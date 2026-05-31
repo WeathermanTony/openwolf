@@ -45,76 +45,32 @@ const CREATE_IF_MISSING = [
   "suggestions.json",
 ];
 
-// Use $CLAUDE_PROJECT_DIR so hooks resolve correctly even if CWD changes during a session
+// Resolve $CLAUDE_PROJECT_DIR cross-platform via node -e instead of shell expansion.
+// `$CLAUDE_PROJECT_DIR` is POSIX-only — on Windows cmd/PowerShell the literal reaches
+// node's argv unmodified, producing paths like `C:\.wolf\hooks\stop.js` that don't
+// exist. Reading `process.env.CLAUDE_PROJECT_DIR` inside `node -e` works on every OS
+// because Node parses env vars the same way everywhere. The trailing `.catch(()=>{})`
+// makes the hook a silent no-op when `.wolf/` is absent (e.g. a project that doesn't
+// use OpenWolf but inherits the hooks from a global settings.json).
+function hookCommand(file: string): string {
+  return `node -e "import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/${file}').catch(()=>{})"`;
+}
+
 const HOOK_SETTINGS = {
   hooks: {
     SessionStart: [
-      {
-        matcher: "",
-        hooks: [
-          {
-            type: "command",
-            command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/session-start.js"',
-            timeout: 5,
-          },
-        ],
-      },
+      { matcher: "", hooks: [{ type: "command", command: hookCommand("session-start.js"), timeout: 5 }] },
     ],
     PreToolUse: [
-      {
-        matcher: "Read",
-        hooks: [
-          {
-            type: "command",
-            command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-read.js"',
-            timeout: 5,
-          },
-        ],
-      },
-      {
-        matcher: "Write|Edit|MultiEdit",
-        hooks: [
-          {
-            type: "command",
-            command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-write.js"',
-            timeout: 5,
-          },
-        ],
-      },
+      { matcher: "Read", hooks: [{ type: "command", command: hookCommand("pre-read.js"), timeout: 5 }] },
+      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: hookCommand("pre-write.js"), timeout: 5 }] },
     ],
     PostToolUse: [
-      {
-        matcher: "Read",
-        hooks: [
-          {
-            type: "command",
-            command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/post-read.js"',
-            timeout: 5,
-          },
-        ],
-      },
-      {
-        matcher: "Write|Edit|MultiEdit",
-        hooks: [
-          {
-            type: "command",
-            command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/post-write.js"',
-            timeout: 10,
-          },
-        ],
-      },
+      { matcher: "Read", hooks: [{ type: "command", command: hookCommand("post-read.js"), timeout: 5 }] },
+      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: hookCommand("post-write.js"), timeout: 10 }] },
     ],
     Stop: [
-      {
-        matcher: "",
-        hooks: [
-          {
-            type: "command",
-            command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/stop.js"',
-            timeout: 10,
-          },
-        ],
-      },
+      { matcher: "", hooks: [{ type: "command", command: hookCommand("stop.js"), timeout: 10 }] },
     ],
   },
 };
