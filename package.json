@@ -8,9 +8,9 @@
   },
   "scripts": {
     "prebuild": "node -e \"const fs=require('fs');if(fs.existsSync('dist'))fs.rmSync('dist',{recursive:true})\"",
-    "build": "tsc && pnpm build:hooks && pnpm build:dashboard",
-    "build:hooks": "tsc -p tsconfig.hooks.json",
+    "build": "tsc && pnpm build:dashboard && pnpm postbuild:chmod",
     "build:dashboard": "cd src/dashboard/app && npx vite build --outDir ../../../dist/dashboard",
+    "postbuild:chmod": "node -e \"const fs=require('fs');const p='dist/bin/openwolf.js';if(fs.existsSync(p))fs.chmodSync(p,0o755)\"",
     "dev": "tsc --watch",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
