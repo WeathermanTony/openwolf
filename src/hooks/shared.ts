@@ -51,9 +51,13 @@ export function readMarkdown(filePath: string): string {
 }
 
 export function appendMarkdown(filePath: string, line: string): void {
-  const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.appendFileSync(filePath, line, "utf-8");
+  // Silent no-op on any error per the hook contract — callers should not
+  // need defensive try/catch around this helper.
+  try {
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.appendFileSync(filePath, line, "utf-8");
+  } catch {}
 }
 
 export interface AnatomyEntry {
@@ -589,4 +593,184 @@ export function readStdin(): Promise<string> {
 
 export function normalizePath(p: string): string {
   return p.replace(/\\/g, "/");
+}
+
+export interface SizeDisciplineConfig {
+  enabled: boolean;
+  buglog: { retention_days: number };
+  reviewlog: { retention_days: number };
+  memory: { retention_days: number };
+  token_ledger: { max_inline_sessions: number };
+  cerebrum: { retention_days: number };
+  daemon_log: { max_bytes: number; keep: number };
+}
+
+export interface ReviewHookConfig {
+  enabled: boolean;
+  min_diff_lines: number;
+  always_review_paths: string[];
+  codex_command: string;
+  max_review_rounds: number;
+  nudge_only: boolean;
+}
+
+export interface OpenWolfConfig {
+  version?: number;
+  openwolf?: {
+    enabled?: boolean;
+    size_discipline?: Partial<SizeDisciplineConfig>;
+    review_hook?: Partial<ReviewHookConfig>;
+    [key: string]: unknown;
+  };
+}
+
+const SIZE_DISCIPLINE_DEFAULTS: SizeDisciplineConfig = {
+  enabled: true,
+  buglog: { retention_days: 30 },
+  reviewlog: { retention_days: 30 },
+  memory: { retention_days: 30 },
+  token_ledger: { max_inline_sessions: 60 },
+  cerebrum: { retention_days: 180 },
+  daemon_log: { max_bytes: 5_242_880, keep: 3 },
+};
+
+const REVIEW_HOOK_DEFAULTS: ReviewHookConfig = {
+  enabled: true,
+  min_diff_lines: 40,
+  always_review_paths: ["**/auth/**", "**/payment/**", "**/migrations/**"],
+  codex_command: "codex exec --full-auto",
+  max_review_rounds: 5,
+  nudge_only: true,
+};
+
+/**
+ * Load OpenWolf config from .wolf/config.json, returning defaults for any
+ * missing keys. Never throws — silently returns defaults on read/parse errors.
+ *
+ * Guards against valid-JSON-but-not-an-object (e.g. file contains `null`,
+ * an array, or a primitive), which would otherwise propagate as type errors
+ * to the getters below.
+ */
+export function loadConfig(): OpenWolfConfig {
+  const wolfDir = getWolfDir();
+  const configPath = path.join(wolfDir, "config.json");
+  const raw = readJSON<unknown>(configPath, null);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { version: 1, openwolf: {} };
+  }
+  return raw as OpenWolfConfig;
+}
+
+export function getSizeDisciplineConfig(): SizeDisciplineConfig {
+  const root = loadConfig();
+  const cfg = (root && typeof root === "object" ? root.openwolf?.size_discipline : undefined) ?? {};
+  return {
+    enabled: cfg.enabled ?? SIZE_DISCIPLINE_DEFAULTS.enabled,
+    buglog: { retention_days: cfg.buglog?.retention_days ?? SIZE_DISCIPLINE_DEFAULTS.buglog.retention_days },
+    reviewlog: { retention_days: cfg.reviewlog?.retention_days ?? SIZE_DISCIPLINE_DEFAULTS.reviewlog.retention_days },
+    memory: { retention_days: cfg.memory?.retention_days ?? SIZE_DISCIPLINE_DEFAULTS.memory.retention_days },
+    token_ledger: { max_inline_sessions: cfg.token_ledger?.max_inline_sessions ?? SIZE_DISCIPLINE_DEFAULTS.token_ledger.max_inline_sessions },
+    cerebrum: { retention_days: cfg.cerebrum?.retention_days ?? SIZE_DISCIPLINE_DEFAULTS.cerebrum.retention_days },
+    daemon_log: {
+      max_bytes: cfg.daemon_log?.max_bytes ?? SIZE_DISCIPLINE_DEFAULTS.daemon_log.max_bytes,
+      keep: cfg.daemon_log?.keep ?? SIZE_DISCIPLINE_DEFAULTS.daemon_log.keep,
+    },
+  };
+}
+
+export interface TranscriptAssistantMessage {
+  text: string;        // Concatenated assistant text from the entry
+  toolUses: Array<{ name: string; input: Record<string, unknown> }>;
+  timestamp: string;   // ISO timestamp from the entry, if present
+}
+
+/**
+ * Read the tail of a Claude Code transcript (JSONL) and return the most recent
+ * assistant message — concatenated text content plus any tool_use blocks.
+ *
+ * Used by the review hook to inspect what the model just produced before
+ * deciding whether to nudge for a Codex review. Silent no-op (returns null)
+ * on any read/parse error or empty transcript.
+ *
+ * Reads up to `maxBytes` from the END of the file to avoid loading multi-MB
+ * transcripts into memory.
+ */
+export function readLastAssistantText(
+  transcriptPath: string,
+  maxBytes = 256 * 1024
+): TranscriptAssistantMessage | null {
+  try {
+    if (!transcriptPath || !fs.existsSync(transcriptPath)) return null;
+    const stat = fs.statSync(transcriptPath);
+    if (stat.size === 0) return null;
+
+    const readSize = Math.min(stat.size, maxBytes);
+    const startOffset = Math.max(0, stat.size - readSize);
+    const fd = fs.openSync(transcriptPath, "r");
+    const buf = Buffer.alloc(readSize);
+    try {
+      fs.readSync(fd, buf, 0, readSize, startOffset);
+    } finally {
+      fs.closeSync(fd);
+    }
+    let tail = buf.toString("utf-8");
+
+    // If we sliced mid-line, drop the partial leading line.
+    if (startOffset > 0) {
+      const firstNewline = tail.indexOf("\n");
+      if (firstNewline >= 0) tail = tail.slice(firstNewline + 1);
+    }
+
+    const lines = tail.split("\n");
+    // Walk backwards for the most recent assistant entry.
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      let entry: Record<string, unknown>;
+      try {
+        entry = JSON.parse(line) as Record<string, unknown>;
+      } catch {
+        continue;
+      }
+      if (entry.type !== "assistant") continue;
+
+      // Claude Code transcripts nest content under message.content as an array
+      // of {type: "text", text} and {type: "tool_use", name, input} blocks.
+      const message = entry.message as { content?: unknown } | undefined;
+      const content = Array.isArray(message?.content) ? message!.content : [];
+      const textParts: string[] = [];
+      const toolUses: Array<{ name: string; input: Record<string, unknown> }> = [];
+      for (const block of content as Array<Record<string, unknown>>) {
+        if (block?.type === "text" && typeof block.text === "string") {
+          textParts.push(block.text);
+        } else if (block?.type === "tool_use" && typeof block.name === "string") {
+          toolUses.push({
+            name: block.name,
+            input: (block.input as Record<string, unknown>) ?? {},
+          });
+        }
+      }
+      return {
+        text: textParts.join("\n"),
+        toolUses,
+        timestamp: typeof entry.timestamp === "string" ? entry.timestamp : "",
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function getReviewHookConfig(): ReviewHookConfig {
+  const root = loadConfig();
+  const cfg = (root && typeof root === "object" ? root.openwolf?.review_hook : undefined) ?? {};
+  return {
+    enabled: cfg.enabled ?? REVIEW_HOOK_DEFAULTS.enabled,
+    min_diff_lines: cfg.min_diff_lines ?? REVIEW_HOOK_DEFAULTS.min_diff_lines,
+    always_review_paths: cfg.always_review_paths ?? REVIEW_HOOK_DEFAULTS.always_review_paths,
+    codex_command: cfg.codex_command ?? REVIEW_HOOK_DEFAULTS.codex_command,
+    max_review_rounds: cfg.max_review_rounds ?? REVIEW_HOOK_DEFAULTS.max_review_rounds,
+    nudge_only: cfg.nudge_only ?? REVIEW_HOOK_DEFAULTS.nudge_only,
+  };
 }

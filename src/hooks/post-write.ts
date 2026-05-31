@@ -3,8 +3,10 @@ import * as path from "node:path";
 import * as crypto from "node:crypto";
 import {
   getWolfDir, ensureWolfDir, readJSON, writeJSON, readMarkdown, parseAnatomy, serializeAnatomy,
-  extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath
+  extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath,
+  getSizeDisciplineConfig
 } from "./shared.js";
+import { rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 
 interface SessionData {
   files_written: Array<{ file: string; action: string; tokens: number; at: string }>;
@@ -63,62 +65,70 @@ async function main(): Promise<void> {
   const oldStr = input.tool_input?.old_string ?? "";
   const newStr = input.tool_input?.new_string ?? "";
 
-  // 1. Update anatomy.md
+  // 1. Update anatomy.md — read-modify-write must be lock-protected to prevent
+  // concurrent post-write hooks from clobbering each other's anatomy entries.
   try {
     const anatomyPath = path.join(wolfDir, "anatomy.md");
-    let anatomyContent: string;
-    try {
-      anatomyContent = fs.readFileSync(anatomyPath, "utf-8");
-    } catch {
-      anatomyContent = "# anatomy.md\n\n> Auto-maintained by OpenWolf.\n";
-    }
+    const anatomyLock = acquireFileLock(anatomyPath);
+    if (anatomyLock) {
+      try {
+        let anatomyContent: string;
+        try {
+          anatomyContent = fs.readFileSync(anatomyPath, "utf-8");
+        } catch {
+          anatomyContent = "# anatomy.md\n\n> Auto-maintained by OpenWolf.\n";
+        }
 
-    const sections = parseAnatomy(anatomyContent);
-    const relPathLocal = normalizePath(path.relative(projectRoot, absolutePath));
-    const dir = path.dirname(relPathLocal);
-    const fileName = path.basename(relPathLocal);
-    const sectionKey = dir === "." ? "./" : dir + "/";
+        const sections = parseAnatomy(anatomyContent);
+        const relPathLocal = normalizePath(path.relative(projectRoot, absolutePath));
+        const dir = path.dirname(relPathLocal);
+        const fileName = path.basename(relPathLocal);
+        const sectionKey = dir === "." ? "./" : dir + "/";
 
-    let fileContent = "";
-    try {
-      fileContent = fs.readFileSync(absolutePath, "utf-8");
-    } catch {
-      fileContent = input.tool_input?.content ?? "";
-    }
+        let fileContent = "";
+        try {
+          fileContent = fs.readFileSync(absolutePath, "utf-8");
+        } catch {
+          fileContent = input.tool_input?.content ?? "";
+        }
 
-    const desc = extractDescription(absolutePath).slice(0, 100);
-    const ext = path.extname(absolutePath).toLowerCase();
-    const codeExts = new Set([".ts", ".js", ".tsx", ".jsx", ".py", ".json", ".yaml", ".yml", ".css"]);
-    const proseExts = new Set([".md", ".txt", ".rst"]);
-    const type = codeExts.has(ext) ? "code" : proseExts.has(ext) ? "prose" : "mixed";
-    const tokens = estimateTokens(fileContent, type as "code" | "prose" | "mixed");
+        const desc = extractDescription(absolutePath).slice(0, 100);
+        const ext = path.extname(absolutePath).toLowerCase();
+        const codeExts = new Set([".ts", ".js", ".tsx", ".jsx", ".py", ".json", ".yaml", ".yml", ".css"]);
+        const proseExts = new Set([".md", ".txt", ".rst"]);
+        const type = codeExts.has(ext) ? "code" : proseExts.has(ext) ? "prose" : "mixed";
+        const tokens = estimateTokens(fileContent, type as "code" | "prose" | "mixed");
 
-    if (!sections.has(sectionKey)) sections.set(sectionKey, []);
-    const entries = sections.get(sectionKey)!;
-    const idx = entries.findIndex((e) => e.file === fileName);
-    if (idx !== -1) {
-      entries[idx] = { file: fileName, description: desc, tokens };
-    } else {
-      entries.push({ file: fileName, description: desc, tokens });
-    }
+        if (!sections.has(sectionKey)) sections.set(sectionKey, []);
+        const entries = sections.get(sectionKey)!;
+        const idx = entries.findIndex((e) => e.file === fileName);
+        if (idx !== -1) {
+          entries[idx] = { file: fileName, description: desc, tokens };
+        } else {
+          entries.push({ file: fileName, description: desc, tokens });
+        }
 
-    let fileCount = 0;
-    for (const [, list] of sections) fileCount += list.length;
+        let fileCount = 0;
+        for (const [, list] of sections) fileCount += list.length;
 
-    const serialized = serializeAnatomy(sections, {
-      lastScanned: new Date().toISOString(),
-      fileCount,
-      hits: 0,
-      misses: 0,
-    });
+        const serialized = serializeAnatomy(sections, {
+          lastScanned: new Date().toISOString(),
+          fileCount,
+          hits: 0,
+          misses: 0,
+        });
 
-    const tmp = anatomyPath + "." + crypto.randomBytes(4).toString("hex") + ".tmp";
-    try {
-      fs.writeFileSync(tmp, serialized, "utf-8");
-      fs.renameSync(tmp, anatomyPath);
-    } catch {
-      try { fs.writeFileSync(anatomyPath, serialized, "utf-8"); } catch {}
-      try { fs.unlinkSync(tmp); } catch {}
+        const tmp = anatomyPath + "." + crypto.randomBytes(4).toString("hex") + ".tmp";
+        try {
+          fs.writeFileSync(tmp, serialized, "utf-8");
+          fs.renameSync(tmp, anatomyPath);
+        } catch {
+          try { fs.writeFileSync(anatomyPath, serialized, "utf-8"); } catch {}
+          try { fs.unlinkSync(tmp); } catch {}
+        }
+      } finally {
+        anatomyLock();
+      }
     }
   } catch {}
 
@@ -139,35 +149,56 @@ async function main(): Promise<void> {
 
     const memoryPath = path.join(wolfDir, "memory.md");
     const outcome = changeDesc || "—";
-    appendMarkdown(memoryPath, `| ${timeShort()} | ${action} ${relFile} | ${outcome} | ~${writeTokens} |\n`);
+    // Lock the append so a concurrent monthlyRotateMarkdown call (stop.ts) can't
+    // truncate the file between our append and a downstream read. Drop silently
+    // if the lock can't be acquired — we'd rather lose one memory line than block.
+    const memLock = acquireFileLock(memoryPath);
+    if (memLock) {
+      try {
+        appendMarkdown(memoryPath, `| ${timeShort()} | ${action} ${relFile} | ${outcome} | ~${writeTokens} |\n`);
+      } finally {
+        memLock();
+      }
+    }
   } catch {}
 
-  // 3. Record in session tracker + track edit counts
+  // 3. Record in session tracker + track edit counts — lock-protected so
+  // parallel post-write hooks can't drop each other's files_written/edit_counts
+  // updates via overlapping read-modify-write.
   try {
-    const session = readJSON<SessionData>(sessionFile, { files_written: [], edit_counts: {} });
-    if (!session.edit_counts) session.edit_counts = {};
+    const sessionLock = acquireFileLock(sessionFile);
+    if (sessionLock) {
+      try {
+        const session = readJSON<SessionData>(sessionFile, { files_written: [], edit_counts: {} });
+        if (!session.edit_counts) session.edit_counts = {};
+        if (!Array.isArray(session.files_written)) session.files_written = [];
 
-    const normalizedFile = normalizePath(filePath);
-    const action = toolName === "Write" ? "create" : "edit";
-    const fileContent = input.tool_input?.content ?? "";
-    const tokens = estimateTokens(fileContent || newStr, "code");
+        const normalizedFile = normalizePath(filePath);
+        const action = toolName === "Write" ? "create" : "edit";
+        const fileContent = input.tool_input?.content ?? "";
+        const tokens = estimateTokens(fileContent || newStr, "code");
 
-    session.files_written.push({
-      file: normalizedFile,
-      action,
-      tokens,
-      at: new Date().toISOString(),
-    });
+        session.files_written.push({
+          file: normalizedFile,
+          action,
+          tokens,
+          at: new Date().toISOString(),
+        });
 
-    const editKey = normalizePath(path.relative(projectRoot, absolutePath));
-    session.edit_counts[editKey] = (session.edit_counts[editKey] || 0) + 1;
+        const editKey = normalizePath(path.relative(projectRoot, absolutePath));
+        const prevCount = typeof session.edit_counts[editKey] === "number" ? session.edit_counts[editKey] : 0;
+        session.edit_counts[editKey] = prevCount + 1;
 
-    writeJSON(sessionFile, session);
+        writeJSON(sessionFile, session);
 
-    if (session.edit_counts[editKey] >= 3) {
-      process.stderr.write(
-        `⚠️ OpenWolf: ${baseName} has been edited ${session.edit_counts[editKey]} times this session. If you're fixing a bug, remember to log it to .wolf/buglog.json.\n`
-      );
+        if (session.edit_counts[editKey] >= 3) {
+          process.stderr.write(
+            `⚠️ OpenWolf: ${baseName} has been edited ${session.edit_counts[editKey]} times this session. If you're fixing a bug, remember to log it to .wolf/buglog.json.\n`
+          );
+        }
+      } finally {
+        sessionLock();
+      }
     }
   } catch {}
 
@@ -285,51 +316,88 @@ function extractCalls(code: string): string[] {
 
 function autoDetectBugFix(wolfDir: string, absolutePath: string, projectRoot: string, oldStr: string, newStr: string): void {
   const bugLogPath = path.join(wolfDir, "buglog.json");
-  const bugLog = readJSON<BugLog>(bugLogPath, { version: 1, bugs: [] });
   const relFile = normalizePath(path.relative(projectRoot, absolutePath));
   const basename = path.basename(absolutePath);
   const ext = path.extname(basename).toLowerCase();
 
-  // Detect what kind of fix this is
+  // Detect what kind of fix this is — cheap, do it before taking the lock.
   const detection = detectFixPattern(oldStr, newStr, ext);
   if (!detection) return;
 
-  // Check for recent duplicate (same file + same category within 5 min)
-  const recentDupe = bugLog.bugs.find(b => {
-    if (path.basename(b.file) !== basename) return false;
-    if (!b.tags.includes("auto-detected")) return false;
-    if (!b.tags.includes(detection.category)) return false;
-    const bugTime = new Date(b.last_seen).getTime();
-    return (Date.now() - bugTime) < 5 * 60 * 1000;
-  });
+  // Lock the buglog for the full read-modify-write. Without this, two parallel
+  // post-write hooks can both compute `bug-${length+1}` and collide on ID, or
+  // one's write can clobber the other's append. Drop the entry silently if the
+  // lock can't be acquired — losing one auto-detected log line is acceptable.
+  const lockRelease = acquireFileLock(bugLogPath);
+  if (!lockRelease) return;
+  try {
+    const bugLog = readJSON<BugLog>(bugLogPath, { version: 1, bugs: [] });
+    if (!Array.isArray(bugLog.bugs)) bugLog.bugs = [];
 
-  if (recentDupe) {
-    recentDupe.occurrences++;
-    recentDupe.last_seen = new Date().toISOString();
-    // Append additional context
-    if (detection.context && !recentDupe.fix.includes(detection.context)) {
-      recentDupe.fix += ` | Also: ${detection.context}`;
+    // Check for recent duplicate (same file + same category within 5 min)
+    const recentDupe = bugLog.bugs.find(b => {
+      if (path.basename(b.file) !== basename) return false;
+      if (!b.tags.includes("auto-detected")) return false;
+      if (!b.tags.includes(detection.category)) return false;
+      const bugTime = new Date(b.last_seen).getTime();
+      return (Date.now() - bugTime) < 5 * 60 * 1000;
+    });
+
+    if (recentDupe) {
+      recentDupe.occurrences = (typeof recentDupe.occurrences === "number" ? recentDupe.occurrences : 0) + 1;
+      recentDupe.last_seen = new Date().toISOString();
+      if (detection.context && !recentDupe.fix.includes(detection.context)) {
+        recentDupe.fix += ` | Also: ${detection.context}`;
+      }
+      writeJSON(bugLogPath, bugLog);
+      return;
     }
+
+    // ID generation uses max(existing numeric suffix) + 1, NOT array.length + 1.
+    // Length-based IDs collide with surviving entries after rolling-window prunes
+    // earlier ones, and with parallel writers that all saw the same length.
+    let maxId = 0;
+    for (const b of bugLog.bugs) {
+      const m = /^bug-(\d+)$/.exec(b.id || "");
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (Number.isFinite(n) && n > maxId) maxId = n;
+      }
+    }
+    const nextId = `bug-${String(maxId + 1).padStart(3, "0")}`;
+
+    bugLog.bugs.push({
+      id: nextId,
+      timestamp: new Date().toISOString(),
+      error_message: detection.summary,
+      file: relFile,
+      root_cause: detection.rootCause,
+      fix: detection.fix,
+      tags: ["auto-detected", detection.category, ext.replace(".", "") || "unknown"],
+      related_bugs: [],
+      occurrences: 1,
+      last_seen: new Date().toISOString(),
+    });
+
     writeJSON(bugLogPath, bugLog);
-    return;
+  } finally {
+    lockRelease();
   }
 
-  const nextId = `bug-${String(bugLog.bugs.length + 1).padStart(3, "0")}`;
-
-  bugLog.bugs.push({
-    id: nextId,
-    timestamp: new Date().toISOString(),
-    error_message: detection.summary,
-    file: relFile,
-    root_cause: detection.rootCause,
-    fix: detection.fix,
-    tags: ["auto-detected", detection.category, ext.replace(".", "") || "unknown"],
-    related_bugs: [],
-    occurrences: 1,
-    last_seen: new Date().toISOString(),
-  });
-
-  writeJSON(bugLogPath, bugLog);
+  // Apply rolling-window retention OUTSIDE the lock (rollingWindowJson takes
+  // its own lock internally; nesting would deadlock).
+  try {
+    const cfg = getSizeDisciplineConfig();
+    if (cfg.enabled) {
+      rollingWindowJson<BugEntry>({
+        file: bugLogPath,
+        arrayKey: "bugs",
+        getDate: (e) => e.last_seen,
+        getId: (e) => e.id,
+        retentionDays: cfg.buglog.retention_days,
+      });
+    }
+  } catch {}
 }
 
 interface FixDetection {

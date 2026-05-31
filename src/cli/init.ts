@@ -38,6 +38,7 @@ const CREATE_IF_MISSING = [
   "anatomy.md",
   "token-ledger.json",
   "buglog.json",
+  "reviewlog.json",
   "cron-manifest.json",
   "cron-state.json",
   "designqc-report.json",
@@ -348,10 +349,28 @@ function generateTemplate(destPath: string, file: string): void {
         daemon: { port: 18790, log_level: "info" },
         dashboard: { enabled: true, port: 18791 },
         designqc: { enabled: true, viewports: [{ name: "desktop", width: 1440, height: 900 }, { name: "mobile", width: 375, height: 812 }], max_screenshots: 6, chrome_path: null },
+        size_discipline: {
+          enabled: true,
+          buglog: { retention_days: 30 },
+          reviewlog: { retention_days: 30 },
+          memory: { retention_days: 30 },
+          token_ledger: { max_inline_sessions: 60 },
+          cerebrum: { retention_days: 180 },
+          daemon_log: { max_bytes: 5242880, keep: 3 },
+        },
+        review_hook: {
+          enabled: true,
+          min_diff_lines: 40,
+          always_review_paths: ["**/auth/**", "**/payment/**", "**/migrations/**"],
+          codex_command: "codex exec --full-auto",
+          max_review_rounds: 5,
+          nudge_only: true,
+        },
       },
     }, null, 2),
     "token-ledger.json": JSON.stringify({ version: 1, created_at: "", lifetime: { total_tokens_estimated: 0, total_reads: 0, total_writes: 0, total_sessions: 0, anatomy_hits: 0, anatomy_misses: 0, repeated_reads_blocked: 0, estimated_savings_vs_bare_cli: 0 }, sessions: [], daemon_usage: [], waste_flags: [], optimization_report: { last_generated: null, patterns: [] } }, null, 2),
     "buglog.json": JSON.stringify({ version: 1, bugs: [] }, null, 2),
+    "reviewlog.json": JSON.stringify({ version: 1, reviews: [] }, null, 2),
     "cron-manifest.json": JSON.stringify({ version: 1, tasks: [] }, null, 2),
     "cron-state.json": JSON.stringify({ last_heartbeat: null, engine_status: "initialized", execution_log: [], dead_letter_queue: [], upcoming: [] }, null, 2),
     "designqc-report.json": JSON.stringify({ captured_at: null, captures: [], total_size_kb: 0, estimated_tokens: 0 }, null, 2),
@@ -442,6 +461,19 @@ function copyHookScripts(wolfDir: string): void {
       if (fs.existsSync(src)) {
         safeCopyFile(src, path.join(hooksDir, file));
         copiedAny = true;
+      }
+    }
+    // Hooks reference compiled utilities via "../utils/size-discipline.js".
+    // Place the utils as a sibling of hooks/ under .wolf/ so the relative
+    // path resolves at runtime (.wolf/hooks/post-write.js → .wolf/utils/...).
+    const utilsSrcDir = path.resolve(sourceDir, "..", "utils");
+    if (fs.existsSync(utilsSrcDir)) {
+      const utilsDestDir = path.resolve(hooksDir, "..", "utils");
+      try { fs.mkdirSync(utilsDestDir, { recursive: true }); } catch {}
+      for (const entry of fs.readdirSync(utilsSrcDir)) {
+        if (entry.endsWith(".js")) {
+          safeCopyFile(path.join(utilsSrcDir, entry), path.join(utilsDestDir, entry));
+        }
       }
     }
   } else if (fs.existsSync(srcHooksDir)) {

@@ -1,6 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getWolfDir, ensureWolfDir, readJSON, readMarkdown, readStdin } from "./shared.js";
+import * as crypto from "node:crypto";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, readMarkdown, readStdin } from "./shared.js";
+import { acquireFileLock } from "../utils/size-discipline.js";
 
 interface BugEntry {
   id: string;
@@ -51,6 +53,24 @@ async function main(): Promise<void> {
   process.exit(0);
 }
 
+interface CerebrumStats {
+  version: number;
+  lessons: Record<string, {
+    text: string;        // First 120 chars of the lesson line, for human reference
+    hits: number;        // Times this lesson surfaced in pre-write
+    first_hit: string;   // ISO timestamp
+    last_hit: string;    // ISO timestamp
+  }>;
+}
+
+function lessonId(lessonText: string): string {
+  // 12-char hash. Stable across hook runs for IDENTICAL text. Wording edits
+  // produce a new ID — that's intentional: a meaningfully reworded lesson
+  // is a different lesson, and stats continuity for typo fixes is a feature
+  // we explicitly don't try to provide (would require fuzzy matching).
+  return crypto.createHash("sha1").update(lessonText).digest("hex").slice(0, 12);
+}
+
 function checkCerebrum(wolfDir: string, content: string): void {
   const cerebrumContent = readMarkdown(path.join(wolfDir, "cerebrum.md"));
   const doNotRepeatSection = cerebrumContent.split("## Do-Not-Repeat")[1];
@@ -58,6 +78,10 @@ function checkCerebrum(wolfDir: string, content: string): void {
 
   const entries = doNotRepeatSection.split("## ")[0];
   const lines = entries.split("\n").filter((l) => l.trim().startsWith("[") || l.trim().startsWith("-"));
+
+  // Track lessons that fired THIS invocation so a single Do-Not-Repeat line
+  // with multiple matching patterns counts as one hit, not many.
+  const firedThisCall = new Set<string>();
 
   for (const line of lines) {
     const trimmed = line.trim().replace(/^[-*]\s*/, "").replace(/^\[[\d-]+\]\s*/, "");
@@ -79,6 +103,11 @@ function checkCerebrum(wolfDir: string, content: string): void {
       try {
         const regex = new RegExp(`\\b${pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
         if (regex.test(content)) {
+          const id = lessonId(trimmed);
+          if (!firedThisCall.has(id)) {
+            firedThisCall.add(id);
+            recordLessonHit(wolfDir, id, trimmed);
+          }
           process.stderr.write(
             `⚠️ OpenWolf cerebrum warning: "${trimmed}" — check your code before proceeding.\n`
           );
@@ -86,6 +115,42 @@ function checkCerebrum(wolfDir: string, content: string): void {
       } catch {}
     }
   }
+}
+
+/**
+ * Increment hit counter for a lesson in cerebrum-stats.json sidecar.
+ * Silent no-op on error — must never block the hook. Uses a file lock so
+ * concurrent pre-write hooks (Claude Code can dispatch parallel Edit/Write
+ * tool calls) cannot lose increments via read-modify-write races.
+ */
+function recordLessonHit(wolfDir: string, id: string, lessonText: string): void {
+  try {
+    const statsPath = path.join(wolfDir, "cerebrum-stats.json");
+    const release = acquireFileLock(statsPath);
+    if (!release) return; // Couldn't acquire lock — drop this increment.
+    try {
+      // Re-read AFTER lock acquisition so we see any concurrent writes.
+      const stats = readJSON<CerebrumStats>(statsPath, { version: 1, lessons: {} });
+      if (!stats.lessons) stats.lessons = {};
+      const now = new Date().toISOString();
+      const existing = stats.lessons[id];
+      if (existing) {
+        existing.hits++;
+        existing.last_hit = now;
+        existing.text = lessonText.slice(0, 120);
+      } else {
+        stats.lessons[id] = {
+          text: lessonText.slice(0, 120),
+          hits: 1,
+          first_hit: now,
+          last_hit: now,
+        };
+      }
+      writeJSON(statsPath, stats);
+    } finally {
+      release();
+    }
+  } catch {}
 }
 
 // Common words that appear in most code — must be excluded from similarity matching

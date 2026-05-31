@@ -68,6 +68,23 @@
       ],
       "max_screenshots": 6,
       "chrome_path": null
+    },
+    "size_discipline": {
+      "enabled": true,
+      "buglog": { "retention_days": 30 },
+      "reviewlog": { "retention_days": 30 },
+      "memory": { "retention_days": 30 },
+      "token_ledger": { "max_inline_sessions": 60 },
+      "cerebrum": { "retention_days": 180 },
+      "daemon_log": { "max_bytes": 5242880, "keep": 3 }
+    },
+    "review_hook": {
+      "enabled": true,
+      "min_diff_lines": 40,
+      "always_review_paths": ["**/auth/**", "**/payment/**", "**/migrations/**"],
+      "codex_command": "codex exec --full-auto",
+      "max_review_rounds": 5,
+      "nudge_only": true
     }
   }
 }
