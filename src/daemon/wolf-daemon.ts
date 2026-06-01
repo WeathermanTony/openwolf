@@ -106,7 +106,7 @@ const projectMeta = detectProjectMeta();
 
 // API routes
 app.get("/api/health", (_req, res) => {
-  const cronState = readJSON<{ engine_status: string; last_heartbeat: string | null; dead_letter_queue: unknown[] }>(
+  const cronState = readJSON<{ engine_status?: string; last_heartbeat?: string | null; dead_letter_queue?: unknown[] }>(
     path.join(wolfDir, "cron-state.json"),
     { engine_status: "unknown", last_heartbeat: null, dead_letter_queue: [] }
   );
@@ -115,12 +115,13 @@ app.get("/api/health", (_req, res) => {
     { tasks: [] }
   );
   const taskCount = Array.isArray(cronManifest.tasks) ? cronManifest.tasks.length : 0;
+  const deadLetterCount = Array.isArray(cronState.dead_letter_queue) ? cronState.dead_letter_queue.length : 0;
   res.json({
     status: "healthy",
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
-    last_heartbeat: cronState.last_heartbeat,
+    last_heartbeat: cronState.last_heartbeat ?? null,
     tasks: taskCount,
-    dead_letters: cronState.dead_letter_queue.length,
+    dead_letters: deadLetterCount,
   });
 });
 

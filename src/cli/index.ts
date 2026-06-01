@@ -58,7 +58,7 @@ export function createProgram(): Command {
     .description("Start daemon via pm2")
     .action(async () => {
       const { daemonStart } = await import("./daemon-cmd.js");
-      daemonStart();
+      await daemonStart();
     });
 
   daemon
@@ -74,7 +74,7 @@ export function createProgram(): Command {
     .description("Restart daemon")
     .action(async () => {
       const { daemonRestart } = await import("./daemon-cmd.js");
-      daemonRestart();
+      await daemonRestart();
     });
 
   daemon

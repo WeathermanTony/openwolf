@@ -8,6 +8,7 @@ import { readJSON, writeJSON, readText, writeText, safeCopyFile } from "../utils
 import { ensureDir } from "../utils/paths.js";
 import { isWindows } from "../utils/platform.js";
 import { registerProject } from "./registry.js";
+import { allocateProjectPorts } from "../utils/port-allocator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -126,6 +127,29 @@ export async function initCommand(): Promise<void> {
   if (!isUpgrade) {
     seedCerebrum(wolfDir, projectRoot);
     seedIdentity(wolfDir, projectRoot);
+  }
+
+  // --- Per-project port allocation ---
+  // Templates ship with the legacy default (dashboard 18791, daemon 18790).
+  // Pick a deterministic, free port pair for this project so multiple
+  // projects can run wolf-daemon concurrently without EADDRINUSE crashloops.
+  const configPath = path.join(wolfDir, "config.json");
+  const cfg = readJSON<{ openwolf: { daemon: { port: number }; dashboard: { port: number } } }>(
+    configPath,
+    { openwolf: { daemon: { port: 18790 }, dashboard: { port: 18791 } } }
+  );
+  const usingLegacyPort =
+    cfg.openwolf.dashboard.port === 18791 && cfg.openwolf.daemon.port === 18790;
+  if (usingLegacyPort) {
+    try {
+      const { daemon, dashboard } = await allocateProjectPorts(projectRoot);
+      cfg.openwolf.daemon.port = daemon;
+      cfg.openwolf.dashboard.port = dashboard;
+      writeJSON(configPath, cfg);
+      console.log(`  ✓ Allocated per-project ports: daemon=${daemon}, dashboard=${dashboard}`);
+    } catch (e) {
+      console.warn(`  ⚠ Port allocation failed (${(e as Error).message}); keeping legacy 18790/18791`);
+    }
   }
 
   // --- Token ledger: set created_at only if empty ---

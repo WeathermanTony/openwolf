@@ -4,8 +4,9 @@ import * as net from "node:net";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { findProjectRoot } from "../scanner/project-root.js";
-import { readJSON } from "../utils/fs-safe.js";
+import { readJSON, writeJSON } from "../utils/fs-safe.js";
 import { isWindows } from "../utils/platform.js";
+import { allocateProjectPorts, isPortFree } from "../utils/port-allocator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,7 +69,32 @@ function killPid(pid: number): boolean {
   }
 }
 
-export function daemonStart(): void {
+async function autoMigrateLegacyPorts(wolfDir: string, projectRoot: string): Promise<void> {
+  const configPath = path.join(wolfDir, "config.json");
+  if (!fs.existsSync(configPath)) return;
+  const cfg = readJSON<{ openwolf: { daemon: { port: number }; dashboard: { port: number } } }>(
+    configPath,
+    { openwolf: { daemon: { port: 18790 }, dashboard: { port: 18791 } } }
+  );
+  const legacy =
+    cfg.openwolf.dashboard.port === 18791 && cfg.openwolf.daemon.port === 18790;
+  if (!legacy) return;
+  // Only migrate if the legacy port is actually taken by some other process.
+  // First-mover on 18791 keeps backward-compat behavior.
+  const free = await isPortFree(18791);
+  if (free) return;
+  try {
+    const { daemon, dashboard } = await allocateProjectPorts(projectRoot);
+    cfg.openwolf.daemon.port = daemon;
+    cfg.openwolf.dashboard.port = dashboard;
+    writeJSON(configPath, cfg);
+    console.log(`  ℹ Port 18791 is in use by another project; migrated this project to daemon=${daemon}, dashboard=${dashboard}`);
+  } catch (e) {
+    console.warn(`  ⚠ Port migration failed (${(e as Error).message}); daemon start will likely fail with EADDRINUSE`);
+  }
+}
+
+export async function daemonStart(): Promise<void> {
   const projectRoot = findProjectRoot();
   const wolfDir = path.join(projectRoot, ".wolf");
 
@@ -81,6 +107,9 @@ export function daemonStart(): void {
     console.log("pm2 not found. Install with: pnpm add -g pm2");
     return;
   }
+
+  await autoMigrateLegacyPorts(wolfDir, projectRoot);
+
   const name = getPm2Name();
   // Resolve daemon script relative to openwolf's install dir, not the target project
   const daemonScript = path.resolve(__dirname, "..", "daemon", "wolf-daemon.js");
@@ -135,7 +164,7 @@ export function daemonStop(): void {
   }
 }
 
-export function daemonRestart(): void {
+export async function daemonRestart(): Promise<void> {
   const projectRoot = findProjectRoot();
   const wolfDir = path.join(projectRoot, ".wolf");
 
@@ -143,6 +172,8 @@ export function daemonRestart(): void {
     console.log("OpenWolf not initialized. Run: openwolf init");
     return;
   }
+
+  await autoMigrateLegacyPorts(wolfDir, projectRoot);
 
   // First try PM2
   if (hasPm2()) {
