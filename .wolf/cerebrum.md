@@ -1,0 +1,24 @@
+# Cerebrum
+
+> OpenWolf's learning memory. Updated automatically as the AI learns from interactions.
+> Do not edit manually unless correcting an error.
+> Last updated: 2026-06-08
+
+## User Preferences
+
+<!-- How the user likes things done. Code style, tools, patterns, communication. -->
+
+## Key Learnings
+
+- **Project:** customopenwolf
+- 2026-06-08: `/home/tony/projects/customopenwolf` and `/mnt/j/projectshome/projects/customopenwolf` resolve to the same physical tree on the J: drvfs mount; treat it as one repo and avoid separate git histories.
+- 2026-06-08: The fork uses a source/runtime split: `.wolf/` remains the installed Claude Code runtime payload, while `src/` and `templates/` are the development source/template layers for future improvements.
+
+## Do-Not-Repeat
+
+<!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
+<!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
+
+## Decision Log
+
+<!-- Significant technical decisions with rationale. Why X was chosen over Y. -->

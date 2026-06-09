@@ -1,0 +1,14 @@
+{
+  "name": "customopenwolf",
+  "version": "0.1.0-custom.0",
+  "private": true,
+  "type": "module",
+  "description": "Custom OpenWolf fork and self-hosting Claude Code context-management scaffold.",
+  "scripts": {
+    "verify": "node scripts/verify-install.js",
+    "test": "node --test \"tests/**/*.test.js\""
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

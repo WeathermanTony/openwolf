@@ -1,0 +1,58 @@
+# anatomy.md
+
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-08T23:07:46.746Z
+> Files: 30 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../../home/tony/.claude/plans/
+
+- `silly-herding-cake.md` — Plan: Bootstrap `customopenwolf` as the canonical custom OpenWolf fork (~1500 tok)
+
+## ./
+
+- `.editorconfig` (~51 tok)
+- `.gitignore` — Git ignore rules (~164 tok)
+- `CLAUDE.md` — OpenWolf (~57 tok)
+- `package.json` — Node.js package manifest (~102 tok)
+- `README.md` — Project documentation (~341 tok)
+- `VERSION` (~4 tok)
+
+## .claude/
+
+- `settings.json` (~508 tok)
+
+## .claude/rules/
+
+- `openwolf.md` (~313 tok)
+
+## .wolf/
+
+- `buglog.json` — structured bug history for known fixes and recurring issues (~2 tok)
+- `cerebrum.md` — project learning memory, user preferences, do-not-repeat, decisions (~68 tok)
+- `config.json` — OpenWolf configuration including quality gate settings (~216 tok)
+- `cron-manifest.json` — OpenWolf scheduled task manifest (~2 tok)
+- `cron-state.json` — OpenWolf scheduled task runtime state (~2 tok)
+- `identity.md` — OpenWolf project identity metadata (~79 tok)
+- `memory.md` — chronological session/action log (~50 tok)
+- `reviewlog.json` — structured review history (~2 tok)
+- `suggestions.json` — OpenWolf suggestion storage (~2 tok)
+- `token-ledger.json` — OpenWolf token tracking ledger (~2 tok)
+
+## .wolf/hooks/
+
+- `_session.json` — hook session state (~253 tok)
+- `package.json` — Node package metadata for OpenWolf hooks (~90 tok)
+- `post-read.js` — hook run after reads (~632 tok)
+- `post-write.js` — hook run after writes (~803 tok)
+- `pre-read.js` — hook run before reads (~867 tok)
+
+## .wolf/qa/
+
+- `_gate-log.json` — quality gate event log (~455 tok)
+- `_README.md` — quality gate README (~330 tok)
+- `_template.md` — adversarial reduction template (~235 tok)
+
+## .wolf/utils/
+
+- `paths.js` — OpenWolf path helpers (~298 tok)
+- `platform.js` — platform detection helper (~247 tok)
+- `port-allocator.js` — deterministic port allocation helper (~824 tok)

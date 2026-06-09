@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+
+# Build and test output
+dist/
+build/
+coverage/
+.cache/
+.tmp/
+*.tmp
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OpenWolf runtime/generated state
+.wolf/daemon.log
+.wolf/*.log
+.wolf/**/*.log
+.wolf/*-state.json
+.wolf/**/*-state.json
+.wolf/cron-state.json
+.wolf/**/cron-state.json
+.wolf/cron-manifest.json
+.wolf/**/cron-manifest.json
+.wolf/token-ledger.json
+.wolf/**/token-ledger.json
+.wolf/cerebrum-stats.json
+.wolf/**/cerebrum-stats.json
+.wolf/**/*.lock
+.wolf/**/*.lock.reclaim
+.wolf/suggestions.json
+.wolf/**/suggestions.json
+.wolf/reviewlog.json
+.wolf/**/reviewlog.json
+.wolf/buglog.json
+.wolf/**/buglog.json
+.wolf/designqc-report.json
+.wolf/**/designqc-report.json
+.wolf/designqc-captures/
+.wolf/archive/
+.wolf/hooks/_session.json
+.wolf/qa/_gate-log.json
+.wolf/qa/*.md
+.wolf/qa/**/*.md
+!.wolf/qa/_README.md
+!.wolf/qa/_template.md
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

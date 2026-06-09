@@ -1,0 +1,72 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/session-start.js').catch(()=>{})\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-read.js').catch(()=>{})\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-write.js').catch(()=>{})\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-read.js').catch(()=>{})\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-write.js').catch(()=>{})\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/stop.js').catch(()=>{})\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
