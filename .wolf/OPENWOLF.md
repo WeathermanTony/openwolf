@@ -84,6 +84,20 @@ OpenWolf's value comes from learning across sessions. You MUST update `.wolf/cer
 
 **The threshold is LOW.** When in doubt, log it. A false positive in the bug log costs nothing. A missed bug means repeating the same mistake later.
 
+
+## Claim Calibration
+
+OpenWolf includes a default reasoning gate for strong claims. When an assistant makes causal, broad, confidence-heavy, methodology, or debugging conclusions without enough calibration, the Stop hook may ask for a compact patch:
+
+```text
+Observed:
+Inferred:
+Limit:
+Falsifier:
+```
+
+This is not a QA reduction and should stay short. The goal is to separate direct evidence from inference, state scope/limits, and name what would lower confidence without adding token-heavy process.
+
 ## Quality Gate (MANDATORY for code edits)
 
 The quality gate exists because AI-written code routinely ships with **unexamined assumptions** that invalidate the result — silently. Tests don't catch this (we usually test the same wrong model). A run-output falsification *does*.
@@ -157,6 +171,17 @@ When the user asks to change, pick, migrate, or "reframe" their project's UI fra
 6. After migration, run `openwolf designqc` to verify the new look.
 
 **Do NOT read the entire reframe-frameworks.md into context upfront.** Read the decision questions and comparison matrix first (~50 lines). Only read the specific framework's prompt section after the user chooses.
+
+
+## Review Completion
+
+When the Stop hook creates a pending review in .wolf/reviewlog.json, do not mark it completed by editing JSON manually. After an independent reviewer approves the work, run:
+
+```bash
+node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --summary "<outcome>"
+```
+
+The helper verifies the pending entry's content_hashes still match current files so repeated review nudges can coalesce safely.
 
 ## Session End
 

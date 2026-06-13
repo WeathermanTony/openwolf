@@ -54,3 +54,76 @@
 | 19:43 | Session end: 49 writes across 10 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~19661 tok |
 | 19:56 | Diagnosed daemon start warning | `pm2 status`, `openwolf daemon start`, `.wolf/daemon.log`, `.wolf/buglog.json` | Found `openwolf-customopenwolf` already online; start failed only because pm2 reports already launched | ~4k |
 | 19:57 | Session end: 49 writes across 10 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~19661 tok |
+| 14:25 | fixed review completion workflow | src/.wolf/templates hooks, docs, tests, verifier | added complete-review helper; content_hash verification tests passed | ~8k |
+| 14:45 | final hardening review pass | complete-review.js; size-discipline.js; review-completion.test.js | fixed stale-hash completion risk, bounded lock retry, Node 18 test path; final ChatGPT review production-ready OK | ~6k |
+| 16:03 | Session end: 12 writes across 5 files (review-hook-loop-advice.md, silly-herding-cake.md, review-completion.test.js, review-completion-helper.md, size-discipline.js) | 12 reads | ~89358 tok |
+| 16:05 | Edited src/utils/size-discipline.js | modified if() | ~184 |
+| 16:05 | Edited templates/wolf/utils/size-discipline.js | modified if() | ~184 |
+| 16:07 | Edited src/utils/size-discipline.js | added error handling | ~200 |
+| 16:07 | Edited src/utils/size-discipline.js | added error handling | ~170 |
+| 16:08 | Edited templates/wolf/utils/size-discipline.js | added error handling | ~200 |
+| 16:08 | Edited templates/wolf/utils/size-discipline.js | added error handling | ~170 |
+| 16:11 | Session end: 19 writes across 6 files (review-hook-loop-advice.md, silly-herding-cake.md, review-completion.test.js, review-completion-helper.md, size-discipline.js) | 12 reads | ~91524 tok |
+| 16:11 | Session end: 19 writes across 6 files (review-hook-loop-advice.md, silly-herding-cake.md, review-completion.test.js, review-completion-helper.md, size-discipline.js) | 12 reads | ~91524 tok |
+
+## Session: 2026-06-13 17:32
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:35 | Created ../../../../../home/tony/.claude/plans/unified-kindling-rose.md | — | ~1018 |
+| 17:46 | Created ../../../../../home/tony/.claude/plans/unified-kindling-rose.md | — | ~1516 |
+| 18:14 | Edited src/hooks/stop.js | 2→2 lines | ~34 |
+| 18:14 | Edited src/hooks/stop.js | added 1 condition(s) | ~121 |
+| 18:14 | Edited src/hooks/stop.js | 2→3 lines | ~62 |
+| 18:14 | Edited src/hooks/stop.js | added nullish coalescing | ~71 |
+| 18:14 | Edited src/hooks/stop.js | added error handling | ~471 |
+| 18:14 | Edited src/hooks/stop.js | 6→6 lines | ~130 |
+| 18:15 | Edited src/hooks/stop.js | modified Codex() | ~357 |
+| 18:15 | Edited tests/review-completion.test.js | modified runHelper() | ~52 |
+| 18:15 | Edited tests/review-completion.test.js | expanded (+19 lines) | ~248 |
+| 18:15 | Edited tests/review-completion.test.js | inline fix | ~24 |
+| 18:16 | Edited tests/review-completion.test.js | 2→3 lines | ~60 |
+| 18:16 | Edited tests/review-completion.test.js | modified sha256() | ~185 |
+| 18:16 | Edited tests/review-completion.test.js | expanded (+51 lines) | ~884 |
+| 18:16 | Edited tests/review-completion.test.js | 2026 → 2099 | ~7 |
+| 18:16 | Edited tests/review-completion.test.js | 2026 → 2099 | ~7 |
+| 18:16 | Edited tests/review-completion.test.js | 2026 → 2099 | ~7 |
+| 18:17 | Edited tests/review-completion.test.js | 2→3 lines | ~92 |
+| 18:18 | Generalized review nudge support and added buglog false-positive suppression | `src/hooks/stop.js`, `.wolf/hooks/stop.js`, `templates/wolf/hooks/stop.js`, `tests/review-completion.test.js`, `.wolf/buglog.json`, `.wolf/cerebrum.md` | ChatGPT and generic installed-plugin guidance listed in review nudge; false-positive buglog acknowledgements are signature-suppressed; npm test passed | ~12k |
+| 18:21 | Edited src/hooks/stop.js | added 1 condition(s) | ~78 |
+| 18:22 | Edited src/hooks/stop.js | inline fix | ~14 |
+| 18:22 | Edited src/hooks/stop.js | inline fix | ~13 |
+| 18:22 | Edited src/hooks/stop.js | modified readLastAssistantText() | ~76 |
+| 18:23 | Hardened stop-hook review findings | `src/hooks/stop.js`, `.wolf/hooks/stop.js`, `templates/wolf/hooks/stop.js`, `.wolf/qa/review-buglog-suppression.md`, `.wolf/buglog.json` | Added stderr flush-before-exit helper and require prior buglog warning before false-positive acknowledgement; tests stayed green | ~3k |
+| 18:23 | Session end: 26 writes across 4 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md) | 13 reads | ~34467 tok |
+| 18:26 | Edited src/hooks/stop.js | inline fix | ~13 |
+| 18:28 | Session end: 27 writes across 4 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md) | 13 reads | ~34572 tok |
+| 18:30 | Edited src/hooks/stop.js | inline fix | ~23 |
+| 18:30 | Session end: 30 writes across 4 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md) | 13 reads | ~34641 tok |
+| 18:32 | Session end: 30 writes across 4 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md) | 13 reads | ~34641 tok |
+| 18:32 | Session end: 30 writes across 4 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md) | 13 reads | ~34641 tok |
+| 18:36 | Session end: 30 writes across 4 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md) | 13 reads | ~34641 tok |
+| 19:09 | Session end: 30 writes across 4 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md) | 13 reads | ~34641 tok |
+| 19:18 | Edited src/hooks/shared.js | expanded (+12 lines) | ~149 |
+| 19:18 | Edited src/hooks/shared.js | added optional chaining | ~235 |
+| 19:18 | Edited src/hooks/stop.js | inline fix | ~94 |
+| 19:18 | Edited src/hooks/stop.js | added 1 condition(s) | ~104 |
+| 19:18 | Edited src/hooks/stop.js | added 1 condition(s) | ~96 |
+| 19:19 | Edited src/hooks/stop.js | added error handling | ~371 |
+| 19:19 | Edited src/hooks/stop.js | added 1 condition(s) | ~60 |
+| 19:19 | Edited tests/review-completion.test.js | expanded (+41 lines) | ~498 |
+| 19:21 | Implemented autonomy continuation Stop-hook reminder | `src/hooks/shared.js`, `src/hooks/stop.js`, `.wolf/hooks/*`, `templates/wolf/hooks/*`, config copies, tests, `.wolf/qa/autonomy-continuation.md` | Added config-backed next-step reminder with per-session cap; tests, syntax checks, and install verification passed | ~8k |
+| 19:25 | Session end: 39 writes across 6 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md, shared.js) | 13 reads | ~37302 tok |
+| 19:28 | Session end: 39 writes across 6 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md, shared.js) | 13 reads | ~37302 tok |
+| 19:29 | Session end: 40 writes across 7 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md, shared.js) | 13 reads | ~38258 tok |
+| 19:46 | Session end: 40 writes across 7 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md, shared.js) | 13 reads | ~38258 tok |
+| 21:10 | Session end: 40 writes across 7 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md, shared.js) | 13 reads | ~38258 tok |
+| 21:10 | Session end: 40 writes across 7 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md, shared.js) | 13 reads | ~38258 tok |
+| 21:11 | Session end: 40 writes across 7 files (unified-kindling-rose.md, stop.js, review-completion.test.js, review-buglog-suppression.md, shared.js) | 13 reads | ~38258 tok |
+| 21:24 | Generalized review nudge plugin guidance | `src/hooks/stop.js`, `.wolf/hooks/stop.js`, `templates/wolf/hooks/stop.js`, tests, QA reductions, `.wolf/cerebrum.md` | Removed hardcoded optional plugin provider references and replaced with generic installed-plugin guidance | ~4k |
+| 21:28 | Session end: 41 writes across 8 files (unified-kindling-rose.md, stop.js, review-completion.test.js, gemini-review-buglog-suppression.md, shared.js) | 13 reads | ~38280 tok |
+| 21:30 | Session end: 41 writes across 8 files (unified-kindling-rose.md, stop.js, review-completion.test.js, gemini-review-buglog-suppression.md, shared.js) | 13 reads | ~38280 tok |
+| 21:35 | Session end: 41 writes across 8 files (unified-kindling-rose.md, stop.js, review-completion.test.js, gemini-review-buglog-suppression.md, shared.js) | 13 reads | ~38280 tok |
+| 21:36 | Session end: 41 writes across 8 files (unified-kindling-rose.md, stop.js, review-completion.test.js, gemini-review-buglog-suppression.md, shared.js) | 13 reads | ~38280 tok |
+| 21:48 | Session end: 41 writes across 8 files (unified-kindling-rose.md, stop.js, review-completion.test.js, gemini-review-buglog-suppression.md, shared.js) | 13 reads | ~38280 tok |
+| 21:49 | Session end: 41 writes across 8 files (unified-kindling-rose.md, stop.js, review-completion.test.js, gemini-review-buglog-suppression.md, shared.js) | 13 reads | ~38280 tok |

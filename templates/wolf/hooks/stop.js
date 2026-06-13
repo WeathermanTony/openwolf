@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, readStdin, readLastAssistantText } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getClaimCalibrationConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 // Per-session firing cap shared by the buglog-missing and cerebrum-freshness
 // stderr nudges. They have no per-state hash to dedup against (unlike the
@@ -29,6 +29,11 @@ const STOP_NUDGE_PER_SESSION_CAP = 3;
  * silently rather than nudge without a log entry" behavior; the slot is
  * effectively given to whoever wins the next contention.
  */
+function exitAfterStderrFlush(code) {
+    if (!process.stderr.writableNeedDrain)
+        process.exit(code);
+    process.stderr.write("", () => process.exit(code));
+}
 function tryConsumeNudgeSlot(sessionFile, field, capN) {
     const release = acquireFileLock(sessionFile);
     if (!release)
@@ -130,8 +135,12 @@ async function main() {
         session.cerebrum_warnings = 0;
     if (typeof session.buglog_warnings !== "number")
         session.buglog_warnings = 0;
+    if (typeof session.autonomy_continuation_warnings !== "number")
+        session.autonomy_continuation_warnings = 0;
     if (typeof session.session_id !== "string")
         session.session_id = "";
+    if (!session.session_id && typeof hookPayload.session_id === "string")
+        session.session_id = hookPayload.session_id;
     if (typeof session.started !== "string")
         session.started = "";
     // Only write to ledger if there's been activity
@@ -162,19 +171,26 @@ async function main() {
             },
         };
         try {
-            if (maybeNudgeConclusionVerification(wolfDir, session, emptyEntry, hookPayload.transcript_path)) {
+            const conclusionNudgeFired = maybeNudgeConclusionVerification(wolfDir, session, emptyEntry, hookPayload.transcript_path);
+            if (conclusionNudgeFired) {
+                nudgeFired = true;
+            }
+            if (!conclusionNudgeFired && maybeNudgeClaimCalibration(wolfDir, session, emptyEntry, hookPayload.transcript_path)) {
+                nudgeFired = true;
+            }
+            if (maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, hookPayload.transcript_path)) {
                 nudgeFired = true;
             }
         }
         catch { }
-        process.exit(nudgeFired ? 2 : 0);
+        exitAfterStderrFlush(nudgeFired ? 2 : 0);
         return;
     }
     // Check for files edited many times without a buglog entry.
     // Counter increment + cap check happen ATOMICALLY inside tryConsumeNudgeSlot
     // under the _session.json file lock — see the helper for the race that
     // motivated this design (Codex round-3 finding).
-    if (checkForMissingBugLogs(wolfDir, session, sessionFile))
+    if (checkForMissingBugLogs(wolfDir, session, sessionFile, hookPayload.transcript_path))
         nudgeFired = true;
     // Check if cerebrum was updated this session (it should be if there were edits)
     if (checkCerebrumFreshness(wolfDir, session, sessionFile))
@@ -327,7 +343,14 @@ async function main() {
     // Verify-conclusions sub-gate: scan the assistant's last text for conclusion
     // language. If hit AND no fresh reduction was written this turn, nudge.
     try {
-        if (maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, hookPayload.transcript_path)) {
+        const conclusionNudgeFired = maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, hookPayload.transcript_path);
+        if (conclusionNudgeFired) {
+            nudgeFired = true;
+        }
+        if (!conclusionNudgeFired && maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, hookPayload.transcript_path)) {
+            nudgeFired = true;
+        }
+        if (maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, hookPayload.transcript_path)) {
             nudgeFired = true;
         }
     }
@@ -338,8 +361,8 @@ async function main() {
     // the writers for the other fields.
     // Exit 2 when any nudge fired so Claude Code surfaces a clear advisory
     // signal. The turn still completes — Stop already ran — but the assistant
-    // sees the non-zero exit code and can't silently ignore the gate.
-    process.exit(nudgeFired ? 2 : 0);
+    // sees the non-zero exit code and can't silently miss or ignore the gate.
+    exitAfterStderrFlush(nudgeFired ? 2 : 0);
 }
 // Convert a glob like `<doublestar>/auth/<doublestar>` to a RegExp. Supports
 // `**`, `*`, and `?`. `**` matches across path segments (including slashes);
@@ -692,12 +715,11 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
         return false;
     // Emit advisory nudge (stderr → next-turn context, never blocks).
     //
-    // Suggests three independent US-based reviewer companions: Codex (OpenAI),
-    // Claude (Anthropic claude.ai subscription via the `claude:` plugin), and
-    // Grok (xAI). Non-US models (Kimi/Moonshot, GLM/Zhipu) are deliberately
-    // omitted — code may contain proprietary work the user wants to keep
-    // domestic. The assistant picks one (or runs multiple for independent
-    // takes) and iterates until production-ready.
+    // Suggests known reviewer companions and a generic installed-plugin fallback.
+    // The local AI plugin set changes over time, so avoid hardcoding every vendor;
+    // assistants should inspect available slash commands/subagents and use any
+    // suitable installed reviewer plugin when present. The assistant picks one
+    // (or runs multiple for independent takes) and iterates until production-ready.
     if (reviewCfg.nudge_only) {
         const fileList = writtenFiles.slice(0, 3).join(", ");
         const more = writtenFiles.length > 3 ? ` +${writtenFiles.length - 3} more` : "";
@@ -709,12 +731,17 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             `  • Codex (OpenAI):  mkdir /tmp/codex-${nextId} && cp <files> /tmp/codex-${nextId}/ && ` +
             `cd /tmp/codex-${nextId} && ${cmd} -o /tmp/codex_${nextId}.txt ` +
             `"Are there critical flaws or things I overlooked in ./<file> that are important to the code intent?"\n` +
+            `  • ChatGPT (OpenAI):  Use Agent tool with subagent_type "chatgpt:chatgpt-rescue" ` +
+            `or run /chatgpt:ask review --file <abs-path> for each file.\n` +
             `  • Claude (Anthropic, claude.ai subscription):  Use Agent tool with subagent_type "claude:claude-rescue" ` +
             `or run /claude:ask review --file <abs-path> for each file.\n` +
             `  • Grok (xAI):  Use Agent tool with subagent_type "grok:grok-rescue" ` +
             `or run /grok:ask review --file <abs-path> for each file.\n` +
-            `Iterate until the reviewer gives a production-ready OK, then mark ` +
-            `.wolf/reviewlog.json entry [${nextId}] as completed.\n`);
+            `  • Other installed AI reviewer plugins: inspect available slash commands/subagents ` +
+            `and use a suitable reviewer if present; record its provider label in --reviewer.\n` +
+            `Iterate until the reviewer gives a production-ready OK, then run:\n` +
+            `  node .wolf/hooks/complete-review.js ${nextId} --reviewer <codex|chatgpt|claude|grok|other|manual> --summary "<one-line outcome>"\n` +
+            `Do not edit .wolf/reviewlog.json by hand; the helper verifies content_hashes so future stops can coalesce safely.\n`);
         return true;
     }
     return false;
@@ -754,7 +781,14 @@ function redactSecrets(cmd) {
  * Check if files were edited multiple times but buglog.json wasn't updated.
  * Emit a stderr reminder so Claude sees it in the next turn.
  */
-function checkForMissingBugLogs(wolfDir, session, sessionFile) {
+function buglogFalsePositiveAcknowledged(text) {
+    if (!text)
+        return false;
+    return /false[- ]positive/i.test(text)
+        && /buglog|bug log/i.test(text)
+        && /not (?:a )?bug ?fix|not bug ?fix|no (?:new )?buglog|no buglog entry warranted|nothing to log/i.test(text);
+}
+function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     if (!session.edit_counts)
         return false;
     // Scratch/driver/test exclusions — repeatedly editing a /tmp falsifier or a
@@ -772,6 +806,7 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile) {
         return false;
     const multiEditFileKeys = new Set(multiEditEntries.map(([file]) => normalizeFilePath(file)));
     const multiEditDisplay = multiEditEntries.map(([file]) => path.basename(file));
+    const latestByFile = new Map();
     // Change-detection: don't nudge if buglog.json was modified more recently
     // than the most recent edit *to one of the multi-edit files*. Using
     // session-cumulative latestEditMs over ALL files_written (Codex R3-2) would
@@ -811,8 +846,11 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile) {
         if (Number.isNaN(t))
             continue;
         const normalized = normalizeFilePath(w.file);
-        if (multiEditFileKeys.has(normalized) && t > latestRelevantEditMs) {
-            latestRelevantEditMs = t;
+        if (multiEditFileKeys.has(normalized)) {
+            latestByFile.set(normalized, Math.max(latestByFile.get(normalized) ?? 0, t));
+            if (t > latestRelevantEditMs) {
+                latestRelevantEditMs = t;
+            }
         }
         if (normalized === buglogIdentity && t > latestBuglogWriteMs) {
             latestBuglogWriteMs = t;
@@ -826,6 +864,37 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile) {
     // 3rd-edit on a file does NOT discharge the obligation.
     if (latestBuglogWriteMs > 0 && latestBuglogWriteMs >= latestRelevantEditMs)
         return false;
+    const signaturePayload = multiEditEntries.map(([file, count]) => {
+        const normalized = normalizeFilePath(file);
+        return [normalized, count, latestByFile.get(normalized) ?? 0];
+    }).sort(([a], [b]) => String(a).localeCompare(String(b)));
+    const signature = crypto.createHash("sha256").update(JSON.stringify(signaturePayload)).digest("hex");
+    const sessionState = readJSON(sessionFile, {});
+    if (sessionState.buglog_false_positive_acks?.[signature]) {
+        return false;
+    }
+    const priorWarnings = typeof sessionState.buglog_warnings === "number" ? sessionState.buglog_warnings : 0;
+    const lastAssistant = priorWarnings > 0 ? readLastAssistantText(transcriptPath) : null;
+    if (buglogFalsePositiveAcknowledged(lastAssistant?.text)) {
+        const release = acquireFileLock(sessionFile);
+        if (release) {
+            try {
+                const onDisk = readJSON(sessionFile, {});
+                if (!onDisk.buglog_false_positive_acks || typeof onDisk.buglog_false_positive_acks !== "object")
+                    onDisk.buglog_false_positive_acks = {};
+                onDisk.buglog_false_positive_acks[signature] = {
+                    at: new Date().toISOString(),
+                    files: multiEditDisplay,
+                };
+                writeJSON(sessionFile, onDisk);
+            }
+            catch { }
+            finally {
+                release();
+            }
+        }
+        return false;
+    }
     // Per-session firing cap (atomically read-checked-incremented under the
     // _session.json file lock by tryConsumeNudgeSlot — see the helper's
     // docblock for the Codex round-3 race that motivated the lock).
@@ -834,86 +903,6 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile) {
     }
     process.stderr.write(`⚠️ OpenWolf: Files edited 3+ times this session (${multiEditDisplay.join(", ")}) but buglog.json was not updated. If you fixed bugs, please log them.\n`);
     return true;
-}
-/**
- * Normalize a file path for set-membership comparison. Resolves to absolute
- * and replaces backslashes with forward slashes so Windows-style edit_counts
- * keys still match Unix-style files_written entries (and vice versa). No
- * filesystem access — purely string normalization.
- */
-function normalizeFilePath(p) {
-    if (!p)
-        return p;
-    return path.resolve(p).replace(/\\/g, "/");
-}
-/**
- * Compute SHA-256 hashes of the listed files' on-disk content for the review-
- * hook content-identity check. Returns a Record keyed by normalized path.
- *
- * Returns "unreadable" sentinel for: missing files, non-regular files (FIFOs,
- * devices, sockets, dirs), files exceeding HASH_MAX_BYTES, or any read error.
- * The coalesce predicate in maybeNudgeReview treats "unreadable" as a
- * never-match — neither current nor stored unreadable values participate in
- * delta coalesce, so transient read failures don't suppress future legit
- * nudges. See Codex round-final finding #2.
- */
-const HASH_MAX_BYTES = 8 * 1024 * 1024; // 8 MiB — source files are tiny; bail on anything weirdly large
-/**
- * Sentinel values used in content_hashes records. Distinct from real sha256
- * digests so callers can pattern-match them without collision risk.
- *
- * - "tombstone" — the file existed at some point but is now gone (deleted,
- *   renamed away). This is a STABLE state: a tombstone reads the same way
- *   on every subsequent stop-hook invocation. Two tombstones for the same
- *   path ARE a legitimate identity match for coalesce purposes (sibling
- *   reports 1 + 4 on 2026-06-08 called out the bug-085 class where a
- *   deleted file's stale "unreadable" hash kept re-firing reviews forever).
- *
- * - "unreadable" — the file exists in some form on the FS (or we got an
- *   error other than ENOENT) but we can't read its bytes confidently
- *   (transient EACCES, oversized, non-regular file like FIFO/socket/dir).
- *   This is an UNSTABLE state and MUST NOT participate in coalesce — two
- *   unreadable-unreadable values may correspond to entirely different
- *   bytes. See Codex round-final finding #2 and bug-101.
- *
- * Coalesce predicate (in maybeNudgeReview):
- * - "unreadable" on either side → never coalesce.
- * - "tombstone" on both sides → coalesce as if equal (the deletion is a
- *   stable identity).
- * - "tombstone" on one side only → never coalesce (deletion is a state
- *   change worth nudging once).
- * - real sha256 on both sides → coalesce iff equal.
- */
-const HASH_SENTINEL_TOMBSTONE = "tombstone";
-const HASH_SENTINEL_UNREADABLE = "unreadable";
-function hashFilesAtRest(files) {
-    const out = {};
-    for (const file of files) {
-        const normalized = normalizeFilePath(file);
-        try {
-            const st = fs.statSync(normalized);
-            if (!st.isFile()) {
-                out[normalized] = HASH_SENTINEL_UNREADABLE;
-                continue;
-            }
-            if (st.size > HASH_MAX_BYTES) {
-                out[normalized] = HASH_SENTINEL_UNREADABLE;
-                continue;
-            }
-            const buf = fs.readFileSync(normalized);
-            out[normalized] = crypto.createHash("sha256").update(buf).digest("hex");
-        }
-        catch (e) {
-            // ENOENT (file deleted) gets a tombstone — stable across invocations.
-            // Other errors (EACCES, EBUSY, EIO, etc.) get "unreadable" — transient.
-            // The Node fs error contract: missing files throw an Error whose .code
-            // is the literal string "ENOENT". Any error-typed object without that
-            // exact code is treated conservatively as transient.
-            const code = (e && typeof e === "object" && "code" in e) ? e.code : undefined;
-            out[normalized] = code === "ENOENT" ? HASH_SENTINEL_TOMBSTONE : HASH_SENTINEL_UNREADABLE;
-        }
-    }
-    return out;
 }
 /**
  * Check if cerebrum.md was updated recently. If it hasn't been updated in
@@ -1185,6 +1174,247 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
  *
  * Returns true iff a nudge was emitted (caller uses this to set exit code 2).
  */
+function autonomyContinuationMessage() {
+    return "OpenWolf autonomy reminder: if you know the next step with confidence and it needs no user decision, perform it now without asking or waiting. Do not stop merely to summarize or ask whether to continue.\n";
+}
+function maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, transcriptPath) {
+    const cfg = getAutonomyContinuationConfig();
+    if (!cfg.enabled || !cfg.nudge_only || !transcriptPath)
+        return false;
+    if (cfg.max_fires_per_session > 0 && session.autonomy_continuation_warnings >= cfg.max_fires_per_session)
+        return false;
+    const last = readLastAssistantText(transcriptPath);
+    if (!last?.text || last.text.length < cfg.min_text_chars)
+        return false;
+    let matched = false;
+    for (const src of cfg.patterns) {
+        try {
+            if (new RegExp(src, "i").test(last.text)) {
+                matched = true;
+                break;
+            }
+        }
+        catch { }
+    }
+    if (!matched)
+        return false;
+    if (!tryConsumeNudgeSlot(sessionFile, "autonomy_continuation_warnings", cfg.max_fires_per_session || STOP_NUDGE_PER_SESSION_CAP))
+        return false;
+    process.stderr.write(autonomyContinuationMessage());
+    return true;
+}
+const CLAIM_CALIBRATION_SIGNALS = {
+    strong_claims: [
+        /\bdefinitely\s+(?:proves?|means|shows|confirms|establishes)\b/i,
+        /\bcertainly\s+(?:means|shows|proves?|confirms|establishes)\b/i,
+        /\bconclusive\s+(?:evidence|proof|result|finding)\b/i,
+        /\bimpossible\s+(?:for|to|that)\b/i,
+        /\balways\s+(?:works|passes|fails|happens|causes|means)\b/i,
+        /\bnever\s+(?:works|passes|fails|happens|causes|means)\b/i,
+    ],
+    causal_claims: [
+        /\broot\s+cause\b/i,
+        /\bcaused\s+by\b/i,
+        /\bdue\s+to\b/i,
+        /\bexplains\s+why\b/i,
+        /\bthe\s+reason\s+is\b/i,
+        /\bthe\s+culprit\s+is\b/i,
+        /\bresponsible\s+for\b/i,
+    ],
+    generalizations: [
+        /\bworks\s+across\b/i,
+        /\bin\s+all\s+cases\b/i,
+        /\bfor\s+every\b/i,
+        /\buniversal(?:ly)?\b/i,
+        /\balways\s+\w+\b/i,
+        /\bnever\s+\w+\b/i,
+    ],
+    debugging_conclusions: [
+        /\bverified\s+the\s+fix\b/i,
+        /\bbug\s+is\s+fixed\b/i,
+        /\bissue\s+is\s+resolved\b/i,
+        /\bnow\s+works\s+because\b/i,
+        /\bcannot\s+reproduce\s+after\b/i,
+        /\bready\s+(?:to\s+ship|to\s+merge|for\s+review)\b/i,
+    ],
+    methodology_claims: [
+        /\bevidence\s+shows\b/i,
+        /\bdata\s+proves\b/i,
+        /\banalysis\s+confirms\b/i,
+        /\btest\s+demonstrates\b/i,
+        /\bbenchmark\s+proves\b/i,
+        /\bresults?\s+demonstrate\b/i,
+    ],
+    confidence_claims: [
+        /\bhigh\s+confidence\b/i,
+        /\bno\s+doubt\b/i,
+        /\bguaranteed\b/i,
+        /\bclearly\s+established\b/i,
+        /\bcertain\s+based\s+on\b/i,
+    ],
+};
+const CLAIM_CALIBRATION_MARKERS = {
+    observed: [
+        /\bobserved\s*:/i,
+        /\bi\s+observed\b/i,
+        /\bevidence\s*:/i,
+        /\bactual\s+output\b/i,
+        /\bfrom\s+the\s+(?:logs?|run|output)\b/i,
+        /\bthe\s+run\s+showed\b/i,
+    ],
+    inferred: [
+        /\binferred\s*:/i,
+        /\bi\s+infer\b/i,
+        /\bsuggests\b/i,
+        /\blikely\b/i,
+        /\bpoints\s+to\b/i,
+        /\bhypothesis\b/i,
+    ],
+    limits: [
+        /\blimit\s*:/i,
+        /\blimitation\b/i,
+        /\bscope\b/i,
+        /\bboundar(?:y|ies)\b/i,
+        /\bdoes\s+not\s+prove\b/i,
+        /\bnot\s+enough\s+to\s+show\b/i,
+    ],
+    falsifiers: [
+        /\bfalsifier\s*:/i,
+        /\bwould\s+falsify\b/i,
+        /\bwould\s+lower\s+confidence\b/i,
+        /\bcounterexample\b/i,
+        /\brival\s+explanation\b/i,
+        /\bdisprove\b/i,
+    ],
+};
+function detectClaimCalibrationSignals(text, categories) {
+    const hits = [];
+    for (const [category, patterns] of Object.entries(CLAIM_CALIBRATION_SIGNALS)) {
+        if (categories && categories[category] === false)
+            continue;
+        if (patterns.some((pattern) => pattern.test(text))) {
+            hits.push(category);
+        }
+    }
+    return hits;
+}
+function detectPresentDisciplineMarkers(text, markersConfig) {
+    const present = [];
+    for (const [marker, patterns] of Object.entries(CLAIM_CALIBRATION_MARKERS)) {
+        if (markersConfig && markersConfig[marker] === false)
+            continue;
+        if (patterns.some((pattern) => pattern.test(text))) {
+            present.push(marker);
+        }
+    }
+    return present;
+}
+function detectMissingDisciplineMarkers(text, markersConfig) {
+    const present = new Set(detectPresentDisciplineMarkers(text, markersConfig));
+    return Object.keys(CLAIM_CALIBRATION_MARKERS)
+        .filter((marker) => markersConfig?.[marker] !== false && !present.has(marker));
+}
+function claimCalibrationCategoryLabel(category) {
+    return category.replace(/_claims$/, "").replace(/_/g, "/");
+}
+function claimCalibrationNudgeMessage(id, categories) {
+    const labels = categories.map(claimCalibrationCategoryLabel).slice(0, 3).join("/");
+    return `OpenWolf claim calibration [${id}]: ${labels || "strong"} claim without calibration. Add 4 short lines: Observed: ... Inferred: ... Limit: ... Falsifier: ...\n`;
+}
+function isCalibrationLikeType(type) {
+    return type === "claim_calibration" || type === "scientific_mode";
+}
+function maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, transcriptPath) {
+    const cfg = getClaimCalibrationConfig();
+    if (!cfg.enabled || !cfg.nudge_only || !cfg.log_decisions)
+        return false;
+    if (!transcriptPath)
+        return false;
+    const last = readLastAssistantText(transcriptPath);
+    if (!last || !last.text || last.text.length < cfg.min_text_chars)
+        return false;
+    const categories = detectClaimCalibrationSignals(last.text, cfg.categories);
+    if (categories.length < cfg.min_signal_hits)
+        return false;
+    const missingMarkers = detectMissingDisciplineMarkers(last.text, cfg.discipline_markers);
+    if (cfg.require_missing_markers && missingMarkers.length === 0)
+        return false;
+    const normalizedText = last.text.replace(/\s+/g, " ").trim();
+    const textHash = crypto.createHash("sha256").update(normalizedText).digest("hex");
+    const qaDir = path.join(wolfDir, "qa");
+    try {
+        fs.mkdirSync(qaDir, { recursive: true });
+    }
+    catch { }
+    const gateLogPath = path.join(qaDir, "_gate-log.json");
+    const release = acquireFileLock(gateLogPath);
+    if (!release)
+        return false;
+    let nextId = "calib-00001";
+    let alreadyNudged = false;
+    let sessionCapReached = false;
+    try {
+        const gateLog = readJSON(gateLogPath, { version: 1, entries: [] });
+        if (!gateLog.entries)
+            gateLog.entries = [];
+        if (cfg.max_fires_per_session > 0 && session.session_id) {
+            const priorFiresThisSession = gateLog.entries.filter((e) => isCalibrationLikeType(e.type)
+                && e.decision === "nudge"
+                && e.session_id === session.session_id).length;
+            if (priorFiresThisSession >= cfg.max_fires_per_session) {
+                sessionCapReached = true;
+            }
+        }
+        alreadyNudged = gateLog.entries.some((e) => e.decision === "nudge"
+            && e.text_sha256 === textHash
+            && (isCalibrationLikeType(e.type) || e.type === "conclusion"));
+        if (!sessionCapReached && !alreadyNudged) {
+            let maxN = 0;
+            for (const e of gateLog.entries) {
+                const m = typeof e.id === "string" ? e.id.match(/^(?:calib|science)-(\d+)$/) : null;
+                if (m) {
+                    const n = parseInt(m[1], 10);
+                    if (n > maxN)
+                        maxN = n;
+                }
+            }
+            nextId = `calib-${String(maxN + 1).padStart(5, "0")}`;
+            gateLog.entries.push({
+                id: nextId,
+                session_id: session.session_id,
+                ended: sessionEntry.ended,
+                type: "claim_calibration",
+                categories,
+                missing_markers: missingMarkers,
+                text_excerpt: normalizedText.slice(0, 240),
+                text_sha256: textHash,
+                decision: "nudge",
+                mode: "soft",
+                trigger: "stop",
+            });
+            writeJSON(gateLogPath, gateLog);
+        }
+    }
+    finally {
+        release();
+    }
+    if (alreadyNudged || sessionCapReached)
+        return false;
+    try {
+        rollingWindowJson({
+            file: gateLogPath,
+            arrayKey: "entries",
+            getDate: (e) => e.ended,
+            getId: (e) => e.id,
+            retentionDays: cfg.retention_days,
+            archiveDir: path.join(wolfDir, "archive"),
+        });
+    }
+    catch { }
+    process.stderr.write(claimCalibrationNudgeMessage(nextId, categories));
+    return true;
+}
+
 function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transcriptPath) {
     const cfg = getQualityGateConfig();
     if (!cfg.enabled)
@@ -1265,7 +1495,9 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
         }
         // Idempotence check BEFORE assigning a new ID — if we've nudged on this
         // exact text before, return without appending a new entry.
-        alreadyNudged = gateLog.entries.some((e) => e.type === "conclusion" && e.decision === "nudge" && e.text_sha256 === textHash);
+        alreadyNudged = gateLog.entries.some((e) => e.decision === "nudge"
+            && e.text_sha256 === textHash
+            && (e.type === "conclusion" || isCalibrationLikeType(e.type)));
         if (sessionCapReached) {
             // No-op: cap reached. Don't pollute the log, don't emit a nudge.
         }
@@ -1315,5 +1547,5 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
         `tested twice — the original work and the falsification pass.\n`);
     return true;
 }
-main().catch(() => process.exit(0));
+main().catch(() => exitAfterStderrFlush(0));
 //# sourceMappingURL=stop.js.map

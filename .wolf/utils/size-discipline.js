@@ -522,13 +522,17 @@ export function acquireFileLock(targetPath, opts = {}) {
                 //      a fresh lock (no longer reclaimable, they wait).
                 const staleSnapshot = readLockContent(lockPath);
                 if (staleSnapshot !== null && isLockReclaimable(lockPath, staleMs, absoluteStaleMs)) {
-                    tryReclaim(lockPath, staleSnapshot, staleMs, absoluteStaleMs);
-                    continue;
+                    if (tryReclaim(lockPath, staleSnapshot, staleMs, absoluteStaleMs)) {
+                        continue;
+                    }
                 }
                 if (Date.now() > deadline)
                     return null;
-                const wait = Date.now() + 25;
-                while (Date.now() < wait) { }
+                // Do not spin-wait here. This lock is used by hooks and daemon
+                // helpers; a synchronous busy loop can peg a CPU core under
+                // contention. Yield briefly through the kernel instead so short
+                // concurrent hook writes can still serialize without burning CPU.
+                Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Math.min(25, Math.max(1, deadline - Date.now())));
             }
         }
     }
@@ -590,18 +594,17 @@ function tryReclaim(lockPath, expectedContent, staleMs, absoluteStaleMs) {
         catch (err) {
             const code = err?.code;
             if (code === "EEXIST") {
-                // Another contender is reclaiming. Check if the reclaim-lock
-                // itself is stale (would deadlock the reclaim path otherwise).
-                try {
-                    const st = fs.statSync(reclaimLockPath);
-                    if (Date.now() - st.mtimeMs > staleMs * 2) {
-                        try {
-                            fs.unlinkSync(reclaimLockPath);
-                        }
-                        catch { }
+                // Another contender is reclaiming. Do not break or steal a live
+                // contender's reclaim-lock: it may have already validated the
+                // target lock and be paused before unlinking it. Only remove the
+                // reclaim-lock when its recorded owner is gone; then let the
+                // caller's bounded retry loop attempt a fresh reclaim.
+                if (isReclaimLockAbandoned(reclaimLockPath, staleMs * 2)) {
+                    try {
+                        fs.unlinkSync(reclaimLockPath);
                     }
+                    catch { }
                 }
-                catch { }
                 return false;
             }
             return false;
@@ -639,6 +642,29 @@ function tryReclaim(lockPath, expectedContent, staleMs, absoluteStaleMs) {
         }
         catch { }
     }
+}
+function isReclaimLockAbandoned(reclaimLockPath, staleMs) {
+    let stat;
+    try {
+        stat = fs.statSync(reclaimLockPath);
+    }
+    catch {
+        return false;
+    }
+    if (Date.now() - stat.mtimeMs <= staleMs)
+        return false;
+    let pid;
+    try {
+        pid = Number(fs.readFileSync(reclaimLockPath, "utf-8").trim());
+    }
+    catch {
+        return false;
+    }
+    if (!Number.isFinite(pid) || pid <= 0)
+        return false;
+    if (pid === process.pid)
+        return false;
+    return !isProcessAlive(pid);
 }
 /**
  * Decide whether a held lock can safely be reclaimed.

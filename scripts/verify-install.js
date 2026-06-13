@@ -15,6 +15,7 @@ const hookNames = [
   'post-write.js',
   'shared.js',
   'stop.js',
+  'complete-review.js',
 ];
 
 const utilNames = [
@@ -90,6 +91,64 @@ async function parseJson(file) {
   } catch (error) {
     failures.push(`invalid JSON in ${file}: ${error.message}`);
     return null;
+  }
+}
+
+const expectedClaimCalibration = {
+  enabled: true,
+  nudge_only: true,
+  min_text_chars: 180,
+  min_signal_hits: 2,
+  max_fires_per_session: 3,
+  retention_days: 30,
+  log_decisions: true,
+  require_missing_markers: true,
+  categories: {
+    strong_claims: true,
+    causal_claims: true,
+    generalizations: true,
+    debugging_conclusions: true,
+    methodology_claims: true,
+    confidence_claims: true,
+  },
+  discipline_markers: {
+    observed: true,
+    inferred: true,
+    limits: true,
+    falsifiers: true,
+  },
+};
+
+function deepEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+async function checkClaimCalibrationConfig() {
+  for (const file of ['.wolf/config.json', 'src/config/default-config.json', 'templates/wolf/config.json']) {
+    const parsed = await parseJson(file);
+    const actual = parsed?.openwolf?.claim_calibration;
+    if (!actual) {
+      failures.push(`${file} missing openwolf.claim_calibration`);
+      continue;
+    }
+    if (parsed?.openwolf?.scientific_mode !== undefined) {
+      failures.push(`${file} should use canonical openwolf.claim_calibration, not legacy openwolf.scientific_mode`);
+    }
+    if (!deepEqual(actual, expectedClaimCalibration)) {
+      failures.push(`${file} openwolf.claim_calibration defaults differ from the expected default-enabled Claim Calibration contract`);
+    }
+  }
+}
+
+async function checkReviewCompletionWorkflow() {
+  for (const file of ['.wolf/hooks/stop.js', 'src/hooks/stop.js', 'templates/wolf/hooks/stop.js']) {
+    const content = await readFile(rel(file), 'utf8');
+    if (content.includes('mark .wolf/reviewlog.json entry')) {
+      failures.push(`${file} still tells assistants to manually complete reviewlog entries`);
+    }
+    if (!content.includes('.wolf/hooks/complete-review.js')) {
+      failures.push(`${file} must point review completion to .wolf/hooks/complete-review.js`);
+    }
   }
 }
 
@@ -225,6 +284,9 @@ for (const file of jsonFiles) {
 for (const file of ['.wolf/hooks/package.json', 'templates/wolf/hooks/package.json']) {
   await checkHookPackage(file);
 }
+
+await checkClaimCalibrationConfig();
+await checkReviewCompletionWorkflow();
 
 for (const file of javascriptFiles) {
   nodeCheck(file);

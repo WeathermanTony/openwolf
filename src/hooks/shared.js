@@ -799,6 +799,48 @@ const QUALITY_GATE_DEFAULTS = {
     retention_days: 30,
     verify_conclusions: VERIFY_CONCLUSIONS_DEFAULTS,
 };
+
+const AUTONOMY_CONTINUATION_DEFAULTS = {
+    enabled: true,
+    nudge_only: true,
+    min_text_chars: 80,
+    max_fires_per_session: 3,
+    patterns: [
+        "\\bnext (?:action|step)\\b",
+        "\\b(?:should|would|could) (?:continue|run|test|verify|fix|update|implement)\\b",
+        "\\b(?:if you want|let me know|when you(?:'re| are) ready)\\b",
+        "\\b(?:waiting for|awaiting) (?:your|user)\\b",
+    ],
+};
+const CLAIM_CALIBRATION_DEFAULTS = {
+    enabled: true,
+    nudge_only: true,
+    min_text_chars: 180,
+    min_signal_hits: 2,
+    max_fires_per_session: 3,
+    retention_days: 30,
+    log_decisions: true,
+    require_missing_markers: true,
+    categories: {
+        strong_claims: true,
+        causal_claims: true,
+        generalizations: true,
+        debugging_conclusions: true,
+        methodology_claims: true,
+        confidence_claims: true,
+    },
+    discipline_markers: {
+        observed: true,
+        inferred: true,
+        limits: true,
+        falsifiers: true,
+    },
+};
+function finiteNumber(value, fallback, { min = 0, max = 10000 } = {}) {
+    if (typeof value !== "number" || !Number.isFinite(value))
+        return fallback;
+    return Math.min(Math.max(Math.floor(value), min), max);
+}
 /**
  * Load OpenWolf config from .wolf/config.json, returning defaults for any
  * missing keys. Never throws — silently returns defaults on read/parse errors.
@@ -954,6 +996,54 @@ export function getReviewHookConfig() {
         nudge_cap: cfg.nudge_cap,
     };
 }
+export function getAutonomyContinuationConfig() {
+    const root = loadConfig();
+    const cfg = (root && typeof root === "object" ? root.openwolf?.autonomy_continuation : undefined) ?? {};
+    return {
+        enabled: cfg.enabled ?? AUTONOMY_CONTINUATION_DEFAULTS.enabled,
+        nudge_only: cfg.nudge_only ?? AUTONOMY_CONTINUATION_DEFAULTS.nudge_only,
+        min_text_chars: finiteNumber(cfg.min_text_chars, AUTONOMY_CONTINUATION_DEFAULTS.min_text_chars, { min: 0, max: 10000 }),
+        max_fires_per_session: finiteNumber(cfg.max_fires_per_session, AUTONOMY_CONTINUATION_DEFAULTS.max_fires_per_session, { min: 0, max: 100 }),
+        patterns: Array.isArray(cfg.patterns) ? cfg.patterns : AUTONOMY_CONTINUATION_DEFAULTS.patterns,
+    };
+}
+export function getClaimCalibrationConfig() {
+    const root = loadConfig();
+    const legacy = (root && typeof root === "object" ? root.openwolf?.scientific_mode : undefined) ?? {};
+    const modern = (root && typeof root === "object" ? root.openwolf?.claim_calibration : undefined) ?? {};
+    const cfg = { ...legacy, ...modern };
+    const legacyCategories = legacy.categories && typeof legacy.categories === "object" ? legacy.categories : {};
+    const modernCategories = modern.categories && typeof modern.categories === "object" ? modern.categories : {};
+    const categories = {
+        ...CLAIM_CALIBRATION_DEFAULTS.categories,
+        ...legacyCategories,
+        ...(legacyCategories.bold_claims === undefined ? {} : { strong_claims: legacyCategories.bold_claims }),
+        ...modernCategories,
+    };
+    delete categories.bold_claims;
+    const legacyMarkers = legacy.discipline_markers && typeof legacy.discipline_markers === "object" ? legacy.discipline_markers : {};
+    const modernMarkers = modern.discipline_markers && typeof modern.discipline_markers === "object" ? modern.discipline_markers : {};
+    return {
+        enabled: cfg.enabled ?? CLAIM_CALIBRATION_DEFAULTS.enabled,
+        nudge_only: cfg.nudge_only ?? CLAIM_CALIBRATION_DEFAULTS.nudge_only,
+        min_text_chars: finiteNumber(cfg.min_text_chars, CLAIM_CALIBRATION_DEFAULTS.min_text_chars, { min: 0, max: 10000 }),
+        min_signal_hits: finiteNumber(cfg.min_signal_hits, CLAIM_CALIBRATION_DEFAULTS.min_signal_hits, { min: 1, max: 10 }),
+        max_fires_per_session: finiteNumber(cfg.max_fires_per_session, CLAIM_CALIBRATION_DEFAULTS.max_fires_per_session, { min: 0, max: 100 }),
+        retention_days: finiteNumber(cfg.retention_days, CLAIM_CALIBRATION_DEFAULTS.retention_days, { min: 1, max: 3650 }),
+        log_decisions: cfg.log_decisions ?? CLAIM_CALIBRATION_DEFAULTS.log_decisions,
+        require_missing_markers: cfg.require_missing_markers ?? CLAIM_CALIBRATION_DEFAULTS.require_missing_markers,
+        categories,
+        discipline_markers: {
+            ...CLAIM_CALIBRATION_DEFAULTS.discipline_markers,
+            ...legacyMarkers,
+            ...modernMarkers,
+        },
+    };
+}
+export function getScientificModeConfig() {
+    return getClaimCalibrationConfig();
+}
+
 export function getQualityGateConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.quality_gate : undefined) ?? {};
@@ -984,3 +1074,47 @@ export function getQualityGateConfig() {
     };
 }
 //# sourceMappingURL=shared.js.map
+/**
+ * Normalize a file path for review-log content identity. Resolves to absolute
+ * and replaces backslashes with forward slashes so Windows-style paths compare
+ * consistently with Unix-style paths. No filesystem access beyond path.resolve.
+ */
+export function normalizeFilePath(p) {
+    if (!p)
+        return p;
+    return path.resolve(p).replace(/\\/g, "/");
+}
+/**
+ * Compute SHA-256 hashes of listed files for review-log coalescing.
+ *
+ * Missing files become the stable "tombstone" sentinel. Existing paths whose
+ * bytes cannot be trusted — directories, devices, oversized files, or read
+ * errors — become the unstable "unreadable" sentinel.
+ */
+const HASH_MAX_BYTES = 8 * 1024 * 1024;
+export const HASH_SENTINEL_TOMBSTONE = "tombstone";
+export const HASH_SENTINEL_UNREADABLE = "unreadable";
+export function hashFilesAtRest(files) {
+    const out = {};
+    for (const file of files) {
+        const normalized = normalizeFilePath(file);
+        try {
+            const st = fs.statSync(normalized);
+            if (!st.isFile()) {
+                out[normalized] = HASH_SENTINEL_UNREADABLE;
+                continue;
+            }
+            if (st.size > HASH_MAX_BYTES) {
+                out[normalized] = HASH_SENTINEL_UNREADABLE;
+                continue;
+            }
+            const buf = fs.readFileSync(normalized);
+            out[normalized] = crypto.createHash("sha256").update(buf).digest("hex");
+        }
+        catch (e) {
+            const code = (e && typeof e === "object" && "code" in e) ? e.code : undefined;
+            out[normalized] = code === "ENOENT" ? HASH_SENTINEL_TOMBSTONE : HASH_SENTINEL_UNREADABLE;
+        }
+    }
+    return out;
+}

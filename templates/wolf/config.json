@@ -133,6 +133,42 @@
         "min_text_chars": 200,
         "nudge_only": true
       }
+    },
+    "claim_calibration": {
+      "enabled": true,
+      "nudge_only": true,
+      "min_text_chars": 180,
+      "min_signal_hits": 2,
+      "max_fires_per_session": 3,
+      "retention_days": 30,
+      "log_decisions": true,
+      "require_missing_markers": true,
+      "categories": {
+        "strong_claims": true,
+        "causal_claims": true,
+        "generalizations": true,
+        "debugging_conclusions": true,
+        "methodology_claims": true,
+        "confidence_claims": true
+      },
+      "discipline_markers": {
+        "observed": true,
+        "inferred": true,
+        "limits": true,
+        "falsifiers": true
+      }
+    },
+    "autonomy_continuation": {
+      "enabled": true,
+      "nudge_only": true,
+      "min_text_chars": 80,
+      "max_fires_per_session": 3,
+      "patterns": [
+        "\\bnext (?:action|step)\\b",
+        "\\b(?:should|would|could) (?:continue|run|test|verify|fix|update|implement)\\b",
+        "\\b(?:if you want|let me know|when you(?:'re| are) ready)\\b",
+        "\\b(?:waiting for|awaiting) (?:your|user)\\b"
+      ]
     }
   }
 }

@@ -1,11 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-08T23:39:20.623Z
-> Files: 52 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-13T23:19:34.880Z
+> Files: 62 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
 - `silly-herding-cake.md` — Plan: Bootstrap `customopenwolf` as the canonical custom OpenWolf fork (~1500 tok)
+- `unified-kindling-rose.md` — Plan: Generalize review support and fix recurring buglog false-positive nudges (~1421 tok)
 
 ## ./
 
@@ -40,6 +41,7 @@
 ## .wolf/hooks/
 
 - `_session.json` — hook session state (~253 tok)
+- `complete-review.js` — Completes pending reviewlog entries after verifying stored content_hashes still match current reviewed files (~1300 tok)
 - `package.json` — Node package metadata for OpenWolf hooks (~90 tok)
 - `post-read.js` — hook run after reads (~632 tok)
 - `post-write.js` — hook run after writes (~803 tok)
@@ -50,6 +52,8 @@
 - `_gate-log.json` — quality gate event log (~455 tok)
 - `_README.md` — quality gate README (~330 tok)
 - `_template.md` — adversarial reduction template (~235 tok)
+- `review-buglog-suppression.md` — QA reduction for review nudge and buglog false-positive acknowledgement suppression (~650 tok)
+- `autonomy-continuation.md` — QA reduction for Stop-hook autonomy continuation reminder (~650 tok)
 
 ## .wolf/utils/
 
@@ -67,15 +71,19 @@
 
 ## src/hooks/
 
+- `complete-review.js` — Source copy of review completion helper; verifies pending content_hashes before marking reviews completed (~1300 tok)
 - `post-read.js` — source copy of hook run after reads (~632 tok)
 - `post-write.js` — source copy of hook run after writes (~803 tok)
 - `pre-read.js` — source copy of hook run before reads (~867 tok)
+- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15020 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~20750 tok)
 
 ## src/utils/
 
 - `paths.js` — source copy of OpenWolf path helpers (~298 tok)
 - `platform.js` — source copy of platform detection helper (~247 tok)
 - `port-allocator.js` — source copy of deterministic port allocation helper (~824 tok)
+- `size-discipline.js` — size-discipline.ts (~10030 tok)
 
 ## templates/claude/
 
@@ -93,6 +101,7 @@
 
 ## templates/wolf/hooks/
 
+- `complete-review.js` — Template copy of review completion helper for installed OpenWolf projects (~1300 tok)
 - `package.json` — install template for hook package metadata (~90 tok)
 - `post-read.js` — install template hook run after reads (~632 tok)
 - `post-write.js` — install template hook run after writes (~803 tok)
@@ -108,3 +117,8 @@
 - `paths.js` — install template OpenWolf path helpers (~298 tok)
 - `platform.js` — install template platform detection helper (~247 tok)
 - `port-allocator.js` — install template deterministic port allocation helper (~824 tok)
+- `size-discipline.js` — size-discipline.ts (~10030 tok)
+
+## tests/
+
+- `review-completion.test.js` — Exports feature (~3242 tok)
