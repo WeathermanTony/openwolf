@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-15T03:31:18.509Z
-> Files: 63 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-15T03:57:10.882Z
+> Files: 66 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
@@ -54,6 +54,7 @@
 - `_template.md` — adversarial reduction template (~235 tok)
 - `autonomy-continuation.md` — QA reduction for Stop-hook autonomy continuation reminder (~650 tok)
 - `review-buglog-suppression.md` — QA reduction for review nudge and buglog false-positive acknowledgement suppression (~650 tok)
+- `update-installs-review-helper.md` — QA reduction verifying `openwolf update` restores review helper and utility dependencies (~850 tok)
 
 ## .wolf/utils/
 
@@ -64,6 +65,11 @@
 ## scripts/
 
 - `verify-install.js` — root: rel, fileExists, parseJson + 4 more (~1974 tok)
+
+## src/cli/
+
+- `init.ts` — Exports initCommand (~7783 tok)
+- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~5204 tok)
 
 ## src/config/
 

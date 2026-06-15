@@ -137,3 +137,13 @@
 | 23:30 | Edited package.json | inline fix | ~21 |
 | 23:31 | Edited package.json | 1→3 lines | ~39 |
 | 23:31 | Edited package.json | removed 9 lines | ~9 |
+| 23:40 | Session end: 45 writes across 9 files (unified-kindling-rose.md, stop.js, review-completion.test.js, gemini-review-buglog-suppression.md, shared.js) | 21 reads | ~38953 tok |
+| 23:42 | Edited src/cli/init.ts | 2→3 lines | ~17 |
+
+## Session: 2026-06-15 23:48
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 23:49 | Edited src/cli/update.ts | added 2 condition(s) | ~311 |
+| 23:54 | Fixed update payload for review completion helper | `src/cli/update.ts`, `.wolf/qa/update-installs-review-helper.md`, `.wolf/buglog.json`, `.wolf/cerebrum.md` | `openwolf update` now copies `complete-review.js` and `.wolf/utils/*.js`; build/test/verify and registered fixture update passed | ~7k |
+| 23:57 | Edited src/cli/update.ts | 13→14 lines | ~149 |

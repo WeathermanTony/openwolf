@@ -334,8 +334,14 @@ function copyHookScripts(wolfDir: string): void {
   }
 
   const hookFiles = [
-    "session-start.js", "pre-read.js", "pre-write.js",
-    "post-read.js", "post-write.js", "stop.js", "shared.js",
+    "session-start.js",
+    "pre-read.js",
+    "pre-write.js",
+    "post-read.js",
+    "post-write.js",
+    "stop.js",
+    "shared.js",
+    "complete-review.js",
   ];
 
   if (sourceDir) {
@@ -344,6 +350,21 @@ function copyHookScripts(wolfDir: string): void {
       if (fs.existsSync(src)) {
         safeCopyFile(src, path.join(hooksDir, file));
       }
+    }
+
+    // Hooks and helper scripts import compiled utilities via ../utils/*.js.
+    // Keep .wolf/utils as a sibling of .wolf/hooks so those relative imports
+    // resolve in projects upgraded with `openwolf update`, not only fresh init.
+    const utilsSrcDir = path.resolve(sourceDir, "..", "utils");
+    if (fs.existsSync(utilsSrcDir)) {
+      const utilsDestDir = path.resolve(hooksDir, "..", "utils");
+      ensureDir(utilsDestDir);
+      for (const entry of fs.readdirSync(utilsSrcDir)) {
+        if (entry.endsWith(".js")) {
+          safeCopyFile(path.join(utilsSrcDir, entry), path.join(utilsDestDir, entry));
+        }
+      }
+      fs.writeFileSync(path.join(utilsDestDir, "package.json"), JSON.stringify({ type: "module" }, null, 2) + "\n", "utf-8");
     }
   }
 

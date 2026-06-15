@@ -494,6 +494,7 @@ function copyHookScripts(wolfDir: string): void {
     "post-write.js",
     "stop.js",
     "shared.js",
+    "complete-review.js",
   ];
 
   let copiedAny = false;

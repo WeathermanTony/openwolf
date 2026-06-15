@@ -30,6 +30,7 @@
 - 2026-06-14: Changes committed in this custom OpenWolf fork are live only for the current checked-out project/runtime; other OpenWolf-managed projects need the fork merged/installed/synced before their `.wolf/hooks/*` copies get the new behavior.
 - 2026-06-14: Review nudge provider lists should avoid hardcoding fast-changing optional AI plugins; list stable built-ins/known companions and include generic guidance to inspect available slash commands/subagents for other installed reviewer plugins.
 - 2026-06-14: User runs `openwolf init` before every session; if that init command copies from this local custom OpenWolf fork, future sessions/projects initialized that way will receive the fork's current template/runtime behavior.
+- 2026-06-14: CLI payload changes must cover both fresh `openwolf init` and existing-project `openwolf update`; update must copy helper scripts such as `complete-review.js` plus sibling `.wolf/utils/*.js` dependencies, not just hook entrypoints.
 
 ## Decision Log
 
