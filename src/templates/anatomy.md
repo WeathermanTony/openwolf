@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-15T03:31:18.509Z
-> Files: 63 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-13T23:19:34.880Z
+> Files: 62 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
@@ -13,7 +13,7 @@
 - `.editorconfig` (~51 tok)
 - `.gitignore` — Git ignore rules (~252 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
-- `package.json` — Node.js package manifest (~562 tok)
+- `package.json` — Node.js package manifest (~102 tok)
 - `README.md` — Project documentation (~341 tok)
 - `VERSION` (~4 tok)
 
@@ -52,8 +52,8 @@
 - `_gate-log.json` — quality gate event log (~455 tok)
 - `_README.md` — quality gate README (~330 tok)
 - `_template.md` — adversarial reduction template (~235 tok)
-- `autonomy-continuation.md` — QA reduction for Stop-hook autonomy continuation reminder (~650 tok)
 - `review-buglog-suppression.md` — QA reduction for review nudge and buglog false-positive acknowledgement suppression (~650 tok)
+- `autonomy-continuation.md` — QA reduction for Stop-hook autonomy continuation reminder (~650 tok)
 
 ## .wolf/utils/
 

@@ -1,0 +1,788 @@
+{
+  "version": 1,
+  "reviews": [
+    {
+      "id": "review-0001",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:11:26.328Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "approx_lines_changed": 256,
+      "reason": "~256 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "69db36f280eb1caacbf0a82439f90c6cc1e505b06a63df4b7daae04a9d42fd9c",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore": "da4baffae4791ec1232702d846d957b3e1e2a28e97c01fd80bb8941f518e8874",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION": "2a3503e7dd2944be59af8859761df54ab6c5962327914ed9cc5169b8d2ae8958",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json": "c4947cef63c69690bfaba11c841affa74dfbf6170aa62c8a665899e0a04a3758",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md": "102284805804a357fb22910127d86681bf7b405ddb7f209c2ba646af03fc6c50",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js": "52465edf7a154e79fc94c9c4319c8e7b81a566181331990fcf1f0216addcf5d6"
+      },
+      "nudge_history": {
+        "a66c1ac42b4be73ac0b7ba5aec95a8dbfa2bb6680353f78a0e25892dbfd2b4a4": 1
+      },
+      "reviewer": "codex:codex-rescue",
+      "review_result": "Addressed findings: ignored cerebrum-stats and OpenWolf lock artifacts; expanded verification to include full template/source hook and utility coverage.",
+      "completed_at": "2026-06-08T19:15:07-04:00"
+    },
+    {
+      "id": "review-0002",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:16:31.622Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "approx_lines_changed": 341,
+      "reason": "~341 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "69db36f280eb1caacbf0a82439f90c6cc1e505b06a63df4b7daae04a9d42fd9c",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore": "3ff8caf717932f97254422e8d4c36e1fa0804916301330b054ebf05f551b1f8f",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION": "2a3503e7dd2944be59af8859761df54ab6c5962327914ed9cc5169b8d2ae8958",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json": "c4947cef63c69690bfaba11c841affa74dfbf6170aa62c8a665899e0a04a3758",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md": "102284805804a357fb22910127d86681bf7b405ddb7f209c2ba646af03fc6c50",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js": "0116031c7bd9d52f834b68ef28236e9e9274f54e46cf9771cad7519d40f6d73b"
+      },
+      "nudge_history": {
+        "91687160d203dd6b4d1e013e8eeefa6845c5246f099c62404f1817f974e05e98": 1
+      },
+      "reviewer": "claude:claude-rescue",
+      "review_result": "Addressed findings: distinguish missing git repo from ignore failures and assert representative scaffold files remain trackable.",
+      "completed_at": "2026-06-08T19:18:36-04:00"
+    },
+    {
+      "id": "review-0003",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:19:59.627Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "approx_lines_changed": 442,
+      "reason": "~442 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "69db36f280eb1caacbf0a82439f90c6cc1e505b06a63df4b7daae04a9d42fd9c",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore": "3ff8caf717932f97254422e8d4c36e1fa0804916301330b054ebf05f551b1f8f",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION": "2a3503e7dd2944be59af8859761df54ab6c5962327914ed9cc5169b8d2ae8958",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json": "c4947cef63c69690bfaba11c841affa74dfbf6170aa62c8a665899e0a04a3758",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md": "102284805804a357fb22910127d86681bf7b405ddb7f209c2ba646af03fc6c50",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js": "3c7fb71962f7a1917d593e96065bec120424faabe39b0736edb205ccd76f3cd9"
+      },
+      "nudge_history": {
+        "f4a26f01766f85a00d70f153a6b7a152848bc7171738852a5f15e69dfbc14b95": 1
+      },
+      "reviewer": "grok:grok-rescue",
+      "review_result": "Addressed findings: expanded trackability checks to the full hook/scaffold surface and added recursive `.wolf` log/state ignore patterns.",
+      "completed_at": "2026-06-08T19:22:26-04:00"
+    },
+    {
+      "id": "review-0004",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:24:05.002Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "approx_lines_changed": 547,
+      "reason": "~547 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "69db36f280eb1caacbf0a82439f90c6cc1e505b06a63df4b7daae04a9d42fd9c",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore": "e94c0e729f478fa421d6791911c07dec1a3c5d12bb6f06043ebd5fc0771c7ff5",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION": "2a3503e7dd2944be59af8859761df54ab6c5962327914ed9cc5169b8d2ae8958",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json": "c4947cef63c69690bfaba11c841affa74dfbf6170aa62c8a665899e0a04a3758",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md": "102284805804a357fb22910127d86681bf7b405ddb7f209c2ba646af03fc6c50",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js": "96af5ff5f3fb650eae420e9a74d263684dfe0f48403651f1f5991ec6a9a75da9"
+      },
+      "nudge_history": {
+        "ccf1ebdac7556c61219f55160c887dbbe6d2d17a0f95803f09ff87b2f8f70b3b": 1
+      },
+      "reviewer": "codex:codex-rescue",
+      "review_result": "Addressed findings: verified hook ESM package manifests and explicitly enforced tracked seed policy for `.wolf/anatomy.md` and `.wolf/memory.md`.",
+      "completed_at": "2026-06-08T19:26:59-04:00"
+    },
+    {
+      "id": "review-0005",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:28:23.819Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "approx_lines_changed": 686,
+      "reason": "~686 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "69db36f280eb1caacbf0a82439f90c6cc1e505b06a63df4b7daae04a9d42fd9c",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore": "e94c0e729f478fa421d6791911c07dec1a3c5d12bb6f06043ebd5fc0771c7ff5",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION": "2a3503e7dd2944be59af8859761df54ab6c5962327914ed9cc5169b8d2ae8958",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json": "c4947cef63c69690bfaba11c841affa74dfbf6170aa62c8a665899e0a04a3758",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md": "102284805804a357fb22910127d86681bf7b405ddb7f209c2ba646af03fc6c50",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js": "ffb5e83c4e300884b573a8ccdc69e9b0afb9e00e72c34552e59f39bd47bf952b"
+      },
+      "nudge_history": {
+        "ba0d54d9d8deceeaf026d05ede4ee3ed990adadf69ac04be5ff78c626059964f": 1
+      },
+      "reviewer": "claude:claude-rescue",
+      "review_result": "Addressed finding: added recursive ignores and verifier probes for nested named runtime JSON files.",
+      "completed_at": "2026-06-08T19:30:35-04:00"
+    },
+    {
+      "id": "review-0006",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:32:12.152Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "approx_lines_changed": 825,
+      "reason": "~825 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "69db36f280eb1caacbf0a82439f90c6cc1e505b06a63df4b7daae04a9d42fd9c",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore": "d62309df61472d18933fbd9d0948cb4ce920890941ea7dcc328ffd28c08e980b",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION": "2a3503e7dd2944be59af8859761df54ab6c5962327914ed9cc5169b8d2ae8958",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json": "c4947cef63c69690bfaba11c841affa74dfbf6170aa62c8a665899e0a04a3758",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md": "102284805804a357fb22910127d86681bf7b405ddb7f209c2ba646af03fc6c50",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js": "a083647adf65282ac3afa96042f541cf0961879dbc9e787b3a1dddf85781f865"
+      },
+      "nudge_history": {
+        "c8aee5223c2405dd4a50fcacc14e1dafb31b71fa27afab3c5e60ce619277f5be": 1
+      },
+      "reviewer": "grok:grok-rescue",
+      "review_result": "Addressed findings: added missing memory template, expanded template trackability coverage, made QA markdown ignores recursive, and expanded runtime ignore probes.",
+      "completed_at": "2026-06-08T19:39:35-04:00"
+    },
+    {
+      "id": "review-0007",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:41:27.219Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/memory.md"
+      ],
+      "approx_lines_changed": 994,
+      "reason": "~994 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "69db36f280eb1caacbf0a82439f90c6cc1e505b06a63df4b7daae04a9d42fd9c",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore": "c69a0c5c1d25b461724795820dd173aa190ac3d0fa613ccbcab0b91e08eadfe0",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION": "2a3503e7dd2944be59af8859761df54ab6c5962327914ed9cc5169b8d2ae8958",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json": "c4947cef63c69690bfaba11c841affa74dfbf6170aa62c8a665899e0a04a3758",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md": "102284805804a357fb22910127d86681bf7b405ddb7f209c2ba646af03fc6c50",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js": "7790a0593ed2026a73df40d80f905858f883112dded870cd2b1ad23e5fb037d4",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/memory.md": "30c3e3057d24c0128c432c29eddd15ca2d5e501de7361fd1ad69564dcb5c2455"
+      },
+      "nudge_history": {
+        "47f7831c816bd6363c95004c3599005d106bc8f90cd7f8b9c697faf81c53a76b": 1
+      },
+      "reviewer": "codex:codex-rescue",
+      "review_result": "production-ready OK",
+      "completed_at": "2026-06-08T19:42:55-04:00"
+    },
+    {
+      "id": "review-0008",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-09T00:33:04.908Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/memory.md"
+      ],
+      "approx_lines_changed": 1310,
+      "reason": "~1310 lines changed (threshold 40)",
+      "status": "pending",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "722c5e66762f7c3d3f2656f85eeb652f2771e4eb6a540689b4643413c1621d54",
+        "/mnt/j/projectshome/projects/customopenwolf/.gitignore": "c69a0c5c1d25b461724795820dd173aa190ac3d0fa613ccbcab0b91e08eadfe0",
+        "/mnt/j/projectshome/projects/customopenwolf/VERSION": "2a3503e7dd2944be59af8859761df54ab6c5962327914ed9cc5169b8d2ae8958",
+        "/mnt/j/projectshome/projects/customopenwolf/.editorconfig": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+        "/mnt/j/projectshome/projects/customopenwolf/package.json": "c4947cef63c69690bfaba11c841affa74dfbf6170aa62c8a665899e0a04a3758",
+        "/mnt/j/projectshome/projects/customopenwolf/README.md": "102284805804a357fb22910127d86681bf7b405ddb7f209c2ba646af03fc6c50",
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js": "7790a0593ed2026a73df40d80f905858f883112dded870cd2b1ad23e5fb037d4",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/memory.md": "30c3e3057d24c0128c432c29eddd15ca2d5e501de7361fd1ad69564dcb5c2455"
+      },
+      "nudge_history": {
+        "c0bdb2c6ccbcb2a6c38e3627cb26f1b41c6ad1de3409de6403c4420c759de841": 2,
+        "5525e6bc4e100741704fd8db95467ceadc3c857516ac942f9c0097588f33c247": 1
+      }
+    },
+    {
+      "id": "review-0009",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T00:47:00.612Z",
+      "files": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "approx_lines_changed": 99,
+      "reason": "~99 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js": "c942039b9acaef4c92457a21e2576988efbf644bda481087647a32b2b25e53b4"
+      },
+      "nudge_history": {
+        "4559e368d1f0dbc8e5e4547156456085162de5800490b8ad92a5c6edb6510851": 1,
+        "28a2b324130c9c50c5f51ddd666c089180167f0ca6fcc79f27c3a2e7e9237820": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after fixing same-text conclusion suppression, log_decisions no-log nudge bypass, and stdin session_id fallback.",
+      "completed_at": "2026-06-09T00:47:24.644701Z"
+    },
+    {
+      "id": "review-0010",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:07:02.687Z",
+      "files": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/home/tony/.claude/plans/silly-herding-cake.md"
+      ],
+      "approx_lines_changed": 269,
+      "reason": "~269 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js": "753ce363fdfa35d9c177892711f5ea947c80a60d0f93aaa1a91813147b4c80d4",
+        "/home/tony/.claude/plans/silly-herding-cake.md": "834fa9c21d1de71383c531c0b13a8a33da50e2b1971a997d5dace6e096bb1cf7"
+      },
+      "nudge_history": {
+        "662e6f2f27177977a0e0fc2e4c1d1eab02d50b330a184b34ea8eb3b699253bff": 3
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after fixing conclusion same-text suppression to honor prior claim_calibration and legacy scientific_mode entries.",
+      "completed_at": "2026-06-09T01:11:46.684998Z"
+    },
+    {
+      "id": "review-0011",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:12:11.164Z",
+      "files": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/home/tony/.claude/plans/silly-herding-cake.md"
+      ],
+      "approx_lines_changed": 327,
+      "reason": "~327 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js": "7aa73f5ef48c2a4920e10b345056fd9a3208371a4df1fe40616d37d82446f529",
+        "/home/tony/.claude/plans/silly-herding-cake.md": "834fa9c21d1de71383c531c0b13a8a33da50e2b1971a997d5dace6e096bb1cf7"
+      },
+      "nudge_history": {
+        "cb069caac69edf82d9d46e1b62cd4c37b01befde7117891af3d32cd601e54bb4": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK",
+      "completed_at": "2026-06-09T01:13:38.541352Z"
+    },
+    {
+      "id": "review-0012",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T07:20:34.488Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "approx_lines_changed": 443,
+      "reason": "~443 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "058deb6a7792d93d712dc05c36191280d2ab52d1a9b7d280d46721dd2a6c3895",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts": "94cf6e5d02d038e4e133766d77a6e2b2c199737598879526f787c79b829ce624",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts": "052e90d5fa4595c319577f1b69092e67d782387c12ade647bdf40439b85853a8",
+        "/home/tony/openwolf-upstream/src/cli/init.ts": "3a7446f7c4a89fb885d02133a0de108a37e5f75cb328e0a7276daf86812291e4",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts": "9248a02a94b8a92a4763adef0c10618d243c815d17fe2206cf234a33a9b53466",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts": "b1be568855672a76f77d1491b7065055bfb16c6d14b21d02e86cb5327e1d08b4",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts": "68728cd42975fcf248abdb8446fe13fc88cc35ae63bffebb75cfd16512273d59"
+      },
+      "nudge_history": {
+        "e883f53dc16e3191892f2671a84fc5df81d4b7e76caf5985657d612163cd9567": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after fixes: atomic singleton lock, hash-qualified/root-matched PM2 names, pm_id-targeted PM2 actions, shell-quoted fallback PM2 names, and config-preserving upgrades.",
+      "completed_at": "2026-06-13T07:34:30Z"
+    },
+    {
+      "id": "review-0013",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T07:35:56.642Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "approx_lines_changed": 582,
+      "reason": "~582 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "058deb6a7792d93d712dc05c36191280d2ab52d1a9b7d280d46721dd2a6c3895",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts": "94cf6e5d02d038e4e133766d77a6e2b2c199737598879526f787c79b829ce624",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts": "7ee8e18e1b2300298c685b895d87330a20964ba7452baf20e56c9ddc02e3a20f",
+        "/home/tony/openwolf-upstream/src/cli/init.ts": "5d4575b4e1fa5c80d1f1cd51e3a0720c5b18c5c3231a3f7cbcf991897c79c8e6",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts": "9248a02a94b8a92a4763adef0c10618d243c815d17fe2206cf234a33a9b53466",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts": "420abc6c4b2d47750ace623431e729895ef49144d3516aee45f36a91285c562c",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts": "68728cd42975fcf248abdb8446fe13fc88cc35ae63bffebb75cfd16512273d59"
+      },
+      "nudge_history": {
+        "142883e2c01e9ddb6d7db77669411c086b84e300982ed43579e90383bcb1155d": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after fixes: --stop-exit-codes 0, start/restart migration guarded by PM2 ownership, PM2 pm_id targets, loopback dashboard bind, safe no-kill fallback, and config-preserving upgrades.",
+      "completed_at": "2026-06-13T07:46:00Z"
+    },
+    {
+      "id": "review-0014",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T07:48:54.137Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "approx_lines_changed": 621,
+      "reason": "~621 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "058deb6a7792d93d712dc05c36191280d2ab52d1a9b7d280d46721dd2a6c3895",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts": "94cf6e5d02d038e4e133766d77a6e2b2c199737598879526f787c79b829ce624",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts": "6596116d8e64440fdb323f835e67f2413686328eb72522ead2ff50eeab6372f8",
+        "/home/tony/openwolf-upstream/src/cli/init.ts": "3ba1f1ba0f4a529bdb1de53e8aa6d5cfdbacf3d2df9369249387c3b37eb04ceb",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts": "9248a02a94b8a92a4763adef0c10618d243c815d17fe2206cf234a33a9b53466",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts": "0e7b02541577115b709948edf778fce609e8d2805be91a1e133677adf350bd84",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts": "d59b0b0d0824c1a3131ff5ea4a045cebb9a493750579d5b75da983419109b40a"
+      },
+      "nudge_history": {
+        "950e7bde8bf533d32a418c87b6aaf29a9f7a93270681304a7e51418c8fe6a1aa": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after fixes: no reclaim-failure spin in size locks, bounded daemon singleton acquisition with safe stale-lock handling, and Windows hook pathToFileURL import.",
+      "completed_at": "2026-06-13T07:58:30Z"
+    },
+    {
+      "id": "review-0015",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:00:34.651Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "approx_lines_changed": 698,
+      "reason": "~698 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "058deb6a7792d93d712dc05c36191280d2ab52d1a9b7d280d46721dd2a6c3895",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts": "7397f0fcc6a3b08e012d97810091d0985d1df937068352830412c654abdb0131",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts": "6596116d8e64440fdb323f835e67f2413686328eb72522ead2ff50eeab6372f8",
+        "/home/tony/openwolf-upstream/src/cli/init.ts": "ff17fd1135278f7b4b27f702e5b7156a381a0bafbddf89c7aed0ddf888e83a8a",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts": "9248a02a94b8a92a4763adef0c10618d243c815d17fe2206cf234a33a9b53466",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts": "37e15cb1c00eb336816173f33bdd817a70f9e3c04ab0ca26a1ea3910a16bc64f",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts": "d59b0b0d0824c1a3131ff5ea4a045cebb9a493750579d5b75da983419109b40a"
+      },
+      "nudge_history": {
+        "ae12dbc0d76ecf2440e40ee8cf3877d8adaad06f83af2dfb856ec994ff08473b": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after root normalization for PM2 naming/matching and daemon singleton lock comparisons.",
+      "completed_at": "2026-06-13T08:08:30Z"
+    },
+    {
+      "id": "review-0016",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:06:33.444Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "approx_lines_changed": 729,
+      "reason": "~729 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "058deb6a7792d93d712dc05c36191280d2ab52d1a9b7d280d46721dd2a6c3895",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts": "7397f0fcc6a3b08e012d97810091d0985d1df937068352830412c654abdb0131",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts": "6930495c596f12cd8f8c2eef34ae11b9a69977858a5813df76d8efc561133c4d",
+        "/home/tony/openwolf-upstream/src/cli/init.ts": "ff17fd1135278f7b4b27f702e5b7156a381a0bafbddf89c7aed0ddf888e83a8a",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts": "9248a02a94b8a92a4763adef0c10618d243c815d17fe2206cf234a33a9b53466",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts": "72351ead6ce89c5b370f7a8dce14528cbfd1589ea2631b3ed75d708835531a34",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts": "d59b0b0d0824c1a3131ff5ea4a045cebb9a493750579d5b75da983419109b40a"
+      },
+      "nudge_history": {
+        "0775fc24006437c544a9eeb92207ad17a90b074cadba1cc9c1f0f27af6dacce5": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after malformed daemon.pid handling and lock JSON validation.",
+      "completed_at": "2026-06-13T08:18:30Z"
+    },
+    {
+      "id": "review-0017",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:13:46.435Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "approx_lines_changed": 766,
+      "reason": "~766 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "058deb6a7792d93d712dc05c36191280d2ab52d1a9b7d280d46721dd2a6c3895",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts": "7397f0fcc6a3b08e012d97810091d0985d1df937068352830412c654abdb0131",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts": "6930495c596f12cd8f8c2eef34ae11b9a69977858a5813df76d8efc561133c4d",
+        "/home/tony/openwolf-upstream/src/cli/init.ts": "ff17fd1135278f7b4b27f702e5b7156a381a0bafbddf89c7aed0ddf888e83a8a",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts": "9248a02a94b8a92a4763adef0c10618d243c815d17fe2206cf234a33a9b53466",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts": "9c81da8bc49d40fdcd3a3f33efe3982ab8c331646e03f597807c27d88c8cf1c3",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts": "d59b0b0d0824c1a3131ff5ea4a045cebb9a493750579d5b75da983419109b40a"
+      },
+      "nudge_history": {
+        "3a3c101574bb45f4fd7e712a4853400ddebc7e3db1463e0060d8aef4486bd5c5": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after PM2 stop-exit-codes migration and active legacy preference over inactive hash entries.",
+      "completed_at": "2026-06-13T08:29:30Z"
+    },
+    {
+      "id": "review-0018",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:22:53.132Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "approx_lines_changed": 803,
+      "reason": "~803 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "058deb6a7792d93d712dc05c36191280d2ab52d1a9b7d280d46721dd2a6c3895",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts": "7397f0fcc6a3b08e012d97810091d0985d1df937068352830412c654abdb0131",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts": "c418ce419b2e830a7f6b19cbd7fde16ecb3dfd310de5f3d616324cb073a81fae",
+        "/home/tony/openwolf-upstream/src/cli/init.ts": "ff17fd1135278f7b4b27f702e5b7156a381a0bafbddf89c7aed0ddf888e83a8a",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts": "9248a02a94b8a92a4763adef0c10618d243c815d17fe2206cf234a33a9b53466",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts": "9c81da8bc49d40fdcd3a3f33efe3982ab8c331646e03f597807c27d88c8cf1c3",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts": "d59b0b0d0824c1a3131ff5ea4a045cebb9a493750579d5b75da983419109b40a"
+      },
+      "nudge_history": {
+        "e3ef1a680e6e6d61cfcb488c241a925cc0e73008154781ff68f71bea0d97fc3a": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after server bind error exits 0 to suppress PM2 restart loops.",
+      "completed_at": "2026-06-13T08:38:30Z"
+    },
+    {
+      "id": "review-0019",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:26:46.161Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "approx_lines_changed": 805,
+      "reason": "~805 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "058deb6a7792d93d712dc05c36191280d2ab52d1a9b7d280d46721dd2a6c3895",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts": "7397f0fcc6a3b08e012d97810091d0985d1df937068352830412c654abdb0131",
+        "/home/tony/openwolf-upstream/.wolf/utils/size-discipline.js": "3b4bed4488ce09d8d130f2f2adf649a4a0f076f564fff0745b17b657cf9e560f",
+        "/home/tony/openwolf-upstream/dist/src/utils/size-discipline.js": "d3632c1b81cf8a4850bb37c3bd4475e0501e92a72e497b1435276043a4e09f6c",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts": "c418ce419b2e830a7f6b19cbd7fde16ecb3dfd310de5f3d616324cb073a81fae",
+        "/home/tony/openwolf-upstream/src/cli/init.ts": "ff17fd1135278f7b4b27f702e5b7156a381a0bafbddf89c7aed0ddf888e83a8a",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts": "9248a02a94b8a92a4763adef0c10618d243c815d17fe2206cf234a33a9b53466",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts": "f85167378d441872d038699949aeff62fb6c51eb37836deee96d87293e6ef50f",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts": "d59b0b0d0824c1a3131ff5ea4a045cebb9a493750579d5b75da983419109b40a"
+      },
+      "nudge_history": {
+        "a3c1576ed7d604ee0d603092a9be7cffc7a184dd4eb6dfd037898d22a6ac0de5": 1
+      },
+      "reviewer": "chatgpt:chatgpt-rescue",
+      "review_result": "production-ready OK after active same-name PM2 stop_exit_codes migration check.",
+      "completed_at": "2026-06-13T08:50:30Z"
+    },
+    {
+      "id": "review-0020",
+      "session_id": "session-2026-06-13-1418",
+      "ended": "2026-06-13T18:49:58.887Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md"
+      ],
+      "approx_lines_changed": 340,
+      "reason": "~340 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "fd04d2f3229a6605fc99275db972e952d528f4cf9d826138d71c479406d6e269"
+      },
+      "nudge_history": {
+        "e525a7c171ad986930647846cfc5219bfa4a4b21f7c0aec46eedc4eaac5a94dd": 1
+      },
+      "completed_at": "2026-06-13T18:53:09.391Z",
+      "reviewer": "chatgpt",
+      "review_summary": "critical finding fixed: helper now refuses missing/stale content_hashes; tests and verify passed"
+    },
+    {
+      "id": "review-0021",
+      "session_id": "session-2026-06-13-1418",
+      "ended": "2026-06-13T20:11:25.696Z",
+      "files": [
+        "/home/tony/.claude/plans/silly-herding-cake.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js"
+      ],
+      "approx_lines_changed": 585,
+      "reason": "~585 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/silly-herding-cake.md": "fd04d2f3229a6605fc99275db972e952d528f4cf9d826138d71c479406d6e269",
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js": "7d09072a15993f3785cc71c1eb4499856bfb297422db5de8e0a92fe0b41b2f47",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js": "7d09072a15993f3785cc71c1eb4499856bfb297422db5de8e0a92fe0b41b2f47"
+      },
+      "nudge_history": {
+        "51acac8a16949b617e0d032a46580cc5895d5bd670994dc87a2203f68d084962": 1,
+        "ec243bbc314fca51d1c34087c9dfb085a17ae7bc9b918c77023931dc5db737f2": 1
+      },
+      "completed_at": "2026-06-13T20:11:34.385Z",
+      "reviewer": "chatgpt",
+      "review_summary": "production-ready OK after reclaim-lock liveness/safety fix; tests, verify, falsifier passed"
+    },
+    {
+      "id": "review-0022",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T22:30:36.522Z",
+      "files": [
+        "/home/tony/.claude/plans/unified-kindling-rose.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "approx_lines_changed": 402,
+      "reason": "~402 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/unified-kindling-rose.md": "82d39e8c8934fc493848af5eff1fac2afe98d276cc12ef22e657b9b2a7275868",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js": "d534973c85909d2cc24a1f29590639359123244ab9ef77cfcfb04623e1b69951"
+      },
+      "nudge_history": {
+        "9365e3a4988cb0ab6c4f4f293f130adafab9a3369659b98fbe7bf646338a5cbd": 1,
+        "86b2155870a29bf3b2ba49b58a573a64929b29d0f9baaa990991048a11120ba5": 1
+      },
+      "completed_at": "2026-06-13T22:31:53.719Z",
+      "reviewer": "grok",
+      "review_summary": "Final re-review of current stop.js returned production-ready OK after fixing primary Stop path to use exitAfterStderrFlush; tests and syntax checks passed."
+    },
+    {
+      "id": "review-0023",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T23:25:53.864Z",
+      "files": [
+        "/home/tony/.claude/plans/unified-kindling-rose.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "approx_lines_changed": 556,
+      "reason": "~556 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/unified-kindling-rose.md": "82d39e8c8934fc493848af5eff1fac2afe98d276cc12ef22e657b9b2a7275868",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js": "8db75c4cfd838dd7f03cb03c766bc6f03698d3b9c65b63e87ff54f7cfc63c756",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js": "8f68b3f3f0ca74782b2c834878f5c484dc8ad5b2144c6065dada84cbc00f0b07"
+      },
+      "nudge_history": {
+        "72e78fd52ca689ee7c189825c80611179b847f4685201179a25c1a87623ec46c": 1
+      },
+      "completed_at": "2026-06-13T23:28:13.560Z",
+      "reviewer": "grok+chatgpt",
+      "review_summary": "Grok and ChatGPT reviewed current stop/shared autonomy continuation implementation; both returned production-ready OK. npm test and npm run verify passed."
+    },
+    {
+      "id": "review-0024",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:28:11.978Z",
+      "files": [
+        "/home/tony/.claude/plans/unified-kindling-rose.md",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "approx_lines_changed": 614,
+      "reason": "~614 lines changed (threshold 40)",
+      "status": "completed",
+      "trigger": "size",
+      "content_hashes": {
+        "/home/tony/.claude/plans/unified-kindling-rose.md": "82d39e8c8934fc493848af5eff1fac2afe98d276cc12ef22e657b9b2a7275868",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js": "16f8cfad8dc452c7c58eb6c15c7b1641a98f28f62e837473e4d77d376bee1077",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js": "8f68b3f3f0ca74782b2c834878f5c484dc8ad5b2144c6065dada84cbc00f0b07"
+      },
+      "nudge_history": {
+        "799516e191a22368f1229f0e5e15d756ef5b56bdaa474ef1c2288d8cf0f0055b": 1
+      },
+      "completed_at": "2026-06-15T01:29:44.936Z",
+      "reviewer": "chatgpt",
+      "review_summary": "Reviewed current stop/shared generic plugin guidance and autonomy continuation implementation; production-ready OK. npm test and npm run verify passed after changes."
+    }
+  ]
+}

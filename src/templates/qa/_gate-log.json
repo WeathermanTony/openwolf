@@ -1,0 +1,1157 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "gate-00001",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:11:26.328Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00002",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:16:31.622Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00003",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:19:59.627Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00004",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:24:05.002Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00005",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:28:23.819Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00006",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:32:12.152Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00007",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:41:27.219Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00008",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:43:37.793Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00009",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-08T23:57:26.384Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00010",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-09T00:02:34.860Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00011",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-09T00:10:11.582Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00012",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-09T00:13:53.968Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00013",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-09T00:14:41.425Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00014",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-09T00:30:35.276Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00015",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-09T00:30:45.142Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00016",
+      "session_id": "session-2026-06-08-1859",
+      "ended": "2026-06-09T00:33:04.908Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/scripts/verify-install.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "science-00001",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T00:39:58.007Z",
+      "type": "scientific_mode",
+      "categories": [
+        "causal_claims",
+        "methodology_claims"
+      ],
+      "text_excerpt": "The root cause is the parser path due to the normalized input branch. Evidence shows this behavior applies across the supported import flow, and the reasoning here should be treated as a causal explanation rather than just an observation.",
+      "text_sha256": "c4424bf81f01585ed8ff2655628223df322292fbaefaee0728bbb71e474bd055",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00017",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T00:42:26.248Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00018",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T00:47:00.612Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00019",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T00:47:37.413Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00020",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T00:51:23.625Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00021",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T00:53:28.106Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00022",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T00:55:16.050Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00023",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T00:58:05.259Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00024",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:07:01.332Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "missing_sig": "253a3e8bce1d7dc5da5fbe18d22185f99a5e08e1c19277ed3e8112f2ca310173",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "calib-00002",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:07:01.332Z",
+      "type": "claim_calibration",
+      "categories": [
+        "causal_claims",
+        "methodology_claims",
+        "confidence_claims"
+      ],
+      "missing_markers": [
+        "observed",
+        "inferred",
+        "limits",
+        "falsifiers"
+      ],
+      "text_excerpt": "The root cause is the parser normalization branch, and I have high confidence this explains why the import path failed across the supported flow. Evidence shows the fix is ready for the checked scenario.",
+      "text_sha256": "58fbdbf652c81bd4ac4e54d3b247a5476fd9145388370b76e828f017dbbcd293",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00025",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:07:02.034Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "missing_sig": "253a3e8bce1d7dc5da5fbe18d22185f99a5e08e1c19277ed3e8112f2ca310173",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00026",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:07:02.687Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "missing_sig": "253a3e8bce1d7dc5da5fbe18d22185f99a5e08e1c19277ed3e8112f2ca310173",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00027",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:12:11.164Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00028",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:13:55.440Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00029",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:16:09.510Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00030",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:17:06.892Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00031",
+      "session_id": "session-2026-06-09-2037",
+      "ended": "2026-06-09T01:18:37.463Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00032",
+      "session_id": "session-2026-06-09-2133",
+      "ended": "2026-06-09T02:16:56.038Z",
+      "type": "conclusion",
+      "patterns_matched": [
+        "\\b(verdict|the (?:answer|finding|conclusion|result|edge|signal)\\s+is)\\b",
+        "\\b(works|fails|passes|broken|fixed|ready (?:to ship|for review))\\b"
+      ],
+      "text_excerpt": "I compared them. The result is interesting: **OpenWolf-on produced better reasoning discipline and stronger DST edge coverage, but it also violated a core API requirement.** OpenWolf-off was more compliant with the requested API. ## Headlin",
+      "text_sha256": "68510461bbc647b58d89a6da2d5d425ba3eff45cc0b8e59941f9116f5cf5e6fd",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "calib-00003",
+      "session_id": "session-2026-06-09-2133",
+      "ended": "2026-06-09T02:23:24.584Z",
+      "type": "claim_calibration",
+      "categories": [
+        "causal_claims",
+        "generalizations"
+      ],
+      "missing_markers": [
+        "observed",
+        "limits",
+        "falsifiers"
+      ],
+      "text_excerpt": "That intuition is reasonable, and the A/B result actually explains why it can feel helpful even when it doesn’t always win a single coding task. OpenWolf helps by changing the **agent’s working posture**: - it reminds the AI there is projec",
+      "text_sha256": "6ccb80a4b86cf2a538d2cc326748f3a42111e50805eeb7d68878ecfb0ecfc767",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00033",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T07:20:34.488Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "missing_sig": "9028e0a7202b37a33f939ea8b5e83d7b52e51ffe381d0c8f6c79cad8de3d896f",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00034",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T07:35:56.642Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "missing_sig": "e9cdfc5d808832ab116b71030f3f78621bedb785ed74d094cbba73604db024d0",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00035",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T07:48:54.137Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "missing_sig": "1de528865b5df89e8fab4f9434920b03c47f102dcad5bb1381adcdfa247c3389",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00036",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:00:34.651Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "missing_sig": "7b2711a6d01fb6f2dd46fb85622d66bd6b150a3574c32ce00ab045440eefaab0",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00037",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:06:33.444Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "missing_sig": "1d07a786107ab896beab8c8acf5ab8672ea92e247b2c95aeab61b2f4608dcf99",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00038",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:13:46.435Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "missing_sig": "383f83a2a63cdac4a92f094647e3b06e3b43a1e504c11fed437d55fef9fc31d3",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00039",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:22:53.132Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "missing_sig": "75f6adf6f2e0f765ecd369467f18397cfb3aa9174af804946bf0eb4b32569d6a",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00040",
+      "session_id": "session-2026-06-13-0255",
+      "ended": "2026-06-13T08:26:46.161Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js",
+        "/home/tony/openwolf-upstream/src/utils/size-discipline.ts",
+        "/home/tony/openwolf-upstream/src/cli/daemon-cmd.ts",
+        "/home/tony/openwolf-upstream/src/cli/init.ts",
+        "/home/tony/openwolf-upstream/src/daemon/file-watcher.ts",
+        "/home/tony/openwolf-upstream/src/daemon/wolf-daemon.ts",
+        "/home/tony/openwolf-upstream/src/utils/port-allocator.ts"
+      ],
+      "missing_sig": "aa07b94e44bc5af1026e67b4e26ece224453cccb5070c5b354c87fc3b7d4f1c5",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00041",
+      "session_id": "session-2026-06-13-1418",
+      "ended": "2026-06-13T18:19:01.279Z",
+      "type": "conclusion",
+      "patterns_matched": [
+        "\\b(verdict|the (?:answer|finding|conclusion|result|edge|signal)\\s+is)\\b",
+        "\\b(confirmed|proven|definitely|definitively|certainly)\\b",
+        "\\b(works|fails|passes|broken|fixed|ready (?:to ship|for review))\\b"
+      ],
+      "text_excerpt": "The other AI is probably correct: this looks less like a code-readiness problem and more like a **review-hook state/coalescing bug**. The key signal is this: ```text OpenWolf review nudge [review-0076]: ~468 lines changed (threshold 40) ...",
+      "text_sha256": "704054c99ddb0497e505f44fb00de7d8d683d0b1d31f13c8ffca14fd92552c69",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00042",
+      "session_id": "session-2026-06-13-1418",
+      "ended": "2026-06-13T20:03:09.217Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js"
+      ],
+      "missing_sig": "e24dba9bf484a9f7fc87ddf91d2bb2fbdc554e73791b9c808620c2a9aabe9b27",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00043",
+      "session_id": "session-2026-06-13-1418",
+      "ended": "2026-06-13T20:11:25.696Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00044",
+      "session_id": "session-2026-06-13-1418",
+      "ended": "2026-06-13T20:11:40.972Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/utils/size-discipline.js",
+        "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/utils/size-discipline.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00045",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T22:23:57.873Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00046",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T22:28:52.600Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "missing_sig": "5837ea1165acc289080bdfdd06e1c7688547944cade2b5ce15b0f0af7f972d20",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00047",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T22:30:36.522Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00048",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T22:32:09.188Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00049",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T22:32:26.477Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00050",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T22:36:53.723Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00051",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T23:09:11.847Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00052",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T23:25:53.864Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "missing_sig": "d838d8a1575cb85839aba250ef1ac9bf322728ee109ba677ec6dd84a09848429",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00053",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T23:28:27.351Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "missing_sig": "d838d8a1575cb85839aba250ef1ac9bf322728ee109ba677ec6dd84a09848429",
+      "decision": "nudge",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00054",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T23:29:04.868Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00055",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-13T23:46:34.204Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00056",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:10:31.256Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00057",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:10:46.333Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00058",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:11:03.087Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00059",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:28:11.978Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00060",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:30:05.172Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00061",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:35:29.754Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00062",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:36:28.137Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00063",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:48:36.926Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00064",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:49:03.191Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00065",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T01:49:27.392Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00066",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T02:02:33.775Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00067",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T02:07:35.213Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00068",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T02:08:39.735Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00069",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T02:11:59.572Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    },
+    {
+      "id": "gate-00070",
+      "session_id": "session-2026-06-13-1732",
+      "ended": "2026-06-15T02:56:53.847Z",
+      "type": "file",
+      "files_checked": [
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js",
+        "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.js"
+      ],
+      "files_missing_reduction": [],
+      "decision": "ok",
+      "mode": "soft",
+      "trigger": "stop"
+    }
+  ]
+}
