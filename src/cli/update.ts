@@ -28,7 +28,8 @@ function getVersion(): string {
 }
 
 // Files that are safe to overwrite (protocol/config)
-const ALWAYS_OVERWRITE = ["OPENWOLF.md", "config.json", "reframe-frameworks.md"];
+const ALWAYS_OVERWRITE = ["OPENWOLF.md", "reframe-frameworks.md"];
+const CREATE_IF_MISSING = ["config.json"];
 
 // Files that contain user data — NEVER overwrite, only create if missing
 const USER_DATA_FILES = [
@@ -40,21 +41,26 @@ const USER_DATA_FILES = [
 // Files to include in backup
 const BACKUP_FILES = [
   ...ALWAYS_OVERWRITE,
+  ...CREATE_IF_MISSING,
   ...USER_DATA_FILES,
 ];
 
+function hookCommand(file: string): string {
+  return `node -e "import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/${file}').href)).catch(()=>{})"`;
+}
+
 const HOOK_SETTINGS = {
   hooks: {
-    SessionStart: [{ matcher: "", hooks: [{ type: "command", command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/session-start.js"', timeout: 5 }] }],
+    SessionStart: [{ matcher: "", hooks: [{ type: "command", command: hookCommand("session-start.js"), timeout: 5 }] }],
     PreToolUse: [
-      { matcher: "Read", hooks: [{ type: "command", command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-read.js"', timeout: 5 }] },
-      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-write.js"', timeout: 5 }] },
+      { matcher: "Read", hooks: [{ type: "command", command: hookCommand("pre-read.js"), timeout: 5 }] },
+      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: hookCommand("pre-write.js"), timeout: 5 }] },
     ],
     PostToolUse: [
-      { matcher: "Read", hooks: [{ type: "command", command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/post-read.js"', timeout: 5 }] },
-      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/post-write.js"', timeout: 10 }] },
+      { matcher: "Read", hooks: [{ type: "command", command: hookCommand("post-read.js"), timeout: 5 }] },
+      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: hookCommand("post-write.js"), timeout: 10 }] },
     ],
-    Stop: [{ matcher: "", hooks: [{ type: "command", command: 'node "$CLAUDE_PROJECT_DIR/.wolf/hooks/stop.js"', timeout: 10 }] }],
+    Stop: [{ matcher: "", hooks: [{ type: "command", command: hookCommand("stop.js"), timeout: 10 }] }],
   },
 };
 
@@ -174,6 +180,14 @@ async function updateProject(
       }
     }
     console.log(`    ✓ Templates updated (${ALWAYS_OVERWRITE.join(", ")})`);
+
+    for (const file of CREATE_IF_MISSING) {
+      const srcPath = path.join(templatesDir, file);
+      const destPath = path.join(wolfDir, file);
+      if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
+        safeCopyFile(srcPath, destPath);
+      }
+    }
 
     // 3. Update hook scripts
     copyHookScripts(wolfDir);

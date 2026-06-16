@@ -371,7 +371,7 @@ function generateTemplate(destPath: string, file: string): void {
         cron: { enabled: true, max_retry_attempts: 3, dead_letter_enabled: true, heartbeat_interval_minutes: 30, use_claude_p: true, api_key_env: null },
         memory: { consolidation_after_days: 7, max_entries_before_consolidation: 200 },
         cerebrum: { max_tokens: 2000, reflection_frequency: "weekly" },
-        daemon: { port: 18790, log_level: "info" },
+        daemon: { port: 18790, log_level: "info", auth_token: null },
         dashboard: { enabled: true, port: 18791 },
         designqc: { enabled: true, viewports: [{ name: "desktop", width: 1440, height: 900 }, { name: "mobile", width: 375, height: 812 }], max_screenshots: 6, chrome_path: null },
         size_discipline: {

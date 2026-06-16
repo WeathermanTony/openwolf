@@ -28,7 +28,7 @@ interface CronManifest {
   tasks: CronTask[];
 }
 
-export type TaskRunResult = "not_found" | "stopped" | "skipped_active" | "skipped_pending_retry" | "retry_scheduled" | "completed" | "dead_lettered";
+export type TaskRunResult = "not_found" | "stopped" | "skipped_active" | "skipped_pending_retry" | "retry_scheduled" | "completed" | "failed" | "dead_lettered";
 
 interface ExecutionEntry {
   task_id: string;
@@ -342,7 +342,7 @@ export class CronEngine {
           duration_ms: duration,
           attempts: failures,
         });
-        return "dead_lettered";
+        return task.failsafe.dead_letter ? "dead_lettered" : "failed";
       }
     } finally {
       if (this.activeRuns.get(task.id) === runId) {
@@ -359,7 +359,7 @@ export class CronEngine {
       case "linear":
         return baseMs * attempt;
       default:
-        return 0;
+        return baseMs;
     }
   }
 

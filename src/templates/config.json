@@ -54,7 +54,8 @@
     },
     "daemon": {
       "port": 18860,
-      "log_level": "info"
+      "log_level": "info",
+      "auth_token": null
     },
     "dashboard": {
       "enabled": true,

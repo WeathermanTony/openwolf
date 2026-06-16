@@ -11,7 +11,7 @@ export function readJSON<T = unknown>(filePath: string, fallback: T): T {
   }
 }
 
-export function writeJSON(filePath: string, data: unknown): void {
+export function tryWriteJSON(filePath: string, data: unknown): boolean {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -20,12 +20,18 @@ export function writeJSON(filePath: string, data: unknown): void {
   try {
     fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf-8");
     fs.renameSync(tmp, filePath);
+    return true;
   } catch {
     // On Windows, rename can fail if another process holds a handle.
     // Fall back to direct write and clean up the tmp file.
-    try { fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8"); } catch {}
+    try { fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8"); return true; } catch {}
     try { fs.unlinkSync(tmp); } catch {}
+    return false;
   }
+}
+
+export function writeJSON(filePath: string, data: unknown): void {
+  void tryWriteJSON(filePath, data);
 }
 
 export function readText(filePath: string, fallback: string = ""): string {
@@ -36,7 +42,7 @@ export function readText(filePath: string, fallback: string = ""): string {
   }
 }
 
-export function writeText(filePath: string, content: string): void {
+export function tryWriteText(filePath: string, content: string): boolean {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -45,12 +51,18 @@ export function writeText(filePath: string, content: string): void {
   try {
     fs.writeFileSync(tmp, content, "utf-8");
     fs.renameSync(tmp, filePath);
+    return true;
   } catch {
     // On Windows, rename can fail if another process holds a handle.
     // Fall back to direct write and clean up the tmp file.
-    try { fs.writeFileSync(filePath, content, "utf-8"); } catch {}
+    try { fs.writeFileSync(filePath, content, "utf-8"); return true; } catch {}
     try { fs.unlinkSync(tmp); } catch {}
+    return false;
   }
+}
+
+export function writeText(filePath: string, content: string): void {
+  void tryWriteText(filePath, content);
 }
 
 export function appendText(filePath: string, content: string): void {

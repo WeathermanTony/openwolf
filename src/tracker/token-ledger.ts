@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { readJSON, writeJSON } from "../utils/fs-safe.js";
 
@@ -56,6 +57,27 @@ interface TokenLedger {
   };
 }
 
+
+function withLedgerLock<T>(wolfDir: string, fn: () => T): T {
+  const lockPath = path.join(wolfDir, "token-ledger.json.lock");
+  const deadline = Date.now() + 2000;
+  let fd: number | null = null;
+  while (fd === null) {
+    try {
+      fd = fs.openSync(lockPath, "wx");
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "EEXIST" || Date.now() >= deadline) throw err;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    try { fs.closeSync(fd); } catch {}
+    try { fs.unlinkSync(lockPath); } catch {}
+  }
+}
+
 export function getLedgerPath(wolfDir: string): string {
   return path.join(wolfDir, "token-ledger.json");
 }
@@ -86,22 +108,26 @@ export function writeLedger(wolfDir: string, ledger: TokenLedger): void {
 }
 
 export function incrementSessions(wolfDir: string): void {
-  const ledger = readLedger(wolfDir);
-  ledger.lifetime.total_sessions++;
-  writeLedger(wolfDir, ledger);
+  withLedgerLock(wolfDir, () => {
+    const ledger = readLedger(wolfDir);
+    ledger.lifetime.total_sessions++;
+    writeLedger(wolfDir, ledger);
+  });
 }
 
 export function addSessionToLedger(
   wolfDir: string,
   session: SessionEntry
 ): void {
-  const ledger = readLedger(wolfDir);
-  ledger.sessions.push(session);
-  ledger.lifetime.total_reads += session.totals.reads_count;
-  ledger.lifetime.total_writes += session.totals.writes_count;
-  ledger.lifetime.total_tokens_estimated +=
-    session.totals.input_tokens_estimated + session.totals.output_tokens_estimated;
-  ledger.lifetime.anatomy_hits += session.totals.anatomy_lookups;
-  ledger.lifetime.repeated_reads_blocked += session.totals.repeated_reads_blocked;
-  writeLedger(wolfDir, ledger);
+  withLedgerLock(wolfDir, () => {
+    const ledger = readLedger(wolfDir);
+    ledger.sessions.push(session);
+    ledger.lifetime.total_reads += session.totals.reads_count;
+    ledger.lifetime.total_writes += session.totals.writes_count;
+    ledger.lifetime.total_tokens_estimated +=
+      session.totals.input_tokens_estimated + session.totals.output_tokens_estimated;
+    ledger.lifetime.anatomy_hits += session.totals.anatomy_lookups;
+    ledger.lifetime.repeated_reads_blocked += session.totals.repeated_reads_blocked;
+    writeLedger(wolfDir, ledger);
+  });
 }

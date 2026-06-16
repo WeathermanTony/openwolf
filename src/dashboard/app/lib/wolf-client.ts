@@ -1,5 +1,16 @@
 type MessageHandler = (msg: any) => void;
 
+declare global {
+  interface Window {
+    __OPENWOLF_DAEMON__?: { token?: string };
+  }
+}
+
+export function openWolfAuthHeaders(): HeadersInit {
+  const token = window.__OPENWOLF_DAEMON__?.token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export class WolfClient {
   private ws: WebSocket | null = null;
   private handlers: MessageHandler[] = [];
@@ -8,7 +19,9 @@ export class WolfClient {
 
   constructor(url?: string) {
     const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
-    this.url = url || `${wsProtocol}//${location.host}/ws`;
+    const token = window.__OPENWOLF_DAEMON__?.token;
+    const suffix = token ? `?token=${encodeURIComponent(token)}` : "";
+    this.url = url || `${wsProtocol}//${location.host}/ws${suffix}`;
   }
 
   connect(): void {

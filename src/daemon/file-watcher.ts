@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { watch } from "chokidar";
+import type { FSWatcher } from "chokidar";
 import { readJSON } from "../utils/fs-safe.js";
 import type { Logger } from "../utils/logger.js";
 
@@ -8,7 +9,7 @@ export function startFileWatcher(
   wolfDir: string,
   logger: Logger,
   broadcast: (msg: unknown) => void
-): void {
+): FSWatcher {
   const watcher = watch(wolfDir, {
     ignoreInitial: true,
     ignored: [
@@ -78,5 +79,10 @@ export function startFileWatcher(
     logger.debug(`File removed: ${relativePath}`);
   });
 
+  watcher.on("error", (err) => {
+    logger.error(`File watcher error: ${err}`);
+  });
+
   logger.info("File watcher started on .wolf/");
+  return watcher;
 }

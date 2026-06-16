@@ -79,22 +79,32 @@ export async function cronRun(id: string): Promise<void> {
   }
 
   // Read dashboard port from config
-  interface WolfConfig { openwolf: { dashboard: { port: number } } }
+  interface WolfConfig { openwolf: { dashboard: { port: number }; daemon?: { auth_token?: string | null } } }
   const config = readJSON<WolfConfig>(path.join(wolfDir, "config.json"), {
-    openwolf: { dashboard: { port: 18791 } },
+    openwolf: { dashboard: { port: 18791 }, daemon: { auth_token: null } },
   });
   const port = config.openwolf.dashboard.port;
+  const authToken = config.openwolf.daemon?.auth_token;
 
   // Try calling the daemon's HTTP endpoint first
   try {
     const res = await fetch(`http://127.0.0.1:${port}/api/cron/run/${encodeURIComponent(id)}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
     });
-    const body = await res.json() as { status?: string; error?: string };
+    const body = await res.text().then((text) => {
+      try { return JSON.parse(text) as { status?: string; error?: string }; }
+      catch { return { error: text || res.statusText }; }
+    });
     if (res.ok) {
-      console.log(`Task ${id} triggered via daemon.`);
+      console.log(`Task ${id} triggered via daemon (${body.status ?? "ok"}).`);
       return;
+    }
+    if (res.status === 401 || res.status === 403) {
+      console.log("Daemon rejected CLI auth. Restart the daemon so it can migrate auth_token, or run openwolf init/update.");
     }
     console.log(`Daemon returned error: ${body.error ?? res.statusText}`);
     console.log("Falling back to direct execution...");
@@ -138,5 +148,5 @@ export function cronRetry(id: string): void {
 
   state.dead_letter_queue.splice(idx, 1);
   writeJSON(statePath, state);
-  console.log(`Removed ${id} from dead letter queue. It will retry on next schedule.`);
+  console.log(`Removed ${id} from dead letter queue. Run 'openwolf cron run ${id}' to execute it now, or wait for its next scheduled run.`);
 }

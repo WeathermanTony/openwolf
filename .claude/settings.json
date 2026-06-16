@@ -1,4 +1,5 @@
 {
+  "awaySummaryEnabled": false,
   "hooks": {
     "SessionStart": [
       {
@@ -6,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/session-start.js').catch(()=>{})\"",
+            "command": "node -e \"import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/session-start.js').href)).catch(()=>{})\"",
             "timeout": 5
           }
         ]
@@ -18,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-read.js').catch(()=>{})\"",
+            "command": "node -e \"import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-read.js').href)).catch(()=>{})\"",
             "timeout": 5
           }
         ]
@@ -28,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-write.js').catch(()=>{})\"",
+            "command": "node -e \"import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-write.js').href)).catch(()=>{})\"",
             "timeout": 5
           }
         ]
@@ -40,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-read.js').catch(()=>{})\"",
+            "command": "node -e \"import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-read.js').href)).catch(()=>{})\"",
             "timeout": 5
           }
         ]
@@ -50,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-write.js').catch(()=>{})\"",
+            "command": "node -e \"import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-write.js').href)).catch(()=>{})\"",
             "timeout": 10
           }
         ]
@@ -62,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/stop.js').catch(()=>{})\"",
+            "command": "node -e \"import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/stop.js').href)).catch(()=>{})\"",
             "timeout": 10
           }
         ]

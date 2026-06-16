@@ -1,5 +1,6 @@
 import * as path from "node:path";
 import { readJSON } from "../utils/fs-safe.js";
+import { normalizeCronState } from "./cron-engine.js";
 
 interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
@@ -10,19 +11,17 @@ interface HealthStatus {
 }
 
 export function getHealth(wolfDir: string, startTime: number): HealthStatus {
-  const cronState = readJSON<{
-    last_heartbeat: string | null;
-    dead_letter_queue: unknown[];
-  }>(path.join(wolfDir, "cron-state.json"), {
+  const cronState = normalizeCronState(readJSON<unknown>(path.join(wolfDir, "cron-state.json"), {
     last_heartbeat: null,
     dead_letter_queue: [],
-  });
+  }));
 
   const manifest = readJSON<{ tasks: unknown[] }>(
     path.join(wolfDir, "cron-manifest.json"),
     { tasks: [] }
   );
 
+  const taskCount = Array.isArray(manifest.tasks) ? manifest.tasks.length : 0;
   const deadLetterCount = cronState.dead_letter_queue.length;
   let status: "healthy" | "degraded" | "unhealthy" = "healthy";
   if (deadLetterCount > 0) status = "degraded";
@@ -32,7 +31,7 @@ export function getHealth(wolfDir: string, startTime: number): HealthStatus {
     status,
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
     last_heartbeat: cronState.last_heartbeat,
-    tasks: manifest.tasks.length,
+    tasks: taskCount,
     dead_letters: deadLetterCount,
   };
 }

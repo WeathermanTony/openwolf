@@ -1,10 +1,12 @@
+import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
+import type { NextFunction, Request, Response } from "express";
 import { WebSocketServer, WebSocket } from "ws";
 import { findProjectRoot } from "../scanner/project-root.js";
-import { readJSON } from "../utils/fs-safe.js";
+import { readJSON, writeJSON } from "../utils/fs-safe.js";
 import { Logger } from "../utils/logger.js";
 import { isWindows } from "../utils/platform.js";
 import { CronEngine, hasDeadLetterEntry, normalizeCronState, removeDeadLetterEntry, updateCronState } from "./cron-engine.js";
@@ -25,6 +27,7 @@ interface WolfConfig {
       log_level: string;
       log_max_bytes?: number;       // rotate when daemon.log exceeds this (0 = disabled)
       log_keep_rotations?: number;  // how many .N files to retain (older are dropped)
+      auth_token?: string | null;
     };
     dashboard: { enabled: boolean; port: number };
     cron: { enabled: boolean; heartbeat_interval_minutes: number };
@@ -33,7 +36,7 @@ interface WolfConfig {
 
 const config = readJSON<WolfConfig>(path.join(wolfDir, "config.json"), {
   openwolf: {
-    daemon: { port: 18790, log_level: "info" },
+    daemon: { port: 18790, log_level: "info", auth_token: null },
     dashboard: { enabled: true, port: 18791 },
     cron: { enabled: true, heartbeat_interval_minutes: 30 },
   },
@@ -47,6 +50,121 @@ const logger = new Logger(
     keepRotations: config.openwolf.daemon.log_keep_rotations,
   },
 );
+
+const AUTH_TOKEN_BYTES = 32;
+const REDACTED = "[redacted]";
+
+function validAuthToken(token: unknown): token is string {
+  return typeof token === "string" && token.length >= 32;
+}
+
+function ensureDaemonAuthToken(): string {
+  if (validAuthToken(config.openwolf.daemon.auth_token)) return config.openwolf.daemon.auth_token;
+  const token = crypto.randomBytes(AUTH_TOKEN_BYTES).toString("base64url");
+  config.openwolf.daemon.auth_token = token;
+  const configPath = path.join(wolfDir, "config.json");
+  const existing = readJSON<Record<string, any>>(configPath, {});
+  existing.openwolf = existing.openwolf && typeof existing.openwolf === "object" ? existing.openwolf : {};
+  existing.openwolf.daemon = existing.openwolf.daemon && typeof existing.openwolf.daemon === "object" ? existing.openwolf.daemon : {};
+  existing.openwolf.daemon.auth_token = token;
+  writeJSON(configPath, existing);
+  return token;
+}
+
+const daemonAuthToken = ensureDaemonAuthToken();
+const allowedHosts = new Set([
+  `localhost:${config.openwolf.dashboard.port}`,
+  `127.0.0.1:${config.openwolf.dashboard.port}`,
+  `[::1]:${config.openwolf.dashboard.port}`,
+]);
+const allowedOrigins = new Set([...allowedHosts].map((host) => `http://${host}`));
+
+function timingSafeTokenEqual(candidate: string, expected: string): boolean {
+  const a = Buffer.from(candidate);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function extractBearerToken(req: Request): string | null {
+  const auth = req.header("authorization");
+  if (auth?.startsWith("Bearer ")) return auth.slice("Bearer ".length).trim();
+  const headerToken = req.header("x-openwolf-token");
+  return headerToken?.trim() || null;
+}
+
+function headerValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function requestHasValidHost(req: { headers: Record<string, string | string[] | undefined> }): boolean {
+  const host = headerValue(req.headers.host);
+  return typeof host === "string" && allowedHosts.has(host.toLowerCase());
+}
+
+function requestHasAllowedOrigin(req: { headers: Record<string, string | string[] | undefined> }): boolean {
+  const origin = headerValue(req.headers.origin);
+  return typeof origin !== "string" || allowedOrigins.has(origin.toLowerCase());
+}
+
+function tokenIsValid(token: string | null): boolean {
+  return token !== null && timingSafeTokenEqual(token, daemonAuthToken);
+}
+
+function requireDashboardAuth(req: Request, res: Response, next: NextFunction): void {
+  if (!requestHasValidHost(req) || !requestHasAllowedOrigin(req)) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  if (!tokenIsValid(extractBearerToken(req))) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  next();
+}
+
+function redactSecrets(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactSecrets);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      if (/token|secret|api[_-]?key|auth/i.test(key)) out[key] = REDACTED;
+      else out[key] = redactSecrets(entry);
+    }
+    return out;
+  }
+  return value;
+}
+
+function readDashboardFile(file: string): string {
+  try {
+    const content = fs.readFileSync(path.join(wolfDir, file), "utf-8");
+    if (file.endsWith(".json")) {
+      try { return JSON.stringify(redactSecrets(JSON.parse(content)), null, 2); } catch {}
+    }
+    return content;
+  } catch {
+    return "";
+  }
+}
+
+function sendDashboardIndex(res: Response): void {
+  const indexPath = path.join(dashboardDir, "index.html");
+  if (!fs.existsSync(indexPath)) {
+    res.status(404).json({ error: "Dashboard not built. Run: pnpm build:dashboard" });
+    return;
+  }
+  const html = fs.readFileSync(indexPath, "utf-8");
+  const runtime = `<script>window.__OPENWOLF_DAEMON__=${JSON.stringify({ token: daemonAuthToken })};</script>`;
+  res.setHeader("Cache-Control", "no-store");
+  res.type("html").send(html.includes("</head>") ? html.replace("</head>", `${runtime}</head>`) : `${runtime}${html}`);
+}
+
+function authenticateWebSocketRequest(req: { headers: Record<string, string | string[] | undefined>; url?: string }): boolean {
+  if (!requestHasValidHost(req) || !requestHasAllowedOrigin(req)) return false;
+  const host = headerValue(req.headers.host) ?? "localhost";
+  const url = new URL(req.url ?? "/", `http://${host}`);
+  return tokenIsValid(url.searchParams.get("token"));
+}
 
 interface DaemonLock {
   pid: number;
@@ -177,7 +295,8 @@ app.use(express.json());
 // In dist: dist/src/daemon/wolf-daemon.js → ../../../dist/dashboard/
 const dashboardDir = path.resolve(__dirname, "..", "..", "..", "dist", "dashboard");
 if (fs.existsSync(dashboardDir)) {
-  app.use(express.static(dashboardDir));
+  app.get("/", (_req, res) => sendDashboardIndex(res));
+  app.use(express.static(dashboardDir, { index: false }));
 }
 
 // Detect project metadata
@@ -253,7 +372,7 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-app.get("/api/project", (_req, res) => {
+app.get("/api/project", requireDashboardAuth, (_req, res) => {
   res.json({
     name: projectMeta.name,
     description: projectMeta.description,
@@ -261,7 +380,7 @@ app.get("/api/project", (_req, res) => {
   });
 });
 
-app.get("/api/files", (_req, res) => {
+app.get("/api/files", requireDashboardAuth, (_req, res) => {
   const files: Record<string, string> = {};
   const wolfFiles = [
     "OPENWOLF.md", "identity.md", "cerebrum.md", "memory.md", "anatomy.md",
@@ -271,34 +390,35 @@ app.get("/api/files", (_req, res) => {
   ];
   for (const file of wolfFiles) {
     try {
-      files[file] = fs.readFileSync(path.join(wolfDir, file), "utf-8");
+      files[file] = readDashboardFile(file);
     } catch {
       files[file] = "";
     }
   }
   // Also try suggestions.json
   try {
-    files["suggestions.json"] = fs.readFileSync(path.join(wolfDir, "suggestions.json"), "utf-8");
+    files["suggestions.json"] = readDashboardFile("suggestions.json");
   } catch {
     files["suggestions.json"] = "";
   }
   res.json(files);
 });
 
-app.get("/api/designqc-report", (_req, res) => {
+app.get("/api/designqc-report", requireDashboardAuth, (_req, res) => {
   const report = readJSON(path.join(wolfDir, "designqc-report.json"), null);
   res.json(report);
 });
 
 // Trigger a cron task by ID
-app.post("/api/cron/run/:taskId", (req, res) => {
-  const { taskId } = req.params;
+app.post("/api/cron/run/:taskId", requireDashboardAuth, (req, res) => {
+  const taskId = String(req.params.taskId);
   if (!cronEngine) {
     res.status(503).json({ error: "Cron engine not running" });
     return;
   }
-  cronEngine.runTask(taskId).then(() => {
-    res.json({ status: "ok", task_id: taskId });
+  cronEngine.runTask(taskId).then((result) => {
+    const status = result === "not_found" ? 404 : result === "stopped" ? 503 : result.startsWith("skipped") ? 409 : 200;
+    res.status(status).json({ status: result, task_id: taskId });
   }).catch((err) => {
     res.status(500).json({ error: String(err) });
   });
@@ -308,7 +428,7 @@ app.post("/api/cron/run/:taskId", (req, res) => {
 app.get("/{*path}", (_req, res) => {
   const indexPath = path.join(dashboardDir, "index.html");
   if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
+    sendDashboardIndex(res);
   } else {
     res.status(404).json({ error: "Dashboard not built. Run: pnpm build:dashboard" });
   }
@@ -327,9 +447,13 @@ server.on("error", (err) => {
 });
 
 // WebSocket server
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, path: "/ws" });
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws, req) => {
+  if (!authenticateWebSocketRequest(req)) {
+    ws.close(1008, "Unauthorized");
+    return;
+  }
   wsClients.add(ws);
   logger.info("WebSocket client connected");
 
@@ -349,7 +473,7 @@ wss.on("connection", (ws) => {
   });
 
   // Send initial state
-  broadcast({ type: "daemon_started", timestamp: new Date().toISOString() });
+  ws.send(JSON.stringify({ type: "daemon_started", timestamp: new Date().toISOString() }));
 });
 
 function broadcast(msg: unknown): void {
@@ -373,20 +497,23 @@ async function handleDashboardCommand(msg: { type: string; task_id?: string }): 
     case "retry_dead_letter":
       if (msg.task_id) {
         const taskId = msg.task_id;
-        await updateCronState(wolfDir, (state) => {
-          const taskIdsBefore = state.dead_letter_queue.length;
-          state.dead_letter_queue = state.dead_letter_queue.filter((d) => d.task_id !== taskId);
-          if (state.dead_letter_queue.length === taskIdsBefore) {
-            logger.warn(`Retry requested for missing dead-letter task: ${taskId}`);
-            return;
-          }
-        });
-        if (cronEngine) {
-          await cronEngine.runTask(taskId).catch((err) => {
-            logger.error(`Dead-letter retry failed: ${err}`);
-          });
-        } else {
+        if (!cronEngine) {
           logger.warn(`Dead-letter retry requested while cron engine is stopped: ${taskId}`);
+          return;
+        }
+        const hadEntry = await hasDeadLetterEntry(wolfDir, taskId);
+        if (!hadEntry) {
+          logger.warn(`Retry requested for missing dead-letter task: ${taskId}`);
+          return;
+        }
+        const result = await cronEngine.runTask(taskId).catch((err): TaskRunResult => {
+          logger.error(`Dead-letter retry failed: ${err}`);
+          return "failed";
+        });
+        if (["completed", "retry_scheduled", "dead_lettered"].includes(result)) {
+          await removeDeadLetterEntry(wolfDir, taskId);
+        } else {
+          logger.warn(`Keeping dead-letter entry for ${taskId}; retry outcome was ${result}`);
         }
       }
       break;
@@ -409,7 +536,7 @@ async function handleDashboardCommand(msg: { type: string; task_id?: string }): 
         ];
         for (const file of wolfFiles) {
           try {
-            files[file] = fs.readFileSync(path.join(wolfDir, file), "utf-8");
+            files[file] = readDashboardFile(file);
           } catch {
             files[file] = "";
           }
@@ -430,7 +557,7 @@ if (config.openwolf.cron.enabled) {
 }
 
 // File watcher
-startFileWatcher(wolfDir, logger, broadcast);
+const fileWatcher = startFileWatcher(wolfDir, logger, broadcast);
 
 // Health heartbeat
 const configuredHeartbeatMinutes = Number(config.openwolf.cron.heartbeat_interval_minutes);
@@ -469,6 +596,7 @@ async function shutdown(): Promise<void> {
 
   clearInterval(heartbeatTimer);
   if (cronEngine) cronEngine.stop();
+  await fileWatcher.close().catch((err) => logger.error(`File watcher close failed: ${err}`));
 
   try {
     await updateCronState(wolfDir, (state) => {
