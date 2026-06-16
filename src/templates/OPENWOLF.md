@@ -173,15 +173,24 @@ When the user asks to change, pick, migrate, or "reframe" their project's UI fra
 **Do NOT read the entire reframe-frameworks.md into context upfront.** Read the decision questions and comparison matrix first (~50 lines). Only read the specific framework's prompt section after the user chooses.
 
 
-## Review Completion
 
-When the Stop hook creates a pending review in .wolf/reviewlog.json, do not mark it completed by editing JSON manually. After an independent reviewer approves the work, run:
+## Review Gate Lifecycle
+
+When the Stop hook creates a pending review in `.wolf/reviewlog.json`, do not mark it completed by editing JSON manually. After an independent reviewer approves the current bytes, run:
 
 ```bash
 node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --summary "<outcome>"
 ```
 
-The helper verifies the pending entry's content_hashes still match current files so repeated review nudges can coalesce safely.
+The helper verifies the pending entry's `content_hashes` still match current files so repeated review nudges can coalesce safely. Practical rules:
+
+1. **Review the bytes you will close.** If the independent reviewer finds an issue and you edit a reviewed file, that file now has a new hash; re-review the new bytes before completing the review.
+2. **Pending reviews coalesce on Stop.** If a pending review already exists for the session, the Stop hook unions the file list and refreshes `content_hashes` for currently written files. This is intentional: the next nudge points at the latest bytes.
+3. **A refused close is usually correct.** `reviewed file hashes changed or file set drifted` means the helper detected edits after the pending review was filed. Let the next Stop refresh/coalesce, re-review the current files, then run the helper again.
+4. **Lock errors are transient.** `could not lock reviewlog.json` usually means the Stop hook and helper raced on the same file; rerun the helper after a moment.
+5. **The file list can be broader than the new issue.** Coalescing unions files across the pending review window, and some files may already be covered by prior completed reviews at the same hash. Review the listed current files, but don't assume every listed path is newly suspicious.
+
+Natural cadence: run the independent review; if it is clean, complete immediately. If it finds issues, fix them, allow the next Stop to refresh the pending hash set, re-review, then complete.
 
 ## Session End
 

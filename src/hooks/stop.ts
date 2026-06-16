@@ -742,7 +742,9 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             `and use a suitable reviewer if present; record its provider label in --reviewer.\n` +
             `Iterate until the reviewer gives a production-ready OK, then run:\n` +
             `  node .wolf/hooks/complete-review.js ${nextId} --reviewer <codex|chatgpt|claude|grok|other|manual> --summary "<one-line outcome>"\n` +
-            `Do not edit .wolf/reviewlog.json by hand; the helper verifies content_hashes so future stops can coalesce safely.\n`);
+            `If the review leads to edits, re-review after the next Stop refreshes this pending review's hashes; a hash-drift refusal means the helper protected you from closing unreviewed bytes. ` +
+            `If complete-review reports a lock error, rerun it after a moment. ` +
+            `Do not edit .wolf/reviewlog.json by hand.\n`);
         return true;
     }
     return false;

@@ -32,6 +32,8 @@
 - 2026-06-14: User runs `openwolf init` before every session; if that init command copies from this local custom OpenWolf fork, future sessions/projects initialized that way will receive the fork's current template/runtime behavior.
 - 2026-06-14: CLI payload changes must cover both fresh `openwolf init` and existing-project `openwolf update`; update must copy helper scripts such as `complete-review.js` plus sibling `.wolf/utils/*.js` dependencies, not just hook entrypoints.
 
+- [2026-06-16] After editing TypeScript hook sources, verify and synchronize the compiled/runtime JS copies (`src/hooks/*.js`, `templates/wolf/hooks/*.js`, `.wolf/hooks/*.js`) before claiming the hook behavior changed; the QA falsification for review nudge lifecycle caught a stale JS copy.
+
 ## Decision Log
 
 <!-- Significant technical decisions with rationale. Why X was chosen over Y. -->
