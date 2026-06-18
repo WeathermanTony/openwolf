@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as path from "node:path";
 import { getWolfDir, ensureWolfDir, readJSON, writeJSON, readMarkdown, parseAnatomy, readStdin, normalizePath } from "./shared.js";
 async function main() {

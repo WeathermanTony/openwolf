@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
@@ -799,7 +800,6 @@ const QUALITY_GATE_DEFAULTS = {
     retention_days: 30,
     verify_conclusions: VERIFY_CONCLUSIONS_DEFAULTS,
 };
-
 const AUTONOMY_CONTINUATION_DEFAULTS = {
     enabled: true,
     nudge_only: true,
@@ -1043,7 +1043,6 @@ export function getClaimCalibrationConfig() {
 export function getScientificModeConfig() {
     return getClaimCalibrationConfig();
 }
-
 export function getQualityGateConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.quality_gate : undefined) ?? {};
@@ -1073,7 +1072,6 @@ export function getQualityGateConfig() {
         },
     };
 }
-//# sourceMappingURL=shared.js.map
 /**
  * Normalize a file path for review-log content identity. Resolves to absolute
  * and replaces backslashes with forward slashes so Windows-style paths compare
@@ -1118,3 +1116,4 @@ export function hashFilesAtRest(files) {
     }
     return out;
 }
+//# sourceMappingURL=shared.js.map

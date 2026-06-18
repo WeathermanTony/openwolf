@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
@@ -431,8 +432,49 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const matchedPaths = writtenFiles.filter(f => pathRegexes.some(re => re.test(f)));
     const sizeTrigger = approxLines >= reviewCfg.min_diff_lines;
     const pathTrigger = matchedPaths.length > 0;
-    if (!sizeTrigger && !pathTrigger)
-        return false;
+    if (!sizeTrigger && !pathTrigger) {
+        const reviewLogPath = path.join(wolfDir, "reviewlog.json");
+        const releaseReviewLock = acquireFileLock(reviewLogPath);
+        if (!releaseReviewLock)
+            return false;
+        let refreshNudge = false;
+        try {
+            const reviewLog = readJSON(reviewLogPath, { version: 1, reviews: [] });
+            if (!Array.isArray(reviewLog.reviews))
+                return false;
+            const existingPending = session.session_id
+                ? reviewLog.reviews.find(r => r.session_id === session.session_id && r.status === "pending")
+                : undefined;
+            const pending = existingPending ?? [...reviewLog.reviews].reverse().find(r => r.status === "pending" && Array.isArray(r.files) && r.files.some((file) => writtenFiles.includes(file)));
+            if (!pending)
+                return false;
+            const currentHashes = hashFilesAtRest(writtenFiles);
+            pending.ended = sessionEntry.ended;
+            pending.approx_lines_changed = Math.max(pending.approx_lines_changed ?? 0, approxLines);
+            pending.files = [...new Set([...(pending.files ?? []), ...writtenFiles])];
+            pending.reason = "follow-up edit below review threshold";
+            pending.content_hashes = {
+                ...(pending.content_hashes ?? {}),
+                ...currentHashes,
+            };
+            const sortedEntries = Object.entries(currentHashes).sort(([a], [b]) => a.localeCompare(b));
+            const refreshSig = crypto.createHash("sha256").update(JSON.stringify(sortedEntries)).digest("hex");
+            if (!pending.refresh_history)
+                pending.refresh_history = {};
+            const prevRefreshCount = pending.refresh_history[refreshSig] ?? 0;
+            if (prevRefreshCount === 0) {
+                pending.refresh_history[refreshSig] = 1;
+                refreshNudge = true;
+            }
+            writeJSON(reviewLogPath, reviewLog);
+            if (refreshNudge)
+                process.stderr.write(`🔄 OpenWolf review refresh [${pending.id}]: refreshed pending review hashes for ${Object.keys(currentHashes).length} file(s). Review log: ${reviewLogPath}\n`);
+        }
+        finally {
+            releaseReviewLock();
+        }
+        return refreshNudge;
+    }
     const trigger = sizeTrigger && pathTrigger ? "size+path" : sizeTrigger ? "size" : "path";
     const reasonParts = [];
     if (sizeTrigger)
@@ -453,6 +495,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     let nextId = "";
     let coalescedSilent = false;
     let suppressedByCap = false; // Fix-3: nudge-cap suppression flag
+    let nudgeCountForState = 1;
     try {
         // Re-read AFTER lock acquisition to capture concurrent appends.
         const reviewLog = readJSON(reviewLogPath, { version: 1, reviews: [] });
@@ -672,13 +715,14 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                     if (!entry.nudge_history)
                         entry.nudge_history = {};
                     const prevCount = entry.nudge_history[sig] ?? 0;
+                    nudgeCountForState = Math.min(prevCount + 1, capN);
                     if (prevCount >= capN) {
                         suppressedByCap = true;
                         // Don't increment further — count saturates at cap. Keeps the
                         // value bounded and signals "we've stopped nudging for this state".
                     }
                     else {
-                        entry.nudge_history[sig] = prevCount + 1;
+                        entry.nudge_history[sig] = nudgeCountForState;
                     }
                 }
             }
@@ -724,8 +768,9 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
         const fileList = writtenFiles.slice(0, 3).join(", ");
         const more = writtenFiles.length > 3 ? ` +${writtenFiles.length - 3} more` : "";
         const cmd = redactSecrets(reviewCfg.codex_command);
+        const repeat = nudgeCountForState > 1 ? ` Repeat ${nudgeCountForState}/${Math.max(1, reviewCfg.nudge_cap || 3)} for this exact file-hash state; if a review is already in flight, wait for it or complete it with the helper below. ` : "";
         process.stderr.write(`🔍 OpenWolf review nudge [${nextId}]: ${reason}. ` +
-            `Files: ${fileList}${more}. ` +
+            `Files: ${fileList}${more}.${repeat} ` +
             `Consider an independent review BEFORE you stop — one of these US-based companions ` +
             `(pick one, or run more than one for a panel):\n` +
             `  • Codex (OpenAI):  mkdir /tmp/codex-${nextId} && cp <files> /tmp/codex-${nextId}/ && ` +
@@ -739,8 +784,10 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             `or run /grok:ask review --file <abs-path> for each file.\n` +
             `  • Other installed AI reviewer plugins: inspect available slash commands/subagents ` +
             `and use a suitable reviewer if present; record its provider label in --reviewer.\n` +
+            `If one reviewer hangs for several minutes on a small file, stop it and try a different model family; stale local brokers can wedge silently.\n` +
+            `Review log: ${reviewLogPath}\n` +
             `Iterate until the reviewer gives a production-ready OK, then run:\n` +
-            `  node .wolf/hooks/complete-review.js ${nextId} --reviewer <codex|chatgpt|claude|grok|other|manual> --summary "<one-line outcome>"\n` +
+            `  node ${path.join(wolfDir, "hooks", "complete-review.js")} ${nextId} --reviewer <codex|chatgpt|claude|grok|other|manual> --summary "<one-line outcome>"\n` +
             `If the review leads to edits, re-review after the next Stop refreshes this pending review's hashes; a hash-drift refusal means the helper protected you from closing unreviewed bytes. ` +
             `If complete-review reports a lock error, rerun it after a moment. ` +
             `Do not edit .wolf/reviewlog.json by hand.\n`);
@@ -940,18 +987,43 @@ const EXCLUDE_PATH_FRAGMENTS = [
     ".wolf/", "node_modules/", ".git/", "dist/", "build/",
     "__tests__/", "/test/", "/tests/", "/spec/", "/__mocks__/",
 ];
+const EXCLUDE_PATH_SEGMENT_PATTERNS = [
+    /(^|\/)test\//,
+    /(^|\/)tests\//,
+    /(^|\/)spec\//,
+    /(^|\/)__tests__\//,
+    /(^|\/)__mocks__\//,
+];
+const TEST_FILE_PATTERNS = [
+    /\.(test|spec)\.[^/]+$/,
+    /_test\.go$/,
+    /(^|\/)test_[^/]+\.py$/,
+    /_test\.py$/,
+    /_spec\.rb$/,
+    /_test\.rb$/,
+    /\.test\.rs$/,
+];
+const JAVA_TEST_FILE_PATTERNS = [
+    /(^|\/)Test[^/]*\.java$/,
+    /(^|\/)[^/]*Test\.java$/,
+    /(^|\/)[^/]*Tests\.java$/,
+];
 function isCodeFile(file) {
     const ext = path.extname(file).toLowerCase();
     if (!CODE_EXTENSIONS.has(ext))
         return false;
-    // Test files are excluded — they verify behavior, not assumptions
+    // Test files are excluded — they verify behavior, not assumptions.
+    if (ext === ".java" && JAVA_TEST_FILE_PATTERNS.some(re => re.test(file)))
+        return false;
     const lower = file.toLowerCase();
-    if (/\.(test|spec)\.[^/]+$/.test(lower))
+    if (TEST_FILE_PATTERNS.some(re => re.test(lower)))
         return false;
     for (const frag of EXCLUDE_PATH_FRAGMENTS) {
         if (lower.includes(frag))
             return false;
     }
+    if (EXCLUDE_PATH_SEGMENT_PATTERNS.some(re => re.test(lower)))
+        return false;
     return true;
 }
 function hashFileContent(absPath) {
@@ -963,10 +1035,43 @@ function hashFileContent(absPath) {
         return null;
     }
 }
+function nearestWolfDirForFile(file, fallbackWolfDir) {
+    let dir = path.dirname(path.resolve(file));
+    while (true) {
+        const candidate = path.join(dir, ".wolf");
+        try {
+            if (fs.statSync(candidate).isDirectory())
+                return candidate;
+        }
+        catch { }
+        const parent = path.dirname(dir);
+        if (parent === dir)
+            return fallbackWolfDir;
+        dir = parent;
+    }
+}
+function readQaFrontmatter(file) {
+    try {
+        const fd = fs.openSync(file, "r");
+        try {
+            const buf = Buffer.alloc(8192);
+            const n = fs.readSync(fd, buf, 0, buf.length, 0);
+            const text = buf.toString("utf8", 0, n);
+            const end = text.indexOf("\n---", 4);
+            return end === -1 ? text : text.slice(0, end + 5);
+        }
+        finally {
+            fs.closeSync(fd);
+        }
+    }
+    catch {
+        return "";
+    }
+}
 /**
  * Scan .wolf/qa/*.md files for one whose frontmatter `target-hash` matches the
- * given content hash. We only read the first ~2KB of each candidate to avoid
- * paying full-file cost; the frontmatter lives at the top.
+ * given content hash. Read through the frontmatter (capped at 8 KiB) so multi-file
+ * reductions with several target-hash lines do not silently fall past a 2 KiB head.
  */
 function qaReductionExists(qaDir, _file, contentHash) {
     let names;
@@ -982,21 +1087,9 @@ function qaReductionExists(qaDir, _file, contentHash) {
         if (name.startsWith("_"))
             continue; // _README.md, _template.md
         const full = path.join(qaDir, name);
-        let head = "";
-        try {
-            const fd = fs.openSync(full, "r");
-            try {
-                const buf = Buffer.alloc(2048);
-                const n = fs.readSync(fd, buf, 0, 2048, 0);
-                head = buf.toString("utf8", 0, n);
-            }
-            finally {
-                fs.closeSync(fd);
-            }
-        }
-        catch {
+        const head = readQaFrontmatter(full);
+        if (!head)
             continue;
-        }
         // Match frontmatter line: target-hash: <hex> OR target-hash-<suffix>: <hex>
         // (quotes optional). The suffixed form lets a single reduction cover
         // multiple files (e.g. target-hash-stop-ts, target-hash-shared-ts) since
@@ -1037,14 +1130,20 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
     }
     if (candidates.length === 0)
         return false;
-    const qaDir = path.join(wolfDir, "qa");
-    try {
-        fs.mkdirSync(qaDir, { recursive: true });
-    }
-    catch { }
+    const defaultQaDir = path.join(wolfDir, "qa");
+    const qaDirsByFile = {};
+    const qaDirsScanned = new Set();
     const missing = [];
     const missingHashes = {};
     for (const file of candidates) {
+        const fileWolfDir = nearestWolfDirForFile(file, wolfDir);
+        const qaDir = path.join(fileWolfDir, "qa");
+        qaDirsByFile[file] = qaDir;
+        qaDirsScanned.add(qaDir);
+        try {
+            fs.mkdirSync(qaDir, { recursive: true });
+        }
+        catch { }
         const hash = hashFileContent(file);
         if (!hash)
             continue; // file unreadable — skip silently
@@ -1053,6 +1152,11 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
             missingHashes[file] = hash;
         }
     }
+    const qaDir = defaultQaDir;
+    try {
+        fs.mkdirSync(qaDir, { recursive: true });
+    }
+    catch { }
     const decision = missing.length === 0 ? "ok" : "nudge";
     // Sanitize nudge_cap symmetric with ReviewHookConfig: invalid → 3,
     // ≤0 → disabled (0), positive → floor + hard-cap at 100. Same trap
@@ -1124,6 +1228,7 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
                 type: "file",
                 files_checked: candidates,
                 files_missing_reduction: missing,
+                qa_dirs_scanned: [...qaDirsScanned],
                 missing_sig: missingSig,
                 decision,
                 mode: cfg.nudge_only ? "soft" : "hard",
@@ -1159,8 +1264,10 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
         return false; // hard mode would block, but we don't ship that yet
     const fileList = missing.slice(0, 3).join(", ");
     const more = missing.length > 3 ? ` +${missing.length - 3} more` : "";
+    const qaDirList = [...new Set(missing.map(f => qaDirsByFile[f] ?? defaultQaDir))];
+    const qaDirDisplay = qaDirList.slice(0, 2).join(", ") + (qaDirList.length > 2 ? ` +${qaDirList.length - 2} more` : "");
     process.stderr.write(`🧪 OpenWolf quality gate [${nextId}]: ${missing.length} edited code file(s) ` +
-        `lack a current adversarial reduction in .wolf/qa/. ` +
+        `lack a current adversarial reduction in ${qaDirDisplay}. ` +
         `Files: ${fileList}${more}. ` +
         `Before claiming done, write a reduction (see .wolf/qa/_template.md) that names ` +
         `≥${cfg.min_assumptions} concrete assumptions the code makes and ` +
@@ -1326,6 +1433,15 @@ function claimCalibrationNudgeMessage(id, categories) {
 function isCalibrationLikeType(type) {
     return type === "claim_calibration" || type === "scientific_mode";
 }
+function claimStateSignature(sessionEntry, labels) {
+    const written = [...new Set((sessionEntry.writes ?? []).map(w => w.file))]
+        .filter(file => typeof file === "string" && isCodeFile(file));
+    const entries = written.map(file => [path.resolve(file).replace(/\\/g, "/"), hashFileContent(file) ?? "unreadable"])
+        .sort(([a], [b]) => a.localeCompare(b));
+    if (entries.length === 0)
+        return "";
+    return crypto.createHash("sha256").update(JSON.stringify({ labels: [...labels].sort(), entries })).digest("hex");
+}
 function maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, transcriptPath) {
     const cfg = getClaimCalibrationConfig();
     if (!cfg.enabled || !cfg.nudge_only || !cfg.log_decisions)
@@ -1343,6 +1459,7 @@ function maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, transcriptPa
         return false;
     const normalizedText = last.text.replace(/\s+/g, " ").trim();
     const textHash = crypto.createHash("sha256").update(normalizedText).digest("hex");
+    const claimSig = claimStateSignature(sessionEntry, categories);
     const qaDir = path.join(wolfDir, "qa");
     try {
         fs.mkdirSync(qaDir, { recursive: true });
@@ -1367,9 +1484,9 @@ function maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, transcriptPa
                 sessionCapReached = true;
             }
         }
-        alreadyNudged = gateLog.entries.some((e) => e.decision === "nudge"
-            && e.text_sha256 === textHash
-            && (isCalibrationLikeType(e.type) || e.type === "conclusion"));
+        alreadyNudged = gateLog.entries.some((e) => (isCalibrationLikeType(e.type) || e.type === "conclusion")
+            && (e.decision === "nudge" || e.decision === "covered_by_reduction")
+            && (e.text_sha256 === textHash || (claimSig && e.claim_signature === claimSig)));
         if (!sessionCapReached && !alreadyNudged) {
             let maxN = 0;
             for (const e of gateLog.entries) {
@@ -1390,6 +1507,7 @@ function maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, transcriptPa
                 missing_markers: missingMarkers,
                 text_excerpt: normalizedText.slice(0, 240),
                 text_sha256: textHash,
+                claim_signature: claimSig,
                 decision: "nudge",
                 mode: "soft",
                 trigger: "stop",
@@ -1416,7 +1534,6 @@ function maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, transcriptPa
     process.stderr.write(claimCalibrationNudgeMessage(nextId, categories));
     return true;
 }
-
 function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transcriptPath) {
     const cfg = getQualityGateConfig();
     if (!cfg.enabled)
@@ -1456,8 +1573,6 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
         const base = f.split("/").pop() || "";
         return base.endsWith(".md") && !base.startsWith("_");
     });
-    if (sessionWroteReduction)
-        return false;
     // Same-text idempotence. Hash the assistant text (post-whitespace-normalize
     // so trivial reformatting still collapses to the same hash) and skip the
     // nudge if any prior conclusion entry in the gate-log already recorded the
@@ -1465,6 +1580,7 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
     // every Stop invocation and the autonomy loop never converges.
     const normalizedText = last.text.replace(/\s+/g, " ").trim();
     const textHash = crypto.createHash("sha256").update(normalizedText).digest("hex");
+    const claimSig = claimStateSignature(sessionEntry, matched);
     // Log the conclusion-detector decision
     const gateLogPath = path.join(qaDir, "_gate-log.json");
     try {
@@ -1497,15 +1613,41 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
         }
         // Idempotence check BEFORE assigning a new ID — if we've nudged on this
         // exact text before, return without appending a new entry.
-        alreadyNudged = gateLog.entries.some((e) => e.decision === "nudge"
-            && e.text_sha256 === textHash
-            && (e.type === "conclusion" || isCalibrationLikeType(e.type)));
+        alreadyNudged = gateLog.entries.some((e) => (e.type === "conclusion" || isCalibrationLikeType(e.type))
+            && (e.decision === "nudge" || e.decision === "covered_by_reduction")
+            && (e.text_sha256 === textHash || (claimSig && e.claim_signature === claimSig)));
         if (sessionCapReached) {
             // No-op: cap reached. Don't pollute the log, don't emit a nudge.
         }
         else if (alreadyNudged) {
             // No-op: don't pollute the log with duplicate entries, don't emit a
             // duplicate nudge. The original entry already recorded our decision.
+        }
+        else if (sessionWroteReduction) {
+            let maxCoveredN = 0;
+            for (const e of gateLog.entries) {
+                const m = typeof e.id === "string" ? e.id.match(/^gate-covered-(\d+)$/) : null;
+                if (m) {
+                    const n = parseInt(m[1], 10);
+                    if (n > maxCoveredN)
+                        maxCoveredN = n;
+                }
+            }
+            gateLog.entries.push({
+                id: `gate-covered-${String(maxCoveredN + 1).padStart(5, "0")}`,
+                session_id: session.session_id,
+                ended: sessionEntry.ended,
+                type: "conclusion",
+                patterns_matched: matched,
+                text_excerpt: normalizedText.slice(0, 240),
+                text_sha256: textHash,
+                claim_signature: claimSig,
+                decision: "covered_by_reduction",
+                mode: vc.nudge_only ? "soft" : "hard",
+                trigger: "stop",
+            });
+            writeJSON(gateLogPath, gateLog);
+            alreadyNudged = true;
         }
         else {
             let maxN = 0;
@@ -1527,6 +1669,7 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
                 patterns_matched: matched,
                 text_excerpt: excerpt,
                 text_sha256: textHash,
+                claim_signature: claimSig,
                 decision: "nudge",
                 mode: vc.nudge_only ? "soft" : "hard",
                 trigger: "stop",

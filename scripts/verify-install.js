@@ -146,8 +146,8 @@ async function checkReviewCompletionWorkflow() {
     if (content.includes('mark .wolf/reviewlog.json entry')) {
       failures.push(`${file} still tells assistants to manually complete reviewlog entries`);
     }
-    if (!content.includes('.wolf/hooks/complete-review.js')) {
-      failures.push(`${file} must point review completion to .wolf/hooks/complete-review.js`);
+    if (!content.includes('hooks", "complete-review.js"') && !content.includes('.wolf/hooks/complete-review.js')) {
+      failures.push(`${file} must point review completion to an absolute or project .wolf/hooks/complete-review.js helper path`);
     }
   }
 }

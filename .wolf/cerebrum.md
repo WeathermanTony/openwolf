@@ -33,6 +33,9 @@
 - 2026-06-14: CLI payload changes must cover both fresh `openwolf init` and existing-project `openwolf update`; update must copy helper scripts such as `complete-review.js` plus sibling `.wolf/utils/*.js` dependencies, not just hook entrypoints.
 
 - [2026-06-16] After editing TypeScript hook sources, verify and synchronize the compiled/runtime JS copies (`src/hooks/*.js`, `templates/wolf/hooks/*.js`, `.wolf/hooks/*.js`) before claiming the hook behavior changed; the QA falsification for review nudge lifecycle caught a stale JS copy.
+- [2026-06-17] Review completion supersede must be based on each pending file's current hash being covered by completed reviews, not file-set subset/superset containment; see `.wolf/qa/review-completion-supersede.md`.
+- [2026-06-17] Quality-gate reductions belong to the edited file's nearest `.wolf/qa` in cross-project sessions, and language-specific test files such as `_test.go` / `test_*.py` should not become source reduction obligations; see `.wolf/qa/quality-gate-cross-project.md`.
+- [2026-06-17] When a falsifier crosses a process/shell/network/file/tool boundary, test the receiving context rather than grepping producer source; presence is not correctness. See `.wolf/qa/qa-template-receiving-context.md`.
 
 ## Decision Log
 

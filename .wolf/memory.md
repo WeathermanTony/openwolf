@@ -4,67 +4,7 @@
 > Old sessions are consolidated by the daemon weekly.
 
 ## Session: 2026-06-08 18:59
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 19:01 | Assessed current OpenWolf installation packaging/git readiness | `.wolf/anatomy.md`, `.wolf/identity.md`, `.wolf/config.json`, `.claude/settings.json` | Found no git repo, no package manifest, no explicit version file; updated anatomy for tracked OpenWolf files | ~4k |
-| 19:06 | Created ../../../../../home/tony/.claude/plans/silly-herding-cake.md | — | ~1600 |
-| 19:07 | Created .gitignore | — | ~164 |
-| 19:07 | Created VERSION | — | ~4 |
-| 19:07 | Created .editorconfig | — | ~51 |
-| 19:07 | Created package.json | — | ~102 |
-| 19:07 | Created README.md | — | ~363 |
-| 19:08 | Created scripts/verify-install.js | — | ~1148 |
-| 19:09 | Edited scripts/verify-install.js | modified checkGitIgnored() | ~134 |
-| 19:10 | Bootstrapped custom OpenWolf fork layout and verification | `.gitignore`, `README.md`, `VERSION`, `package.json`, `src/`, `templates/`, `scripts/verify-install.js`, `.wolf/buglog.json`, `.wolf/cerebrum.md`, `.wolf/anatomy.md` | Added git-trackable baseline, source/template split, verification script, QA reduction, and buglog entry for fixed ignore-check issue | ~8k |
-| 19:11 | Session end: 10 writes across 9 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 8 reads | ~6152 tok |
-| 19:14 | Edited .gitignore | 3→6 lines | ~31 |
-| 19:14 | Edited scripts/verify-install.js | expanded (+12 lines) | ~310 |
-| 19:14 | Edited scripts/verify-install.js | reduced (-12 lines) | ~73 |
-| 19:14 | Edited scripts/verify-install.js | 3→6 lines | ~52 |
-| 19:14 | Edited scripts/verify-install.js | modified for() | ~17 |
-| 19:16 | Session end: 17 writes across 9 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~6624 tok |
-| 19:18 | Edited scripts/verify-install.js | added 2 condition(s) | ~392 |
-| 19:19 | Session end: 20 writes across 9 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~8339 tok |
-| 19:22 | Edited .gitignore | 4→6 lines | ~23 |
-| 19:22 | Edited scripts/verify-install.js | expanded (+11 lines) | ~201 |
-| 19:24 | Session end: 24 writes across 9 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~11608 tok |
-| 19:26 | Edited scripts/verify-install.js | 4→7 lines | ~43 |
-| 19:26 | Edited scripts/verify-install.js | 3→4 lines | ~30 |
-| 19:26 | Edited scripts/verify-install.js | 3→4 lines | ~26 |
-| 19:26 | Edited scripts/verify-install.js | 3→4 lines | ~22 |
-| 19:26 | Edited scripts/verify-install.js | added 1 condition(s) | ~122 |
-| 19:26 | Edited scripts/verify-install.js | 3→5 lines | ~39 |
-| 19:26 | Edited scripts/verify-install.js | 3→6 lines | ~38 |
-| 19:26 | Edited scripts/verify-install.js | 3→4 lines | ~32 |
-| 19:26 | Edited scripts/verify-install.js | modified for() | ~64 |
-| 19:28 | Session end: 35 writes across 9 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~14119 tok |
-| 19:30 | Edited .gitignore | 5→9 lines | ~55 |
-| 19:30 | Edited .gitignore | 5→9 lines | ~51 |
-| 19:30 | Edited scripts/verify-install.js | 3→6 lines | ~52 |
-| 19:32 | Session end: 40 writes across 9 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~16487 tok |
-| 19:38 | Created templates/wolf/memory.md | — | ~70 |
-| 19:38 | Edited .gitignore | 5→6 lines | ~27 |
-| 19:38 | Edited scripts/verify-install.js | 3→4 lines | ~27 |
-| 19:39 | Edited scripts/verify-install.js | 3→7 lines | ~62 |
-| 19:39 | Edited scripts/verify-install.js | 2→3 lines | ~20 |
-| 19:39 | Edited scripts/verify-install.js | 3→7 lines | ~58 |
-| 19:39 | Edited scripts/verify-install.js | 3→4 lines | ~35 |
-| 19:41 | Session end: 49 writes across 10 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~19661 tok |
-| 19:43 | Session end: 49 writes across 10 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~19661 tok |
-| 19:56 | Diagnosed daemon start warning | `pm2 status`, `openwolf daemon start`, `.wolf/daemon.log`, `.wolf/buglog.json` | Found `openwolf-customopenwolf` already online; start failed only because pm2 reports already launched | ~4k |
-| 19:57 | Session end: 49 writes across 10 files (silly-herding-cake.md, .gitignore, VERSION, .editorconfig, package.json) | 9 reads | ~19661 tok |
-| 14:25 | fixed review completion workflow | src/.wolf/templates hooks, docs, tests, verifier | added complete-review helper; content_hash verification tests passed | ~8k |
-| 14:45 | final hardening review pass | complete-review.js; size-discipline.js; review-completion.test.js | fixed stale-hash completion risk, bounded lock retry, Node 18 test path; final ChatGPT review production-ready OK | ~6k |
-| 16:03 | Session end: 12 writes across 5 files (review-hook-loop-advice.md, silly-herding-cake.md, review-completion.test.js, review-completion-helper.md, size-discipline.js) | 12 reads | ~89358 tok |
-| 16:05 | Edited src/utils/size-discipline.js | modified if() | ~184 |
-| 16:05 | Edited templates/wolf/utils/size-discipline.js | modified if() | ~184 |
-| 16:07 | Edited src/utils/size-discipline.js | added error handling | ~200 |
-| 16:07 | Edited src/utils/size-discipline.js | added error handling | ~170 |
-| 16:08 | Edited templates/wolf/utils/size-discipline.js | added error handling | ~200 |
-| 16:08 | Edited templates/wolf/utils/size-discipline.js | added error handling | ~170 |
-| 16:11 | Session end: 19 writes across 6 files (review-hook-loop-advice.md, silly-herding-cake.md, review-completion.test.js, review-completion-helper.md, size-discipline.js) | 12 reads | ~91524 tok |
-| 16:11 | Session end: 19 writes across 6 files (review-hook-loop-advice.md, silly-herding-cake.md, review-completion.test.js, review-completion-helper.md, size-discipline.js) | 12 reads | ~91524 tok |
+> Consolidated session (0 actions)
 
 ## Session: 2026-06-13 17:32
 
@@ -147,3 +87,54 @@
 | 23:49 | Edited src/cli/update.ts | added 2 condition(s) | ~311 |
 | 23:54 | Fixed update payload for review completion helper | `src/cli/update.ts`, `.wolf/qa/update-installs-review-helper.md`, `.wolf/buglog.json`, `.wolf/cerebrum.md` | `openwolf update` now copies `complete-review.js` and `.wolf/utils/*.js`; build/test/verify and registered fixture update passed | ~7k |
 | 23:57 | Edited src/cli/update.ts | 13→14 lines | ~149 |
+| 19:34 | Session end: 2 writes across 2 files (stop.ts, review-nudge-lifecycle.md) | 5 reads | ~51573 tok |
+| 19:37 | Fixed below-threshold pending review refresh | stop hook copies, QA, buglog | ChatGPT found lifecycle blocker; pending reviews now refresh hashes before trigger early-return | ~3500 |
+| 19:39 | Session end: 2 writes across 2 files (stop.ts, review-nudge-lifecycle.md) | 5 reads | ~30833 tok |
+| 11:20 | Edited src/hooks/stop.ts | 2→1 lines | ~14 |
+
+## Session: 2026-06-17 11:27
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 11:27 | Edited src/hooks/complete-review.ts | modified markSupersededPendingReviews() | ~472 |
+| 11:27 | Edited src/hooks/complete-review.ts | 2→2 lines | ~21 |
+| 11:29 | Edited src/hooks/complete-review.ts | added optional chaining | ~71 |
+| 11:30 | Edited src/hooks/complete-review.ts | inline fix | ~36 |
+| 11:30 | Edited src/hooks/complete-review.ts | resolve() → normalizeFilePath() | ~18 |
+| 11:33 | Edited src/hooks/stop.ts | 2→3 lines | ~86 |
+| 11:34 | Edited scripts/verify-install.js | 4→4 lines | ~72 |
+| 11:38 | fixed external OpenWolf review/quality-gate feedback | src/hooks/stop.ts; src/hooks/complete-review.ts; scripts/verify-install.js; .wolf/qa/*.md | added conservative pending-review supersede, absolute review helper paths, per-file QA dirs, test exclusions, 8KiB frontmatter; build/verify passed | ~20k |
+| 11:41 | Edited src/hooks/stop.ts | expanded (+7 lines) | ~159 |
+| 11:41 | Edited src/hooks/stop.ts | added 1 condition(s) | ~63 |
+| 11:42 | Edited src/hooks/stop.ts | added 1 condition(s) | ~168 |
+| 11:47 | Session end: 22 writes across 7 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 6 reads | ~48145 tok |
+| 11:47 | Session end: 22 writes across 7 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 6 reads | ~48145 tok |
+| 23:47 | Edited src/hooks/complete-review.ts | modified if() | ~282 |
+| 23:47 | Edited src/hooks/stop.ts | 4→5 lines | ~45 |
+| 23:47 | Edited src/hooks/stop.ts | modified if() | ~159 |
+| 23:48 | Edited src/hooks/stop.ts | 3→4 lines | ~137 |
+| 23:48 | Edited src/templates/qa/_template.md | 1→3 lines | ~143 |
+| 23:48 | Edited templates/wolf/qa/_template.md | 1→3 lines | ~143 |
+| 23:49 | Edited src/hooks/stop.ts | 7→8 lines | ~99 |
+| 23:50 | Edited src/hooks/stop.ts | 3→4 lines | ~116 |
+| 23:53 | applied new OpenWolf feedback | src/hooks/stop.ts; src/hooks/complete-review.ts; qa templates | added repeat nudge signal, hash-refresh output, drift hash details, receiver-context QA template guidance; verify passed | ~12k |
+| 23:56 | Edited src/hooks/complete-review.ts | modified markSupersededPendingReviews() | ~343 |
+| 23:56 | Edited src/hooks/stop.ts | modified if() | ~80 |
+| 23:56 | Edited src/hooks/stop.ts | added nullish coalescing | ~272 |
+| 00:00 | Edited src/hooks/stop.ts | added nullish coalescing | ~128 |
+| 00:00 | Edited src/hooks/stop.ts | modified if() | ~359 |
+| 00:03 | fixed independent review blockers | src/hooks/stop.ts; src/hooks/complete-review.ts | cross-session refresh fallback and single-review supersede criterion added; build/test/verify and re-review OK | ~10k |
+| 00:03 | Session end: 46 writes across 9 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 8 reads | ~52736 tok |
+| 00:05 | Session end: 46 writes across 9 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 8 reads | ~52736 tok |
+| 13:32 | Session end: 46 writes across 9 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 8 reads | ~52584 tok |
+| 13:43 | Edited src/hooks/stop.ts | 5→4 lines | ~64 |
+| 13:44 | Edited src/hooks/stop.ts | added 1 condition(s) | ~97 |
+| 13:44 | Edited src/hooks/stop.ts | inline fix | ~14 |
+| 13:44 | Edited src/hooks/stop.ts | added 2 condition(s) | ~163 |
+| 13:47 | implemented OpenWolf feedback priority fixes | src/hooks/complete-review.ts; src/hooks/stop.ts | distinct complete-review exit codes and claim-signature suppression added; build/test/verify passed | ~9k |
+| 13:48 | Session end: 55 writes across 11 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 8 reads | ~55037 tok |
+| 13:49 | Session end: 55 writes across 11 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 8 reads | ~55037 tok |
+| 14:13 | Session end: 55 writes across 11 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 8 reads | ~55037 tok |
+| 14:13 | Session end: 55 writes across 11 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 8 reads | ~55037 tok |
+| 14:14 | Session end: 55 writes across 11 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 8 reads | ~55037 tok |
+| 14:14 | Session end: 55 writes across 11 files (complete-review.ts, stop.ts, verify-install.js, review-completion-supersede.md, review-nudge-lifecycle.md) | 8 reads | ~55037 tok |

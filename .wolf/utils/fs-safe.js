@@ -10,7 +10,7 @@ export function readJSON(filePath, fallback) {
         return fallback;
     }
 }
-export function writeJSON(filePath, data) {
+export function tryWriteJSON(filePath, data) {
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -19,19 +19,25 @@ export function writeJSON(filePath, data) {
     try {
         fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf-8");
         fs.renameSync(tmp, filePath);
+        return true;
     }
     catch {
         // On Windows, rename can fail if another process holds a handle.
         // Fall back to direct write and clean up the tmp file.
         try {
             fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+            return true;
         }
         catch { }
         try {
             fs.unlinkSync(tmp);
         }
         catch { }
+        return false;
     }
+}
+export function writeJSON(filePath, data) {
+    void tryWriteJSON(filePath, data);
 }
 export function readText(filePath, fallback = "") {
     try {
@@ -41,7 +47,7 @@ export function readText(filePath, fallback = "") {
         return fallback;
     }
 }
-export function writeText(filePath, content) {
+export function tryWriteText(filePath, content) {
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -50,19 +56,25 @@ export function writeText(filePath, content) {
     try {
         fs.writeFileSync(tmp, content, "utf-8");
         fs.renameSync(tmp, filePath);
+        return true;
     }
     catch {
         // On Windows, rename can fail if another process holds a handle.
         // Fall back to direct write and clean up the tmp file.
         try {
             fs.writeFileSync(filePath, content, "utf-8");
+            return true;
         }
         catch { }
         try {
             fs.unlinkSync(tmp);
         }
         catch { }
+        return false;
     }
+}
+export function writeText(filePath, content) {
+    void tryWriteText(filePath, content);
 }
 export function appendText(filePath, content) {
     const dir = path.dirname(filePath);

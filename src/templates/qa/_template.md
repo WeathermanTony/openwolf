@@ -26,6 +26,8 @@ Which one would silently break the most things if it were wrong? Why is that one
 
 A small, **runnable** test designed to *try to break* the riskiest assumption — not to confirm the happy path. Adversarial inputs preferred (boundary cases, empty/oversized, malformed, concurrent, etc.).
 
+If the value crosses a process, shell, network, file, or tool boundary, run the falsifier in the **receiving context**, not just against the source text. Presence is not correctness: `grep` can prove a string exists while missing that the shell, child process, browser, daemon, or remote API receives an empty or different value.
+
 ```bash
 # command(s) to run the test
 ```

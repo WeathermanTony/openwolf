@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { getWolfDir, ensureWolfDir, writeJSON, appendMarkdown, readJSON, timestamp, timeShort } from "./shared.js";
