@@ -170,6 +170,12 @@
         "\\b(?:if you want|let me know|when you(?:'re| are) ready)\\b",
         "\\b(?:waiting for|awaiting) (?:your|user)\\b"
       ]
+    },
+    "hook_messages": {
+      "verbosity": "compact",
+      "max_files": 3,
+      "include_provider_examples": false,
+      "include_docs_hint": true
     }
   }
 }

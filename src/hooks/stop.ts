@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getClaimCalibrationConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getClaimCalibrationConfig, getHookMessageConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 // Per-session firing cap shared by the buglog-missing and cerebrum-freshness
 // stderr nudges. They have no per-state hash to dedup against (unlike the
@@ -30,6 +30,39 @@ const STOP_NUDGE_PER_SESSION_CAP = 3;
  * silently rather than nudge without a log entry" behavior; the slot is
  * effectively given to whoever wins the next contention.
  */
+
+function compactList(items, max = 3) {
+    const shown = items.slice(0, max).join(", ");
+    const more = items.length > max ? ` +${items.length - max} more` : "";
+    return shown ? `${shown}${more}` : "none";
+}
+function isVerboseHookMessages(cfg) {
+    return cfg.verbosity === "verbose" || cfg.include_provider_examples === true;
+}
+function formatReviewNudge({ id, reason, files, repeat, reviewLogPath, completeCommand, codexCommand, wolfDir }, msgCfg) {
+    const fileList = compactList(files, msgCfg.max_files);
+    const repeatText = repeat ? ` Repeat ${repeat}.` : "";
+    const base = `OpenWolf review [${id}]: ${reason}. Files: ${fileList}.${repeatText}\n`;
+    if (isVerboseHookMessages(msgCfg)) {
+        return base +
+            `Action: run an independent reviewer before stopping, then complete: ${completeCommand}\n` +
+            `Review log: ${reviewLogPath}\n` +
+            `Reviewers: Codex (${codexCommand}), ChatGPT/Claude/Grok rescue agents, or another installed reviewer. If one hangs, try another model family. Re-review after edits/refresh; do not edit reviewlog by hand.\n`;
+    }
+    const hint = msgCfg.verbosity === "standard" ? " Use any installed reviewer/subagent; if one hangs, try another model family." : "";
+    return base + `Action: run an independent reviewer, then complete: ${completeCommand}.${hint}\n`;
+}
+function formatQualityNudge({ id, count, qaDirDisplay, files, minAssumptions, requireRunOutput }, msgCfg) {
+    const fileList = compactList(files, msgCfg.max_files);
+    const output = requireRunOutput ? "actual falsification output" : "why each assumption holds";
+    return `OpenWolf quality [${id}]: ${count} edited code file(s) lack current adversarial reduction in ${qaDirDisplay}. Files: ${fileList}.\n` +
+        `Action: add .wolf/qa reduction with ≥${minAssumptions} assumptions and ${output} before claiming done.\n`;
+}
+function formatConclusionNudge({ id, matchedCount, minAssumptions }, _msgCfg) {
+    return `OpenWolf conclusion [${id}]: last turn matched ${matchedCount} conclusion pattern(s).\n` +
+        `Action: add .wolf/qa reduction with ≥${minAssumptions} assumptions, riskiest falsifier, and actual output before finalizing.\n`;
+}
+
 function exitAfterStderrFlush(code) {
     if (!process.stderr.writableNeedDrain)
         process.exit(code);
@@ -765,32 +798,20 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     // suitable installed reviewer plugin when present. The assistant picks one
     // (or runs multiple for independent takes) and iterates until production-ready.
     if (reviewCfg.nudge_only) {
-        const fileList = writtenFiles.slice(0, 3).join(", ");
-        const more = writtenFiles.length > 3 ? ` +${writtenFiles.length - 3} more` : "";
+        const msgCfg = getHookMessageConfig();
         const cmd = redactSecrets(reviewCfg.codex_command);
-        const repeat = nudgeCountForState > 1 ? ` Repeat ${nudgeCountForState}/${Math.max(1, reviewCfg.nudge_cap || 3)} for this exact file-hash state; if a review is already in flight, wait for it or complete it with the helper below. ` : "";
-        process.stderr.write(`🔍 OpenWolf review nudge [${nextId}]: ${reason}. ` +
-            `Files: ${fileList}${more}.${repeat} ` +
-            `Consider an independent review BEFORE you stop — one of these US-based companions ` +
-            `(pick one, or run more than one for a panel):\n` +
-            `  • Codex (OpenAI):  mkdir /tmp/codex-${nextId} && cp <files> /tmp/codex-${nextId}/ && ` +
-            `cd /tmp/codex-${nextId} && ${cmd} -o /tmp/codex_${nextId}.txt ` +
-            `"Are there critical flaws or things I overlooked in ./<file> that are important to the code intent?"\n` +
-            `  • ChatGPT (OpenAI):  Use Agent tool with subagent_type "chatgpt:chatgpt-rescue" ` +
-            `or run /chatgpt:ask review --file <abs-path> for each file.\n` +
-            `  • Claude (Anthropic, claude.ai subscription):  Use Agent tool with subagent_type "claude:claude-rescue" ` +
-            `or run /claude:ask review --file <abs-path> for each file.\n` +
-            `  • Grok (xAI):  Use Agent tool with subagent_type "grok:grok-rescue" ` +
-            `or run /grok:ask review --file <abs-path> for each file.\n` +
-            `  • Other installed AI reviewer plugins: inspect available slash commands/subagents ` +
-            `and use a suitable reviewer if present; record its provider label in --reviewer.\n` +
-            `If one reviewer hangs for several minutes on a small file, stop it and try a different model family; stale local brokers can wedge silently.\n` +
-            `Review log: ${reviewLogPath}\n` +
-            `Iterate until the reviewer gives a production-ready OK, then run:\n` +
-            `  node ${path.join(wolfDir, "hooks", "complete-review.js")} ${nextId} --reviewer <codex|chatgpt|claude|grok|other|manual> --summary "<one-line outcome>"\n` +
-            `If the review leads to edits, re-review after the next Stop refreshes this pending review's hashes; a hash-drift refusal means the helper protected you from closing unreviewed bytes. ` +
-            `If complete-review reports a lock error, rerun it after a moment. ` +
-            `Do not edit .wolf/reviewlog.json by hand.\n`);
+        const repeat = nudgeCountForState > 1 ? `${nudgeCountForState}/${Math.max(1, reviewCfg.nudge_cap || 3)} for same file state` : "";
+        const completeCommand = `node ${path.join(wolfDir, "hooks", "complete-review.js")} ${nextId} --reviewer <name> --summary "<outcome>"`;
+        process.stderr.write(formatReviewNudge({
+            id: nextId,
+            reason,
+            files: writtenFiles,
+            repeat,
+            reviewLogPath,
+            completeCommand,
+            codexCommand: cmd,
+            wolfDir,
+        }, msgCfg));
         return true;
     }
     return false;
@@ -1262,16 +1283,16 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
         return false;
     if (!cfg.nudge_only)
         return false; // hard mode would block, but we don't ship that yet
-    const fileList = missing.slice(0, 3).join(", ");
-    const more = missing.length > 3 ? ` +${missing.length - 3} more` : "";
     const qaDirList = [...new Set(missing.map(f => qaDirsByFile[f] ?? defaultQaDir))];
-    const qaDirDisplay = qaDirList.slice(0, 2).join(", ") + (qaDirList.length > 2 ? ` +${qaDirList.length - 2} more` : "");
-    process.stderr.write(`🧪 OpenWolf quality gate [${nextId}]: ${missing.length} edited code file(s) ` +
-        `lack a current adversarial reduction in ${qaDirDisplay}. ` +
-        `Files: ${fileList}${more}. ` +
-        `Before claiming done, write a reduction (see .wolf/qa/_template.md) that names ` +
-        `≥${cfg.min_assumptions} concrete assumptions the code makes and ` +
-        `${cfg.require_run_output ? "shows a run that falsifies the riskiest one" : "explains why each holds"}.\n`);
+    const qaDirDisplay = compactList(qaDirList, 2);
+    process.stderr.write(formatQualityNudge({
+        id: nextId,
+        count: missing.length,
+        qaDirDisplay,
+        files: missing,
+        minAssumptions: cfg.min_assumptions,
+        requireRunOutput: cfg.require_run_output,
+    }, getHookMessageConfig()));
     return true;
 }
 /**
@@ -1284,7 +1305,7 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
  * Returns true iff a nudge was emitted (caller uses this to set exit code 2).
  */
 function autonomyContinuationMessage() {
-    return "OpenWolf autonomy reminder: if you know the next step with confidence and it needs no user decision, perform it now without asking or waiting. Do not stop merely to summarize or ask whether to continue.\n";
+    return "OpenWolf autonomy: if the next step is clear and needs no user decision, do it now; do not stop only to summarize or ask to continue.\n";
 }
 function maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, transcriptPath) {
     const cfg = getAutonomyContinuationConfig();
@@ -1686,12 +1707,11 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
         return false;
     if (!vc.nudge_only)
         return true; // hard-mode would block; not shipped yet
-    process.stderr.write(`🧪 OpenWolf conclusion gate [${nextId}]: the assistant's last turn matched ` +
-        `${matched.length} conclusion patterns. Before treating the conclusion as final, ` +
-        `write an adversarial reduction in .wolf/qa/ that (a) names ≥${cfg.min_assumptions} ` +
-        `concrete assumptions the conclusion depends on, (b) picks the riskiest, (c) runs ` +
-        `a test designed to falsify it, (d) pastes the actual output. Every conclusion gets ` +
-        `tested twice — the original work and the falsification pass.\n`);
+    process.stderr.write(formatConclusionNudge({
+        id: nextId,
+        matchedCount: matched.length,
+        minAssumptions: cfg.min_assumptions,
+    }, getHookMessageConfig()));
     return true;
 }
 main().catch(() => exitAfterStderrFlush(0));

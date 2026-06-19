@@ -228,11 +228,11 @@ test('stop hook nudges autonomy continuation on obvious next-step language', asy
 
     const first = runStopHook(dir, transcript, 'sess-autonomy');
     assert.equal(first.status, 2, first.stderr);
-    assert.match(first.stderr, /OpenWolf autonomy reminder/);
+    assert.match(first.stderr, /OpenWolf autonomy:/);
 
     const second = runStopHook(dir, transcript, 'sess-autonomy');
     assert.equal(second.status, 0, second.stderr);
-    assert.doesNotMatch(second.stderr, /OpenWolf autonomy reminder/);
+    assert.doesNotMatch(second.stderr, /OpenWolf autonomy:/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

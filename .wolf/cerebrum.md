@@ -36,6 +36,7 @@
 - [2026-06-17] Review completion supersede must be based on each pending file's current hash being covered by completed reviews, not file-set subset/superset containment; see `.wolf/qa/review-completion-supersede.md`.
 - [2026-06-17] Quality-gate reductions belong to the edited file's nearest `.wolf/qa` in cross-project sessions, and language-specific test files such as `_test.go` / `test_*.py` should not become source reduction obligations; see `.wolf/qa/quality-gate-cross-project.md`.
 - [2026-06-17] When a falsifier crosses a process/shell/network/file/tool boundary, test the receiving context rather than grepping producer source; presence is not correctness. See `.wolf/qa/qa-template-receiving-context.md`.
+- [2026-06-19] To verify whether another project has the latest OpenWolf fork, check both the global `openwolf` symlink target and that the project `.wolf/hooks/stop.js` / `complete-review.js` contain the expected new markers (absolute review paths, review refresh message, claim_signature suppression, and complete-review EXIT_* codes); metatrader-indicators had the latest hook payload live while customopenwolf was at commit 1a686b7.
 
 ## Decision Log
 

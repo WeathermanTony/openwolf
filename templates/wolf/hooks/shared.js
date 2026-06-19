@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
@@ -799,7 +800,12 @@ const QUALITY_GATE_DEFAULTS = {
     retention_days: 30,
     verify_conclusions: VERIFY_CONCLUSIONS_DEFAULTS,
 };
-
+const HOOK_MESSAGE_DEFAULTS = {
+    verbosity: "compact",
+    max_files: 3,
+    include_provider_examples: false,
+    include_docs_hint: true,
+};
 const AUTONOMY_CONTINUATION_DEFAULTS = {
     enabled: true,
     nudge_only: true,
@@ -980,6 +986,17 @@ export function readLastAssistantText(transcriptPath, maxBytes = 256 * 1024) {
         return null;
     }
 }
+export function getHookMessageConfig() {
+    const root = loadConfig();
+    const cfg = (root && typeof root === "object" ? root.openwolf?.hook_messages : undefined) ?? {};
+    const verbosity = ["compact", "standard", "verbose"].includes(cfg.verbosity) ? cfg.verbosity : HOOK_MESSAGE_DEFAULTS.verbosity;
+    return {
+        verbosity,
+        max_files: finiteNumber(cfg.max_files, HOOK_MESSAGE_DEFAULTS.max_files, { min: 1, max: 20 }),
+        include_provider_examples: cfg.include_provider_examples ?? HOOK_MESSAGE_DEFAULTS.include_provider_examples,
+        include_docs_hint: cfg.include_docs_hint ?? HOOK_MESSAGE_DEFAULTS.include_docs_hint,
+    };
+}
 export function getReviewHookConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.review_hook : undefined) ?? {};
@@ -1043,7 +1060,6 @@ export function getClaimCalibrationConfig() {
 export function getScientificModeConfig() {
     return getClaimCalibrationConfig();
 }
-
 export function getQualityGateConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.quality_gate : undefined) ?? {};
@@ -1073,7 +1089,6 @@ export function getQualityGateConfig() {
         },
     };
 }
-//# sourceMappingURL=shared.js.map
 /**
  * Normalize a file path for review-log content identity. Resolves to absolute
  * and replaces backslashes with forward slashes so Windows-style paths compare
@@ -1118,3 +1133,4 @@ export function hashFilesAtRest(files) {
     }
     return out;
 }
+//# sourceMappingURL=shared.js.map

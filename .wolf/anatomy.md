@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-18T17:44:34.082Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T16:00:03.586Z
 > Files: 142 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -52,7 +52,7 @@
 
 ## src/config/
 
-- `default-config.json` (~1251 tok)
+- `default-config.json` (~1296 tok)
 
 ## src/daemon/
 
@@ -118,8 +118,8 @@
 
 ## src/hooks/
 
-- `complete-review.js` — @ts-nocheck (~1767 tok)
-- `complete-review.ts` — @ts-nocheck (~1758 tok)
+- `complete-review.js` — @ts-nocheck (~1861 tok)
+- `complete-review.ts` — @ts-nocheck (~1852 tok)
 - `post-read.js` — Declares main (~799 tok)
 - `post-read.ts` — @ts-nocheck (~793 tok)
 - `post-write.js` — Declares main (~9825 tok)
@@ -130,10 +130,10 @@
 - `pre-write.ts` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2245 tok)
 - `session-start.js` — Declares main (~1006 tok)
 - `session-start.ts` — @ts-nocheck (~998 tok)
-- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15020 tok)
-- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15014 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22183 tok)
-- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~22738 tok)
+- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15253 tok)
+- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15245 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22580 tok)
+- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~22572 tok)
 
 ## src/scanner/
 
@@ -148,7 +148,7 @@
 - `cerebrum.md` — Cerebrum (~930 tok)
 - `claude-md-snippet.md` — OpenWolf (~57 tok)
 - `claude-rules-openwolf.md` (~371 tok)
-- `config.json` (~1251 tok)
+- `config.json` (~1296 tok)
 - `cron-manifest.json` (~927 tok)
 - `cron-state.json` (~511 tok)
 - `designqc-report.json` (~26 tok)
@@ -199,7 +199,7 @@
 
 - `anatomy.md` — anatomy.md (~501 tok)
 - `cerebrum.md` — Cerebrum (~156 tok)
-- `config.json` (~1251 tok)
+- `config.json` (~1296 tok)
 - `identity.md` — Identity (~89 tok)
 - `memory.md` — Memory (~65 tok)
 - `OPENWOLF.md` — OpenWolf Operating Protocol (~3134 tok)
@@ -207,15 +207,15 @@
 
 ## templates/wolf/hooks/
 
-- `complete-review.js` — @ts-nocheck (~1767 tok)
+- `complete-review.js` — @ts-nocheck (~1861 tok)
 - `package.json` — Node.js package manifest (~7 tok)
 - `post-read.js` — Declares main (~799 tok)
 - `post-write.js` — Declares main (~9825 tok)
 - `pre-read.js` — Declares main (~914 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
 - `session-start.js` — Declares main (~1006 tok)
-- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15020 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22183 tok)
+- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15253 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22580 tok)
 
 ## templates/wolf/qa/
 
@@ -233,4 +233,4 @@
 
 ## tests/
 
-- `review-completion.test.js` — Exports feature (~3247 tok)
+- `review-completion.test.js` — Exports feature (~3242 tok)

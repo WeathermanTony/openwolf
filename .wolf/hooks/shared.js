@@ -800,6 +800,12 @@ const QUALITY_GATE_DEFAULTS = {
     retention_days: 30,
     verify_conclusions: VERIFY_CONCLUSIONS_DEFAULTS,
 };
+const HOOK_MESSAGE_DEFAULTS = {
+    verbosity: "compact",
+    max_files: 3,
+    include_provider_examples: false,
+    include_docs_hint: true,
+};
 const AUTONOMY_CONTINUATION_DEFAULTS = {
     enabled: true,
     nudge_only: true,
@@ -979,6 +985,17 @@ export function readLastAssistantText(transcriptPath, maxBytes = 256 * 1024) {
     catch {
         return null;
     }
+}
+export function getHookMessageConfig() {
+    const root = loadConfig();
+    const cfg = (root && typeof root === "object" ? root.openwolf?.hook_messages : undefined) ?? {};
+    const verbosity = ["compact", "standard", "verbose"].includes(cfg.verbosity) ? cfg.verbosity : HOOK_MESSAGE_DEFAULTS.verbosity;
+    return {
+        verbosity,
+        max_files: finiteNumber(cfg.max_files, HOOK_MESSAGE_DEFAULTS.max_files, { min: 1, max: 20 }),
+        include_provider_examples: cfg.include_provider_examples ?? HOOK_MESSAGE_DEFAULTS.include_provider_examples,
+        include_docs_hint: cfg.include_docs_hint ?? HOOK_MESSAGE_DEFAULTS.include_docs_hint,
+    };
 }
 export function getReviewHookConfig() {
     const root = loadConfig();
