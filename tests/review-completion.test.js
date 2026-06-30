@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const helper = path.join(repoRoot, 'src/hooks/complete-review.js');
 const stopHook = path.join(repoRoot, 'src/hooks/stop.js');
+const stopHookSource = path.join(repoRoot, 'src/hooks/stop.ts');
 
 async function fixture() {
   const dir = await mkdtemp(path.join(tmpdir(), 'ow-review-complete-'));
@@ -51,6 +52,21 @@ function runStopHook(dir, transcriptPath, sessionId = 'sess-test') {
     input: JSON.stringify({ session_id: sessionId, transcript_path: transcriptPath }),
     encoding: 'utf8',
   });
+}
+
+async function assertStopSourceAndRuntimeContract() {
+  const [source, runtime] = await Promise.all([
+    readFile(stopHookSource, 'utf8'),
+    readFile(stopHook, 'utf8'),
+  ]);
+  for (const text of [source, runtime]) {
+    assert.match(text, /hookSpecificOutput/);
+    assert.match(text, /additionalContext/);
+    assert.match(text, /out\.decision\s*=\s*"block"/);
+    assert.match(text, /out\.reason\s*=\s*"OpenWolf feedback"/);
+    assert.doesNotMatch(text, /out\.reason\s*=\s*additionalContext/);
+    assert.doesNotMatch(text, /process\.stderr\.write\(/);
+  }
 }
 
 test('complete-review completes pending review when stored hashes match current bytes', async () => {
@@ -263,6 +279,7 @@ test('complete-review refuses unreadable non-regular files and leaves review pen
 });
 
 test('stop hook nudges autonomy continuation on obvious next-step language', async () => {
+  await assertStopSourceAndRuntimeContract();
   const dir = await fixture();
   try {
     await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
@@ -296,6 +313,8 @@ test('stop hook nudges autonomy continuation on obvious next-step language', asy
     assert.equal(first.stderr, '');
     const firstPayload = JSON.parse(first.stdout);
     assert.equal(firstPayload.decision, 'block');
+    assert.equal(firstPayload.reason, 'OpenWolf feedback');
+    assert.doesNotMatch(firstPayload.reason, /OpenWolf autonomy:/);
     assert.match(firstPayload.hookSpecificOutput.additionalContext, /OpenWolf autonomy:/);
 
     const second = runStopHook(dir, transcript, 'sess-autonomy');
@@ -307,6 +326,7 @@ test('stop hook nudges autonomy continuation on obvious next-step language', asy
 });
 
 test('stop hook suppresses repeated buglog nudges after explicit false-positive acknowledgement', async () => {
+  await assertStopSourceAndRuntimeContract();
   const dir = await fixture();
   try {
     await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
@@ -338,6 +358,8 @@ test('stop hook suppresses repeated buglog nudges after explicit false-positive 
     assert.equal(first.stderr, '');
     const firstPayload = JSON.parse(first.stdout);
     assert.equal(firstPayload.decision, 'block');
+    assert.equal(firstPayload.reason, 'OpenWolf feedback');
+    assert.doesNotMatch(firstPayload.reason, /Files edited 3\+ times/);
     assert.match(firstPayload.hookSpecificOutput.additionalContext, /Files edited 3\+ times/);
 
     await writeFile(transcript, assistantTranscript('Buglog nudge is a false positive: these edits were not bug fixes, so no buglog entry warranted.'));

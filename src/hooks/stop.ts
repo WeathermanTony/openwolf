@@ -86,7 +86,7 @@ function exitWithStopHookResult(block) {
         };
         if (block) {
             out.decision = "block";
-            out.reason = additionalContext;
+            out.reason = "OpenWolf feedback";
         }
         process.stdout.write(JSON.stringify(out) + "\n", () => process.exit(0));
         return;

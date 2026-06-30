@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-30T01:36:55.357Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-30T22:00:03.796Z
 > Files: 144 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -131,8 +131,8 @@
 - `session-start.ts` — @ts-nocheck (~998 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15680 tok)
 - `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15673 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22991 tok)
-- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~22983 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23134 tok)
+- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~23131 tok)
 
 ## src/scanner/
 
@@ -216,7 +216,7 @@
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
 - `session-start.js` — Declares main (~1006 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15680 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22991 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23134 tok)
 
 ## templates/wolf/qa/
 
@@ -235,4 +235,4 @@
 
 ## tests/
 
-- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 4 more (~4198 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 5 more (~4479 tok)
