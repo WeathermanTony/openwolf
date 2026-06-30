@@ -11,6 +11,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getRegisteredProjects, registerProject, type RegisteredProject } from "./registry.js";
+import { applyReviewerProfile, normalizeReviewerProfile } from "./init.js";
 import { readJSON, writeJSON, readText, writeText, safeCopyFile } from "../utils/fs-safe.js";
 import { ensureDir } from "../utils/paths.js";
 
@@ -28,7 +29,7 @@ function getVersion(): string {
 }
 
 // Files that are safe to overwrite (protocol/config)
-const ALWAYS_OVERWRITE = ["OPENWOLF.md", "reframe-frameworks.md"];
+const ALWAYS_OVERWRITE = ["OPENWOLF.md", "PROTOCOL-UPGRADE-2026-06.md", "reframe-frameworks.md"];
 const CREATE_IF_MISSING = ["config.json"];
 
 // Files that contain user data — NEVER overwrite, only create if missing
@@ -71,7 +72,7 @@ interface UpdateResult {
   message: string;
 }
 
-export async function updateCommand(options: { dryRun?: boolean; force?: boolean; project?: string }): Promise<void> {
+export async function updateCommand(options: { dryRun?: boolean; force?: boolean; project?: string; profile?: string }): Promise<void> {
   const version = getVersion();
   const projects = getRegisteredProjects(true);
 
@@ -99,12 +100,16 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
     }
   }
 
+  if (options.profile) {
+    normalizeReviewerProfile(options.profile);
+  }
+
   console.log(`OpenWolf v${version} — updating ${targets.length} project(s)${options.dryRun ? " (dry run)" : ""}...\n`);
 
   const results: UpdateResult[] = [];
 
   for (const project of targets) {
-    const result = await updateProject(project, version, options.dryRun ?? false);
+    const result = await updateProject(project, version, options.dryRun ?? false, options.profile);
     results.push(result);
   }
 
@@ -138,7 +143,8 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
 async function updateProject(
   project: RegisteredProject,
   version: string,
-  dryRun: boolean
+  dryRun: boolean,
+  profile?: string
 ): Promise<UpdateResult> {
   const { root, name } = project;
   const wolfDir = path.join(root, ".wolf");
@@ -161,8 +167,9 @@ async function updateProject(
   }
 
   if (dryRun) {
-    console.log(`    [dry run] Would backup, update hooks, templates, rules`);
-    return { project, status: "updated", message: `would update to v${version}` };
+    const profileText = profile ? ` and set reviewer profile to ${normalizeReviewerProfile(profile)}` : "";
+    console.log(`    [dry run] Would backup, update hooks, templates, rules${profileText}`);
+    return { project, status: "updated", message: `would update to v${version}${profileText}` };
   }
 
   try {
@@ -188,6 +195,13 @@ async function updateProject(
         safeCopyFile(srcPath, destPath);
       }
     }
+    const appliedProfile = applyReviewerProfile(path.join(wolfDir, "config.json"), profile);
+    if (appliedProfile) {
+      console.log(`    ✓ Reviewer profile: ${appliedProfile}`);
+    }
+
+    updateQaDirectory(templatesDir, wolfDir);
+    console.log(`    ✓ QA scaffold updated`);
 
     // 3. Update hook scripts
     copyHookScripts(wolfDir);
@@ -315,6 +329,29 @@ function findTemplatesDir(): string {
     if (fs.existsSync(dir)) return dir;
   }
   return candidates[0];
+}
+
+function updateQaDirectory(templatesDir: string, wolfDir: string): void {
+  const qaDir = path.join(wolfDir, "qa");
+  ensureDir(qaDir);
+
+  for (const name of ["_README.md", "_template.md"]) {
+    const src = path.join(templatesDir, "qa", name);
+    const dest = path.join(qaDir, name);
+    if (fs.existsSync(src)) {
+      safeCopyFile(src, dest);
+    }
+  }
+
+  const gateLogDest = path.join(qaDir, "_gate-log.json");
+  if (!fs.existsSync(gateLogDest)) {
+    const src = path.join(templatesDir, "qa", "_gate-log.json");
+    if (fs.existsSync(src)) {
+      safeCopyFile(src, gateLogDest);
+    } else {
+      fs.writeFileSync(gateLogDest, JSON.stringify({ version: 1, entries: [] }, null, 2) + "\n", "utf-8");
+    }
+  }
 }
 
 function readTemplateContent(filename: string, templatesDir: string): string {

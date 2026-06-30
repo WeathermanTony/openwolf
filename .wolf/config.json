@@ -54,7 +54,8 @@
     },
     "daemon": {
       "port": 18860,
-      "log_level": "info"
+      "log_level": "info",
+      "auth_token": "mmCzFCnd5BK8_TSsdBAI9zhZ0CFQU4Eqp4Oye7nrIx0"
     },
     "dashboard": {
       "enabled": true,
@@ -169,6 +170,13 @@
         "\\b(?:if you want|let me know|when you(?:'re| are) ready)\\b",
         "\\b(?:waiting for|awaiting) (?:your|user)\\b"
       ]
+    },
+    "hook_messages": {
+      "verbosity": "compact",
+      "reviewer_profile": "open",
+      "max_files": 3,
+      "include_provider_examples": false,
+      "include_docs_hint": true
     }
   }
 }

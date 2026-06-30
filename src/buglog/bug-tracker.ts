@@ -13,6 +13,8 @@ interface BugEntry {
   related_bugs: string[];
   occurrences: number;
   last_seen: string;
+  commit: string | null;
+  reduction: string | null;
 }
 
 interface BugLog {
@@ -25,7 +27,12 @@ export function getBugLogPath(wolfDir: string): string {
 }
 
 export function readBugLog(wolfDir: string): BugLog {
-  return readJSON<BugLog>(getBugLogPath(wolfDir), { version: 1, bugs: [] });
+  const bugLog = readJSON<BugLog>(getBugLogPath(wolfDir), { version: 1, bugs: [] });
+  for (const entry of bugLog.bugs || []) {
+    if (!Object.prototype.hasOwnProperty.call(entry, "commit")) entry.commit = null;
+    if (!Object.prototype.hasOwnProperty.call(entry, "reduction")) entry.reduction = null;
+  }
+  return bugLog;
 }
 
 export function logBug(
@@ -37,10 +44,16 @@ export function logBug(
     root_cause: string;
     fix: string;
     tags: string[];
+    commit?: string | null;
+    reduction?: string | null;
   }
 ): void {
   const bugLog = readBugLog(wolfDir);
   const now = new Date().toISOString();
+  for (const entry of bugLog.bugs) {
+    if (!Object.prototype.hasOwnProperty.call(entry, "commit")) entry.commit = null;
+    if (!Object.prototype.hasOwnProperty.call(entry, "reduction")) entry.reduction = null;
+  }
 
   // Check for near-duplicate (score > 0.8)
   const similar = findSimilarBugs(wolfDir, bug.error_message);
@@ -49,6 +62,10 @@ export function logBug(
     if (existing) {
       existing.occurrences++;
       existing.last_seen = now;
+      if (!Object.prototype.hasOwnProperty.call(existing, "commit")) existing.commit = null;
+      if (!Object.prototype.hasOwnProperty.call(existing, "reduction")) existing.reduction = null;
+      if (bug.commit) existing.commit = bug.commit;
+      if (bug.reduction) existing.reduction = bug.reduction;
       writeJSON(getBugLogPath(wolfDir), bugLog);
       return;
     }
@@ -67,6 +84,8 @@ export function logBug(
     related_bugs: [],
     occurrences: 1,
     last_seen: now,
+    commit: bug.commit ?? null,
+    reduction: bug.reduction ?? null,
   });
 
   writeJSON(getBugLogPath(wolfDir), bugLog);

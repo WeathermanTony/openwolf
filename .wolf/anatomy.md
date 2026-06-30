@@ -1,14 +1,13 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T16:00:03.586Z
-> Files: 142 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-30T01:36:55.357Z
+> Files: 144 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
 - `.editorconfig` — Editor configuration (~51 tok)
 - `.gitignore` — Git ignore rules (~252 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
-- `OPENWOLF-ISSUES-from-stress-test.md` — OpenWolf Issues & Suggestions — found via live stress-testing (~3958 tok)
 - `package-lock.json` — npm lock file (~69262 tok)
 - `package.json` — Node.js package manifest (~562 tok)
 - `README.md` — Project documentation (~341 tok)
@@ -29,12 +28,12 @@
 
 ## scripts/
 
-- `verify-install.js` — root: rel, fileExists, parseJson + 7 more (~2569 tok)
+- `verify-install.js` — root: rel, fileExists, parseJson + 13 more (~4386 tok)
 
 ## src/buglog/
 
 - `bug-matcher.ts` — Re-export from bug-tracker for convenience (~32 tok)
-- `bug-tracker.ts` — Exports getBugLogPath, readBugLog, logBug, findSimilarBugs, searchBugs (~993 tok)
+- `bug-tracker.ts` — Exports getBugLogPath, readBugLog, logBug, findSimilarBugs, searchBugs (~1265 tok)
 
 ## src/cli/
 
@@ -43,16 +42,16 @@
 - `daemon-cmd.ts` — Exports getPm2NameForRoot, hasPm2, hasOpenWolfPm2Daemon, ensurePm2Daemon + 4 more (~3363 tok)
 - `dashboard.ts` — Exports dashboardCommand (~816 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
-- `index.ts` — Exports createProgram (~1452 tok)
-- `init.ts` — Exports initCommand (~7788 tok)
+- `index.ts` — Exports createProgram (~1503 tok)
+- `init.ts` — Exports initCommand (~9194 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~852 tok)
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1067 tok)
-- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~5310 tok)
+- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~5704 tok)
 
 ## src/config/
 
-- `default-config.json` (~1296 tok)
+- `default-config.json` (~1306 tok)
 
 ## src/daemon/
 
@@ -118,22 +117,22 @@
 
 ## src/hooks/
 
-- `complete-review.js` — @ts-nocheck (~1861 tok)
-- `complete-review.ts` — @ts-nocheck (~1852 tok)
+- `complete-review.js` — @ts-nocheck (~2975 tok)
+- `complete-review.ts` — @ts-nocheck (~2944 tok)
 - `post-read.js` — Declares main (~799 tok)
 - `post-read.ts` — @ts-nocheck (~793 tok)
-- `post-write.js` — Declares main (~9825 tok)
-- `post-write.ts` — @ts-nocheck (~9818 tok)
+- `post-write.js` — @ts-nocheck (~9924 tok)
+- `post-write.ts` — @ts-nocheck (~9913 tok)
 - `pre-read.js` — Declares main (~914 tok)
 - `pre-read.ts` — @ts-nocheck (~908 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
 - `pre-write.ts` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2245 tok)
 - `session-start.js` — Declares main (~1006 tok)
 - `session-start.ts` — @ts-nocheck (~998 tok)
-- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15253 tok)
-- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15245 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22580 tok)
-- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~22572 tok)
+- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15680 tok)
+- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15673 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22991 tok)
+- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~22983 tok)
 
 ## src/scanner/
 
@@ -143,26 +142,27 @@
 
 ## src/templates/
 
-- `anatomy.md` — anatomy.md (~1236 tok)
-- `buglog.json` — /*.lock`, and `.wolf/**/*.lock.reclaim`; expanded `scripts/verify-install.js` to assert those ignores and syntax-check installed, source, and templ... (~13194 tok)
-- `cerebrum.md` — Cerebrum (~930 tok)
+- `anatomy.md` — anatomy.md (~54 tok)
+- `buglog.json` (~10 tok)
+- `cerebrum.md` — Cerebrum (~164 tok)
 - `claude-md-snippet.md` — OpenWolf (~57 tok)
 - `claude-rules-openwolf.md` (~371 tok)
-- `config.json` (~1296 tok)
-- `cron-manifest.json` (~927 tok)
-- `cron-state.json` (~511 tok)
+- `config.json` (~1306 tok)
+- `cron-manifest.json` (~10 tok)
+- `cron-state.json` (~38 tok)
 - `designqc-report.json` (~26 tok)
-- `identity.md` — Identity (~89 tok)
+- `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — OpenWolf Operating Protocol (~3134 tok)
+- `OPENWOLF.md` — OpenWolf Operating Protocol (~3654 tok)
+- `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
-- `reviewlog.json` (~14302 tok)
+- `reviewlog.json` (~11 tok)
 - `suggestions.json` (~14 tok)
-- `token-ledger.json` (~126062 tok)
+- `token-ledger.json` (~121 tok)
 
 ## src/templates/qa/
 
-- `_gate-log.json` (~11747 tok)
+- `_gate-log.json` (~11 tok)
 - `_README.md` — Quality Gate — Adversarial Reductions (~613 tok)
 - `_template.md` — <short title> (~463 tok)
 
@@ -197,28 +197,30 @@
 
 ## templates/wolf/
 
-- `anatomy.md` — anatomy.md (~501 tok)
-- `cerebrum.md` — Cerebrum (~156 tok)
-- `config.json` (~1296 tok)
-- `identity.md` — Identity (~89 tok)
+- `anatomy.md` — anatomy.md (~54 tok)
+- `cerebrum.md` — Cerebrum (~164 tok)
+- `config.json` (~1306 tok)
+- `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — OpenWolf Operating Protocol (~3134 tok)
+- `OPENWOLF.md` — OpenWolf Operating Protocol (~3654 tok)
+- `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 
 ## templates/wolf/hooks/
 
-- `complete-review.js` — @ts-nocheck (~1861 tok)
+- `complete-review.js` — @ts-nocheck (~2975 tok)
 - `package.json` — Node.js package manifest (~7 tok)
 - `post-read.js` — Declares main (~799 tok)
-- `post-write.js` — Declares main (~9825 tok)
+- `post-write.js` — @ts-nocheck (~9924 tok)
 - `pre-read.js` — Declares main (~914 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
 - `session-start.js` — Declares main (~1006 tok)
-- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15253 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22580 tok)
+- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15680 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~22991 tok)
 
 ## templates/wolf/qa/
 
+- `_gate-log.json` (~11 tok)
 - `_README.md` — Quality Gate — Adversarial Reductions (~613 tok)
 - `_template.md` — <short title> (~463 tok)
 
@@ -233,4 +235,4 @@
 
 ## tests/
 
-- `review-completion.test.js` — Exports feature (~3242 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 4 more (~4198 tok)

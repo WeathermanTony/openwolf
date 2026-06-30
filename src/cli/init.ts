@@ -28,6 +28,7 @@ function getVersion(): string {
 // Files that are safe to overwrite on upgrade (config/protocol, not user data)
 const ALWAYS_OVERWRITE = [
   "OPENWOLF.md",
+  "PROTOCOL-UPGRADE-2026-06.md",
   "reframe-frameworks.md",
 ];
 
@@ -76,7 +77,7 @@ const HOOK_SETTINGS = {
   },
 };
 
-export async function initCommand(): Promise<void> {
+export async function initCommand(options: { profile?: string } = {}): Promise<void> {
   // Check Node.js version
   const nodeVersion = parseInt(process.version.slice(1), 10);
   if (nodeVersion < 20) {
@@ -143,10 +144,15 @@ export async function initCommand(): Promise<void> {
   // Pick a deterministic, free port pair for this project so multiple
   // projects can run wolf-daemon concurrently without EADDRINUSE crashloops.
   const configPath = path.join(wolfDir, "config.json");
-  const cfg = readJSON<{ openwolf: { daemon: { port: number }; dashboard: { port: number } } }>(
+  const cfg = readJSON<{ openwolf?: { daemon?: { port?: number }; dashboard?: { port?: number } } }>(
     configPath,
     { openwolf: { daemon: { port: 18790 }, dashboard: { port: 18791 } } }
   );
+  cfg.openwolf = cfg.openwolf && typeof cfg.openwolf === "object" ? cfg.openwolf : {};
+  cfg.openwolf.daemon = cfg.openwolf.daemon && typeof cfg.openwolf.daemon === "object" ? cfg.openwolf.daemon : {};
+  cfg.openwolf.dashboard = cfg.openwolf.dashboard && typeof cfg.openwolf.dashboard === "object" ? cfg.openwolf.dashboard : {};
+  cfg.openwolf.daemon.port = typeof cfg.openwolf.daemon.port === "number" ? cfg.openwolf.daemon.port : 18790;
+  cfg.openwolf.dashboard.port = typeof cfg.openwolf.dashboard.port === "number" ? cfg.openwolf.dashboard.port : 18791;
   if (!isUpgrade || !hasOpenWolfPm2Daemon(projectRoot)) {
     try {
       const dashboardFree = await isPortFree(cfg.openwolf.dashboard.port);
@@ -162,6 +168,8 @@ export async function initCommand(): Promise<void> {
       console.warn(`  ⚠ Port allocation failed (${(e as Error).message}); keeping configured daemon/dashboard ports`);
     }
   }
+
+  applyReviewerProfile(configPath, options.profile);
 
   // --- Token ledger: set created_at only if empty ---
   const ledgerPath = path.join(wolfDir, "token-ledger.json");
@@ -224,33 +232,41 @@ export async function initCommand(): Promise<void> {
     }
   }
 
+  const verifyInstallMode = process.env.OPENWOLF_VERIFY_INSTALL === "1";
+
   // --- Daemon ---
   let daemonStatus = "start manually with: openwolf daemon start";
-  try {
-    const pm2Cmd = isWindows() ? "where pm2" : "which pm2";
-    execSync(pm2Cmd, { stdio: "ignore" });
+  if (verifyInstallMode) {
+    daemonStatus = "skipped during install verification";
+  } else {
     try {
-      const result = ensurePm2Daemon(projectRoot, { silent: true });
-      daemonStatus = result.status === "already-running"
-        ? `already registered via pm2 (${result.name})`
-        : `${result.status} via pm2 (${result.name})`;
+      const pm2Cmd = isWindows() ? "where pm2" : "which pm2";
+      execSync(pm2Cmd, { stdio: "ignore" });
+      try {
+        const result = ensurePm2Daemon(projectRoot, { silent: true });
+        daemonStatus = result.status === "already-running"
+          ? `already registered via pm2 (${result.name})`
+          : `${result.status} via pm2 (${result.name})`;
+      } catch {
+        daemonStatus = "pm2 found but daemon start failed. Try: openwolf daemon start";
+      }
     } catch {
-      daemonStatus = "pm2 found but daemon start failed. Try: openwolf daemon start";
+      daemonStatus = "pm2 not found. Install with: pnpm add -g pm2";
     }
-  } catch {
-    daemonStatus = "pm2 not found. Install with: pnpm add -g pm2";
   }
 
   // --- Register in central registry (skip if this IS the openwolf source repo) ---
-  try {
-    const projectName = detectProjectName(projectRoot);
-    if (projectName === "openwolf") {
-      // Don't register the openwolf dev repo — it would get updated by `openwolf update`
-    } else {
-      registerProject(projectRoot, projectName, version);
+  if (!verifyInstallMode) {
+    try {
+      const projectName = detectProjectName(projectRoot);
+      if (projectName === "openwolf") {
+        // Don't register the openwolf dev repo — it would get updated by `openwolf update`
+      } else {
+        registerProject(projectRoot, projectName, version);
+      }
+    } catch {
+      // Non-fatal — registry is a convenience feature
     }
-  } catch {
-    // Non-fatal — registry is a convenience feature
   }
 
   // --- Summary ---
@@ -268,6 +284,10 @@ export async function initCommand(): Promise<void> {
     console.log(`  ✓ CLAUDE.md updated`);
     console.log(`  ✓ .claude/rules/openwolf.md created`);
     console.log(`  ✓ Anatomy scan: ${fileCount} files indexed`);
+  }
+  if (options.profile) {
+    const reviewerProfile = normalizeReviewerProfile(options.profile);
+    console.log(`  ✓ Reviewer profile: ${reviewerProfile}`);
   }
   console.log(`  ✓ Daemon: ${daemonStatus}`);
   console.log("");
@@ -339,6 +359,26 @@ function embeddedQaTemplate(name: string): string {
   return "";
 }
 
+export function normalizeReviewerProfile(profile?: string): "us-only" | "open" | undefined {
+  if (!profile) return undefined;
+  const normalized = profile.trim().toLowerCase();
+  if (["gov", "government", "us-only", "us", "american"].includes(normalized)) return "us-only";
+  if (["open", "normal", "default", "unrestricted"].includes(normalized)) return "open";
+  throw new Error(`Unknown OpenWolf profile "${profile}". Use "gov" or "open".`);
+}
+
+export function applyReviewerProfile(configPath: string, profile?: string): "us-only" | "open" | undefined {
+  const reviewerProfile = normalizeReviewerProfile(profile);
+  if (!reviewerProfile) return undefined;
+  const parsed = readJSON<Record<string, any>>(configPath, {});
+  const cfg = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  cfg.openwolf = cfg.openwolf && typeof cfg.openwolf === "object" && !Array.isArray(cfg.openwolf) ? cfg.openwolf : {};
+  cfg.openwolf.hook_messages = cfg.openwolf.hook_messages && typeof cfg.openwolf.hook_messages === "object" && !Array.isArray(cfg.openwolf.hook_messages) ? cfg.openwolf.hook_messages : {};
+  cfg.openwolf.hook_messages.reviewer_profile = reviewerProfile;
+  writeJSON(configPath, cfg);
+  return reviewerProfile;
+}
+
 function readTemplateContent(filename: string, templatesDir: string): string {
   const filePath = path.join(templatesDir, filename);
   if (fs.existsSync(filePath)) {
@@ -357,11 +397,11 @@ function getEmbeddedTemplate(filename: string): string {
 
 function generateTemplate(destPath: string, file: string): void {
   const templates: Record<string, string> = {
-    "OPENWOLF.md": `# OpenWolf Operating Protocol\n\nYou are working in an OpenWolf-managed project. These rules apply every turn.\n\n## File Navigation\n\n1. Check \`.wolf/anatomy.md\` BEFORE reading any file.\n2. If the description is sufficient, do NOT read the full file.\n3. If a file is not in anatomy.md, search with Grep/Glob.\n\n## Code Generation\n\n1. Read \`.wolf/cerebrum.md\` and respect every entry.\n2. Check \`## Do-Not-Repeat\` section.\n\n## After Actions\n\n1. Append to \`.wolf/memory.md\`.\n2. After file changes: update \`.wolf/anatomy.md\`.\n\n## Token Discipline\n\n- Never re-read a file already read this session.\n- Prefer anatomy.md descriptions over full reads.\n`,
+    "OPENWOLF.md": `# OpenWolf Operating Protocol\n\nYou are working in an OpenWolf-managed project. These rules apply every turn.\n\n## File Navigation\n\n1. Check \`.wolf/anatomy.md\` BEFORE reading any file.\n2. If the description is sufficient, do NOT read the full file.\n3. If a file is not in anatomy.md, search with Grep/Glob.\n\n## Code Generation\n\n1. Read \`.wolf/cerebrum.md\` and respect every entry.\n2. Check \`## Do-Not-Repeat\` section.\n\n## Recall Before Acting\n\nBefore starting non-trivial work, use OpenWolf's local memory in this order:\n\n1. Check \`.wolf/anatomy.md\` to locate only the files needed.\n2. Check \`.wolf/cerebrum.md\` for project conventions, user preferences, and do-not-repeat lessons.\n3. Check \`.wolf/buglog.json\` before fixing errors or repeating a pattern that may already have a known fix.\n4. Prefer applying an existing proven fix over rediscovering one. If the existing memory is stale or wrong, correct it as part of the work.\n\n## Link Fixes to Proof\n\nEvery buglog entry should connect the reported problem to the evidence that the fix was real:\n\n- \`commit\`: the resolving commit SHA when known, otherwise \`null\` until committed.\n- \`reduction\`: the QA reduction, test file, command, or transcript that proves the fix, otherwise \`null\` until evidence exists.\n\nWhen adding or updating a buglog entry, include both fields. If a bug is fixed before commit, fill \`reduction\` immediately and backfill \`commit\` after the fix is committed.\n\n## Consolidate When Noisy\n\nOpenWolf memory should stay useful, not merely large. When \`.wolf/memory.md\`, \`.wolf/buglog.json\`, review logs, or QA logs become noisy:\n\n1. Preserve durable facts, current decisions, and recurring gotchas in \`.wolf/cerebrum.md\`.\n2. Keep raw chronological detail in the original log only when it is still operationally useful.\n3. Prefer compact summaries that link to proof files, reductions, review IDs, or commits.\n4. Do not delete user data just to reduce size; consolidate only when the retained summary is enough to recover the lesson.\n\n## After Actions\n\n1. Append to \`.wolf/memory.md\`.\n2. After file changes: update \`.wolf/anatomy.md\`.\n\n## Token Discipline\n\n- Never re-read a file already read this session.\n- Prefer anatomy.md descriptions over full reads.\n`,
     "identity.md": `# Identity\n\n- **Name:** Wolf\n- **Role:** AI development assistant for this project\n- **Tone:** Direct, concise, technically precise\n`,
-    "cerebrum.md": `# Cerebrum\n\n> OpenWolf's learning memory.\n\n## User Preferences\n\n## Key Learnings\n\n## Do-Not-Repeat\n\n## Decision Log\n`,
-    "memory.md": `# Memory\n\n> Chronological action log.\n`,
-    "anatomy.md": `# anatomy.md\n\n> Project structure index. Pending initial scan.\n`,
+    "cerebrum.md": `# Cerebrum\n\n> OpenWolf's learning memory. Updated automatically as the AI learns from interactions.\n> Do not edit manually unless correcting an error.\n> Last updated: —\n\n## User Preferences\n\n<!-- How the user likes things done. Code style, tools, patterns, communication. -->\n\n## Key Learnings\n\n<!-- Project-specific conventions discovered during development. -->\n\n## Do-Not-Repeat\n\n<!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->\n<!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->\n\n## Decision Log\n\n<!-- Significant technical decisions with rationale. Why X was chosen over Y. -->\n`,
+    "memory.md": `# Memory\n\n> Chronological action log. Hooks and AI append to this file automatically.\n> Old sessions are consolidated by the daemon weekly.\n\n## Session: bootstrap\n\n| Time | Action | File(s) | Outcome | ~Tokens |\n|------|--------|---------|---------|--------|\n`,
+    "anatomy.md": `# anatomy.md\n\n> Auto-maintained by OpenWolf. Pending initial scan.\n> Files: 0 tracked | Anatomy hits: 0 | Misses: 0\n\n## Project\n\n- Run \`openwolf scan\` or \`openwolf init\` to populate this index with project files.\n`,
     "config.json": JSON.stringify({
       version: 1,
       openwolf: {

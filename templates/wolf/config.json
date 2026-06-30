@@ -173,6 +173,7 @@
     },
     "hook_messages": {
       "verbosity": "compact",
+      "reviewer_profile": "us-only",
       "max_files": 3,
       "include_provider_examples": false,
       "include_docs_hint": true

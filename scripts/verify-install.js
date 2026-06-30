@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { access, readFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 const root = process.cwd();
@@ -32,6 +33,7 @@ const requiredFiles = [
   '.claude/settings.json',
   '.claude/rules/openwolf.md',
   '.wolf/OPENWOLF.md',
+  '.wolf/PROTOCOL-UPGRADE-2026-06.md',
   '.wolf/config.json',
   '.wolf/anatomy.md',
   '.wolf/memory.md',
@@ -42,6 +44,7 @@ const requiredFiles = [
   'templates/claude/settings.json',
   'templates/claude/rules/openwolf.md',
   'templates/wolf/OPENWOLF.md',
+  'templates/wolf/PROTOCOL-UPGRADE-2026-06.md',
   'templates/wolf/anatomy.md',
   'templates/wolf/memory.md',
   'templates/wolf/cerebrum.md',
@@ -51,6 +54,7 @@ const requiredFiles = [
   'templates/wolf/reframe-frameworks.md',
   'templates/wolf/qa/_README.md',
   'templates/wolf/qa/_template.md',
+  'templates/wolf/qa/_gate-log.json',
   ...hookNames.flatMap((name) => [`.wolf/hooks/${name}`, `src/hooks/${name}`, `templates/wolf/hooks/${name}`]),
   ...utilNames.flatMap((name) => [`.wolf/utils/${name}`, `src/utils/${name}`, `templates/wolf/utils/${name}`]),
 ];
@@ -140,15 +144,151 @@ async function checkClaimCalibrationConfig() {
   }
 }
 
+async function readRequiredText(file) {
+  try {
+    return await readFile(rel(file), 'utf8');
+  } catch (error) {
+    failures.push(`unable to inspect ${file}: ${error.message}`);
+    return '';
+  }
+}
+
 async function checkReviewCompletionWorkflow() {
   for (const file of ['.wolf/hooks/stop.js', 'src/hooks/stop.js', 'templates/wolf/hooks/stop.js']) {
-    const content = await readFile(rel(file), 'utf8');
+    const content = await readRequiredText(file);
     if (content.includes('mark .wolf/reviewlog.json entry')) {
       failures.push(`${file} still tells assistants to manually complete reviewlog entries`);
     }
     if (!content.includes('hooks", "complete-review.js"') && !content.includes('.wolf/hooks/complete-review.js')) {
       failures.push(`${file} must point review completion to an absolute or project .wolf/hooks/complete-review.js helper path`);
     }
+  }
+}
+
+const scaffoldLeakMarkers = [
+  'customopenwolf',
+  '/mnt/j/projectshome/projects/customopenwolf',
+  '/home/tony/projects/customopenwolf',
+  'Scientific Mode',
+  'autonomy_continuation',
+  'complete-review.js review-NNNN',
+  'daemon start/init paths',
+  'silly-herding-cake',
+  'unified-kindling-rose',
+];
+
+function checkNoScaffoldLeakMarkers(label, content) {
+  for (const marker of scaffoldLeakMarkers) {
+    if (content.includes(marker)) {
+      failures.push(`${label} contains project-specific scaffold marker: ${marker}`);
+    }
+  }
+}
+
+async function checkCleanProjectTemplates() {
+  for (const file of ['src/templates/cerebrum.md', 'templates/wolf/cerebrum.md', 'src/templates/anatomy.md', 'templates/wolf/anatomy.md', 'src/templates/identity.md', 'templates/wolf/identity.md', 'src/templates/buglog.json', 'src/templates/reviewlog.json', 'src/templates/token-ledger.json', 'src/templates/qa/_gate-log.json', 'templates/wolf/qa/_gate-log.json']) {
+    checkNoScaffoldLeakMarkers(file, await readRequiredText(file));
+  }
+
+  const initSource = await readRequiredText('src/cli/init.ts');
+  for (const marker of ['"cerebrum.md"', '"anatomy.md"']) {
+    if (!initSource.includes(marker)) {
+      failures.push(`src/cli/init.ts embedded scaffold fallback missing ${marker}`);
+    }
+  }
+  checkNoScaffoldLeakMarkers('src/cli/init.ts embedded scaffold fallback', initSource);
+}
+
+async function checkProtocolUpgradeDocs() {
+  for (const file of ['.wolf/OPENWOLF.md', 'src/templates/OPENWOLF.md', 'templates/wolf/OPENWOLF.md']) {
+    const content = await readRequiredText(file);
+    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy']) {
+      if (!content.includes(heading)) {
+        failures.push(`${file} missing protocol section ${heading}`);
+      }
+    }
+    for (const field of ['"commit": null', '"reduction":']) {
+      if (!content.includes(field)) {
+        failures.push(`${file} buglog schema example missing ${field}`);
+      }
+    }
+  }
+
+  for (const file of ['.wolf/PROTOCOL-UPGRADE-2026-06.md', 'src/templates/PROTOCOL-UPGRADE-2026-06.md', 'templates/wolf/PROTOCOL-UPGRADE-2026-06.md']) {
+    const content = await readRequiredText(file);
+    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Buglog schema bump']) {
+      if (!content.includes(heading)) {
+        failures.push(`${file} missing portable protocol section ${heading}`);
+      }
+    }
+  }
+}
+
+async function checkBuglogProofFields() {
+  const current = await parseJson('.wolf/buglog.json');
+  for (const bug of current?.bugs || []) {
+    if (!Object.prototype.hasOwnProperty.call(bug, 'commit')) {
+      failures.push(`.wolf/buglog.json ${bug.id || '<unknown>'} missing commit field`);
+    }
+    if (!Object.prototype.hasOwnProperty.call(bug, 'reduction')) {
+      failures.push(`.wolf/buglog.json ${bug.id || '<unknown>'} missing reduction field`);
+    }
+  }
+
+  const scaffold = await parseJson('src/templates/buglog.json');
+  if (Array.isArray(scaffold?.bugs) && scaffold.bugs.length !== 0) {
+    failures.push('src/templates/buglog.json should be an empty scaffold buglog, not copied project history');
+  }
+}
+
+async function checkFreshInitScaffoldOutput() {
+  const cli = rel('dist/bin/openwolf.js');
+  try {
+    await access(cli, constants.X_OK);
+  } catch {
+    failures.push('dist/bin/openwolf.js missing or not executable; run npm run build before verify');
+    return;
+  }
+
+  const dir = await mkdtemp(path.join(tmpdir(), 'ow-verify-scaffold-'));
+  try {
+    await writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'fresh-verify-app', description: 'Fresh verify scaffold' }, null, 2));
+    const result = spawnSync(process.execPath, [cli, 'init', '--profile', 'open'], {
+      cwd: dir,
+      env: { ...process.env, CLAUDE_PROJECT_DIR: dir, OPENWOLF_VERIFY_INSTALL: '1' },
+      encoding: 'utf8',
+      timeout: 120000,
+    });
+    if (result.status !== 0) {
+      failures.push(`fresh init scaffold check failed: ${(result.stderr || result.stdout).trim()}`);
+      return;
+    }
+
+    const cerebrum = await readFile(path.join(dir, '.wolf', 'cerebrum.md'), 'utf8');
+    const anatomy = await readFile(path.join(dir, '.wolf', 'anatomy.md'), 'utf8');
+    const gateLog = JSON.parse(await readFile(path.join(dir, '.wolf', 'qa', '_gate-log.json'), 'utf8'));
+    const protocolUpgrade = await readFile(path.join(dir, '.wolf', 'PROTOCOL-UPGRADE-2026-06.md'), 'utf8');
+    checkNoScaffoldLeakMarkers('fresh init .wolf/cerebrum.md', cerebrum);
+    checkNoScaffoldLeakMarkers('fresh init .wolf/anatomy.md', anatomy);
+    checkNoScaffoldLeakMarkers('fresh init .wolf/qa/_gate-log.json', JSON.stringify(gateLog));
+    if (!Array.isArray(gateLog.entries) || gateLog.entries.length !== 0) {
+      failures.push('fresh init .wolf/qa/_gate-log.json should be an empty scaffold log');
+    }
+    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Buglog schema bump']) {
+      if (!protocolUpgrade.includes(heading)) {
+        failures.push(`fresh init .wolf/PROTOCOL-UPGRADE-2026-06.md missing ${heading}`);
+      }
+    }
+    if (!cerebrum.includes('- **Project:** fresh-verify-app')) {
+      failures.push('fresh init .wolf/cerebrum.md did not seed the fresh project name');
+    }
+    if (!cerebrum.includes('- **Description:** Fresh verify scaffold')) {
+      failures.push('fresh init .wolf/cerebrum.md did not seed the fresh project description');
+    }
+  } catch (error) {
+    failures.push(`fresh init scaffold check could not inspect generated output: ${error.message}`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 }
 
@@ -238,6 +378,7 @@ function checkGitIgnored() {
     '.claude/settings.json',
     '.claude/rules/openwolf.md',
     '.wolf/OPENWOLF.md',
+    '.wolf/PROTOCOL-UPGRADE-2026-06.md',
     '.wolf/config.json',
     '.wolf/anatomy.md',
     '.wolf/memory.md',
@@ -248,6 +389,7 @@ function checkGitIgnored() {
     'templates/claude/settings.json',
     'templates/claude/rules/openwolf.md',
     'templates/wolf/OPENWOLF.md',
+    'templates/wolf/PROTOCOL-UPGRADE-2026-06.md',
     'templates/wolf/anatomy.md',
     'templates/wolf/memory.md',
     'templates/wolf/cerebrum.md',
@@ -257,6 +399,7 @@ function checkGitIgnored() {
     'templates/wolf/reframe-frameworks.md',
     'templates/wolf/qa/_README.md',
     'templates/wolf/qa/_template.md',
+    'templates/wolf/qa/_gate-log.json',
     ...hookNames.flatMap((name) => [`.wolf/hooks/${name}`, `src/hooks/${name}`, `templates/wolf/hooks/${name}`]),
     ...utilNames.flatMap((name) => [`.wolf/utils/${name}`, `src/utils/${name}`, `templates/wolf/utils/${name}`]),
   ];
@@ -287,6 +430,10 @@ for (const file of ['.wolf/hooks/package.json', 'templates/wolf/hooks/package.js
 
 await checkClaimCalibrationConfig();
 await checkReviewCompletionWorkflow();
+await checkCleanProjectTemplates();
+await checkProtocolUpgradeDocs();
+await checkBuglogProofFields();
+await checkFreshInitScaffoldOutput();
 
 for (const file of javascriptFiles) {
   nodeCheck(file);

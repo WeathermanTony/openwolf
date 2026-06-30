@@ -94,7 +94,7 @@ test('complete-review accepts arbitrary extensible reviewer labels', async () =>
   }
 });
 
-test('complete-review refuses pending review without stored content hashes', async () => {
+test('complete-review refuses completion without stored content hashes but allows refresh', async () => {
   const dir = await fixture();
   try {
     const file = path.join(dir, 'target.js');
@@ -103,16 +103,24 @@ test('complete-review refuses pending review without stored content hashes', asy
 
     const result = runHelper(dir);
     assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /--refresh/);
 
-    const review = (await readReviewLog(dir)).reviews[0];
+    let review = (await readReviewLog(dir)).reviews[0];
     assert.equal(review.status, 'pending');
     assert.equal(review.content_hashes, undefined);
+
+    const refreshed = runHelper(dir, 'review-0001', ['--refresh']);
+    assert.equal(refreshed.status, 0, refreshed.stderr);
+    review = (await readReviewLog(dir)).reviews[0];
+    assert.equal(review.status, 'pending');
+    assert.equal(review.content_hashes[file], sha256('bytes\n'));
+    assert.equal(review.receipt.hashes[file], sha256('bytes\n'));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
 });
 
-test('complete-review refuses stale pending hashes when file changed after nudge', async () => {
+test('complete-review refuses stale pending hashes with refresh instructions', async () => {
   const dir = await fixture();
   try {
     const file = path.join(dir, 'target.js');
@@ -120,11 +128,65 @@ test('complete-review refuses stale pending hashes when file changed after nudge
     await writeReviewLog(dir, [{ id: 'review-0001', status: 'pending', files: [file], content_hashes: { [file]: sha256('old bytes\n') } }]);
 
     const result = runHelper(dir);
-    assert.notEqual(result.status, 0);
+    assert.equal(result.status, 4);
+    assert.match(result.stderr, /REVIEW_STALE/);
+    assert.match(result.stderr, /--refresh/);
+    assert.match(result.stderr, /stored=/);
+    assert.match(result.stderr, /current=/);
 
     const review = (await readReviewLog(dir)).reviews[0];
     assert.equal(review.status, 'pending');
     assert.equal(review.content_hashes[file], sha256('old bytes\n'));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review refresh updates current-byte receipt without completing', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'new bytes\n');
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'pending', files: [file], content_hashes: { [file]: sha256('old bytes\n') } }]);
+
+    const refreshed = runHelper(dir, 'review-0001', ['--refresh']);
+    assert.equal(refreshed.status, 0, refreshed.stderr);
+    assert.match(refreshed.stdout, /OpenWolf refreshed review-0001/);
+
+    let review = (await readReviewLog(dir)).reviews[0];
+    assert.equal(review.status, 'pending');
+    assert.equal(review.content_hashes[file], sha256('new bytes\n'));
+    assert.equal(review.receipt.kind, 'current-byte');
+    assert.equal(review.receipt.hashes[file], sha256('new bytes\n'));
+
+    const unsafe = runHelper(dir, 'review-0001', [], 'test');
+    assert.equal(unsafe.status, 4);
+    assert.match(unsafe.stderr, /REVIEW_STALE/);
+    assert.match(unsafe.stderr, /--reviewed-current/);
+
+    const completed = runHelper(dir, 'review-0001', ['--reviewed-current'], 'test');
+    assert.equal(completed.status, 0, completed.stderr);
+    review = (await readReviewLog(dir)).reviews[0];
+    assert.equal(review.status, 'completed');
+    assert.equal(review.requires_rereview, false);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review refresh records deleted files as tombstones', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'deleted.js');
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'pending', files: [file], content_hashes: { [file]: sha256('old bytes\n') } }]);
+
+    const refreshed = runHelper(dir, 'review-0001', ['--refresh']);
+    assert.equal(refreshed.status, 0, refreshed.stderr);
+
+    const review = (await readReviewLog(dir)).reviews[0];
+    assert.equal(review.status, 'pending');
+    assert.equal(review.content_hashes[file], 'tombstone');
+    assert.equal(review.receipt.hashes[file], 'tombstone');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -189,6 +251,9 @@ test('complete-review refuses unreadable non-regular files and leaves review pen
     const result = runHelper(dir);
     assert.notEqual(result.status, 0);
 
+    const refresh = runHelper(dir, 'review-0001', ['--refresh']);
+    assert.equal(refresh.status, 5);
+
     const review = (await readReviewLog(dir)).reviews[0];
     assert.equal(review.status, 'pending');
     assert.equal(review.content_hashes[file], 'unreadable');
@@ -227,12 +292,15 @@ test('stop hook nudges autonomy continuation on obvious next-step language', asy
     await writeFile(transcript, assistantTranscript('The next action is to run the focused test now. I can continue with that without a user decision.'));
 
     const first = runStopHook(dir, transcript, 'sess-autonomy');
-    assert.equal(first.status, 2, first.stderr);
-    assert.match(first.stderr, /OpenWolf autonomy:/);
+    assert.equal(first.status, 0, first.stderr);
+    assert.equal(first.stderr, '');
+    const firstPayload = JSON.parse(first.stdout);
+    assert.equal(firstPayload.decision, 'block');
+    assert.match(firstPayload.hookSpecificOutput.additionalContext, /OpenWolf autonomy:/);
 
     const second = runStopHook(dir, transcript, 'sess-autonomy');
     assert.equal(second.status, 0, second.stderr);
-    assert.doesNotMatch(second.stderr, /OpenWolf autonomy:/);
+    assert.doesNotMatch(second.stdout, /OpenWolf autonomy:/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -266,13 +334,16 @@ test('stop hook suppresses repeated buglog nudges after explicit false-positive 
     await writeFile(transcript, assistantTranscript('I changed a feature.'));
 
     const first = runStopHook(dir, transcript, 'sess-buglog');
-    assert.equal(first.status, 2, first.stderr);
-    assert.match(first.stderr, /Files edited 3\+ times/);
+    assert.equal(first.status, 0, first.stderr);
+    assert.equal(first.stderr, '');
+    const firstPayload = JSON.parse(first.stdout);
+    assert.equal(firstPayload.decision, 'block');
+    assert.match(firstPayload.hookSpecificOutput.additionalContext, /Files edited 3\+ times/);
 
     await writeFile(transcript, assistantTranscript('Buglog nudge is a false positive: these edits were not bug fixes, so no buglog entry warranted.'));
     const acknowledged = runStopHook(dir, transcript, 'sess-buglog');
     assert.equal(acknowledged.status, 0, acknowledged.stderr);
-    assert.doesNotMatch(acknowledged.stderr, /Files edited 3\+ times/);
+    assert.doesNotMatch(acknowledged.stdout, /Files edited 3\+ times/);
 
     const stored = JSON.parse(await readFile(sessionFile, 'utf8'));
     assert.equal(Object.keys(stored.buglog_false_positive_acks).length, 1);
@@ -283,8 +354,10 @@ test('stop hook suppresses repeated buglog nudges after explicit false-positive 
     await writeFile(transcript, assistantTranscript('I changed another feature.'));
 
     const changed = runStopHook(dir, transcript, 'sess-buglog');
-    assert.equal(changed.status, 2, changed.stderr);
-    assert.match(changed.stderr, /Files edited 3\+ times/);
+    assert.equal(changed.status, 0, changed.stderr);
+    const changedPayload = JSON.parse(changed.stdout);
+    assert.equal(changedPayload.decision, 'block');
+    assert.match(changedPayload.hookSpecificOutput.additionalContext, /Files edited 3\+ times/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

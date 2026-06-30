@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getClaimCalibrationConfig, getHookMessageConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getClaimCalibrationConfig, getHookMessageConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 // Per-session firing cap shared by the buglog-missing and cerebrum-freshness
 // stderr nudges. They have no per-state hash to dedup against (unlike the
@@ -10,6 +10,10 @@ import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFi
 // with verify-conclusions' max_fires_per_session. Hard-coded for now;
 // promote to config if a project needs to tune it.
 const STOP_NUDGE_PER_SESSION_CAP = 3;
+const stopHookMessages: string[] = [];
+function emitStopHookFeedback(message: string): void {
+    if (message) stopHookMessages.push(message);
+}
 /**
  * Atomically claim a per-session nudge slot for the given counter field.
  *
@@ -39,17 +43,25 @@ function compactList(items, max = 3) {
 function isVerboseHookMessages(cfg) {
     return cfg.verbosity === "verbose" || cfg.include_provider_examples === true;
 }
-function formatReviewNudge({ id, reason, files, repeat, reviewLogPath, completeCommand, codexCommand, wolfDir }, msgCfg) {
+function reviewerGuidance(msgCfg, codexCommand) {
+    if (msgCfg.reviewer_profile === "open") {
+        return `Reviewers: GLM (good token-rich second opinion), Codex (${codexCommand}), ChatGPT/Claude/Grok rescue agents, or another installed reviewer for unrestricted work. If one hangs, try another model family. Re-review after edits/refresh; do not edit reviewlog by hand.`;
+    }
+    return `Reviewers: use US-based reviewers only for this project: Codex/OpenAI (${codexCommand}), ChatGPT/OpenAI, Claude/Anthropic, Grok/xAI, or manual review. Avoid non-US reviewer plugins for this project. Re-review after edits/refresh; do not edit reviewlog by hand.`;
+}
+function formatReviewNudge({ id, reason, files, repeat, reviewLogPath, completeCommand, refreshCommand, codexCommand, wolfDir }, msgCfg) {
     const fileList = compactList(files, msgCfg.max_files);
     const repeatText = repeat ? ` Repeat ${repeat}.` : "";
     const base = `OpenWolf review [${id}]: ${reason}. Files: ${fileList}.${repeatText}\n`;
     if (isVerboseHookMessages(msgCfg)) {
         return base +
             `Action: run an independent reviewer before stopping, then complete: ${completeCommand}\n` +
+            `If completion says REVIEW_STALE, refresh first: ${refreshCommand}; then re-review current bytes and complete with --reviewed-current.\n` +
             `Review log: ${reviewLogPath}\n` +
-            `Reviewers: Codex (${codexCommand}), ChatGPT/Claude/Grok rescue agents, or another installed reviewer. If one hangs, try another model family. Re-review after edits/refresh; do not edit reviewlog by hand.\n`;
+            `${reviewerGuidance(msgCfg, codexCommand)}\n`;
     }
-    const hint = msgCfg.verbosity === "standard" ? " Use any installed reviewer/subagent; if one hangs, try another model family." : "";
+    const staleHint = ` If completion says REVIEW_STALE, refresh first: ${refreshCommand}; then re-review current bytes and complete with --reviewed-current.`;
+    const hint = msgCfg.verbosity === "standard" ? `${staleHint} ${reviewerGuidance(msgCfg, codexCommand)}` : staleHint;
     return base + `Action: run an independent reviewer, then complete: ${completeCommand}.${hint}\n`;
 }
 function formatQualityNudge({ id, count, qaDirDisplay, files, minAssumptions, requireRunOutput }, msgCfg) {
@@ -63,10 +75,23 @@ function formatConclusionNudge({ id, matchedCount, minAssumptions }, _msgCfg) {
         `Action: add .wolf/qa reduction with ≥${minAssumptions} assumptions, riskiest falsifier, and actual output before finalizing.\n`;
 }
 
-function exitAfterStderrFlush(code) {
-    if (!process.stderr.writableNeedDrain)
-        process.exit(code);
-    process.stderr.write("", () => process.exit(code));
+function exitWithStopHookResult(block) {
+    if (stopHookMessages.length > 0) {
+        const additionalContext = stopHookMessages.join("").trimEnd();
+        const out = {
+            hookSpecificOutput: {
+                hookEventName: "Stop",
+                additionalContext,
+            },
+        };
+        if (block) {
+            out.decision = "block";
+            out.reason = additionalContext;
+        }
+        process.stdout.write(JSON.stringify(out) + "\n", () => process.exit(0));
+        return;
+    }
+    process.exit(0);
 }
 function tryConsumeNudgeSlot(sessionFile, field, capN) {
     const release = acquireFileLock(sessionFile);
@@ -217,7 +242,7 @@ async function main() {
             }
         }
         catch { }
-        exitAfterStderrFlush(nudgeFired ? 2 : 0);
+        exitWithStopHookResult(nudgeFired);
         return;
     }
     // Check for files edited many times without a buglog entry.
@@ -396,7 +421,7 @@ async function main() {
     // Exit 2 when any nudge fired so Claude Code surfaces a clear advisory
     // signal. The turn still completes — Stop already ran — but the assistant
     // sees the non-zero exit code and can't silently miss or ignore the gate.
-    exitAfterStderrFlush(nudgeFired ? 2 : 0);
+    exitWithStopHookResult(nudgeFired);
 }
 // Convert a glob like `<doublestar>/auth/<doublestar>` to a RegExp. Supports
 // `**`, `*`, and `?`. `**` matches across path segments (including slashes);
@@ -486,10 +511,12 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             pending.approx_lines_changed = Math.max(pending.approx_lines_changed ?? 0, approxLines);
             pending.files = [...new Set([...(pending.files ?? []), ...writtenFiles])];
             pending.reason = "follow-up edit below review threshold";
-            pending.content_hashes = {
+            setReviewCurrentByteReceipt(pending, pending.files, {
                 ...(pending.content_hashes ?? {}),
                 ...currentHashes,
-            };
+            });
+            pending.requires_rereview = true;
+            pending.requires_rereview_reason = "pending review refreshed after follow-up edits";
             const sortedEntries = Object.entries(currentHashes).sort(([a], [b]) => a.localeCompare(b));
             const refreshSig = crypto.createHash("sha256").update(JSON.stringify(sortedEntries)).digest("hex");
             if (!pending.refresh_history)
@@ -501,7 +528,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             }
             writeJSON(reviewLogPath, reviewLog);
             if (refreshNudge)
-                process.stderr.write(`🔄 OpenWolf review refresh [${pending.id}]: refreshed pending review hashes for ${Object.keys(currentHashes).length} file(s). Review log: ${reviewLogPath}\n`);
+                emitStopHookFeedback(`🔄 OpenWolf review refresh [${pending.id}]: refreshed pending review hashes for ${Object.keys(currentHashes).length} file(s). Review log: ${reviewLogPath}\n`);
         }
         finally {
             releaseReviewLock();
@@ -671,10 +698,12 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             existingPending.files = [...new Set([...existingPending.files, ...writtenFiles])];
             existingPending.reason = reason;
             existingPending.trigger = trigger;
-            existingPending.content_hashes = {
+            setReviewCurrentByteReceipt(existingPending, existingPending.files, {
                 ...(existingPending.content_hashes ?? {}),
                 ...currentHashes,
-            };
+            });
+            existingPending.requires_rereview = true;
+            existingPending.requires_rereview_reason = "pending review refreshed after additional edits";
             if (pathTrigger) {
                 existingPending.matched_paths = [...new Set([...(existingPending.matched_paths ?? []), ...matchedPaths])];
             }
@@ -703,7 +732,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 }
             }
             nextId = `review-${String(maxN + 1).padStart(4, "0")}`;
-            reviewLog.reviews.push({
+            const pendingReview = {
                 id: nextId,
                 session_id: session.session_id,
                 ended: sessionEntry.ended,
@@ -712,9 +741,10 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 reason,
                 status: "pending",
                 trigger,
-                content_hashes: currentHashes,
                 ...(pathTrigger ? { matched_paths: matchedPaths } : {}),
-            });
+            };
+            setReviewCurrentByteReceipt(pendingReview, writtenFiles, currentHashes);
+            reviewLog.reviews.push(pendingReview);
         }
         // Fix-3: per-(review-id, content-hash-tuple) nudge cap.
         // If this exact (id, hash-tuple) has been nudged ≥cap times already,
@@ -801,14 +831,17 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
         const msgCfg = getHookMessageConfig();
         const cmd = redactSecrets(reviewCfg.codex_command);
         const repeat = nudgeCountForState > 1 ? `${nudgeCountForState}/${Math.max(1, reviewCfg.nudge_cap || 3)} for same file state` : "";
-        const completeCommand = `node ${path.join(wolfDir, "hooks", "complete-review.js")} ${nextId} --reviewer <name> --summary "<outcome>"`;
-        process.stderr.write(formatReviewNudge({
+        const reviewHelper = path.join(wolfDir, "hooks", "complete-review.js");
+        const completeCommand = `node ${reviewHelper} ${nextId} --reviewer <name> --summary "<outcome>"`;
+        const refreshCommand = `node ${reviewHelper} ${nextId} --refresh`;
+        emitStopHookFeedback(formatReviewNudge({
             id: nextId,
             reason,
             files: writtenFiles,
             repeat,
             reviewLogPath,
             completeCommand,
+            refreshCommand,
             codexCommand: cmd,
             wolfDir,
         }, msgCfg));
@@ -971,7 +1004,7 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     if (!tryConsumeNudgeSlot(sessionFile, "buglog_warnings", STOP_NUDGE_PER_SESSION_CAP)) {
         return false;
     }
-    process.stderr.write(`⚠️ OpenWolf: Files edited 3+ times this session (${multiEditDisplay.join(", ")}) but buglog.json was not updated. If you fixed bugs, please log them.\n`);
+    emitStopHookFeedback(`⚠️ OpenWolf: Files edited 3+ times this session (${multiEditDisplay.join(", ")}) but buglog.json was not updated. If you fixed bugs, please log them.\n`);
     return true;
 }
 /**
@@ -990,7 +1023,7 @@ function checkCerebrumFreshness(wolfDir, session, sessionFile) {
             if (!tryConsumeNudgeSlot(sessionFile, "cerebrum_warnings", STOP_NUDGE_PER_SESSION_CAP)) {
                 return false;
             }
-            process.stderr.write(`💡 OpenWolf: cerebrum.md hasn't been updated in ${Math.floor(hoursSinceUpdate)}h. Did you learn any user preferences, conventions, or gotchas this session? Consider updating .wolf/cerebrum.md.\n`);
+            emitStopHookFeedback(`💡 OpenWolf: cerebrum.md hasn't been updated in ${Math.floor(hoursSinceUpdate)}h. Did you learn any user preferences, conventions, or gotchas this session? Consider updating .wolf/cerebrum.md.\n`);
             return true;
         }
     }
@@ -1285,7 +1318,7 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
         return false; // hard mode would block, but we don't ship that yet
     const qaDirList = [...new Set(missing.map(f => qaDirsByFile[f] ?? defaultQaDir))];
     const qaDirDisplay = compactList(qaDirList, 2);
-    process.stderr.write(formatQualityNudge({
+    emitStopHookFeedback(formatQualityNudge({
         id: nextId,
         count: missing.length,
         qaDirDisplay,
@@ -1330,7 +1363,7 @@ function maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, transcrip
         return false;
     if (!tryConsumeNudgeSlot(sessionFile, "autonomy_continuation_warnings", cfg.max_fires_per_session || STOP_NUDGE_PER_SESSION_CAP))
         return false;
-    process.stderr.write(autonomyContinuationMessage());
+    emitStopHookFeedback(autonomyContinuationMessage());
     return true;
 }
 const CLAIM_CALIBRATION_SIGNALS = {
@@ -1553,7 +1586,7 @@ function maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, transcriptPa
         });
     }
     catch { }
-    process.stderr.write(claimCalibrationNudgeMessage(nextId, categories));
+    emitStopHookFeedback(claimCalibrationNudgeMessage(nextId, categories));
     return true;
 }
 
@@ -1707,11 +1740,11 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
         return false;
     if (!vc.nudge_only)
         return true; // hard-mode would block; not shipped yet
-    process.stderr.write(formatConclusionNudge({
+    emitStopHookFeedback(formatConclusionNudge({
         id: nextId,
         matchedCount: matched.length,
         minAssumptions: cfg.min_assumptions,
     }, getHookMessageConfig()));
     return true;
 }
-main().catch(() => exitAfterStderrFlush(0));
+main().catch(() => exitWithStopHookResult(false));

@@ -410,6 +410,12 @@ function autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr) {
         const bugLog = readJSON(bugLogPath, { version: 1, bugs: [] });
         if (!Array.isArray(bugLog.bugs))
             bugLog.bugs = [];
+        for (const entry of bugLog.bugs) {
+            if (!Object.prototype.hasOwnProperty.call(entry, "commit"))
+                entry.commit = null;
+            if (!Object.prototype.hasOwnProperty.call(entry, "reduction"))
+                entry.reduction = null;
+        }
         // Check for recent duplicate (same file + same category within 5 min)
         const recentDupe = bugLog.bugs.find(b => {
             if (path.basename(b.file) !== basename)
@@ -454,6 +460,8 @@ function autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr) {
             related_bugs: [],
             occurrences: 1,
             last_seen: new Date().toISOString(),
+            commit: null,
+            reduction: null,
         });
         writeJSON(bugLogPath, bugLog);
     }

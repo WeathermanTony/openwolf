@@ -14,6 +14,33 @@ You are working in an OpenWolf-managed project. These rules apply every turn.
 2. Check the `## Do-Not-Repeat` section — these are past mistakes that must not recur.
 3. Follow all conventions in `## Key Learnings` and `## User Preferences`.
 
+## Recall Before Acting
+
+Before starting non-trivial work, use OpenWolf's local memory in this order:
+
+1. Check `.wolf/anatomy.md` to locate only the files needed.
+2. Check `.wolf/cerebrum.md` for project conventions, user preferences, and do-not-repeat lessons.
+3. Check `.wolf/buglog.json` before fixing errors or repeating a pattern that may already have a known fix.
+4. Prefer applying an existing proven fix over rediscovering one. If the existing memory is stale or wrong, correct it as part of the work.
+
+## Link Fixes to Proof
+
+Every buglog entry should connect the reported problem to the evidence that the fix was real:
+
+- `commit`: the resolving commit SHA when known, otherwise `null` until committed.
+- `reduction`: the QA reduction, test file, command, or transcript that proves the fix, otherwise `null` until evidence exists.
+
+When adding or updating a buglog entry, include both fields. If a bug is fixed before commit, fill `reduction` immediately and backfill `commit` after the fix is committed.
+
+## Consolidate When Noisy
+
+OpenWolf memory should stay useful, not merely large. When `.wolf/memory.md`, `.wolf/buglog.json`, review logs, or QA logs become noisy:
+
+1. Preserve durable facts, current decisions, and recurring gotchas in `.wolf/cerebrum.md`.
+2. Keep raw chronological detail in the original log only when it is still operationally useful.
+3. Prefer compact summaries that link to proof files, reductions, review IDs, or commits.
+4. Do not delete user data just to reduce size; consolidate only when the retained summary is enough to recover the lesson.
+
 ## After Actions
 
 1. After every significant action, append a one-line entry to `.wolf/memory.md`:
@@ -78,7 +105,9 @@ OpenWolf's value comes from learning across sessions. You MUST update `.wolf/cer
   "tags": ["relevant", "keywords"],
   "related_bugs": [],
   "occurrences": 1,
-  "last_seen": "ISO date"
+  "last_seen": "ISO date",
+  "commit": null,
+  "reduction": ".wolf/qa/<proof>.md or command/test transcript"
 }
 ```
 
@@ -173,6 +202,10 @@ When the user asks to change, pick, migrate, or "reframe" their project's UI fra
 **Do NOT read the entire reframe-frameworks.md into context upfront.** Read the decision questions and comparison matrix first (~50 lines). Only read the specific framework's prompt section after the user chooses.
 
 
+
+## Reviewer Profiles
+
+Use `openwolf init --profile gov` for government or compliance-sensitive projects. This sets review nudges to advertise only US-based reviewers. Use `openwolf init --profile open` for unrestricted projects where broader installed reviewers such as GLM are acceptable. The profile controls OpenWolf's visible recommendations only; it does not enforce network, model, or account access.
 
 ## Review Gate Lifecycle
 

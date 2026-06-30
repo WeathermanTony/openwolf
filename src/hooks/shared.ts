@@ -804,6 +804,7 @@ const QUALITY_GATE_DEFAULTS = {
 
 const HOOK_MESSAGE_DEFAULTS = {
     verbosity: "compact",
+    reviewer_profile: "us-only",
     max_files: 3,
     include_provider_examples: false,
     include_docs_hint: true,
@@ -994,8 +995,10 @@ export function getHookMessageConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.hook_messages : undefined) ?? {};
     const verbosity = ["compact", "standard", "verbose"].includes(cfg.verbosity) ? cfg.verbosity : HOOK_MESSAGE_DEFAULTS.verbosity;
+    const reviewer_profile = ["us-only", "open"].includes(cfg.reviewer_profile) ? cfg.reviewer_profile : HOOK_MESSAGE_DEFAULTS.reviewer_profile;
     return {
         verbosity,
+        reviewer_profile,
         max_files: finiteNumber(cfg.max_files, HOOK_MESSAGE_DEFAULTS.max_files, { min: 1, max: 20 }),
         include_provider_examples: cfg.include_provider_examples ?? HOOK_MESSAGE_DEFAULTS.include_provider_examples,
         include_docs_hint: cfg.include_docs_hint ?? HOOK_MESSAGE_DEFAULTS.include_docs_hint,
@@ -1138,4 +1141,38 @@ export function hashFilesAtRest(files) {
         }
     }
     return out;
+}
+
+export function makeCurrentByteReceipt(files, hashes, existing) {
+    const now = new Date().toISOString();
+    return {
+        kind: "current-byte",
+        created_at: existing?.created_at ?? now,
+        updated_at: now,
+        hash_algorithm: "sha256",
+        files: [...new Set(files.map(normalizeFilePath))],
+        hashes: { ...hashes },
+    };
+}
+export function setReviewCurrentByteReceipt(review, files, hashes) {
+    const normalizedFiles = [...new Set(files.map(normalizeFilePath))];
+    const normalizedHashes = {};
+    for (const file of normalizedFiles) {
+        if (Object.prototype.hasOwnProperty.call(hashes, file)) {
+            normalizedHashes[file] = hashes[file];
+        }
+    }
+    review.files = normalizedFiles;
+    review.content_hashes = normalizedHashes;
+    review.receipt = makeCurrentByteReceipt(normalizedFiles, normalizedHashes, review.receipt);
+    return normalizedHashes;
+}
+export function getReviewHashes(review) {
+    const receiptHashes = review?.receipt && typeof review.receipt === "object" && !Array.isArray(review.receipt)
+        ? review.receipt.hashes
+        : undefined;
+    if (receiptHashes && typeof receiptHashes === "object" && !Array.isArray(receiptHashes)) {
+        return receiptHashes;
+    }
+    return review?.content_hashes;
 }
