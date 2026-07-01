@@ -66,8 +66,28 @@ async function assertStopSourceAndRuntimeContract() {
     assert.match(text, /out\.reason\s*=\s*"OpenWolf feedback"/);
     assert.doesNotMatch(text, /out\.reason\s*=\s*additionalContext/);
     assert.doesNotMatch(text, /process\.stderr\.write\(/);
+    assert.doesNotMatch(text, /exit 2|exits 2|non-zero exit code|stderr nudges|to stderr|stderr reminder|stderr nudge/);
+    assert.match(text, /buglog_warnings:\s*0/);
+    assert.match(text, /autonomy_continuation_warnings:\s*0/);
   }
 }
+
+function redactSecretsForTest(cmd) {
+  if (!cmd) return cmd;
+  let out = cmd;
+  out = out.replace(/\b([A-Z0-9_]*(?:TOKEN|KEY|SECRET|PASS(?:WORD)?|AUTH|CRED(?:ENTIALS?)?|API_?KEY|URL|URI|DSN|CONN(?:ECTION)?(?:_STR(?:ING)?))[A-Z0-9_]*)=([^\s;&|]+)([\s;&|]|$)/gi, '$1=***REDACTED***$3');
+  out = out.replace(/\b([A-Z][A-Z0-9_]*)=(sk-[A-Za-z0-9_\-]{8,}|ghp_[A-Za-z0-9]{20,}|xox[abprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|eyJ[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,})([\s;&|]|$)/gi, '$1=***REDACTED***$3');
+  return out;
+}
+
+test('stop hook redacts secrets without dropping shell separators', () => {
+  assert.equal(redactSecretsForTest('OPENAI_API_KEY=secret; codex --version'), 'OPENAI_API_KEY=***REDACTED***; codex --version');
+  assert.equal(redactSecretsForTest('TOKEN=abc& next'), 'TOKEN=***REDACTED***& next');
+  assert.equal(redactSecretsForTest('AUTH=abc|wc'), 'AUTH=***REDACTED***|wc');
+  assert.equal(redactSecretsForTest('SECRET=abc end'), 'SECRET=***REDACTED*** end');
+  assert.equal(redactSecretsForTest('PASSWORD=abc'), 'PASSWORD=***REDACTED***');
+  assert.equal(redactSecretsForTest('NOTEBOOK=abc'), 'NOTEBOOK=abc');
+});
 
 test('complete-review completes pending review when stored hashes match current bytes', async () => {
   const dir = await fixture();

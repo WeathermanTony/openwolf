@@ -5,7 +5,7 @@ import * as crypto from "node:crypto";
 import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getClaimCalibrationConfig, getHookMessageConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 // Per-session firing cap shared by the buglog-missing and cerebrum-freshness
-// stderr nudges. They have no per-state hash to dedup against (unlike the
+// feedback nudges. They have no per-state hash to dedup against (unlike the
 // review/file gates), so a session-scoped cap is the right shape. Symmetric
 // with verify-conclusions' max_fires_per_session. Hard-coded for now;
 // promote to config if a project needs to tune it.
@@ -19,7 +19,7 @@ function emitStopHookFeedback(message: string): void {
  *
  * Reads _session.json under file lock, checks if the counter < cap, increments
  * + writes back, releases lock. Returns true iff the slot was claimed (caller
- * may emit its stderr nudge). On lock contention OR cap reached, returns
+ * may emit its structured feedback nudge). On lock contention OR cap reached, returns
  * false without writing.
  *
  * This is the load-bearing primitive that fixes the round-3 race Codex
@@ -149,6 +149,8 @@ async function main() {
         anatomy_misses: 0,
         repeated_reads_warned: 0,
         cerebrum_warnings: 0,
+        buglog_warnings: 0,
+        autonomy_continuation_warnings: 0,
         stop_count: 0,
     };
     let session;
@@ -205,10 +207,11 @@ async function main() {
     // Only write to ledger if there's been activity
     const readCount = Object.keys(session.files_read).length;
     const writeCount = session.files_written.length;
-    // Track nudges across all sub-gates so we can exit 2 (advisory failure)
-    // when ANY of them fires. This is what makes the autonomy loop work:
-    // exit 2 blocks Stop and forces Claude to address the nudge next turn
-    // instead of stopping and waiting for the user to re-prompt.
+    // Track nudges across all sub-gates so we can emit a Claude Code Stop-hook
+    // JSON block when ANY of them fires. This is what makes the autonomy loop
+    // work: decision:"block" with additionalContext feeds the nudge into the
+    // next turn without using stderr/exit-2, which Claude Code displays as a
+    // hook error rather than normal feedback.
     let nudgeFired = false;
     // Even on a zero-read zero-write turn we still want the conclusion gate to
     // run — a pure-text "verdict" turn (no file ops) is exactly the case the
@@ -391,9 +394,9 @@ async function main() {
     }
     catch { }
     // Quality gate: nudge when an edited code file lacks a current adversarial
-    // reduction in .wolf/qa/. Soft-mode only — never blocks Stop, but exits 2
-    // (advisory failure) when a nudge fires so Claude Code surfaces it visibly
-    // and the assistant can't silently skip the warning.
+    // reduction in .wolf/qa/. Soft-mode only for the repository, but a nudge
+    // emits Stop-hook JSON feedback with decision:"block" so Claude Code feeds
+    // it into the next assistant turn instead of ending silently.
     try {
         if (maybeNudgeQualityGate(wolfDir, session, sessionEntry))
             nudgeFired = true;
@@ -418,9 +421,9 @@ async function main() {
     // protect the stop_count increment. The local `session` object is otherwise
     // read-only from this hook's perspective; post-read/post-write hooks are
     // the writers for the other fields.
-    // Exit 2 when any nudge fired so Claude Code surfaces a clear advisory
-    // signal. The turn still completes — Stop already ran — but the assistant
-    // sees the non-zero exit code and can't silently miss or ignore the gate.
+    // Emit JSON feedback when any nudge fired so Claude Code surfaces a clear
+    // advisory signal in the next assistant turn. We intentionally exit 0 after
+    // writing the JSON payload; stderr/exit-2 is reserved for actual hook errors.
     exitWithStopHookResult(nudgeFired);
 }
 // Convert a glob like `<doublestar>/auth/<doublestar>` to a RegExp. Supports
@@ -811,7 +814,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     }
     catch { }
     // Delta coalesce hit: a prior completed review already covers this work.
-    // Don't emit a nudge — return false so the hook doesn't drive exit 2.
+    // Don't emit a nudge — return false so the hook doesn't emit a JSON block.
     if (coalescedSilent)
         return false;
     // Fix-3: nudge-cap suppression. The (review-id, content-hash-tuple) has
@@ -820,7 +823,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     // assistant can address it without the gate re-pestering every turn.
     if (suppressedByCap)
         return false;
-    // Emit advisory nudge (stderr → next-turn context, never blocks).
+    // Emit advisory nudge through Stop-hook JSON feedback (stdout + exit 0).
     //
     // Suggests known reviewer companions and a generic installed-plugin fallback.
     // The local AI plugin set changes over time, so avoid hardcoding every vendor;
@@ -850,9 +853,9 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     return false;
 }
 /**
- * Strip likely-secret material from a shell-command string before echoing it
- * to stderr (which lands in the next-turn assistant context, and may be
- * uploaded to telemetry). The redactor is conservative: it catches the most
+ * Strip likely-secret material from a shell-command string before including it
+ * in Stop-hook JSON feedback (which lands in the next-turn assistant context,
+ * and may be uploaded to telemetry). The redactor is conservative: it catches the most
  * common shapes (env-var assignments with token-like values, --token/--api-key
  * flag values, bare tokens with `sk-`/`ghp_`/etc. prefixes) and leaves the
  * rest alone. The risk model here is the user putting a token directly into
@@ -863,10 +866,10 @@ function redactSecrets(cmd) {
         return cmd;
     let out = cmd;
     // KEY=value where the key name looks credential-ish OR the value matches a
-    // known token prefix. Use the matched separator (space, ;, &, end) verbatim
-    // so we don't mangle command structure.
-    out = out.replace(/\b([A-Z][A-Z0-9_]*(?:TOKEN|KEY|SECRET|PASS(?:WORD)?|AUTH|CRED(?:ENTIALS?)?|API_?KEY|URL|URI|DSN|CONN(?:ECTION)?(?:_STR(?:ING)?)?))=\S+/gi, "$1=***REDACTED***");
-    out = out.replace(/\b([A-Z][A-Z0-9_]*)=(sk-[A-Za-z0-9_\-]{8,}|ghp_[A-Za-z0-9]{20,}|xox[abprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|eyJ[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,})/g, "$1=***REDACTED***");
+    // known token prefix. Stop at shell separators/whitespace and preserve the
+    // delimiter so redaction doesn't mangle displayed command structure.
+    out = out.replace(/\b([A-Z0-9_]*(?:TOKEN|KEY|SECRET|PASS(?:WORD)?|AUTH|CRED(?:ENTIALS?)?|API_?KEY|URL|URI|DSN|CONN(?:ECTION)?(?:_STR(?:ING)?))[A-Z0-9_]*)=([^\s;&|]+)([\s;&|]|$)/gi, "$1=***REDACTED***$3");
+    out = out.replace(/\b([A-Z][A-Z0-9_]*)=(sk-[A-Za-z0-9_\-]{8,}|ghp_[A-Za-z0-9]{20,}|xox[abprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|eyJ[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,})([\s;&|]|$)/gi, "$1=***REDACTED***$3");
     // --token=value / --token value, --api-key, --auth, --password, --secret
     out = out.replace(/(--(?:token|api[-_]?key|auth(?:[-_]?token)?|password|secret|bearer)[=\s]+)\S+/gi, "$1***REDACTED***");
     // -H 'Authorization: Bearer foo' / Authorization: Basic xyz (any quoting).
@@ -882,7 +885,7 @@ function redactSecrets(cmd) {
 }
 /**
  * Check if files were edited multiple times but buglog.json wasn't updated.
- * Emit a stderr reminder so Claude sees it in the next turn.
+ * Emits structured Stop-hook feedback so Claude sees it in the next turn.
  */
 function buglogFalsePositiveAcknowledged(text) {
     if (!text)
@@ -1332,10 +1335,10 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
  * Verify-conclusions sub-gate. Reads the assistant's last text turn from the
  * transcript, scans for conclusion-language patterns. If ≥min_pattern_hits
  * distinct patterns match AND the gate log has no covering reduction entry
- * for this session, emit a stderr nudge requiring the assistant to test the
- * conclusion twice before stating it as fact.
+ * for this session, emit structured Stop-hook feedback requiring the assistant
+ * to test the conclusion twice before stating it as fact.
  *
- * Returns true iff a nudge was emitted (caller uses this to set exit code 2).
+ * Returns true iff a nudge was emitted (caller uses this to emit a JSON block).
  */
 function autonomyContinuationMessage() {
     return "OpenWolf autonomy: if the next step is clear and needs no user decision, do it now; do not stop only to summarize or ask to continue.\n";
@@ -1632,8 +1635,8 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
     // Same-text idempotence. Hash the assistant text (post-whitespace-normalize
     // so trivial reformatting still collapses to the same hash) and skip the
     // nudge if any prior conclusion entry in the gate-log already recorded the
-    // same hash. Without this, an unchanged assistant turn re-fires exit 2 on
-    // every Stop invocation and the autonomy loop never converges.
+    // same hash. Without this, an unchanged assistant turn re-emits the same
+    // JSON block on every Stop invocation and the autonomy loop never converges.
     const normalizedText = last.text.replace(/\s+/g, " ").trim();
     const textHash = crypto.createHash("sha256").update(normalizedText).digest("hex");
     const claimSig = claimStateSignature(sessionEntry, matched);

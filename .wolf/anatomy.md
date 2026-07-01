@@ -1,7 +1,19 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-30T22:00:03.796Z
-> Files: 144 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-01T23:26:04.702Z
+> Files: 147 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../../home/tony/.claude/plugins/marketplaces/tony-local/plugins/redteam/agents/
+
+- `redteam-panel.md` — What you return (~2446 tok)
+
+## ../../../../../home/tony/.claude/plugins/marketplaces/tony-local/plugins/redteam/commands/
+
+- `redteam.md` — /redteam — adversarial multi-model red-team panel (~3874 tok)
+
+## ../../../../../tmp/redteam-run-eFtTSN/
+
+- `verdict.md` — Red-team verdict (~1114 tok)
 
 ## ./
 
@@ -132,7 +144,7 @@
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15680 tok)
 - `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15673 tok)
 - `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23134 tok)
-- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~23131 tok)
+- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~23221 tok)
 
 ## src/scanner/
 
@@ -235,4 +247,4 @@
 
 ## tests/
 
-- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 5 more (~4479 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 6 more (~4874 tok)
