@@ -1,6 +1,6 @@
 # Cerebrum
 
-> OpenWolf's learning memory. Updated automatically as the AI learns from interactions.
+> Wolfpack's learning memory. Updated automatically as the AI learns from interactions.
 > Do not edit manually unless correcting an error.
 > Last updated: —
 

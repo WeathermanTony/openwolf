@@ -24,8 +24,8 @@ export function TokenUsage({ data }: { data: WolfData }) {
 
   const comparisonData = [
     { name: "OpenClaw + Claude", tokens: withOpenClaw, fill: "#f87171" },
-    { name: "Claude CLI (without OpenWolf)", tokens: withoutWolf, fill: "#fbbf24" },
-    { name: "OpenWolf + Claude CLI", tokens: totalTracked, fill: "#34d399" },
+    { name: "Claude CLI (without Wolfpack)", tokens: withoutWolf, fill: "#fbbf24" },
+    { name: "Wolfpack + Claude CLI", tokens: totalTracked, fill: "#34d399" },
   ];
 
   return (
@@ -55,7 +55,7 @@ export function TokenUsage({ data }: { data: WolfData }) {
           <h3 className="font-medium" style={{ color: "var(--text-secondary)" }}>Token Comparison</h3>
           {savingsPercent > 0 && (
             <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
-              OpenWolf saved ~{savingsPercent}%
+              Wolfpack saved ~{savingsPercent}%
             </span>
           )}
         </div>

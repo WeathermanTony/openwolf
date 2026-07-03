@@ -128,3 +128,60 @@
 | 19:28 | Session end: 28 writes across 6 files (verdict.md, stop.ts, redteam.md, redteam-panel.md, review-completion.test.js) | 16 reads | ~29792 tok |
 | 19:34 | Session end: 28 writes across 6 files (verdict.md, stop.ts, redteam.md, redteam-panel.md, review-completion.test.js) | 16 reads | ~29792 tok |
 | 19:36 | Session end: 28 writes across 6 files (verdict.md, stop.ts, redteam.md, redteam-panel.md, review-completion.test.js) | 16 reads | ~29792 tok |
+| 19:40 | Session end: 28 writes across 6 files (verdict.md, stop.ts, redteam.md, redteam-panel.md, review-completion.test.js) | 16 reads | ~29792 tok |
+| 19:41 | Session end: 28 writes across 6 files (verdict.md, stop.ts, redteam.md, redteam-panel.md, review-completion.test.js) | 16 reads | ~29792 tok |
+| 19:45 | Session end: 28 writes across 6 files (verdict.md, stop.ts, redteam.md, redteam-panel.md, review-completion.test.js) | 18 reads | ~30358 tok |
+| 19:45 | Session end: 28 writes across 6 files (verdict.md, stop.ts, redteam.md, redteam-panel.md, review-completion.test.js) | 18 reads | ~30358 tok |
+| 19:46 | Session end: 28 writes across 6 files (verdict.md, stop.ts, redteam.md, redteam-panel.md, review-completion.test.js) | 18 reads | ~30358 tok |
+| 19:48 | Session end: 28 writes across 6 files (verdict.md, stop.ts, redteam.md, redteam-panel.md, review-completion.test.js) | 18 reads | ~30358 tok |
+
+## Session: 2026-07-01 19:57
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:00 | Edited src/cli/daemon-cmd.ts | modified isActivePm2Process() | ~65 |
+| 20:00 | Edited src/cli/daemon-cmd.ts | 8→9 lines | ~90 |
+| 20:01 | Edited src/cli/daemon-cmd.ts | modified if() | ~97 |
+| 20:01 | Created tests/daemon-cmd.test.js | — | ~199 |
+| 20:02 | Edited src/cli/daemon-cmd.ts | added 1 condition(s) | ~68 |
+| 20:03 | Edited src/cli/daemon-cmd.ts | modified isActivePm2Process() | ~79 |
+| 20:04 | Edited tests/daemon-cmd.test.js | 2→2 lines | ~20 |
+| 20:06 | tightened PM2 daemon liveness and stop cleanup | src/cli/daemon-cmd.ts; tests/daemon-cmd.test.js; .wolf/qa/pm2-stale-daemons.md | build/test/verify passed | ~2k |
+| 20:10 | Session end: 8 writes across 3 files (daemon-cmd.ts, daemon-cmd.test.js, pm2-stale-daemons.md) | 4 reads | ~6994 tok |
+| 20:11 | Session end: 8 writes across 3 files (daemon-cmd.ts, daemon-cmd.test.js, pm2-stale-daemons.md) | 4 reads | ~6994 tok |
+
+## Session: 2026-07-03 13:13
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:17 | Edited package.json | 5→6 lines | ~62 |
+| 13:18 | Edited package-lock.json | 3→4 lines | ~32 |
+| 13:18 | Edited bin/openwolf.ts | "OpenWolf requires Node.js" → "Wolfpack requires Node.js" | ~28 |
+| 13:18 | Edited src/cli/init.ts | "Upgrading OpenWolf to v${" → "Upgrading Wolfpack to v${" | ~16 |
+| 13:18 | Edited src/cli/init.ts | 2→2 lines | ~52 |
+| 13:18 | Edited src/cli/init.ts | 2→2 lines | ~38 |
+| 13:18 | Edited src/cli/init.ts | inline fix | ~25 |
+| 13:19 | Edited src/cli/init.ts | inline fix | ~94 |
+| 13:19 | Edited src/cli/init.ts | inline fix | ~69 |
+| 13:19 | Edited src/cli/init.ts | inline fix | ~22 |
+| 13:19 | Edited src/cli/init.ts | inline fix | ~16 |
+| 13:19 | Edited src/cli/init.ts | inline fix | ~35 |
+| 13:19 | Edited src/cli/init.ts | inline fix | ~25 |
+| 13:19 | Edited src/dashboard/app/index.html | inline fix | ~9 |
+| 13:19 | Edited src/dashboard/app/App.tsx | inline fix | ~19 |
+| 13:19 | Edited src/dashboard/app/App.tsx | "OpenWolf" → "Wolfpack" | ~29 |
+| 13:20 | Edited src/dashboard/app/components/layout/Sidebar.tsx | inline fix | ~28 |
+| 13:20 | Edited src/dashboard/app/components/layout/Sidebar.tsx | inline fix | ~23 |
+| 13:20 | Edited src/dashboard/app/components/layout/Sidebar.tsx | 4→1 lines | ~26 |
+| 13:20 | Created README.md | — | ~537 |
+| 13:22 | Edited src/dashboard/app/components/panels/TokenUsage.tsx | 2→2 lines | ~47 |
+| 13:22 | Edited src/dashboard/app/components/panels/TokenUsage.tsx | inline fix | ~10 |
+| 13:22 | Edited src/dashboard/app/components/panels/DesignQC.tsx | inline fix | ~18 |
+| 13:22 | Edited src/templates/claude-rules-openwolf.md | inline fix | ~18 |
+| 13:23 | Edited src/cli/init.ts | inline fix | ~19 |
+| 13:25 | added Wolfpack brand alias and user-facing wording | package.json; src/cli/init.ts; dashboard; README.md; templates | build/test/verify passed | ~3k |
+| 13:26 | Session end: 26 writes across 12 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 14 reads | ~89881 tok |
+| 13:28 | Edited src/cli/init.ts | added 2 condition(s) | ~243 |
+| 13:35 | Session end: 27 writes across 12 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 14 reads | ~90175 tok |
+| 13:44 | Session end: 27 writes across 12 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 14 reads | ~90175 tok |
+| 13:45 | Session end: 27 writes across 12 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 14 reads | ~90175 tok |

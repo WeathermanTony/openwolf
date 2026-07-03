@@ -53,7 +53,7 @@ export default function App() {
       <div className="flex items-center justify-center min-h-screen" style={{ background: "var(--bg-base)" }}>
         <div className="text-center">
           <div className="text-4xl mb-4">🐺</div>
-          <p style={{ color: "var(--text-muted)" }}>Loading OpenWolf...</p>
+          <p style={{ color: "var(--text-muted)" }}>Loading Wolfpack...</p>
         </div>
       </div>
     );
@@ -70,7 +70,7 @@ export default function App() {
         onToggleTheme={toggleTheme}
       />
       <Layout>
-        <Header title={panelTitles[activePanel] || "OpenWolf"} theme={theme} onToggleTheme={toggleTheme} />
+        <Header title={panelTitles[activePanel] || "Wolfpack"} theme={theme} onToggleTheme={toggleTheme} />
         <Suspense fallback={<Skeleton />}>
           {activePanel === "overview" && <ProjectOverview data={data} />}
           {activePanel === "activity" && <ActivityTimeline data={data} />}

@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Pending initial scan.
+> Auto-maintained by Wolfpack. Pending initial scan.
 > Files: 0 tracked | Anatomy hits: 0 | Misses: 0
 
 ## Project

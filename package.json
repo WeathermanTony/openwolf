@@ -1,10 +1,11 @@
 {
   "name": "customopenwolf",
-  "version": "1.2.0-custom.0",
-  "description": "Custom OpenWolf fork and local CLI source for Claude Code projects",
+  "version": "1.2.0-custom.1",
+  "description": "Wolfpack: Claude Code workflow harness built on the OpenWolf runtime namespace",
   "type": "module",
   "bin": {
-    "openwolf": "./dist/bin/openwolf.js"
+    "openwolf": "./dist/bin/openwolf.js",
+    "wolfpack": "./dist/bin/openwolf.js"
   },
   "scripts": {
     "prebuild": "node -e \"const fs=require('fs');if(fs.existsSync('dist'))fs.rmSync('dist',{recursive:true})\"",

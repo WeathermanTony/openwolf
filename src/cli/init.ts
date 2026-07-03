@@ -95,7 +95,7 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
   const version = getVersion();
 
   if (isUpgrade) {
-    console.log(`Upgrading OpenWolf to v${version}...`);
+    console.log(`Upgrading Wolfpack to v${version}...`);
   }
 
   // Create .wolf/ directory
@@ -206,7 +206,12 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
   const snippetContent = readTemplateContent("claude-md-snippet.md", actualTemplatesDir);
   if (fs.existsSync(claudeMdPath)) {
     const existing = readText(claudeMdPath);
-    if (!existing.includes("OpenWolf")) {
+    const oldSnippetPattern = /# OpenWolf\n\n@\.wolf\/OPENWOLF\.md\n\nThis project uses OpenWolf for context management\. Read and follow \.wolf\/OPENWOLF\.md every session\. Check \.wolf\/cerebrum\.md before generating code\. Check \.wolf\/anatomy\.md before reading files\.?\n*/;
+    if (existing.includes("# Wolfpack") || existing.includes("This project uses Wolfpack")) {
+      // Already carries the current Wolfpack-facing bootstrap.
+    } else if (oldSnippetPattern.test(existing)) {
+      writeText(claudeMdPath, existing.replace(oldSnippetPattern, snippetContent + "\n\n"));
+    } else if (!existing.includes("OpenWolf")) {
       writeText(claudeMdPath, snippetContent + "\n\n" + existing);
     }
   } else {
@@ -272,14 +277,14 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
   // --- Summary ---
   console.log("");
   if (isUpgrade) {
-    console.log(`  ✓ OpenWolf upgraded to v${version}`);
-    console.log(`  ✓ All .wolf data preserved (${skippedCount} files: cerebrum, memory, anatomy, buglog, ledger)`);
+    console.log(`  ✓ Wolfpack upgraded to v${version}`);
+    console.log(`  ✓ All .wolf runtime data preserved (${skippedCount} files: cerebrum, memory, anatomy, buglog, ledger)`);
     console.log(`  ✓ Hook scripts updated (6 hooks)`);
     console.log(`  ✓ ${createdCount} config files updated`);
     console.log(`  ✓ Anatomy: ${fileCount} files tracked (unchanged)`);
   } else {
-    console.log(`  ✓ OpenWolf v${version} initialized`);
-    console.log(`  ✓ .wolf/ created with ${createdCount} files`);
+    console.log(`  ✓ Wolfpack v${version} initialized`);
+    console.log(`  ✓ .wolf/ runtime created with ${createdCount} files`);
     console.log(`  ✓ Claude Code hooks registered (6 hooks)`);
     console.log(`  ✓ CLAUDE.md updated`);
     console.log(`  ✓ .claude/rules/openwolf.md created`);
@@ -291,7 +296,7 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
   }
   console.log(`  ✓ Daemon: ${daemonStatus}`);
   console.log("");
-  console.log("  You're ready. Just use 'claude' as normal — OpenWolf is watching.");
+  console.log("  You're ready. Just use 'claude' as normal — Wolfpack is watching.");
   console.log("");
 }
 
@@ -389,19 +394,19 @@ function readTemplateContent(filename: string, templatesDir: string): string {
 
 function getEmbeddedTemplate(filename: string): string {
   const templates: Record<string, string> = {
-    "claude-md-snippet.md": `# OpenWolf\n\n@.wolf/OPENWOLF.md\n\nThis project uses OpenWolf for context management. Read and follow .wolf/OPENWOLF.md every session. Check .wolf/cerebrum.md before generating code. Check .wolf/anatomy.md before reading files.`,
-    "claude-rules-openwolf.md": `---\ndescription: OpenWolf protocol enforcement — active on all files\nglobs: **/*\n---\n\n- Check .wolf/anatomy.md before reading any project file\n- Check .wolf/cerebrum.md Do-Not-Repeat list before generating code\n- After writing or editing files, update .wolf/anatomy.md and append to .wolf/memory.md\n- After receiving a user correction, update .wolf/cerebrum.md immediately (Preferences, Learnings, or Do-Not-Repeat)\n- LEARN from every interaction: if you discover a convention, user preference, or project pattern, add it to .wolf/cerebrum.md. Low threshold — when in doubt, log it.\n- BEFORE fixing any bug or error: read .wolf/buglog.json for known fixes\n- AFTER fixing any bug, error, failed test, failed build, or user-reported problem: ALWAYS log to .wolf/buglog.json with error_message, root_cause, fix, and tags\n- If you edit a file more than twice in a session, that likely indicates a bug — log it to .wolf/buglog.json\n- When the user asks to check/evaluate UI design: run \`openwolf designqc\` to capture screenshots, then read them from .wolf/designqc-captures/\n- When the user asks to change/pick/migrate UI framework: read .wolf/reframe-frameworks.md, ask decision questions, recommend a framework, then execute with the framework's prompt`,
+    "claude-md-snippet.md": `# Wolfpack\n\n@.wolf/OPENWOLF.md\n\nThis project uses Wolfpack, a heavily customized Claude Code workflow harness built on the OpenWolf runtime namespace. Read and follow .wolf/OPENWOLF.md every session. Check .wolf/cerebrum.md before generating code. Check .wolf/anatomy.md before reading files.`,
+    "claude-rules-openwolf.md": `---\ndescription: Wolfpack protocol enforcement — active on all files\nglobs: **/*\n---\n\n- Check .wolf/anatomy.md before reading any project file\n- Check .wolf/cerebrum.md Do-Not-Repeat list before generating code\n- After writing or editing files, update .wolf/anatomy.md and append to .wolf/memory.md\n- After receiving a user correction, update .wolf/cerebrum.md immediately (Preferences, Learnings, or Do-Not-Repeat)\n- LEARN from every interaction: if you discover a convention, user preference, or project pattern, add it to .wolf/cerebrum.md. Low threshold — when in doubt, log it.\n- BEFORE fixing any bug or error: read .wolf/buglog.json for known fixes\n- AFTER fixing any bug, error, failed test, failed build, or user-reported problem: ALWAYS log to .wolf/buglog.json with error_message, root_cause, fix, and tags\n- If you edit a file more than twice in a session, that likely indicates a bug — log it to .wolf/buglog.json\n- When the user asks to check/evaluate UI design: run \`openwolf designqc\` to capture screenshots, then read them from .wolf/designqc-captures/\n- When the user asks to change/pick/migrate UI framework: read .wolf/reframe-frameworks.md, ask decision questions, recommend a framework, then execute with the framework's prompt`,
   };
   return templates[filename] ?? "";
 }
 
 function generateTemplate(destPath: string, file: string): void {
   const templates: Record<string, string> = {
-    "OPENWOLF.md": `# OpenWolf Operating Protocol\n\nYou are working in an OpenWolf-managed project. These rules apply every turn.\n\n## File Navigation\n\n1. Check \`.wolf/anatomy.md\` BEFORE reading any file.\n2. If the description is sufficient, do NOT read the full file.\n3. If a file is not in anatomy.md, search with Grep/Glob.\n\n## Code Generation\n\n1. Read \`.wolf/cerebrum.md\` and respect every entry.\n2. Check \`## Do-Not-Repeat\` section.\n\n## Recall Before Acting\n\nBefore starting non-trivial work, use OpenWolf's local memory in this order:\n\n1. Check \`.wolf/anatomy.md\` to locate only the files needed.\n2. Check \`.wolf/cerebrum.md\` for project conventions, user preferences, and do-not-repeat lessons.\n3. Check \`.wolf/buglog.json\` before fixing errors or repeating a pattern that may already have a known fix.\n4. Prefer applying an existing proven fix over rediscovering one. If the existing memory is stale or wrong, correct it as part of the work.\n\n## Link Fixes to Proof\n\nEvery buglog entry should connect the reported problem to the evidence that the fix was real:\n\n- \`commit\`: the resolving commit SHA when known, otherwise \`null\` until committed.\n- \`reduction\`: the QA reduction, test file, command, or transcript that proves the fix, otherwise \`null\` until evidence exists.\n\nWhen adding or updating a buglog entry, include both fields. If a bug is fixed before commit, fill \`reduction\` immediately and backfill \`commit\` after the fix is committed.\n\n## Consolidate When Noisy\n\nOpenWolf memory should stay useful, not merely large. When \`.wolf/memory.md\`, \`.wolf/buglog.json\`, review logs, or QA logs become noisy:\n\n1. Preserve durable facts, current decisions, and recurring gotchas in \`.wolf/cerebrum.md\`.\n2. Keep raw chronological detail in the original log only when it is still operationally useful.\n3. Prefer compact summaries that link to proof files, reductions, review IDs, or commits.\n4. Do not delete user data just to reduce size; consolidate only when the retained summary is enough to recover the lesson.\n\n## After Actions\n\n1. Append to \`.wolf/memory.md\`.\n2. After file changes: update \`.wolf/anatomy.md\`.\n\n## Token Discipline\n\n- Never re-read a file already read this session.\n- Prefer anatomy.md descriptions over full reads.\n`,
+    "OPENWOLF.md": `# Wolfpack Operating Protocol\n\nYou are working in a Wolfpack-managed project. Wolfpack is the customized workflow harness; .wolf/ and openwolf.* remain the compatibility/runtime namespace. These rules apply every turn.\n\n## File Navigation\n\n1. Check \`.wolf/anatomy.md\` BEFORE reading any file.\n2. If the description is sufficient, do NOT read the full file.\n3. If a file is not in anatomy.md, search with Grep/Glob.\n\n## Code Generation\n\n1. Read \`.wolf/cerebrum.md\` and respect every entry.\n2. Check \`## Do-Not-Repeat\` section.\n\n## Recall Before Acting\n\nBefore starting non-trivial work, use Wolfpack's local memory in this order:\n\n1. Check \`.wolf/anatomy.md\` to locate only the files needed.\n2. Check \`.wolf/cerebrum.md\` for project conventions, user preferences, and do-not-repeat lessons.\n3. Check \`.wolf/buglog.json\` before fixing errors or repeating a pattern that may already have a known fix.\n4. Prefer applying an existing proven fix over rediscovering one. If the existing memory is stale or wrong, correct it as part of the work.\n\n## Link Fixes to Proof\n\nEvery buglog entry should connect the reported problem to the evidence that the fix was real:\n\n- \`commit\`: the resolving commit SHA when known, otherwise \`null\` until committed.\n- \`reduction\`: the QA reduction, test file, command, or transcript that proves the fix, otherwise \`null\` until evidence exists.\n\nWhen adding or updating a buglog entry, include both fields. If a bug is fixed before commit, fill \`reduction\` immediately and backfill \`commit\` after the fix is committed.\n\n## Consolidate When Noisy\n\nWolfpack memory should stay useful, not merely large. When \`.wolf/memory.md\`, \`.wolf/buglog.json\`, review logs, or QA logs become noisy:\n\n1. Preserve durable facts, current decisions, and recurring gotchas in \`.wolf/cerebrum.md\`.\n2. Keep raw chronological detail in the original log only when it is still operationally useful.\n3. Prefer compact summaries that link to proof files, reductions, review IDs, or commits.\n4. Do not delete user data just to reduce size; consolidate only when the retained summary is enough to recover the lesson.\n\n## After Actions\n\n1. Append to \`.wolf/memory.md\`.\n2. After file changes: update \`.wolf/anatomy.md\`.\n\n## Token Discipline\n\n- Never re-read a file already read this session.\n- Prefer anatomy.md descriptions over full reads.\n`,
     "identity.md": `# Identity\n\n- **Name:** Wolf\n- **Role:** AI development assistant for this project\n- **Tone:** Direct, concise, technically precise\n`,
-    "cerebrum.md": `# Cerebrum\n\n> OpenWolf's learning memory. Updated automatically as the AI learns from interactions.\n> Do not edit manually unless correcting an error.\n> Last updated: —\n\n## User Preferences\n\n<!-- How the user likes things done. Code style, tools, patterns, communication. -->\n\n## Key Learnings\n\n<!-- Project-specific conventions discovered during development. -->\n\n## Do-Not-Repeat\n\n<!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->\n<!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->\n\n## Decision Log\n\n<!-- Significant technical decisions with rationale. Why X was chosen over Y. -->\n`,
+    "cerebrum.md": `# Cerebrum\n\n> Wolfpack's learning memory. Updated automatically as the AI learns from interactions.\n> Do not edit manually unless correcting an error.\n> Last updated: —\n\n## User Preferences\n\n<!-- How the user likes things done. Code style, tools, patterns, communication. -->\n\n## Key Learnings\n\n<!-- Project-specific conventions discovered during development. -->\n\n## Do-Not-Repeat\n\n<!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->\n<!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->\n\n## Decision Log\n\n<!-- Significant technical decisions with rationale. Why X was chosen over Y. -->\n`,
     "memory.md": `# Memory\n\n> Chronological action log. Hooks and AI append to this file automatically.\n> Old sessions are consolidated by the daemon weekly.\n\n## Session: bootstrap\n\n| Time | Action | File(s) | Outcome | ~Tokens |\n|------|--------|---------|---------|--------|\n`,
-    "anatomy.md": `# anatomy.md\n\n> Auto-maintained by OpenWolf. Pending initial scan.\n> Files: 0 tracked | Anatomy hits: 0 | Misses: 0\n\n## Project\n\n- Run \`openwolf scan\` or \`openwolf init\` to populate this index with project files.\n`,
+    "anatomy.md": `# anatomy.md\n\n> Auto-maintained by Wolfpack. Pending initial scan.\n> Files: 0 tracked | Anatomy hits: 0 | Misses: 0\n\n## Project\n\n- Run \`openwolf scan\` or \`openwolf init\` to populate this index with project files.\n`,
     "config.json": JSON.stringify({
       version: 1,
       openwolf: {

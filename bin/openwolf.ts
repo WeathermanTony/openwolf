@@ -2,7 +2,7 @@
 
 const major = parseInt(process.versions.node.split(".")[0], 10);
 if (major < 20) {
-  console.error(`OpenWolf requires Node.js 20 or higher. You are running ${process.version}.`);
+  console.error(`Wolfpack requires Node.js 20 or higher. You are running ${process.version}.`);
   process.exit(1);
 }
 

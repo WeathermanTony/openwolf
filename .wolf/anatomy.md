@@ -1,28 +1,16 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-01T23:26:04.702Z
-> Files: 147 tracked | Anatomy hits: 0 | Misses: 0
-
-## ../../../../../home/tony/.claude/plugins/marketplaces/tony-local/plugins/redteam/agents/
-
-- `redteam-panel.md` — What you return (~2446 tok)
-
-## ../../../../../home/tony/.claude/plugins/marketplaces/tony-local/plugins/redteam/commands/
-
-- `redteam.md` — /redteam — adversarial multi-model red-team panel (~3874 tok)
-
-## ../../../../../tmp/redteam-run-eFtTSN/
-
-- `verdict.md` — Red-team verdict (~1114 tok)
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-03T17:28:43.601Z
+> Files: 145 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
 - `.editorconfig` — Editor configuration (~51 tok)
 - `.gitignore` — Git ignore rules (~252 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
-- `package-lock.json` — npm lock file (~69262 tok)
-- `package.json` — Node.js package manifest (~562 tok)
-- `README.md` — Project documentation (~341 tok)
+- `package-lock.json` (~69275 tok)
+- `package.json` — Node.js package manifest (~577 tok)
+- `README.md` — Project documentation (~504 tok)
 - `tsconfig.json` — TypeScript configuration (~140 tok)
 - `VERSION` (~4 tok)
 
@@ -51,11 +39,11 @@
 
 - `bug-cmd.ts` — Exports bugSearch (~310 tok)
 - `cron-cmd.ts` — Exports cronList, cronRun, cronRetry (~1448 tok)
-- `daemon-cmd.ts` — Exports getPm2NameForRoot, hasPm2, hasOpenWolfPm2Daemon, ensurePm2Daemon + 4 more (~3363 tok)
+- `daemon-cmd.ts` — Exports getPm2NameForRoot, hasPm2, isActivePm2Process, hasOpenWolfPm2Daemon + 5 more (~3394 tok)
 - `dashboard.ts` — Exports dashboardCommand (~816 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `index.ts` — Exports createProgram (~1503 tok)
-- `init.ts` — Exports initCommand (~9194 tok)
+- `init.ts` — Exports initCommand (~9418 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~852 tok)
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1067 tok)
@@ -74,8 +62,8 @@
 
 ## src/dashboard/app/
 
-- `App.tsx` — ProjectOverview — uses useState (~1212 tok)
-- `index.html` — OpenWolf Dashboard (~159 tok)
+- `App.tsx` — ProjectOverview (~1212 tok)
+- `index.html` — Wolfpack Dashboard (~159 tok)
 - `main.tsx` — root (~76 tok)
 - `vite.config.ts` — Vite build configuration (~132 tok)
 
@@ -83,7 +71,7 @@
 
 - `Header.tsx` — Header (~254 tok)
 - `Layout.tsx` — Layout (~60 tok)
-- `Sidebar.tsx` — navItems (~1391 tok)
+- `Sidebar.tsx` — navItems (~1366 tok)
 
 ## src/dashboard/app/components/panels/
 
@@ -96,7 +84,7 @@
 - `DesignQC.tsx` — DesignQC (~793 tok)
 - `MemoryViewer.tsx` — MemoryViewer — renders table — uses useState (~1350 tok)
 - `ProjectOverview.tsx` — ProjectOverview (~1112 tok)
-- `TokenUsage.tsx` — TokenUsage — renders chart (~1568 tok)
+- `TokenUsage.tsx` — TokenUsage (~1568 tok)
 
 ## src/dashboard/app/components/shared/
 
@@ -143,7 +131,7 @@
 - `session-start.ts` — @ts-nocheck (~998 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15680 tok)
 - `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15673 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23134 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23224 tok)
 - `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~23221 tok)
 
 ## src/scanner/
@@ -228,7 +216,7 @@
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
 - `session-start.js` — Declares main (~1006 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15680 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23134 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23224 tok)
 
 ## templates/wolf/qa/
 
@@ -247,4 +235,5 @@
 
 ## tests/
 
+- `daemon-cmd.test.js` (~200 tok)
 - `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 6 more (~4874 tok)

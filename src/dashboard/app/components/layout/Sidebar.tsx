@@ -33,7 +33,7 @@ export function Sidebar({ activePanel, onNavigate, daemonStatus, projectName, th
         style={{ background: "var(--bg-surface)", borderRight: "1px solid var(--border)" }}>
         <div className="p-4" style={{ borderBottom: "1px solid var(--border)" }}>
           <div className="flex items-center justify-between">
-            <span className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>🐺 OpenWolf</span>
+            <span className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>🐺 Wolfpack</span>
             <button
               onClick={onToggleTheme}
               className="p-1.5 rounded-md transition-colors text-sm"
@@ -73,13 +73,10 @@ export function Sidebar({ activePanel, onNavigate, daemonStatus, projectName, th
         </nav>
         <div className="p-4 space-y-2" style={{ borderTop: "1px solid var(--border)" }}>
           <p className="text-xs leading-relaxed" style={{ color: "var(--text-faint)" }}>
-            Token-conscious AI project brain for Claude Code.
+            Claude Code workflow harness for memory, review, redteam, QA, and continuation.
           </p>
           <div className="flex items-center justify-between">
-            <a href="https://openwolf.com" target="_blank" rel="noopener noreferrer"
-              className="text-xs underline transition-colors"
-              style={{ color: "var(--accent)" }}
-            >Docs</a>
+            <span className="text-xs" style={{ color: "var(--text-faint)" }}>OpenWolf runtime</span>
             <span className="text-xs" style={{ color: "var(--text-faint)" }}>v1.0.0</span>
           </div>
         </div>

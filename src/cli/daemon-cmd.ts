@@ -97,9 +97,10 @@ function getPm2Process(name: string, projectRoot: string): Pm2ProcessInfo | null
   return listPm2Processes().find((proc) => proc.name === name && sameProjectRoot(proc, projectRoot)) ?? null;
 }
 
-function isActivePm2Process(proc: Pm2ProcessInfo | null): boolean {
-  const status = proc?.pm2_env?.status;
-  return proc !== null && status !== "stopped" && status !== "errored";
+export function isActivePm2Process(proc: Pm2ProcessInfo | null): proc is Pm2ProcessInfo & { pid: number } {
+  if (proc === null || proc.pm2_env?.status !== "online") return false;
+  const pid = proc.pid;
+  return typeof pid === "number" && Number.isInteger(pid) && pid > 0;
 }
 
 function getOpenWolfPm2Process(projectRoot: string): Pm2ProcessInfo | null {
@@ -130,7 +131,7 @@ export function ensurePm2Daemon(projectRoot: string, options: { silent?: boolean
   const existingName = existing?.name ?? name;
   const existingStatus = existing?.pm2_env?.status;
 
-  if (existing && existingStatus !== "stopped" && existingStatus !== "errored" && existingName === name && hasStopExitCodeZero(existing)) {
+  if (isActivePm2Process(existing) && existingName === name && hasStopExitCodeZero(existing)) {
     if (!options.silent) {
       console.log(`  ✓ Daemon already registered: ${existingName} (status ${existingStatus ?? "unknown"}, pid ${existing.pid ?? "unknown"})`);
     }
@@ -259,11 +260,12 @@ export function daemonStop(): void {
     const name = proc?.name ?? getPm2NameForRoot(projectRoot);
     if (proc) {
       try {
-        execSync(`pm2 stop ${pm2Target(proc, name)}`, { stdio: "ignore" });
-        console.log(`  ✓ Daemon stopped (PM2): ${name}`);
+        execSync(`pm2 delete ${pm2Target(proc, name)}`, { stdio: "ignore" });
+        execSync("pm2 save", { stdio: "ignore" });
+        console.log(`  ✓ Daemon removed from PM2: ${name}`);
         return;
       } catch {
-        // PM2 process stop failed — fall through to port-based stop
+        // PM2 process delete failed — fall through to port-based stop
       }
     }
   }
