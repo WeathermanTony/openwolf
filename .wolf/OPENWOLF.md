@@ -1,6 +1,6 @@
-# OpenWolf Operating Protocol
+# Wolfpack Operating Protocol
 
-You are working in an OpenWolf-managed project. These rules apply every turn.
+You are working in a Wolfpack-managed project. Wolfpack is the customized workflow harness; `.wolf/` and `openwolf.*` remain the compatibility/runtime namespace. These rules apply every turn.
 
 ## File Navigation
 
@@ -16,7 +16,7 @@ You are working in an OpenWolf-managed project. These rules apply every turn.
 
 ## Recall Before Acting
 
-Before starting non-trivial work, use OpenWolf's local memory in this order:
+Before starting non-trivial work, use Wolfpack's local memory in this order:
 
 1. Check `.wolf/anatomy.md` to locate only the files needed.
 2. Check `.wolf/cerebrum.md` for project conventions, user preferences, and do-not-repeat lessons.
@@ -34,7 +34,7 @@ When adding or updating a buglog entry, include both fields. If a bug is fixed b
 
 ## Consolidate When Noisy
 
-OpenWolf memory should stay useful, not merely large. When `.wolf/memory.md`, `.wolf/buglog.json`, review logs, or QA logs become noisy:
+Wolfpack memory should stay useful, not merely large. When `.wolf/memory.md`, `.wolf/buglog.json`, review logs, or QA logs become noisy:
 
 1. Preserve durable facts, current decisions, and recurring gotchas in `.wolf/cerebrum.md`.
 2. Keep raw chronological detail in the original log only when it is still operationally useful.
@@ -49,7 +49,7 @@ OpenWolf memory should stay useful, not merely large. When `.wolf/memory.md`, `.
 
 ## Cerebrum Learning (MANDATORY — every session)
 
-OpenWolf's value comes from learning across sessions. You MUST update `.wolf/cerebrum.md` whenever you learn something useful. This is not optional.
+Wolfpack's value comes from learning across sessions. You MUST update `.wolf/cerebrum.md` whenever you learn something useful. This is not optional.
 
 **Update `## User Preferences` when the user:**
 - Corrects your approach ("no, do it this way instead")

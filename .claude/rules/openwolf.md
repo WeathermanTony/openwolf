@@ -1,5 +1,5 @@
 ---
-description: OpenWolf protocol enforcement — active on all files
+description: Wolfpack protocol enforcement — active on all files
 globs: **/*
 ---
 
