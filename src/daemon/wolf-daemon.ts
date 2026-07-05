@@ -12,6 +12,7 @@ import { isWindows } from "../utils/platform.js";
 import { CronEngine, hasDeadLetterEntry, normalizeCronState, removeDeadLetterEntry, updateCronState } from "./cron-engine.js";
 import type { TaskRunResult } from "./cron-engine.js";
 import { startFileWatcher } from "./file-watcher.js";
+import { shouldStartDaemonForProject } from "./startup-guard.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +20,11 @@ const __dirname = path.dirname(__filename);
 // Prefer explicit OPENWOLF_PROJECT_ROOT env (set by CLI commands) over cwd detection
 const projectRoot = process.env.OPENWOLF_PROJECT_ROOT || findProjectRoot();
 const wolfDir = path.join(projectRoot, ".wolf");
+
+if (!shouldStartDaemonForProject(projectRoot, wolfDir)) {
+  console.error(`OpenWolf daemon refusing to start because project runtime is missing: ${projectRoot}`);
+  process.exit(0);
+}
 
 interface WolfConfig {
   openwolf: {
@@ -571,6 +577,11 @@ if (!validHeartbeatMinutes) {
   logger.warn(`Invalid cron heartbeat interval ${config.openwolf.cron.heartbeat_interval_minutes}; using 30 minutes`);
 }
 const heartbeatTimer = setInterval(() => {
+  if (!shouldStartDaemonForProject(projectRoot, wolfDir)) {
+    logger.warn(`Project runtime disappeared; stopping daemon without recreating .wolf files: ${projectRoot}`);
+    void shutdown({ skipStateWrite: true });
+    return;
+  }
   updateCronState(wolfDir, (state) => {
     state.last_heartbeat = new Date().toISOString();
   }).catch((err) => {
@@ -590,7 +601,7 @@ updateCronState(wolfDir, (state) => {
 logger.info(`OpenWolf daemon started pid=${process.pid} project=${projectRoot} dashboard_port=${port}`);
 
 // Graceful shutdown
-async function shutdown(): Promise<void> {
+async function shutdown(options: { skipStateWrite?: boolean } = {}): Promise<void> {
   logger.info("Daemon shutting down...");
   broadcast({ type: "daemon_stopping", timestamp: new Date().toISOString() });
 
@@ -599,9 +610,11 @@ async function shutdown(): Promise<void> {
   await fileWatcher.close().catch((err) => logger.error(`File watcher close failed: ${err}`));
 
   try {
-    await updateCronState(wolfDir, (state) => {
-      state.engine_status = "stopped";
-    });
+    if (!options.skipStateWrite && shouldStartDaemonForProject(projectRoot, wolfDir)) {
+      await updateCronState(wolfDir, (state) => {
+        state.engine_status = "stopped";
+      });
+    }
   } catch (err) {
     logger.error(`Could not write stopped cron state: ${err}`);
   } finally {

@@ -48,6 +48,7 @@
 - [2026-07-01] Versioning convention: increment the custom prerelease suffix for durable OpenWolf changes (for example `1.2.0-custom.0` → `1.2.0-custom.1`) and keep `package.json`, `package-lock.json`, and `VERSION` synchronized before commit/update so existing-project update summaries show meaningful versions.
 - [2026-07-01] PM2 liveness must require `status: "online"` plus a positive integer `pid`; pid-less `online` rows in `pm2 jlist` are stale metadata and should be restarted/deleted, not treated as active OpenWolf daemons. `openwolf daemon stop` should delete the PM2 entry instead of leaving stopped rows. See `.wolf/qa/pm2-stale-daemons.md`.
 - [2026-07-03] User preference: present this enhanced workflow as **Wolfpack**, not simply OpenWolf, because it is not vanilla OpenWolf and should not imply a workplace recommendation of upstream OpenWolf would deliver the same results. Keep `.wolf/`, `openwolf`, and `openwolf.*` as compatibility/runtime namespaces unless intentionally migrated.
+- [2026-07-04] A running PM2 daemon can recreate a manually deleted project root with only `.wolf` files if it keeps writing `daemon.log` or `cron-state.json`; daemon startup and heartbeat paths must refuse missing project/runtime directories and avoid state writes during deletion shutdown. See `.wolf/qa/deleted-project-daemon-guard.md`.
 
 ## Decision Log
 

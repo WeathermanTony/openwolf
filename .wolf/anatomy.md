@@ -1,14 +1,14 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-03T17:28:43.601Z
-> Files: 145 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-05T04:00:02.455Z
+> Files: 146 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
 - `.editorconfig` — Editor configuration (~51 tok)
 - `.gitignore` — Git ignore rules (~252 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
-- `package-lock.json` (~69275 tok)
+- `package-lock.json` — npm lock file (~69275 tok)
 - `package.json` — Node.js package manifest (~577 tok)
 - `README.md` — Project documentation (~504 tok)
 - `tsconfig.json` — TypeScript configuration (~140 tok)
@@ -58,11 +58,12 @@
 - `cron-engine.ts` — Exports TaskRunResult, enqueueCronStateWrite, normalizeCronState, updateCronState + 4 more (~5343 tok)
 - `file-watcher.ts` — Exports startFileWatcher (~678 tok)
 - `health.ts` — Exports getHealth (~336 tok)
-- `wolf-daemon.ts` — API routes: GET (2 endpoints) (~6101 tok)
+- `startup-guard.ts` — Exports shouldStartDaemonForProject (~101 tok)
+- `wolf-daemon.ts` — API routes: GET (2 endpoints) (~6280 tok)
 
 ## src/dashboard/app/
 
-- `App.tsx` — ProjectOverview (~1212 tok)
+- `App.tsx` — ProjectOverview — uses useState (~1212 tok)
 - `index.html` — Wolfpack Dashboard (~159 tok)
 - `main.tsx` — root (~76 tok)
 - `vite.config.ts` — Vite build configuration (~132 tok)
@@ -84,7 +85,7 @@
 - `DesignQC.tsx` — DesignQC (~793 tok)
 - `MemoryViewer.tsx` — MemoryViewer — renders table — uses useState (~1350 tok)
 - `ProjectOverview.tsx` — ProjectOverview (~1112 tok)
-- `TokenUsage.tsx` — TokenUsage (~1568 tok)
+- `TokenUsage.tsx` — TokenUsage — renders chart (~1568 tok)
 
 ## src/dashboard/app/components/shared/
 
@@ -145,7 +146,7 @@
 - `anatomy.md` — anatomy.md (~54 tok)
 - `buglog.json` (~10 tok)
 - `cerebrum.md` — Cerebrum (~164 tok)
-- `claude-md-snippet.md` — OpenWolf (~57 tok)
+- `claude-md-snippet.md` — Wolfpack (~74 tok)
 - `claude-rules-openwolf.md` (~371 tok)
 - `config.json` (~1306 tok)
 - `cron-manifest.json` (~10 tok)
@@ -153,7 +154,7 @@
 - `designqc-report.json` (~26 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — OpenWolf Operating Protocol (~3654 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~3682 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 - `reviewlog.json` (~11 tok)
@@ -202,7 +203,7 @@
 - `config.json` (~1306 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — OpenWolf Operating Protocol (~3654 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~3682 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 
@@ -235,5 +236,5 @@
 
 ## tests/
 
-- `daemon-cmd.test.js` (~200 tok)
+- `daemon-cmd.test.js` — Declares dir (~422 tok)
 - `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 6 more (~4874 tok)
