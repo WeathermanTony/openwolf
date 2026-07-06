@@ -154,6 +154,84 @@ export function createProgram(): Command {
       await designqcCommand(target, opts);
     });
 
+
+  const review = program
+    .command("review")
+    .description("Review receipt management");
+
+  review
+    .command("list")
+    .description("List review receipts")
+    .action(async () => {
+      const { reviewList } = await import("./review-cmd.js");
+      reviewList();
+    });
+
+  review
+    .command("show <id>")
+    .description("Show one review receipt and current hash state")
+    .action(async (id: string) => {
+      const { reviewShow } = await import("./review-cmd.js");
+      reviewShow(id);
+    });
+
+  review
+    .command("hash <files...>")
+    .description("Compute the reviewed-hash manifest for file(s)")
+    .action(async (files: string[]) => {
+      const { reviewHash } = await import("./review-cmd.js");
+      reviewHash(files);
+    });
+
+  review
+    .command("complete <id>")
+    .description("Complete a review receipt with optional reviewed-hash provenance")
+    .option("--reviewer <name>", "Reviewer label", "manual")
+    .option("--summary <text>", "Review summary", "")
+    .option("--reviewed-hash <hash>", "Manifest hash the reviewer saw")
+    .option("--reviewed-current", "Legacy manual assertion that current bytes were reviewed")
+    .action(async (id: string, opts: { reviewer?: string; summary?: string; reviewedHash?: string; reviewedCurrent?: boolean }) => {
+      const { reviewComplete } = await import("./review-cmd.js");
+      reviewComplete(id, opts);
+    });
+
+  const qa = program
+    .command("qa")
+    .description("Quality gate management");
+
+  qa
+    .command("status")
+    .description("Show QA reduction current/stale/orphan/broken status")
+    .option("--check", "Exit nonzero when stale, orphan, or broken reductions exist")
+    .option("--json", "Output JSON")
+    .action(async (opts: { check?: boolean; json?: boolean }) => {
+      const { qaStatus } = await import("./qa-cmd.js");
+      qaStatus(opts);
+    });
+
+  program
+    .command("trace <target>")
+    .description("Trace bug/review/path links across Wolfpack memory")
+    .option("--json", "Output JSON")
+    .action(async (target: string, opts: { json?: boolean }) => {
+      const { traceCommand } = await import("./trace-cmd.js");
+      traceCommand(target, opts);
+    });
+
+  const cerebrum = program
+    .command("cerebrum")
+    .description("Cerebrum memory management");
+
+  cerebrum
+    .command("lint")
+    .description("Validate .wolf/cerebrum.md structure")
+    .option("--check", "Exit nonzero on structural errors")
+    .option("--json", "Output JSON")
+    .action(async (opts: { check?: boolean; json?: boolean }) => {
+      const { cerebrumLint } = await import("./cerebrum-cmd.js");
+      cerebrumLint(opts);
+    });
+
   // --- Bug command ---
   const bug = program
     .command("bug")

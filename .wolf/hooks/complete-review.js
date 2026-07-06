@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 // @ts-nocheck
 import * as path from "node:path";
-import { getWolfDir, readJSON, writeJSON, hashFilesAtRest, HASH_SENTINEL_TOMBSTONE, HASH_SENTINEL_UNREADABLE, normalizeFilePath, getReviewHashes, setReviewCurrentByteReceipt } from "./shared.js";
+import { getWolfDir, readJSON, writeJSON, hashFilesAtRest, HASH_SENTINEL_TOMBSTONE, HASH_SENTINEL_UNREADABLE, normalizeFilePath, getReviewHashes, setReviewCurrentByteReceipt, hashReviewManifest, setReviewReviewedByteReceipt } from "./shared.js";
 import { acquireFileLock } from "../utils/size-discipline.js";
 function usage() {
     console.error('Usage: node .wolf/hooks/complete-review.js review-NNNN [--reviewer <name>] [--summary <text>]');
     console.error('       node .wolf/hooks/complete-review.js review-NNNN --refresh');
     console.error('       node .wolf/hooks/complete-review.js review-NNNN --reviewed-current --reviewer <name> --summary <text>');
+    console.error('       node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --reviewed-hash <manifest-hash> --summary <text>');
 }
 function parseArgs(argv) {
-    const out = { id: "", reviewer: "manual", summary: "", refresh: false, reviewedCurrent: false };
+    const out = { id: "", reviewer: "manual", summary: "", refresh: false, reviewedCurrent: false, reviewedHash: "" };
     const args = [...argv];
     if (args.includes("--help") || args.includes("-h")) {
         usage();
@@ -30,6 +31,9 @@ function parseArgs(argv) {
         else if (arg === "--reviewed-current") {
             out.reviewedCurrent = true;
         }
+        else if (arg === "--reviewed-hash") {
+            out.reviewedHash = args[++i] ?? "";
+        }
         else {
             console.error(`Unknown argument: ${arg}`);
             usage();
@@ -44,6 +48,7 @@ const EXIT_LOCK_BUSY = 3;
 const EXIT_HASH_DRIFT = 4;
 const EXIT_UNREADABLE = 5;
 const EXIT_REVIEW_STATE = 6;
+const EXIT_REVIEW_HASH_MISMATCH = 7;
 let reviewLogPath = "";
 let releaseReviewLock = null;
 function fail(message, code = EXIT_GENERIC) {
@@ -61,13 +66,19 @@ function fail(message, code = EXIT_GENERIC) {
     }
     process.exit(code);
 }
-const { id, reviewer, summary, refresh, reviewedCurrent } = parseArgs(process.argv.slice(2));
+const { id, reviewer, summary, refresh, reviewedCurrent, reviewedHash } = parseArgs(process.argv.slice(2));
 if (!/^review-\d+$/.test(id)) {
     usage();
     fail("review id must look like review-0001", EXIT_USAGE);
 }
 if (!refresh && (!reviewer || reviewer.trim().length === 0)) {
     fail("--reviewer must not be empty", EXIT_USAGE);
+}
+if (refresh && reviewedHash) {
+    fail("--refresh cannot be combined with --reviewed-hash", EXIT_USAGE);
+}
+if (reviewedHash && !/^[a-f0-9]{64}$/.test(reviewedHash)) {
+    fail("--reviewed-hash must be a 64-character sha256 manifest hash", EXIT_USAGE);
 }
 const wolfDir = getWolfDir();
 reviewLogPath = path.join(wolfDir, "reviewlog.json");
@@ -82,7 +93,8 @@ function classifyDrift(file, storedHash, currentHash) {
 }
 function formatReviewStaleMessage(id, storedHashes, currentHashes, mismatchedFiles, missingReviewedFiles) {
     const refreshCommand = `node .wolf/hooks/complete-review.js ${id} --refresh`;
-    const completeCommand = `node .wolf/hooks/complete-review.js ${id} --reviewed-current --reviewer <name> --summary "<outcome>"`;
+    const completeCommand = `node .wolf/hooks/complete-review.js ${id} --reviewer <name> --reviewed-hash <manifest-hash> --summary "<outcome>"`;
+    const fallbackCommand = `node .wolf/hooks/complete-review.js ${id} --reviewed-current --reviewer <name> --summary "<outcome>"`;
     const driftDetails = [
         ...mismatchedFiles.map((file) => {
             const stored = storedHashes?.[file];
@@ -110,6 +122,7 @@ function formatReviewStaleMessage(id, storedHashes, currentHashes, mismatchedFil
         `  1. Refresh the pending review receipt: ${refreshCommand}\n` +
         `  2. Rerun the independent review on the current files.\n` +
         `  3. Complete after review: ${completeCommand}\n` +
+        `Fallback after manual current-byte review: ${fallbackCommand}\n` +
         `Drift: ${[...driftDetails, ...possibleRenames].join("; ")}`;
 }
 function markSupersededPendingReviews(reviewLog, completedReview) {
@@ -161,9 +174,6 @@ try {
         fail(`${id} has no content_hashes; refresh the pending review first: node .wolf/hooks/complete-review.js ${id} --refresh`, EXIT_REVIEW_STATE);
     }
     const contentHashes = hashFilesAtRest(review.files);
-    if (!refresh && review.requires_rereview === true && !reviewedCurrent) {
-        fail(formatReviewStaleMessage(id, reviewHashes, contentHashes, Object.keys(contentHashes), []), EXIT_HASH_DRIFT);
-    }
     const unreadableFiles = Object.entries(contentHashes)
         .filter(([, hash]) => hash === HASH_SENTINEL_UNREADABLE)
         .map(([file]) => file);
@@ -177,8 +187,12 @@ try {
         review.requires_rereview = true;
         review.requires_rereview_reason = "pending review refreshed; rerun independent review on current bytes";
         writeJSON(reviewLogPath, reviewLog);
+        const manifestHash = hashReviewManifest(review.files, contentHashes);
         console.log(`OpenWolf refreshed ${id} content_hashes for ${Object.keys(contentHashes).length} file(s).`);
+        console.log(`Current review manifest hash: ${manifestHash}`);
         console.log("Next: rerun the independent review on current bytes, then complete with:");
+        console.log(`  node .wolf/hooks/complete-review.js ${id} --reviewer <name> --reviewed-hash ${manifestHash} --summary "<outcome>"`);
+        console.log("Fallback if you manually verified current bytes:");
         console.log(`  node .wolf/hooks/complete-review.js ${id} --reviewed-current --reviewer <name> --summary "<outcome>"`);
     }
     else {
@@ -190,6 +204,13 @@ try {
         if (mismatchedFiles.length > 0 || missingReviewedFiles.length > 0) {
             fail(formatReviewStaleMessage(id, reviewHashes, contentHashes, mismatchedFiles, missingReviewedFiles), EXIT_HASH_DRIFT);
         }
+        const currentManifestHash = hashReviewManifest(review.files, contentHashes);
+        if (reviewedHash && reviewedHash !== currentManifestHash) {
+            fail(`REVIEW_HASH_MISMATCH: ${id} current manifest hash is ${currentManifestHash}, but --reviewed-hash was ${reviewedHash}. Rerun the reviewer on current bytes or refresh/review again.`, EXIT_REVIEW_HASH_MISMATCH);
+        }
+        if (review.requires_rereview === true && !reviewedCurrent && !reviewedHash) {
+            fail(formatReviewStaleMessage(id, reviewHashes, contentHashes, Object.keys(contentHashes), []), EXIT_HASH_DRIFT);
+        }
         review.status = "completed";
         review.completed_at = new Date().toISOString();
         review.reviewer = reviewer.trim();
@@ -198,7 +219,12 @@ try {
         if (summary.trim().length > 0) {
             review.review_summary = summary.trim();
         }
-        setReviewCurrentByteReceipt(review, review.files, contentHashes);
+        if (reviewedHash) {
+            setReviewReviewedByteReceipt(review, review.files, contentHashes, { reviewer: reviewer.trim(), source: "reviewed-hash" });
+        }
+        else {
+            setReviewCurrentByteReceipt(review, review.files, contentHashes);
+        }
         const superseded = markSupersededPendingReviews(reviewLog, review);
         writeJSON(reviewLogPath, reviewLog);
         console.log(`OpenWolf completed ${id} and verified content_hashes for ${Object.keys(contentHashes).length} file(s).${superseded > 0 ? ` Superseded ${superseded} covered pending review(s).` : ""}`);

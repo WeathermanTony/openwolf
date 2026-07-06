@@ -111,6 +111,56 @@ test('complete-review completes pending review when stored hashes match current 
   }
 });
 
+
+
+test('complete-review records reviewed-hash provenance when manifest hash matches', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    const bytes = 'const reviewed = true;\n';
+    await writeFile(file, bytes);
+    const fileHash = sha256(bytes);
+    const manifestHash = sha256(JSON.stringify([[file, fileHash]]));
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'pending', files: [file], content_hashes: { [file]: fileHash } }]);
+
+    const result = runHelper(dir, 'review-0001', ['--reviewed-hash', manifestHash], 'hash-reviewer');
+    assert.equal(result.status, 0, result.stderr);
+
+    const review = (await readReviewLog(dir)).reviews[0];
+    assert.equal(review.status, 'completed');
+    assert.equal(review.reviewer, 'hash-reviewer');
+    assert.equal(review.receipt.kind, 'reviewed-byte');
+    assert.equal(review.receipt.reviewed_hash, manifestHash);
+    assert.equal(review.reviewed_hash, manifestHash);
+    assert.equal(review.reviewed_hashes[file], fileHash);
+    assert.equal(review.review_provenance.kind, 'reviewer-saw-current-bytes');
+    assert.equal(review.review_provenance.hashes[file], fileHash);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review refuses mismatched reviewed-hash and leaves review pending', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    const bytes = 'const reviewed = false;\n';
+    await writeFile(file, bytes);
+    const fileHash = sha256(bytes);
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'pending', files: [file], content_hashes: { [file]: fileHash } }]);
+
+    const result = runHelper(dir, 'review-0001', ['--reviewed-hash', '0'.repeat(64)], 'hash-reviewer');
+    assert.equal(result.status, 7);
+    assert.match(result.stderr, /REVIEW_HASH_MISMATCH/);
+
+    const review = (await readReviewLog(dir)).reviews[0];
+    assert.equal(review.status, 'pending');
+    assert.equal(review.reviewed_hash, undefined);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('complete-review accepts arbitrary extensible reviewer labels', async () => {
   const dir = await fixture();
   try {
@@ -200,7 +250,8 @@ test('complete-review refresh updates current-byte receipt without completing', 
     assert.match(unsafe.stderr, /REVIEW_STALE/);
     assert.match(unsafe.stderr, /--reviewed-current/);
 
-    const completed = runHelper(dir, 'review-0001', ['--reviewed-current'], 'test');
+    const manifestHash = sha256(JSON.stringify([[file, sha256('new bytes\n')]]));
+    const completed = runHelper(dir, 'review-0001', ['--reviewed-hash', manifestHash], 'test');
     assert.equal(completed.status, 0, completed.stderr);
     review = (await readReviewLog(dir)).reviews[0];
     assert.equal(review.status, 'completed');

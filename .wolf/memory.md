@@ -241,3 +241,41 @@
 | 17:21 | Diagnosed Adventists Stop hook OpenWolf-feedback report | .wolf/buglog.json | stale installed runtime branding; JSON block contract present | ~1k |
 | 17:22 | Added QA reduction for Adventists Stop hook branding diagnosis | .wolf/qa/adventists-stop-hook-branding.md | falsifier supports stale runtime branding with JSON block markers | ~1k |
 | 17:22 | Session end: 1 writes across 1 files (adventists-stop-hook-branding.md) | 0 reads | ~1086 tok |
+| 18:32 | Committed reviewer profile changes and updated registered projects | git, openwolf update | commit 68f3b28; 72 projects updated | ~2k |
+| 18:32 | Session end: 1 writes across 1 files (adventists-stop-hook-branding.md) | 1 reads | ~1086 tok |
+| 18:42 | Created ../../../../../home/tony/.claude/plans/moonlit-coalescing-glade.md | — | ~2820 |
+| 18:48 | Session end: 2 writes across 2 files (adventists-stop-hook-branding.md, moonlit-coalescing-glade.md) | 27 reads | ~97930 tok |
+| 18:49 | Created src/cli/review-cmd.ts | — | ~1561 |
+| 18:50 | Created tests/review-cmd.test.js | — | ~749 |
+
+## Session: 2026-07-06 19:11
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:12 | Edited tests/review-cmd.test.js | inline fix | ~25 |
+| 19:12 | Edited tests/review-cmd.test.js | expanded (+28 lines) | ~669 |
+| 19:13 | Edited tests/review-cmd.test.js | 1→4 lines | ~126 |
+| 19:13 | Session end: 3 writes across 1 files (review-cmd.test.js) | 2 reads | ~3130 tok |
+| 19:14 | Session end: 3 writes across 1 files (review-cmd.test.js) | 2 reads | ~3130 tok |
+| 19:15 | Created src/cli/qa-cmd.ts | — | ~1289 |
+| 19:15 | Edited src/cli/index.ts | expanded (+14 lines) | ~164 |
+| 19:16 | Created tests/qa-cmd.test.js | — | ~587 |
+| 19:16 | Session end: 6 writes across 4 files (review-cmd.test.js, qa-cmd.ts, index.ts, qa-cmd.test.js) | 3 reads | ~6673 tok |
+| 19:17 | Session end: 7 writes across 5 files (review-cmd.test.js, qa-cmd.ts, index.ts, qa-cmd.test.js, qa-status-cli.md) | 3 reads | ~7355 tok |
+| 19:18 | Edited src/cli/qa-cmd.ts | modified if() | ~27 |
+| 19:18 | Edited tests/qa-cmd.test.js | 7→8 lines | ~127 |
+| 19:18 | Edited tests/qa-cmd.test.js | 1→2 lines | ~57 |
+| 19:19 | Session end: 10 writes across 5 files (review-cmd.test.js, qa-cmd.ts, index.ts, qa-cmd.test.js, qa-status-cli.md) | 5 reads | ~9442 tok |
+| 19:21 | Session end: 10 writes across 5 files (review-cmd.test.js, qa-cmd.ts, index.ts, qa-cmd.test.js, qa-status-cli.md) | 5 reads | ~9442 tok |
+| 19:23 | Created src/cli/trace-cmd.ts | — | ~887 |
+| 19:23 | Created src/cli/cerebrum-cmd.ts | — | ~723 |
+| 19:23 | Edited src/cli/index.ts | expanded (+23 lines) | ~253 |
+| 19:24 | Created tests/trace-cerebrum-cmd.test.js | — | ~852 |
+| 19:26 | Completed review provenance, review CLI, QA status, trace, and cerebrum lint work | src/hooks/*, src/cli/*, tests/* | full build/test/verify passed; QA reductions written | ~6k |
+| 19:27 | Session end: 16 writes across 10 files (review-cmd.test.js, qa-cmd.ts, index.ts, qa-cmd.test.js, qa-status-cli.md) | 5 reads | ~13861 tok |
+| 19:29 | Edited src/cli/review-cmd.ts | added optional chaining | ~236 |
+| 19:29 | Edited src/cli/review-cmd.ts | inline fix | ~28 |
+| 19:29 | Edited src/cli/review-cmd.ts | 1→2 lines | ~35 |
+| 19:30 | Edited tests/review-cmd.test.js | expanded (+6 lines) | ~125 |
+| 19:30 | Edited tests/review-cmd.test.js | 2→3 lines | ~44 |
+| 19:31 | Session end: 21 writes across 11 files (review-cmd.test.js, qa-cmd.ts, index.ts, qa-cmd.test.js, qa-status-cli.md) | 5 reads | ~14810 tok |

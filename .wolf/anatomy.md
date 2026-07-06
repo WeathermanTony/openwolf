@@ -1,7 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-06T22:00:03.560Z
-> Files: 146 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-06T23:30:07.982Z
+> Files: 154 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../../home/tony/.claude/plans/
+
+- `moonlit-coalescing-glade.md` — Plan: Wolfpack review provenance and memory-query improvements (~2643 tok)
 
 ## ./
 
@@ -38,15 +42,19 @@
 ## src/cli/
 
 - `bug-cmd.ts` — Exports bugSearch (~310 tok)
+- `cerebrum-cmd.ts` — Exports lintCerebrum, cerebrumLint (~723 tok)
 - `cron-cmd.ts` — Exports cronList, cronRun, cronRetry (~1448 tok)
 - `daemon-cmd.ts` — Exports getPm2NameForRoot, hasPm2, isActivePm2Process, hasOpenWolfPm2Daemon + 5 more (~3394 tok)
 - `dashboard.ts` — Exports dashboardCommand (~816 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
-- `index.ts` — Exports createProgram (~1503 tok)
+- `index.ts` — Exports createProgram (~2259 tok)
 - `init.ts` — Exports initCommand (~9455 tok)
+- `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~852 tok)
+- `review-cmd.ts` — Exports reviewList, reviewShow, reviewHash, reviewComplete (~1646 tok)
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1067 tok)
+- `trace-cmd.ts` — Exports traceCommand (~887 tok)
 - `update.ts` — openwolf update — Update all registered OpenWolf projects. (~5704 tok)
 
 ## src/config/
@@ -237,4 +245,7 @@
 ## tests/
 
 - `daemon-cmd.test.js` — Declares dir (~554 tok)
+- `qa-cmd.test.js` — sha256: fixture (~656 tok)
+- `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
 - `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 6 more (~4874 tok)
+- `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)

@@ -1136,13 +1136,27 @@ export function hashFilesAtRest(files) {
     }
     return out;
 }
+export function makeHashManifest(files, hashes) {
+    const normalizedFiles = [...new Set(files.map(normalizeFilePath))];
+    return normalizedFiles
+        .filter((file) => Object.prototype.hasOwnProperty.call(hashes, file))
+        .map((file) => [file, hashes[file]])
+        .sort((a, b) => a[0].localeCompare(b[0]));
+}
+export function hashReviewManifest(files, hashes) {
+    const manifest = makeHashManifest(files, hashes);
+    return crypto.createHash("sha256").update(JSON.stringify(manifest)).digest("hex");
+}
 export function makeCurrentByteReceipt(files, hashes, existing) {
     const now = new Date().toISOString();
     return {
+        version: 1,
         kind: "current-byte",
         created_at: existing?.created_at ?? now,
         updated_at: now,
         hash_algorithm: "sha256",
+        manifest_algorithm: "sha256-json-v1",
+        reviewed_hash: hashReviewManifest(files, hashes),
         files: [...new Set(files.map(normalizeFilePath))],
         hashes: { ...hashes },
     };
@@ -1158,6 +1172,51 @@ export function setReviewCurrentByteReceipt(review, files, hashes) {
     review.files = normalizedFiles;
     review.content_hashes = normalizedHashes;
     review.receipt = makeCurrentByteReceipt(normalizedFiles, normalizedHashes, review.receipt);
+    return normalizedHashes;
+}
+export function makeReviewedByteReceipt(files, hashes, options = {}, existing) {
+    const now = new Date().toISOString();
+    return {
+        version: 1,
+        kind: "reviewed-byte",
+        created_at: existing?.created_at ?? now,
+        updated_at: now,
+        completed_at: options.completed_at ?? now,
+        reviewed_at: options.reviewed_at ?? now,
+        reviewer: options.reviewer ?? "manual",
+        review_command: options.review_command ?? null,
+        hash_algorithm: "sha256",
+        manifest_algorithm: "sha256-json-v1",
+        reviewed_hash: hashReviewManifest(files, hashes),
+        files: [...new Set(files.map(normalizeFilePath))],
+        hashes: { ...hashes },
+        source: options.source ?? "reviewed-hash",
+    };
+}
+export function setReviewReviewedByteReceipt(review, files, hashes, options = {}) {
+    const normalizedFiles = [...new Set(files.map(normalizeFilePath))];
+    const normalizedHashes = {};
+    for (const file of normalizedFiles) {
+        if (Object.prototype.hasOwnProperty.call(hashes, file)) {
+            normalizedHashes[file] = hashes[file];
+        }
+    }
+    review.files = normalizedFiles;
+    review.content_hashes = normalizedHashes;
+    review.receipt = makeReviewedByteReceipt(normalizedFiles, normalizedHashes, options, review.receipt);
+    review.reviewed_hash = review.receipt.reviewed_hash;
+    review.reviewed_hash_algorithm = "sha256-json-v1";
+    review.reviewed_hashes = { ...normalizedHashes };
+    review.reviewed_at = review.receipt.reviewed_at;
+    review.review_provenance = {
+        kind: "reviewer-saw-current-bytes",
+        reviewer: options.reviewer ?? "manual",
+        hashes: { ...normalizedHashes },
+        hash_algorithm: "sha256",
+        manifest_algorithm: "sha256-json-v1",
+        reviewed_hash: review.receipt.reviewed_hash,
+        source: options.source ?? "reviewed-hash",
+    };
     return normalizedHashes;
 }
 export function getReviewHashes(review) {
