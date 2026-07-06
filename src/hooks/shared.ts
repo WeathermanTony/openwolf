@@ -995,7 +995,7 @@ export function getHookMessageConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.hook_messages : undefined) ?? {};
     const verbosity = ["compact", "standard", "verbose"].includes(cfg.verbosity) ? cfg.verbosity : HOOK_MESSAGE_DEFAULTS.verbosity;
-    const reviewer_profile = ["us-only", "open"].includes(cfg.reviewer_profile) ? cfg.reviewer_profile : HOOK_MESSAGE_DEFAULTS.reviewer_profile;
+    const reviewer_profile = ["us-only", "open", "budget"].includes(cfg.reviewer_profile) ? cfg.reviewer_profile : HOOK_MESSAGE_DEFAULTS.reviewer_profile;
     return {
         verbosity,
         reviewer_profile,

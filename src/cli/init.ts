@@ -364,15 +364,16 @@ function embeddedQaTemplate(name: string): string {
   return "";
 }
 
-export function normalizeReviewerProfile(profile?: string): "us-only" | "open" | undefined {
+export function normalizeReviewerProfile(profile?: string): "us-only" | "open" | "budget" | undefined {
   if (!profile) return undefined;
   const normalized = profile.trim().toLowerCase();
   if (["gov", "government", "us-only", "us", "american"].includes(normalized)) return "us-only";
   if (["open", "normal", "default", "unrestricted"].includes(normalized)) return "open";
-  throw new Error(`Unknown OpenWolf profile "${profile}". Use "gov" or "open".`);
+  if (["budget", "token-rich", "cheap", "low-cost", "glm"].includes(normalized)) return "budget";
+  throw new Error(`Unknown Wolfpack profile "${profile}". Use "gov", "open", or "budget".`);
 }
 
-export function applyReviewerProfile(configPath: string, profile?: string): "us-only" | "open" | undefined {
+export function applyReviewerProfile(configPath: string, profile?: string): "us-only" | "open" | "budget" | undefined {
   const reviewerProfile = normalizeReviewerProfile(profile);
   if (!reviewerProfile) return undefined;
   const parsed = readJSON<Record<string, any>>(configPath, {});

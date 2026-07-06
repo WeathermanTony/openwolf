@@ -63,7 +63,7 @@ async function assertStopSourceAndRuntimeContract() {
     assert.match(text, /hookSpecificOutput/);
     assert.match(text, /additionalContext/);
     assert.match(text, /out\.decision\s*=\s*"block"/);
-    assert.match(text, /out\.reason\s*=\s*"OpenWolf feedback"/);
+    assert.match(text, /out\.reason\s*=\s*"Wolfpack feedback"/);
     assert.doesNotMatch(text, /out\.reason\s*=\s*additionalContext/);
     assert.doesNotMatch(text, /process\.stderr\.write\(/);
     assert.doesNotMatch(text, /exit 2|exits 2|non-zero exit code|stderr nudges|to stderr|stderr reminder|stderr nudge/);
@@ -333,13 +333,13 @@ test('stop hook nudges autonomy continuation on obvious next-step language', asy
     assert.equal(first.stderr, '');
     const firstPayload = JSON.parse(first.stdout);
     assert.equal(firstPayload.decision, 'block');
-    assert.equal(firstPayload.reason, 'OpenWolf feedback');
-    assert.doesNotMatch(firstPayload.reason, /OpenWolf autonomy:/);
-    assert.match(firstPayload.hookSpecificOutput.additionalContext, /OpenWolf autonomy:/);
+    assert.equal(firstPayload.reason, 'Wolfpack feedback');
+    assert.doesNotMatch(firstPayload.reason, /Wolfpack autonomy:/);
+    assert.match(firstPayload.hookSpecificOutput.additionalContext, /Wolfpack autonomy:/);
 
     const second = runStopHook(dir, transcript, 'sess-autonomy');
     assert.equal(second.status, 0, second.stderr);
-    assert.doesNotMatch(second.stdout, /OpenWolf autonomy:/);
+    assert.doesNotMatch(second.stdout, /Wolfpack autonomy:/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -378,7 +378,7 @@ test('stop hook suppresses repeated buglog nudges after explicit false-positive 
     assert.equal(first.stderr, '');
     const firstPayload = JSON.parse(first.stdout);
     assert.equal(firstPayload.decision, 'block');
-    assert.equal(firstPayload.reason, 'OpenWolf feedback');
+    assert.equal(firstPayload.reason, 'Wolfpack feedback');
     assert.doesNotMatch(firstPayload.reason, /Files edited 3\+ times/);
     assert.match(firstPayload.hookSpecificOutput.additionalContext, /Files edited 3\+ times/);
 

@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-05T04:00:02.455Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-06T22:00:03.560Z
 > Files: 146 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -43,7 +43,7 @@
 - `dashboard.ts` — Exports dashboardCommand (~816 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `index.ts` — Exports createProgram (~1503 tok)
-- `init.ts` — Exports initCommand (~9418 tok)
+- `init.ts` — Exports initCommand (~9455 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~852 tok)
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1067 tok)
@@ -130,10 +130,10 @@
 - `pre-write.ts` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2245 tok)
 - `session-start.js` — Declares main (~1006 tok)
 - `session-start.ts` — @ts-nocheck (~998 tok)
-- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15680 tok)
-- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15673 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23224 tok)
-- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~23221 tok)
+- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15683 tok)
+- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15676 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23382 tok)
+- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~23379 tok)
 
 ## src/scanner/
 
@@ -154,7 +154,7 @@
 - `designqc-report.json` (~26 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~3682 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~3758 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 - `reviewlog.json` (~11 tok)
@@ -203,7 +203,7 @@
 - `config.json` (~1306 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~3682 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~3758 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 
@@ -216,8 +216,8 @@
 - `pre-read.js` — Declares main (~914 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
 - `session-start.js` — Declares main (~1006 tok)
-- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15680 tok)
-- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23224 tok)
+- `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~15683 tok)
+- `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~23382 tok)
 
 ## templates/wolf/qa/
 
@@ -236,5 +236,5 @@
 
 ## tests/
 
-- `daemon-cmd.test.js` — Declares dir (~422 tok)
+- `daemon-cmd.test.js` — Declares dir (~554 tok)
 - `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 6 more (~4874 tok)

@@ -25,14 +25,10 @@
 > Consolidated session (0 actions)
 
 ## Session: 2026-06-28 03:00
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
+> Consolidated session (0 actions)
 
 ## Session: 2026-06-29 04:00
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
+> Consolidated session (0 actions)
 
 ## Session: 2026-06-30 21:28
 
@@ -205,3 +201,43 @@
 | 19:49 | Session end: 39 writes across 17 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 21 reads | ~108813 tok |
 | 19:49 | Session end: 39 writes across 17 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 21 reads | ~108813 tok |
 | 19:50 | Session end: 39 writes across 17 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 21 reads | ~108813 tok |
+| 00:46 | Session end: 39 writes across 17 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 21 reads | ~108813 tok |
+| 02:31 | Session end: 39 writes across 17 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 22 reads | ~110288 tok |
+| 02:35 | Session end: 39 writes across 17 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 23 reads | ~133509 tok |
+| 02:43 | Edited src/cli/init.ts | added 1 condition(s) | ~197 |
+| 02:43 | Edited src/hooks/shared.ts | inline fix | ~44 |
+| 02:44 | Edited src/hooks/stop.ts | added 1 condition(s) | ~344 |
+| 02:46 | Edited tests/daemon-cmd.test.js | added 1 import(s) | ~44 |
+| 02:46 | Edited tests/daemon-cmd.test.js | expanded (+8 lines) | ~277 |
+| 02:47 | Session end: 44 writes across 19 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 25 reads | ~154962 tok |
+| 02:49 | Session end: 47 writes across 22 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 25 reads | ~157227 tok |
+| 02:54 | Session end: 47 writes across 22 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 25 reads | ~157227 tok |
+| 02:58 | Session end: 47 writes across 22 files (package.json, package-lock.json, openwolf.ts, init.ts, index.html) | 25 reads | ~157227 tok |
+
+## Session: 2026-07-05 03:00
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 05:45 | Edited src/hooks/stop.ts | 2→2 lines | ~109 |
+| 05:45 | Edited src/hooks/stop.ts | 2→2 lines | ~119 |
+| 05:45 | Session end: 2 writes across 1 files (stop.ts) | 1 reads | ~23604 tok |
+| 05:47 | Session end: 3 writes across 2 files (stop.ts, profile-guidance-deepseek-qwen.md) | 1 reads | ~24273 tok |
+| 05:49 | Session end: 3 writes across 2 files (stop.ts, profile-guidance-deepseek-qwen.md) | 1 reads | ~24273 tok |
+| 11:12 | Session end: 3 writes across 2 files (stop.ts, profile-guidance-deepseek-qwen.md) | 1 reads | ~24273 tok |
+| 11:13 | Edited src/hooks/stop.ts | 2→2 lines | ~105 |
+| 11:13 | Session end: 4 writes across 2 files (stop.ts, profile-guidance-deepseek-qwen.md) | 1 reads | ~24378 tok |
+
+## Session: 2026-07-05 11:19
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 11:21 | Removed DeepSeek/Qwen from budget reviewer guidance and reverified stop hooks | src/hooks/stop.ts, src/hooks/stop.js, templates/wolf/hooks/stop.js, .wolf/hooks/stop.js, .wolf/qa/profile-guidance-deepseek-qwen.md | build/test/verify passed; independent review clean | ~3k |
+| 11:22 | Session end: 1 writes across 1 files (profile-guidance-deepseek-qwen.md) | 0 reads | ~871 tok |
+
+## Session: 2026-07-06 04:00
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:21 | Diagnosed Adventists Stop hook OpenWolf-feedback report | .wolf/buglog.json | stale installed runtime branding; JSON block contract present | ~1k |
+| 17:22 | Added QA reduction for Adventists Stop hook branding diagnosis | .wolf/qa/adventists-stop-hook-branding.md | falsifier supports stale runtime branding with JSON block markers | ~1k |
+| 17:22 | Session end: 1 writes across 1 files (adventists-stop-hook-branding.md) | 0 reads | ~1086 tok |

@@ -44,15 +44,18 @@ function isVerboseHookMessages(cfg) {
     return cfg.verbosity === "verbose" || cfg.include_provider_examples === true;
 }
 function reviewerGuidance(msgCfg, codexCommand) {
+    if (msgCfg.reviewer_profile === "budget") {
+        return `Reviewers: budget profile — prefer token-rich models first: GLM 5.2 as daily-driver/reasoning grader, plus Kimi, MiMo, and MiniMax for token-intensive research and independent finder coverage. Reserve Claude/ChatGPT/Codex for escalation, final arbitration, or tasks that require them. Re-review after edits/refresh; do not edit reviewlog by hand.`;
+    }
     if (msgCfg.reviewer_profile === "open") {
-        return `Reviewers: GLM (good token-rich second opinion), Codex (${codexCommand}), ChatGPT/Claude/Grok rescue agents, or another installed reviewer for unrestricted work. If one hangs, try another model family. Re-review after edits/refresh; do not edit reviewlog by hand.`;
+        return `Reviewers: for open/unrestricted work, use a diverse panel: GLM for high-context reasoning/grading, MiniMax/MiMo/DeepSeek/Qwen for cheap independent finder coverage, Kimi for alternate-family contrast, one OpenAI-family lane (Codex or ChatGPT), plus Claude/Grok for critic/security perspectives. If one hangs, try another model family. Re-review after edits/refresh; do not edit reviewlog by hand.`;
     }
     return `Reviewers: use US-based reviewers only for this project: Codex/OpenAI (${codexCommand}), ChatGPT/OpenAI, Claude/Anthropic, Grok/xAI, or manual review. Avoid non-US reviewer plugins for this project. Re-review after edits/refresh; do not edit reviewlog by hand.`;
 }
 function formatReviewNudge({ id, reason, files, repeat, reviewLogPath, completeCommand, refreshCommand, codexCommand, wolfDir }, msgCfg) {
     const fileList = compactList(files, msgCfg.max_files);
     const repeatText = repeat ? ` Repeat ${repeat}.` : "";
-    const base = `OpenWolf review [${id}]: ${reason}. Files: ${fileList}.${repeatText}\n`;
+    const base = `Wolfpack review [${id}]: ${reason}. Files: ${fileList}.${repeatText}\n`;
     if (isVerboseHookMessages(msgCfg)) {
         return base +
             `Action: run an independent reviewer before stopping, then complete: ${completeCommand}\n` +
@@ -67,11 +70,11 @@ function formatReviewNudge({ id, reason, files, repeat, reviewLogPath, completeC
 function formatQualityNudge({ id, count, qaDirDisplay, files, minAssumptions, requireRunOutput }, msgCfg) {
     const fileList = compactList(files, msgCfg.max_files);
     const output = requireRunOutput ? "actual falsification output" : "why each assumption holds";
-    return `OpenWolf quality [${id}]: ${count} edited code file(s) lack current adversarial reduction in ${qaDirDisplay}. Files: ${fileList}.\n` +
+    return `Wolfpack quality [${id}]: ${count} edited code file(s) lack current adversarial reduction in ${qaDirDisplay}. Files: ${fileList}.\n` +
         `Action: add .wolf/qa reduction with ≥${minAssumptions} assumptions and ${output} before claiming done.\n`;
 }
 function formatConclusionNudge({ id, matchedCount, minAssumptions }, _msgCfg) {
-    return `OpenWolf conclusion [${id}]: last turn matched ${matchedCount} conclusion pattern(s).\n` +
+    return `Wolfpack conclusion [${id}]: last turn matched ${matchedCount} conclusion pattern(s).\n` +
         `Action: add .wolf/qa reduction with ≥${minAssumptions} assumptions, riskiest falsifier, and actual output before finalizing.\n`;
 }
 function exitWithStopHookResult(block) {
@@ -85,7 +88,7 @@ function exitWithStopHookResult(block) {
         };
         if (block) {
             out.decision = "block";
-            out.reason = "OpenWolf feedback";
+            out.reason = "Wolfpack feedback";
         }
         process.stdout.write(JSON.stringify(out) + "\n", () => process.exit(0));
         return;
@@ -530,7 +533,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             }
             writeJSON(reviewLogPath, reviewLog);
             if (refreshNudge)
-                emitStopHookFeedback(`🔄 OpenWolf review refresh [${pending.id}]: refreshed pending review hashes for ${Object.keys(currentHashes).length} file(s). Review log: ${reviewLogPath}\n`);
+                emitStopHookFeedback(`🔄 Wolfpack review refresh [${pending.id}]: refreshed pending review hashes for ${Object.keys(currentHashes).length} file(s). Review log: ${reviewLogPath}\n`);
         }
         finally {
             releaseReviewLock();
@@ -1006,7 +1009,7 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     if (!tryConsumeNudgeSlot(sessionFile, "buglog_warnings", STOP_NUDGE_PER_SESSION_CAP)) {
         return false;
     }
-    emitStopHookFeedback(`⚠️ OpenWolf: Files edited 3+ times this session (${multiEditDisplay.join(", ")}) but buglog.json was not updated. If you fixed bugs, please log them.\n`);
+    emitStopHookFeedback(`⚠️ Wolfpack: Files edited 3+ times this session (${multiEditDisplay.join(", ")}) but buglog.json was not updated. If you fixed bugs, please log them.\n`);
     return true;
 }
 /**
@@ -1025,7 +1028,7 @@ function checkCerebrumFreshness(wolfDir, session, sessionFile) {
             if (!tryConsumeNudgeSlot(sessionFile, "cerebrum_warnings", STOP_NUDGE_PER_SESSION_CAP)) {
                 return false;
             }
-            emitStopHookFeedback(`💡 OpenWolf: cerebrum.md hasn't been updated in ${Math.floor(hoursSinceUpdate)}h. Did you learn any user preferences, conventions, or gotchas this session? Consider updating .wolf/cerebrum.md.\n`);
+            emitStopHookFeedback(`💡 Wolfpack: cerebrum.md hasn't been updated in ${Math.floor(hoursSinceUpdate)}h. Did you learn any user preferences, conventions, or gotchas this session? Consider updating .wolf/cerebrum.md.\n`);
             return true;
         }
     }
@@ -1340,7 +1343,7 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
  * Returns true iff a nudge was emitted (caller uses this to emit a JSON block).
  */
 function autonomyContinuationMessage() {
-    return "OpenWolf autonomy: if the next step is clear and needs no user decision, do it now; do not stop only to summarize or ask to continue.\n";
+    return "Wolfpack autonomy: if the next step is clear and needs no user decision, do it now; do not stop only to summarize or ask to continue.\n";
 }
 function maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, transcriptPath) {
     const cfg = getAutonomyContinuationConfig();
@@ -1484,7 +1487,7 @@ function claimCalibrationCategoryLabel(category) {
 }
 function claimCalibrationNudgeMessage(id, categories) {
     const labels = categories.map(claimCalibrationCategoryLabel).slice(0, 3).join("/");
-    return `OpenWolf claim calibration [${id}]: ${labels || "strong"} claim without calibration. Add 4 short lines: Observed: ... Inferred: ... Limit: ... Falsifier: ...\n`;
+    return `Wolfpack claim calibration [${id}]: ${labels || "strong"} claim without calibration. Add 4 short lines: Observed: ... Inferred: ... Limit: ... Falsifier: ...\n`;
 }
 function isCalibrationLikeType(type) {
     return type === "claim_calibration" || type === "scientific_mode";

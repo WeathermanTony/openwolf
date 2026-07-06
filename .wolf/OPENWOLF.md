@@ -152,7 +152,7 @@ The quality gate exists because AI-written code routinely ships with **unexamine
 
 "It works" is not a conclusion. "It survived <specific test> with <actual output>" is.
 
-**Stop hook exits 2 when a nudge fires — this is the autonomy mechanism.** Exit 2 on a Stop hook blocks the turn from ending and feeds the stderr message back into the model's next iteration, so the gate runs the loop *for* you instead of waiting for the user to type "continue". When you see a nudge in stderr, the turn has NOT ended — your next action should be to address the nudge directly (write the reduction, falsify the assumption, paste the run output), then yield. Do not re-emit the same conclusion language without first addressing the gate, or it will fire again and the loop will not converge.
+**Stop hook emits structured JSON feedback when a nudge fires — this is the autonomy mechanism.** A Stop-hook JSON block with `decision: "block"`, short `reason`, and `hookSpecificOutput.additionalContext` blocks the turn from ending and feeds the nudge into the model's next iteration without using stderr/exit-2 hook errors. When you see a Wolfpack nudge, the turn has NOT ended — your next action should be to address the nudge directly (write the reduction, falsify the assumption, paste the run output), then yield. Do not re-emit the same conclusion language without first addressing the gate, or it will fire again and the loop will not converge.
 
 The escape hatch: if a nudge is a false positive (the "conclusion" was actually a summary or recap, not a new claim), say so explicitly in one sentence, then yield. The gate logs the decision but won't re-fire on the same text.
 
@@ -205,7 +205,7 @@ When the user asks to change, pick, migrate, or "reframe" their project's UI fra
 
 ## Reviewer Profiles
 
-Use `openwolf init --profile gov` for government or compliance-sensitive projects. This sets review nudges to advertise only US-based reviewers. Use `openwolf init --profile open` for unrestricted projects where broader installed reviewers such as GLM are acceptable. The profile controls OpenWolf's visible recommendations only; it does not enforce network, model, or account access.
+Use `wolfpack init --profile gov` for government or compliance-sensitive projects. This sets review nudges to advertise only US-based reviewers. Use `wolfpack init --profile open` for unrestricted projects where broader installed reviewers such as GLM are acceptable. Use `wolfpack init --profile budget` when token-rich GLM 5.2, Kimi, MiMo, and MiniMax should be preferred while Claude/ChatGPT/Codex are reserved for escalation or final arbitration. The profile controls Wolfpack's visible recommendations only; it does not enforce network, model, or account access. The compatibility `openwolf init --profile ...` command remains supported.
 
 ## Review Gate Lifecycle
 

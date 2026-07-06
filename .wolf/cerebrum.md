@@ -49,6 +49,7 @@
 - [2026-07-01] PM2 liveness must require `status: "online"` plus a positive integer `pid`; pid-less `online` rows in `pm2 jlist` are stale metadata and should be restarted/deleted, not treated as active OpenWolf daemons. `openwolf daemon stop` should delete the PM2 entry instead of leaving stopped rows. See `.wolf/qa/pm2-stale-daemons.md`.
 - [2026-07-03] User preference: present this enhanced workflow as **Wolfpack**, not simply OpenWolf, because it is not vanilla OpenWolf and should not imply a workplace recommendation of upstream OpenWolf would deliver the same results. Keep `.wolf/`, `openwolf`, and `openwolf.*` as compatibility/runtime namespaces unless intentionally migrated.
 - [2026-07-04] A running PM2 daemon can recreate a manually deleted project root with only `.wolf` files if it keeps writing `daemon.log` or `cron-state.json`; daemon startup and heartbeat paths must refuse missing project/runtime directories and avoid state writes during deletion shutdown. See `.wolf/qa/deleted-project-daemon-guard.md`.
+- [2026-07-05] User added DeepSeek and Qwen reviewer plugins (`/deepseek:ask`, `/qwen:ask`, `deepseek:deepseek-rescue`, `qwen:qwen-rescue`). Open-profile reviewer guidance can include them as non-US finder options, but budget guidance should not prefer them because their tokens are not as plentiful as expected; gov/us-only guidance must continue excluding them.
 
 ## Decision Log
 
