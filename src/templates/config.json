@@ -177,6 +177,86 @@
       "max_files": 3,
       "include_provider_examples": false,
       "include_docs_hint": true
+    },
+    "git_discipline": {
+      "enabled": true,
+      "nudge_only": true,
+      "min_written_files": 2,
+      "max_fires_per_session": 3,
+      "require_status_block": true,
+      "require_version_impact_for_user_visible": true,
+      "discourage_broad_staging": true,
+      "user_visible_paths": [
+        "package.json",
+        "package-lock.json",
+        "VERSION",
+        "CHANGELOG*",
+        "README*",
+        "docs/**",
+        "src/**",
+        "bin/**",
+        "cli/**",
+        "lib/**",
+        "packages/**",
+        "apps/**",
+        "templates/**"
+      ],
+      "version_files": [
+        "package.json",
+        "package-lock.json",
+        "VERSION",
+        "CHANGELOG*"
+      ],
+      "doc_extensions": [
+        ".md",
+        ".mdx",
+        ".txt",
+        ".adoc",
+        ".rst"
+      ],
+      "status_markers": [
+        "git/version status",
+        "git status",
+        "changed files",
+        "commit-ready",
+        "version impact",
+        "pre-existing",
+        "untracked",
+        "verification"
+      ],
+      "version_markers": [
+        "version impact",
+        "version bump",
+        "changelog",
+        "change log",
+        "last updated",
+        "revision",
+        "document version",
+        "package version"
+      ],
+      "min_changed_lines": 10,
+      "require_cached_diff_before_commit": true,
+      "warn_destructive_commands": true,
+      "material_paths": [
+        "package.json",
+        "package-lock.json",
+        "VERSION",
+        "CHANGELOG*",
+        "src/**",
+        "bin/**",
+        "cli/**",
+        "templates/**",
+        "docs/**"
+      ],
+      "destructive_patterns": [
+        "\\bgit\\s+reset\\s+--hard\\b",
+        "\\bgit\\s+clean\\s+-[^\\n;|&]*[fd]",
+        "\\bgit\\s+push\\b[^\\n;|&]*(?:--force|-f)\\b",
+        "\\bgit\\s+(?:checkout|restore)\\s+(?:--\\s+)?(?:\\.|:[/\\w.-]*)(?=\\s|$|;|&|\\|)"
+      ],
+      "commit_patterns": [
+        "\\bgit\\s+commit\\b"
+      ]
     }
   }
 }

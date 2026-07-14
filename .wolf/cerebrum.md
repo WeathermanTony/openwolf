@@ -1,59 +1,48 @@
 # Cerebrum
 
-> OpenWolf's learning memory. Updated automatically as the AI learns from interactions.
-> Do not edit manually unless correcting an error.
-> Last updated: 2026-06-08
+> Wolfpack/OpenWolf project learning memory.
+> Last updated: 2026-07-12
 
 ## User Preferences
 
-<!-- How the user likes things done. Code style, tools, patterns, communication. -->
+- Present this enhanced workflow as **Wolfpack**, not vanilla OpenWolf; keep `.wolf/`, `openwolf`, and `openwolf.*` as compatibility/runtime namespaces unless intentionally migrated.
+- Do not initialize or use OpenWolf inside AI plugin staging/runtime directories; keep plugin stages minimal and isolated to avoid nested hooks, token waste, daemon confusion, and contaminated model comparisons.
+- User runs `openwolf init` before every session; if that command copies from this local fork, future initialized projects receive the fork's current template/runtime behavior.
+- User wants Wolfpack to improve AI git/version discipline: nudge agents to inspect/report git state, avoid broad staging, distinguish pre-existing changes, and consider version/changelog/document revision impacts.
 
 ## Key Learnings
 
-- **Project:** customopenwolf
-- 2026-06-08: `/home/tony/projects/customopenwolf` and `/mnt/j/projectshome/projects/customopenwolf` resolve to the same physical tree on the J: drvfs mount; treat it as one repo and avoid separate git histories.
-- 2026-06-08: The fork uses a source/runtime split: `.wolf/` remains the installed Claude Code runtime payload, while `src/` and `templates/` are the development source/template layers for future improvements.
-
-- 2026-06-09: Scientific Mode is a concept-only, disabled-by-default Stop-hook extension that nudges AI reasoning methodology around evidence strength, rival explanations, falsification, scope, and calibrated confidence; do not copy or paraphrase source-book text.
-
-- 2026-06-09: Scientific Mode was rolled into base OpenWolf as default-enabled Claim Calibration: a low-token reasoning gate that fires only on risky claims missing observation/inference/limit/falsifier markers.
+- **Project:** customopenwolf.
+- `/home/tony/projects/customopenwolf` and `/mnt/j/projectshome/projects/customopenwolf` are the same physical J: drvfs repo; treat them as one git history.
+- The fork has a source/runtime/template split: `src/` and source templates drive durable changes, `.wolf/` is the installed runtime payload, and scaffold templates must remain generic.
+- Scientific Mode became default-enabled Claim Calibration: a compact Stop-hook reasoning gate using observation/inference/limit/falsifier framing, with legacy `openwolf.scientific_mode` compatibility during migration.
+- Runtime/template changes usually need three-layer sync: source, installed `.wolf/`, and templates/update payloads. Hook behavior often spans `src/hooks/*`, `.wolf/hooks/*`, `templates/wolf/hooks/*`, shared utilities, and config copies.
+- Existing-project `openwolf update` must copy helper scripts and sibling `.wolf/utils/*.js` dependencies, not only hook entrypoints.
+- Review gate lifecycle: pending review entries must be completed with `complete-review.js` or `wolfpack review complete`, never by manual JSON edits, so content hashes and reviewer provenance are verified.
+- Reviewer recommendations are profile-driven and project-local: `gov/us-only` suppresses non-US/open-profile models; `open` can advertise broader plugins; `budget` should prefer plentiful-token GLM/Kimi/MiMo/MiniMax before escalating.
+- Open-profile redteam diversity should include GLM, MiMo, MiniMax when available; GLM-5.2 is a high-value finder/grader candidate, Kimi is useful as an independent contrast grader, and MiMo/MiniMax are good cheap diverse finders.
+- DeepSeek and Qwen reviewer plugins are available as non-US open-profile options, but budget guidance should not prefer them because their tokens are not as plentiful.
+- Version durable OpenWolf changes by incrementing the custom prerelease suffix and keeping `package.json`, `package-lock.json`, and `VERSION` synchronized.
+- Git/version discipline is now a Stop-hook gate: command-level safety nudges (broad staging, destructive Git, commit without cached diff) are always eligible, while status/version footers are materiality-gated to avoid nagging on mini edits.
+- PM2 daemon liveness requires `status: "online"` plus a positive integer `pid`; stopped or pid-less PM2 rows are stale and should not count as active daemons.
+- Daemon startup/heartbeat paths must refuse missing project/runtime directories and avoid recreating manually deleted project roots by writing `.wolf` state during shutdown.
+- Redteam plugin files live outside this repo at `~/.claude/plugins/marketplaces/tony-local/plugins/redteam/`; QA reductions for external edits made from this repo still belong in this project's `.wolf/qa`.
 
 ## Do-Not-Repeat
 
-<!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
-<!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
-- [2026-06-13] Do not instruct assistants to manually mark reviewlog entries completed; use `node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --summary "<outcome>"` so `content_hashes` are refreshed and review nudges can coalesce.
-- [2026-06-13] Never use synchronous busy-wait loops in OpenWolf hooks/runtime code, and daemon start/init paths must be idempotent against PM2 state. Port allocation must test the same wildcard bind mode the daemon uses, not just 127.0.0.1. See `.wolf/qa/daemon-cpu-pm2.md`.
-
-- 2026-06-13: Review nudge provider wording and buglog false-positive suppression logic live in `src/hooks/stop.js` and must be kept synchronized to `.wolf/hooks/stop.js` and `templates/wolf/hooks/stop.js`.
-- 2026-06-13: Autonomy continuation is a config-backed Stop-hook reminder (`openwolf.autonomy_continuation`) that nudges when the last assistant text implies a known next step or permission-seeking pause; keep `shared.js`, `stop.js`, and config copies synchronized across source/runtime/templates.
-- 2026-06-14: Changes committed in this custom OpenWolf fork are live only for the current checked-out project/runtime; other OpenWolf-managed projects need the fork merged/installed/synced before their `.wolf/hooks/*` copies get the new behavior.
-- 2026-06-14: Review nudge provider lists should avoid hardcoding fast-changing optional AI plugins; list stable built-ins/known companions and include generic guidance to inspect available slash commands/subagents for other installed reviewer plugins.
-- 2026-06-14: User runs `openwolf init` before every session; if that init command copies from this local custom OpenWolf fork, future sessions/projects initialized that way will receive the fork's current template/runtime behavior.
-- 2026-06-14: CLI payload changes must cover both fresh `openwolf init` and existing-project `openwolf update`; update must copy helper scripts such as `complete-review.js` plus sibling `.wolf/utils/*.js` dependencies, not just hook entrypoints.
-
-- [2026-06-16] After editing TypeScript hook sources, verify and synchronize the compiled/runtime JS copies (`src/hooks/*.js`, `templates/wolf/hooks/*.js`, `.wolf/hooks/*.js`) before claiming the hook behavior changed; the QA falsification for review nudge lifecycle caught a stale JS copy.
-- [2026-06-17] Review completion supersede must be based on each pending file's current hash being covered by completed reviews, not file-set subset/superset containment; see `.wolf/qa/review-completion-supersede.md`.
-- [2026-06-17] Quality-gate reductions belong to the edited file's nearest `.wolf/qa` in cross-project sessions, and language-specific test files such as `_test.go` / `test_*.py` should not become source reduction obligations; see `.wolf/qa/quality-gate-cross-project.md`.
-- [2026-06-17] When a falsifier crosses a process/shell/network/file/tool boundary, test the receiving context rather than grepping producer source; presence is not correctness. See `.wolf/qa/qa-template-receiving-context.md`.
-- [2026-06-19] To verify whether another project has the latest OpenWolf fork, check both the global `openwolf` symlink target and that the project `.wolf/hooks/stop.js` / `complete-review.js` contain the expected new markers (absolute review paths, review refresh message, claim_signature suppression, and complete-review EXIT_* codes); metatrader-indicators had the latest hook payload live while customopenwolf was at commit 1a686b7.
-- [2026-06-19] Keep reviewer recommendation profiles project-local: default/government work should use `openwolf init --profile gov` or `reviewer_profile: "us-only"`, while unrestricted work can opt into `openwolf init --profile open` to advertise GLM and other broader reviewer plugins. Profiles guide visible recommendations only; they do not enforce provider access.
-- [2026-06-20] Never sync self-hosted `.wolf/cerebrum.md` or `.wolf/anatomy.md` into `src/templates/` or `templates/wolf/`; scaffold templates must stay generic, and project metadata should be added only by fresh-init seeding. See `.wolf/qa/clean-scaffold-templates.md`.
-- [2026-06-20] Protocol upgrades must be applied in three layers: runtime `.wolf/OPENWOLF.md`, source/template `OPENWOLF.md`, and the install/update payload list. Buglog entries now carry `commit` and `reduction` proof fields; verifier enforces them. See `.wolf/qa/protocol-upgrade-verifier.md`.
-- [2026-06-21] Redteam plugin open-profile defaults should include MiMo as an additional finder (`codex,grok,glm,mimo`), while gov/us-only continues to drop/forbid GLM/Kimi/MiMo. Plugin files live outside this repo under `~/.claude/plugins/marketplaces/tony-local/plugins/redteam/`; QA reductions for those external edits still go in this project's `.wolf/qa` when the current session is rooted here.
-- [2026-06-21] Stop-hook nudges should use Claude Code's JSON stdout contract (`decision: "block"`, `reason`, and `hookSpecificOutput.additionalContext`) with exit 0; do not use stderr + exit 2 for normal OpenWolf feedback, because Claude Code surfaces that as `Stop hook error: [command]` for users.
-- [2026-07-01] Redteam/open-profile usage audit found GLM and MiMo are active but still much lower-volume than Claude/OpenAI/Grok, while MiniMax initially appeared in prompts/content but not as clear staged run artifacts due to session-stale plugin discovery; after restart, `minimax:minimax-rescue` and `/minimax:ask` are available. Open-profile diversity should prefer an explicit floor such as GLM+MiMo+MiniMax finders when available, while gov/us-only must continue suppressing non-US/open-profile models.
-- [2026-07-01] User-provided open-model comparison suggests GLM-5.2 may be stronger than Kimi K2.7 Code on several review-relevant axes: 1M context vs 262k, stronger reasoning/math/coding table scores, and better long-context fit. For open-profile redteam, prefer GLM-5.2 as a high-value finder or grader candidate, keep Kimi useful as an independent-family grader/contrast model, and use MiniMax/MiMo primarily for cheap diverse finder coverage unless task evidence says otherwise.
-- [2026-07-01] User preference: do not initialize or use OpenWolf inside AI plugin staging/runtime directories. Plugin calls should avoid OpenWolf hooks because they waste tokens, create confusing nested nudges/daemon state, and can contaminate clean model comparisons. Keep plugin stages minimal and isolated; use `claude -p` routing for runtime consistency but without `openwolf init` in the plugin cwd.
-- [2026-07-01] Versioning convention: increment the custom prerelease suffix for durable OpenWolf changes (for example `1.2.0-custom.0` → `1.2.0-custom.1`) and keep `package.json`, `package-lock.json`, and `VERSION` synchronized before commit/update so existing-project update summaries show meaningful versions.
-- [2026-07-01] PM2 liveness must require `status: "online"` plus a positive integer `pid`; pid-less `online` rows in `pm2 jlist` are stale metadata and should be restarted/deleted, not treated as active OpenWolf daemons. `openwolf daemon stop` should delete the PM2 entry instead of leaving stopped rows. See `.wolf/qa/pm2-stale-daemons.md`.
-- [2026-07-03] User preference: present this enhanced workflow as **Wolfpack**, not simply OpenWolf, because it is not vanilla OpenWolf and should not imply a workplace recommendation of upstream OpenWolf would deliver the same results. Keep `.wolf/`, `openwolf`, and `openwolf.*` as compatibility/runtime namespaces unless intentionally migrated.
-- [2026-07-04] A running PM2 daemon can recreate a manually deleted project root with only `.wolf` files if it keeps writing `daemon.log` or `cron-state.json`; daemon startup and heartbeat paths must refuse missing project/runtime directories and avoid state writes during deletion shutdown. See `.wolf/qa/deleted-project-daemon-guard.md`.
-- [2026-07-05] User added DeepSeek and Qwen reviewer plugins (`/deepseek:ask`, `/qwen:ask`, `deepseek:deepseek-rescue`, `qwen:qwen-rescue`). Open-profile reviewer guidance can include them as non-US finder options, but budget guidance should not prefer them because their tokens are not as plentiful as expected; gov/us-only guidance must continue excluding them.
-- [2026-07-06] Review integrity improvement: prefer reviewer-saw-this-hash receipts over manual assertions. `complete-review.js --reviewed-hash <manifest>` records exact reviewed-byte provenance, while `wolfpack review hash`/`review complete` make the safe path easier; keep legacy `--reviewed-current` only as a fallback.
+- [2026-06-13] Do not instruct assistants to manually mark reviewlog entries completed; use `node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --summary "<outcome>"` so hashes are refreshed and review nudges coalesce.
+- [2026-06-13] Never use synchronous busy-wait loops in OpenWolf hooks/runtime code. Daemon start/init paths must be idempotent against PM2 state, and port allocation must test the same wildcard bind mode the daemon uses.
+- [2026-06-16] After editing TypeScript hook sources, verify and synchronize compiled/runtime JS copies before claiming hook behavior changed.
+- [2026-06-17] Review completion supersede must be based on each pending file's current hash being covered by completed reviews, not file-set subset/superset containment.
+- [2026-06-17] Quality-gate reductions belong to the edited file's nearest `.wolf/qa` in cross-project sessions, and language-specific test files should not become source reduction obligations.
+- [2026-06-17] When a falsifier crosses a process, shell, network, file, or tool boundary, test the receiving context rather than grepping producer source; presence is not correctness.
+- [2026-06-19] To verify another project has the latest fork, check both the global `openwolf` symlink target and the project `.wolf/hooks/stop.js` / `complete-review.js` markers.
+- [2026-06-20] Never sync self-hosted `.wolf/cerebrum.md` or `.wolf/anatomy.md` into `src/templates/` or `templates/wolf/`; templates must stay generic.
+- [2026-06-21] Stop-hook nudges should use Claude Code's JSON stdout contract with `decision: "block"` and exit 0; do not use stderr + exit 2 for normal Wolfpack feedback.
+- [2026-07-06] Prefer reviewer-saw-this-hash receipts over manual assertions. `complete-review.js --reviewed-hash <manifest>` and `wolfpack review hash/complete` are the safe path; keep `--reviewed-current` only as fallback.
+- [2026-07-14] Falsifiers for path-scoped gates must run outside excluded scratch paths such as `/tmp/**`; otherwise a missing nudge may prove only that the exclusion worked, not that the gate failed.
+- [2026-07-14] Regexes that target literal `.` or `:/` pathspecs must not end with `\b`; use a separator lookahead such as `(?=\s|$|;|&|\|)` or destructive Git forms like `git checkout -- .` silently miss.
 
 ## Decision Log
 
-<!-- Significant technical decisions with rationale. Why X was chosen over Y. -->
 - 2026-06-09: Use canonical config `openwolf.claim_calibration` and log type `claim_calibration`; keep legacy `openwolf.scientific_mode` config and `scientific_mode` log suppression compatibility during migration.
-- 2026-06-09: Scientific Mode MVP uses `openwolf.scientific_mode` config and logs `type: "scientific_mode"` entries in `.wolf/qa/_gate-log.json`; it skips if verify-conclusions already fired to avoid double-nudging.

@@ -195,6 +195,7 @@ async function updateProject(
         safeCopyFile(srcPath, destPath);
       }
     }
+    mergeConfigDefaults(path.join(templatesDir, "config.json"), path.join(wolfDir, "config.json"));
     const appliedProfile = applyReviewerProfile(path.join(wolfDir, "config.json"), profile);
     if (appliedProfile) {
       console.log(`    ✓ Reviewer profile: ${appliedProfile}`);
@@ -329,6 +330,28 @@ function findTemplatesDir(): string {
     if (fs.existsSync(dir)) return dir;
   }
   return candidates[0];
+}
+
+function mergeMissingDefaults(existing: unknown, defaults: unknown): unknown {
+  if (!defaults || typeof defaults !== "object" || Array.isArray(defaults)) {
+    return existing === undefined ? defaults : existing;
+  }
+  if (!existing || typeof existing !== "object" || Array.isArray(existing)) {
+    return defaults;
+  }
+  const out: Record<string, unknown> = { ...(existing as Record<string, unknown>) };
+  for (const [key, value] of Object.entries(defaults as Record<string, unknown>)) {
+    out[key] = key in out ? mergeMissingDefaults(out[key], value) : value;
+  }
+  return out;
+}
+
+function mergeConfigDefaults(srcPath: string, destPath: string): void {
+  if (!fs.existsSync(srcPath) || !fs.existsSync(destPath)) return;
+  const defaults = readJSON<Record<string, unknown>>(srcPath, {});
+  const existing = readJSON<Record<string, unknown>>(destPath, {});
+  const merged = mergeMissingDefaults(existing, defaults) as Record<string, unknown>;
+  writeJSON(destPath, merged);
 }
 
 function updateQaDirectory(templatesDir: string, wolfDir: string): void {

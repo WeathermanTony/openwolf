@@ -2,7 +2,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getClaimCalibrationConfig, getHookMessageConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
+import { execFileSync } from "node:child_process";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getClaimCalibrationConfig, getHookMessageConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 // Per-session firing cap shared by the buglog-missing and cerebrum-freshness
 // feedback nudges. They have no per-state hash to dedup against (unlike the
@@ -154,6 +155,7 @@ async function main() {
         cerebrum_warnings: 0,
         buglog_warnings: 0,
         autonomy_continuation_warnings: 0,
+        git_discipline_warnings: 0,
         stop_count: 0,
     };
     let session;
@@ -201,6 +203,8 @@ async function main() {
         session.buglog_warnings = 0;
     if (typeof session.autonomy_continuation_warnings !== "number")
         session.autonomy_continuation_warnings = 0;
+    if (typeof session.git_discipline_warnings !== "number")
+        session.git_discipline_warnings = 0;
     if (typeof session.session_id !== "string")
         session.session_id = "";
     if (!session.session_id && typeof hookPayload.session_id === "string")
@@ -244,6 +248,9 @@ async function main() {
                 nudgeFired = true;
             }
             if (maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, hookPayload.transcript_path)) {
+                nudgeFired = true;
+            }
+            if (maybeNudgeGitDiscipline(wolfDir, session, emptyEntry, sessionFile, hookPayload.transcript_path)) {
                 nudgeFired = true;
             }
         }
@@ -389,6 +396,13 @@ async function main() {
         }
         catch { }
     }
+    // Git/version discipline: after writes, nudge for a final git/version status
+    // block and version-impact statement when user-visible files changed.
+    try {
+        if (maybeNudgeGitDiscipline(wolfDir, session, sessionEntry, sessionFile, hookPayload.transcript_path))
+            nudgeFired = true;
+    }
+    catch { }
     // Review-hook nudge: log session to reviewlog.json and prompt for Codex
     // review when thresholds are crossed. Silent no-op on error — never blocks.
     try {
@@ -474,6 +488,160 @@ function globToRegex(glob) {
         }
     }
     return new RegExp("^" + re + "$");
+}
+function relToProject(file) {
+    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    return path.relative(projectDir, file).replace(/\\/g, "/");
+}
+function gitRootForProject() {
+    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    try {
+        return execFileSync("git", ["rev-parse", "--show-toplevel"], {
+            cwd: projectDir,
+            encoding: "utf8",
+            stdio: ["ignore", "pipe", "ignore"],
+            timeout: 2000,
+        }).trim();
+    }
+    catch {
+        return null;
+    }
+}
+function gitStatusPorcelain(gitRoot) {
+    try {
+        return execFileSync("git", ["status", "--short", "--untracked-files=normal"], {
+            cwd: gitRoot,
+            encoding: "utf8",
+            stdio: ["ignore", "pipe", "ignore"],
+            timeout: 3000,
+        }).split("\n").map(s => s.trimEnd()).filter(Boolean);
+    }
+    catch {
+        return [];
+    }
+}
+function gitBranch(gitRoot) {
+    try {
+        return execFileSync("git", ["branch", "--show-current"], {
+            cwd: gitRoot,
+            encoding: "utf8",
+            stdio: ["ignore", "pipe", "ignore"],
+            timeout: 2000,
+        }).trim() || "detached";
+    }
+    catch {
+        return "unknown";
+    }
+}
+function markerPresent(text, markers) {
+    const lower = (text || "").toLowerCase();
+    return markers.some(marker => lower.includes(String(marker).toLowerCase()));
+}
+function recentBashCommands(lastAssistant, transcriptPath) {
+    const commands = (lastAssistant?.toolUses || [])
+        .filter(t => t?.name === "Bash")
+        .map(t => String(t.input?.command || ""))
+        .filter(Boolean);
+    try {
+        if (!transcriptPath || !fs.existsSync(transcriptPath))
+            return commands;
+        const stat = fs.statSync(transcriptPath);
+        const readSize = Math.min(stat.size, 256 * 1024);
+        const fd = fs.openSync(transcriptPath, "r");
+        const buf = Buffer.alloc(readSize);
+        try {
+            fs.readSync(fd, buf, 0, readSize, Math.max(0, stat.size - readSize));
+        }
+        finally {
+            fs.closeSync(fd);
+        }
+        const lines = buf.toString("utf8").split("\n").filter(Boolean);
+        let sawAssistant = false;
+        for (let i = lines.length - 1; i >= 0; i--) {
+            let entry;
+            try { entry = JSON.parse(lines[i]); }
+            catch { continue; }
+            if (sawAssistant && entry.type === "user")
+                break;
+            if (entry.type !== "assistant")
+                continue;
+            sawAssistant = true;
+            const content = Array.isArray(entry.message?.content) ? entry.message.content : [];
+            for (const block of content) {
+                if (block?.type === "tool_use" && block.name === "Bash") {
+                    const cmd = String(block.input?.command || "");
+                    if (cmd)
+                        commands.unshift(cmd);
+                }
+            }
+        }
+    }
+    catch { }
+    return [...new Set(commands)];
+}
+function broadStagingSeen(commands) {
+    return commands.some(cmd => /\bgit\s+add\s+(?:\.|-A|--all)(?=\s|$|;|&|\|)/i.test(cmd));
+}
+function destructiveGitSeen(commands, patterns) {
+    return commands.some(cmd => patterns.some(pattern => new RegExp(pattern, "i").test(cmd)));
+}
+function commitSeen(commands, patterns) {
+    return commands.some(cmd => patterns.some(pattern => new RegExp(pattern, "i").test(cmd)));
+}
+function cachedDiffSeen(commands) {
+    return commands.some(cmd => /\bgit\s+diff\s+(?:--cached|--staged)\b/i.test(cmd));
+}
+function changedPathMatches(rel, patterns) {
+    const cleanRel = normalizeFilePath(rel).replace(/^\.\//, "");
+    return patterns.some(pattern => globToRegex(String(pattern)).test(cleanRel));
+}
+function maybeNudgeGitDiscipline(wolfDir, session, sessionEntry, sessionFile, transcriptPath) {
+    const cfg = getGitDisciplineConfig();
+    if (!cfg.enabled)
+        return false;
+    const excludeRegexes = cfg.scope_excludes.map(globToRegex);
+    const written = [...new Set(sessionEntry.writes.map(w => w.file))]
+        .filter(file => !excludeRegexes.some(re => re.test(file)));
+    const lastAssistant = readLastAssistantText(transcriptPath);
+    const text = lastAssistant?.text || "";
+    const commands = recentBashCommands(lastAssistant, transcriptPath);
+    const hasStatusBlock = !cfg.require_status_block || markerPresent(text, cfg.status_markers);
+    const relWritten = written.map(relToProject);
+    const userVisible = relWritten.filter(rel => changedPathMatches(rel, cfg.user_visible_paths));
+    const versionFiles = relWritten.filter(rel => changedPathMatches(rel, cfg.version_files));
+    const materialFiles = relWritten.filter(rel => changedPathMatches(rel, cfg.material_paths));
+    const docs = relWritten.filter(rel => cfg.doc_extensions.includes(path.extname(rel).toLowerCase()));
+    const approxLines = Math.round(sessionEntry.totals.output_tokens_estimated / 17);
+    const materialBySize = written.length >= cfg.min_written_files && approxLines >= cfg.min_changed_lines;
+    const materialByPath = materialFiles.length > 0 || versionFiles.length > 0;
+    const material = written.length > 0 && (materialBySize || materialByPath);
+    const needsVersionImpact = material && cfg.require_version_impact_for_user_visible && (userVisible.length > 0 || docs.length > 0 || versionFiles.length > 0);
+    const hasVersionImpact = !needsVersionImpact || markerPresent(text, cfg.version_markers);
+    const sawBroadStaging = cfg.discourage_broad_staging && broadStagingSeen(commands);
+    const sawDestructive = cfg.warn_destructive_commands && destructiveGitSeen(commands, cfg.destructive_patterns);
+    const sawCommitWithoutCachedDiff = cfg.require_cached_diff_before_commit && commitSeen(commands, cfg.commit_patterns) && !cachedDiffSeen(commands);
+    const needsStatusBlock = material && cfg.require_status_block;
+    if ((!needsStatusBlock || hasStatusBlock) && hasVersionImpact && !sawBroadStaging && !sawDestructive && !sawCommitWithoutCachedDiff)
+        return false;
+    if (!tryConsumeNudgeSlot(sessionFile, "git_discipline_warnings", cfg.max_fires_per_session))
+        return false;
+    const gitRoot = gitRootForProject();
+    const branch = gitRoot ? gitBranch(gitRoot) : "not-a-git-repo";
+    const statusLines = gitRoot ? gitStatusPorcelain(gitRoot) : [];
+    const statusSummary = statusLines.length ? compactList(statusLines, 6) : "clean or unavailable";
+    const missing = [];
+    if (needsStatusBlock && !hasStatusBlock)
+        missing.push("git status/diff summary");
+    if (!hasVersionImpact)
+        missing.push("version/changelog/document revision impact");
+    if (sawBroadStaging)
+        missing.push("replace broad `git add .`/`git add -A` with path-specific staging");
+    if (sawDestructive)
+        missing.push("confirm destructive Git operation or use a safer alternative");
+    if (sawCommitWithoutCachedDiff)
+        missing.push("inspect `git diff --cached` before committing");
+    emitStopHookFeedback(`🐺 Wolfpack git/version: ${missing.join("; ")}. Branch: ${branch}. Written: ${compactList(relWritten, 6)}. Git status: ${statusSummary}.\nAction: before stopping, include a Git/version status block with changed files, pre-existing/untracked state, verification, commit-readiness, and version impact (or why no bump/revision is needed).\n`);
+    return true;
 }
 function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const reviewCfg = getReviewHookConfig();
