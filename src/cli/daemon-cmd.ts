@@ -53,14 +53,16 @@ export function hasPm2(): boolean {
   }
 }
 
-interface Pm2ProcessInfo {
+export interface Pm2ProcessInfo {
   name?: string;
   pm2_env?: {
     status?: string;
     pm_id?: number;
     restart_time?: number;
     pm_cwd?: string;
+    pm_exec_path?: string;
     OPENWOLF_PROJECT_ROOT?: string;
+    OPENWOLF_DASHBOARD_ENABLED?: string;
     stop_exit_codes?: number | number[];
   };
   pid?: number;
@@ -76,7 +78,7 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'"'"'`)}'`;
 }
 
-function listPm2Processes(): Pm2ProcessInfo[] {
+export function listPm2Processes(): Pm2ProcessInfo[] {
   try {
     const output = execSync("pm2 jlist", { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] });
     return JSON.parse(output) as Pm2ProcessInfo[];
@@ -86,15 +88,12 @@ function listPm2Processes(): Pm2ProcessInfo[] {
 }
 
 function sameProjectRoot(proc: Pm2ProcessInfo, projectRoot: string): boolean {
-  const expected = normalizeProjectRoot(projectRoot);
-  const envRoot = proc.pm2_env?.OPENWOLF_PROJECT_ROOT;
-  const cwd = proc.pm2_env?.pm_cwd;
-  return (envRoot !== undefined && normalizeProjectRoot(envRoot) === expected)
-    || (cwd !== undefined && normalizeProjectRoot(cwd) === expected);
+  const root = recordedProjectRoot(proc);
+  return root !== null && normalizeProjectRoot(root) === normalizeProjectRoot(projectRoot);
 }
 
-function getPm2Process(name: string, projectRoot: string): Pm2ProcessInfo | null {
-  return listPm2Processes().find((proc) => proc.name === name && sameProjectRoot(proc, projectRoot)) ?? null;
+function getPm2Process(processes: Pm2ProcessInfo[], name: string, projectRoot: string): Pm2ProcessInfo | null {
+  return processes.find((proc) => proc.name === name && sameProjectRoot(proc, projectRoot)) ?? null;
 }
 
 export function isActivePm2Process(proc: Pm2ProcessInfo | null): proc is Pm2ProcessInfo & { pid: number } {
@@ -103,9 +102,9 @@ export function isActivePm2Process(proc: Pm2ProcessInfo | null): proc is Pm2Proc
   return typeof pid === "number" && Number.isInteger(pid) && pid > 0;
 }
 
-function getOpenWolfPm2Process(projectRoot: string): Pm2ProcessInfo | null {
-  const hash = getPm2Process(getPm2NameForRoot(projectRoot), projectRoot);
-  const legacy = getPm2Process(getLegacyPm2Name(projectRoot), projectRoot);
+export function getOpenWolfPm2Process(projectRoot: string, processes = listPm2Processes()): Pm2ProcessInfo | null {
+  const hash = getPm2Process(processes, getPm2NameForRoot(projectRoot), projectRoot);
+  const legacy = getPm2Process(processes, getLegacyPm2Name(projectRoot), projectRoot);
   if (isActivePm2Process(legacy) && !isActivePm2Process(hash)) return legacy;
   return hash ?? legacy;
 }
@@ -113,6 +112,94 @@ function getOpenWolfPm2Process(projectRoot: string): Pm2ProcessInfo | null {
 function pm2Target(proc: Pm2ProcessInfo | null, fallbackName: string): string {
   const pmId = proc?.pm2_env?.pm_id;
   return Number.isInteger(pmId) ? String(pmId) : shellQuote(fallbackName);
+}
+
+function recordedProjectRoot(proc: Pm2ProcessInfo): string | null {
+  const script = proc.pm2_env?.pm_exec_path;
+  const wolfProcess = typeof script === "string" && /(?:^|[\\/])wolf-daemon\.js$/.test(script)
+    && typeof proc.name === "string" && proc.name.startsWith("openwolf-");
+  if (!wolfProcess) return null;
+  const envRoot = proc.pm2_env?.OPENWOLF_PROJECT_ROOT;
+  if (typeof envRoot === "string" && path.isAbsolute(envRoot)) return envRoot;
+  const cwd = proc.pm2_env?.pm_cwd;
+  return typeof cwd === "string" && path.isAbsolute(cwd) ? cwd : null;
+}
+
+export function ownedPm2ProcessesForRoot(processes: Pm2ProcessInfo[], projectRoot: string): Pm2ProcessInfo[] {
+  const expected = normalizeProjectRoot(projectRoot);
+  return processes.filter((proc) => {
+    const root = recordedProjectRoot(proc);
+    return root !== null && normalizeProjectRoot(root) === expected;
+  });
+}
+
+export function ownedPm2ProcessForRoot(processes: Pm2ProcessInfo[], projectRoot: string): Pm2ProcessInfo | null {
+  return ownedPm2ProcessesForRoot(processes, projectRoot)[0] ?? null;
+}
+
+export function staleOpenWolfPm2Processes(processes: Pm2ProcessInfo[]): Pm2ProcessInfo[] {
+  return processes.filter((proc) => {
+    const root = recordedProjectRoot(proc);
+    return root !== null && !fs.existsSync(path.join(root, ".wolf"));
+  });
+}
+
+export interface Pm2CleanupResult {
+  removed: string[];
+  notFound: string[];
+  staleFound: number;
+}
+
+export function cleanupOpenWolfPm2(options: {
+  projectRoots?: string[];
+  pruneStale?: boolean;
+  dryRun?: boolean;
+  processes?: Pm2ProcessInfo[];
+} = {}): Pm2CleanupResult {
+  if (!options.processes && !hasPm2()) {
+    return { removed: [], notFound: options.projectRoots ?? [], staleFound: 0 };
+  }
+  const processes = options.processes ?? listPm2Processes();
+  const candidates = new Map<number | string, Pm2ProcessInfo>();
+  const notFound: string[] = [];
+
+  for (const root of options.projectRoots ?? []) {
+    const owned = ownedPm2ProcessesForRoot(processes, root);
+    if (owned.length === 0) {
+      notFound.push(root);
+      continue;
+    }
+    for (const proc of owned) {
+      const key = Number.isInteger(proc.pm2_env?.pm_id) ? proc.pm2_env!.pm_id! : proc.name ?? root;
+      candidates.set(key, proc);
+    }
+  }
+  const stale = options.pruneStale ? staleOpenWolfPm2Processes(processes) : [];
+  for (const proc of stale) {
+    const key = Number.isInteger(proc.pm2_env?.pm_id) ? proc.pm2_env!.pm_id! : proc.name ?? recordedProjectRoot(proc)!;
+    candidates.set(key, proc);
+  }
+
+  const removed: string[] = [];
+  let changed = false;
+  for (const proc of candidates.values()) {
+    const label = proc.name ?? recordedProjectRoot(proc)!;
+    if (options.dryRun) {
+      removed.push(label);
+      continue;
+    }
+    try {
+      execSync(`pm2 delete ${pm2Target(proc, label)}`, { stdio: "ignore" });
+      removed.push(label);
+      changed = true;
+    } catch {
+      // Process may have disappeared after the snapshot; continue cleaning others.
+    }
+  }
+  if (!options.dryRun && changed) {
+    try { execSync("pm2 save", { stdio: "ignore" }); } catch {}
+  }
+  return { removed, notFound, staleFound: stale.length };
 }
 
 function hasStopExitCodeZero(proc: Pm2ProcessInfo): boolean {
@@ -124,21 +211,26 @@ export function hasOpenWolfPm2Daemon(projectRoot: string): boolean {
   return isActivePm2Process(getOpenWolfPm2Process(projectRoot));
 }
 
-export function ensurePm2Daemon(projectRoot: string, options: { silent?: boolean } = {}): Pm2EnsureResult {
+export function ensurePm2Daemon(projectRoot: string, options: { silent?: boolean; dashboard?: boolean } = {}): Pm2EnsureResult {
   const name = getPm2NameForRoot(projectRoot);
   const daemonScript = path.resolve(__dirname, "..", "daemon", "wolf-daemon.js");
   const existing = getOpenWolfPm2Process(projectRoot);
   const existingName = existing?.name ?? name;
   const existingStatus = existing?.pm2_env?.status;
 
-  if (isActivePm2Process(existing) && existingName === name && hasStopExitCodeZero(existing)) {
+  const dashboardModeMatches = existing?.pm2_env?.OPENWOLF_DASHBOARD_ENABLED === (options.dashboard ? "1" : "0");
+  if (isActivePm2Process(existing) && existingName === name && hasStopExitCodeZero(existing) && dashboardModeMatches) {
     if (!options.silent) {
       console.log(`  ✓ Daemon already registered: ${existingName} (status ${existingStatus ?? "unknown"}, pid ${existing.pid ?? "unknown"})`);
     }
     return { status: "already-running", name: existingName };
   }
 
-  const env = { ...process.env, OPENWOLF_PROJECT_ROOT: projectRoot };
+  const env = {
+    ...process.env,
+    OPENWOLF_PROJECT_ROOT: projectRoot,
+    OPENWOLF_DASHBOARD_ENABLED: options.dashboard ? "1" : "0",
+  };
   if (existing) {
     execSync(`pm2 delete ${pm2Target(existing, existingName)}`, { stdio: "ignore" });
     execSync(`pm2 start ${shellQuote(daemonScript)} --name ${shellQuote(name)} --cwd ${shellQuote(projectRoot)} --stop-exit-codes 0`, {
@@ -192,28 +284,24 @@ function killPid(pid: number): boolean {
   }
 }
 
-async function autoMigrateLegacyPorts(wolfDir: string, projectRoot: string): Promise<void> {
+export async function prepareDaemonPorts(wolfDir: string, projectRoot: string): Promise<void> {
   const configPath = path.join(wolfDir, "config.json");
   if (!fs.existsSync(configPath)) return;
   const cfg = readJSON<{ openwolf: { daemon: { port: number }; dashboard: { port: number } } }>(
     configPath,
     { openwolf: { daemon: { port: 18790 }, dashboard: { port: 18791 } } }
   );
-  const legacy =
-    cfg.openwolf.dashboard.port === 18791 && cfg.openwolf.daemon.port === 18790;
-  if (!legacy) return;
-  // Only migrate if the legacy port is actually taken by some other process.
-  // First-mover on 18791 keeps backward-compat behavior.
-  const free = await isPortFree(18791);
-  if (free) return;
+  const dashboardFree = await isPortFree(cfg.openwolf.dashboard.port);
+  const daemonFree = await isPortFree(cfg.openwolf.daemon.port);
+  if (dashboardFree && daemonFree) return;
   try {
     const { daemon, dashboard } = await allocateProjectPorts(projectRoot);
     cfg.openwolf.daemon.port = daemon;
     cfg.openwolf.dashboard.port = dashboard;
     writeJSON(configPath, cfg);
-    console.log(`  ℹ Port 18791 is in use by another project; migrated this project to daemon=${daemon}, dashboard=${dashboard}`);
+    console.log(`  ℹ Configured ports are in use; allocated daemon=${daemon}, dashboard=${dashboard}`);
   } catch (e) {
-    console.warn(`  ⚠ Port migration failed (${(e as Error).message}); daemon start will likely fail with EADDRINUSE`);
+    console.warn(`  ⚠ Port allocation failed (${(e as Error).message}); daemon start will likely fail with EADDRINUSE`);
   }
 }
 
@@ -232,7 +320,7 @@ export async function daemonStart(): Promise<void> {
   }
 
   if (!hasOpenWolfPm2Daemon(projectRoot)) {
-    await autoMigrateLegacyPorts(wolfDir, projectRoot);
+    await prepareDaemonPorts(wolfDir, projectRoot);
   }
 
   try {
@@ -289,7 +377,7 @@ export async function daemonRestart(): Promise<void> {
   }
 
   if (!hasOpenWolfPm2Daemon(projectRoot)) {
-    await autoMigrateLegacyPorts(wolfDir, projectRoot);
+    await prepareDaemonPorts(wolfDir, projectRoot);
   }
 
   // First try PM2

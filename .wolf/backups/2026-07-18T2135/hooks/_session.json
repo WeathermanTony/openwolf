@@ -1,0 +1,22 @@
+{
+  "session_id": "session-2026-07-18-1645",
+  "started": "2026-07-18T20:45:09.057Z",
+  "files_read": {},
+  "files_written": [
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/tryconsumenudgeslot-cap0.md",
+      "action": "create",
+      "tokens": 835,
+      "at": "2026-07-18T20:46:43.113Z"
+    }
+  ],
+  "edit_counts": {
+    ".wolf/qa/tryconsumenudgeslot-cap0.md": 1
+  },
+  "anatomy_hits": 0,
+  "anatomy_misses": 0,
+  "repeated_reads_warned": 0,
+  "cerebrum_warnings": 0,
+  "stop_count": 2,
+  "simplicity_warnings": 1
+}

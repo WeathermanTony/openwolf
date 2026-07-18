@@ -55,7 +55,8 @@
     "daemon": {
       "port": 18860,
       "log_level": "info",
-      "auth_token": "mmCzFCnd5BK8_TSsdBAI9zhZ0CFQU4Eqp4Oye7nrIx0"
+      "auth_token": "mmCzFCnd5BK8_TSsdBAI9zhZ0CFQU4Eqp4Oye7nrIx0",
+      "auto_start": false
     },
     "dashboard": {
       "enabled": true,

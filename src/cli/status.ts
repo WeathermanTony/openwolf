@@ -2,6 +2,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { findProjectRoot } from "../scanner/project-root.js";
 import { readJSON, readText } from "../utils/fs-safe.js";
+import { hasOpenWolfPm2Daemon } from "./daemon-cmd.js";
+import { shouldAutoStartDaemon } from "./init.js";
 
 export async function statusCommand(): Promise<void> {
   const projectRoot = findProjectRoot();
@@ -88,16 +90,25 @@ export async function statusCommand(): Promise<void> {
   const entryCount = (anatomyContent.match(/^- `/gm) || []).length;
   console.log(`\nAnatomy: ${entryCount} files tracked`);
 
-  // Cron state
-  const cronState = readJSON<{ engine_status: string; last_heartbeat: string | null }>(
+  const config = readJSON<unknown>(path.join(wolfDir, "config.json"), {});
+  const autoStart = shouldAutoStartDaemon(config);
+  const daemonRunning = hasOpenWolfPm2Daemon(projectRoot);
+  console.log("\nBackground Services:");
+  console.log(`  Quality hooks: ${hooksMissing === 0 ? "active" : "incomplete"}`);
+  console.log(`  Daemon policy: automatic startup ${autoStart ? "enabled" : "disabled"}`);
+  console.log(`  Daemon runtime: ${daemonRunning ? "running through PM2" : "not running"}`);
+  console.log("  Dashboard: open on demand with `openwolf dashboard`");
+  console.log(`  Scheduled cron: ${daemonRunning ? "active when enabled in config" : "inactive while daemon is stopped"}`);
+  console.log("  Manual maintenance: `openwolf scan` and `openwolf cron run <id>`");
+
+  const cronState = readJSON<{ last_heartbeat: string | null }>(
     path.join(wolfDir, "cron-state.json"),
-    { engine_status: "unknown", last_heartbeat: null }
+    { last_heartbeat: null }
   );
-  console.log(`\nDaemon: ${cronState.engine_status}`);
   if (cronState.last_heartbeat) {
     const elapsed = Date.now() - new Date(cronState.last_heartbeat).getTime();
     const mins = Math.floor(elapsed / 60000);
-    console.log(`  Last heartbeat: ${mins} minutes ago`);
+    console.log(`  ${daemonRunning ? "Last heartbeat" : "Historical heartbeat"}: ${mins} minutes ago`);
   }
 
   console.log("");

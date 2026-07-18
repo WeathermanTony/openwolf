@@ -53,12 +53,13 @@
       "reflection_frequency": "weekly"
     },
     "daemon": {
+      "auto_start": false,
       "port": 18860,
       "log_level": "info",
       "auth_token": null
     },
     "dashboard": {
-      "enabled": true,
+      "enabled": false,
       "port": 18861
     },
     "designqc": {

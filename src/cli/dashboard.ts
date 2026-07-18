@@ -1,13 +1,14 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import * as net from "node:net";
-import { fileURLToPath } from "node:url";
-import { fork } from "node:child_process";
+import * as http from "node:http";
 import { findProjectRoot } from "../scanner/project-root.js";
 import { readJSON } from "../utils/fs-safe.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import {
+  ensurePm2Daemon,
+  hasOpenWolfPm2Daemon,
+  hasPm2,
+  prepareDaemonPorts,
+} from "./daemon-cmd.js";
 
 interface WolfConfig {
   openwolf: {
@@ -15,24 +16,38 @@ interface WolfConfig {
   };
 }
 
-function isPortOpen(port: number): Promise<boolean> {
+function normalizeRoot(root: string): string {
+  try { return fs.realpathSync.native(root); } catch { return path.resolve(root); }
+}
+
+function isExpectedDashboard(port: number, projectRoot: string): Promise<boolean> {
   return new Promise((resolve) => {
-    const socket = new net.Socket();
-    socket.setTimeout(1000);
-    socket.once("connect", () => {
-      socket.destroy();
-      resolve(true);
+    const req = http.get({ hostname: "127.0.0.1", port, path: "/api/health", timeout: 1000 }, (res) => {
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", chunk => { if (body.length < 8192) body += chunk; });
+      res.on("end", () => {
+        try {
+          const parsed = JSON.parse(body) as { status?: string; project_root?: string };
+          resolve(res.statusCode === 200 && parsed.status === "healthy"
+            && typeof parsed.project_root === "string"
+            && normalizeRoot(parsed.project_root) === normalizeRoot(projectRoot));
+        } catch {
+          resolve(false);
+        }
+      });
     });
-    socket.once("timeout", () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.once("error", () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.connect(port, "127.0.0.1");
+    req.once("timeout", () => { req.destroy(); resolve(false); });
+    req.once("error", () => resolve(false));
   });
+}
+
+async function waitForDashboard(port: number, projectRoot: string): Promise<boolean> {
+  for (let i = 0; i < 25; i++) {
+    if (await isExpectedDashboard(port, projectRoot)) return true;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  return false;
 }
 
 export async function dashboardCommand(): Promise<void> {
@@ -44,56 +59,45 @@ export async function dashboardCommand(): Promise<void> {
     return;
   }
 
-  const config = readJSON<WolfConfig>(path.join(wolfDir, "config.json"), {
+  let config = readJSON<WolfConfig>(path.join(wolfDir, "config.json"), {
     openwolf: { dashboard: { port: 18791 } },
   });
+  let port = config.openwolf.dashboard.port;
 
-  const port = config.openwolf.dashboard.port;
-  const url = `http://localhost:${port}`;
-
-  // Check if daemon is already running on that port
-  const running = await isPortOpen(port);
-
-  if (!running) {
-    console.log("  Daemon not running. Starting dashboard server...");
-
-    // Find the daemon script
-    const daemonScript = path.resolve(__dirname, "..", "daemon", "wolf-daemon.js");
-    if (!fs.existsSync(daemonScript)) {
-      console.error(`  Daemon script not found at: ${daemonScript}`);
-      console.log("  Run 'pnpm build' in the openwolf directory first.");
-      return;
-    }
-
-    // Fork the daemon as a child process, passing project root explicitly
-    const child = fork(daemonScript, [], {
-      cwd: projectRoot,
-      env: { ...process.env, OPENWOLF_PROJECT_ROOT: projectRoot },
-      detached: true,
-      stdio: "ignore",
-    });
-    child.unref();
-
-    // Wait for the port to open (up to 5 seconds)
-    let ready = false;
-    for (let i = 0; i < 25; i++) {
-      await new Promise((r) => setTimeout(r, 200));
-      if (await isPortOpen(port)) {
-        ready = true;
-        break;
-      }
-    }
-
-    if (!ready) {
-      console.log(`  Server didn't start in time. Try manually: node "${daemonScript}"`);
-      return;
-    }
-
-    console.log(`  ✓ Dashboard server running on port ${port}`);
+  if (await isExpectedDashboard(port, projectRoot)) {
+    return openDashboard(port);
   }
 
-  console.log(`  Opening ${url}...`);
+  if (!hasPm2()) {
+    console.log("PM2 is only required for the optional dashboard/background service.");
+    console.log("Install it with: pnpm add -g pm2");
+    return;
+  }
 
+  if (hasOpenWolfPm2Daemon(projectRoot)) {
+    console.log("  Managed daemon is not serving the configured dashboard port; enabling its dashboard...");
+  } else {
+    console.log("  Starting the optional dashboard service through PM2...");
+    await prepareDaemonPorts(wolfDir, projectRoot);
+  }
+  ensurePm2Daemon(projectRoot, { silent: true, dashboard: true });
+
+  config = readJSON<WolfConfig>(path.join(wolfDir, "config.json"), config);
+  port = config.openwolf.dashboard.port;
+  if (!(await waitForDashboard(port, projectRoot))) {
+    console.log("  Dashboard service did not become ready in time.");
+    console.log("  Inspect it with: openwolf daemon logs");
+    return;
+  }
+
+  console.log(`  ✓ Dashboard service running on port ${port}`);
+  console.log("  It remains active until: openwolf daemon stop");
+  await openDashboard(port);
+}
+
+async function openDashboard(port: number): Promise<void> {
+  const url = `http://localhost:${port}`;
+  console.log(`  Opening ${url}...`);
   try {
     const { default: open } = await import("open");
     await open(url);

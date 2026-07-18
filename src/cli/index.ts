@@ -36,7 +36,7 @@ export function createProgram(): Command {
 
   program
     .command("status")
-    .description("Show daemon health, last session stats, file integrity")
+    .description("Show quality hooks, optional services, stats, and file integrity")
     .action(statusCommand);
 
   program

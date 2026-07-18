@@ -1,0 +1,171 @@
+{
+  "session_id": "",
+  "files_read": {
+    "/mnt/j/projectshome/projects/customopenwolf/src/daemon/wolf-daemon.ts": {
+      "count": 9,
+      "tokens": 6326,
+      "first_read": "2026-07-18T23:30:55.670Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/status.ts": {
+      "count": 1,
+      "tokens": 1298,
+      "first_read": "2026-07-18T23:30:55.862Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/init.ts": {
+      "count": 4,
+      "tokens": 10228,
+      "first_read": "2026-07-18T23:31:08.792Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/update.ts": {
+      "count": 6,
+      "tokens": 6426,
+      "first_read": "2026-07-18T23:31:08.915Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts": {
+      "count": 15,
+      "tokens": 4150,
+      "first_read": "2026-07-18T23:31:12.394Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/tests/daemon-cmd.test.js": {
+      "count": 4,
+      "tokens": 1404,
+      "first_read": "2026-07-18T23:31:25.681Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/dashboard.ts": {
+      "count": 3,
+      "tokens": 712,
+      "first_read": "2026-07-18T23:32:18.464Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/index.ts": {
+      "count": 1,
+      "tokens": 2267,
+      "first_read": "2026-07-18T23:32:29.214Z"
+    }
+  },
+  "anatomy_hits": 7,
+  "anatomy_misses": 0,
+  "repeated_reads_warned": 35,
+  "edit_counts": {
+    "src/cli/daemon-cmd.ts": 9,
+    "src/cli/update.ts": 2,
+    "src/cli/dashboard.ts": 3,
+    "src/daemon/wolf-daemon.ts": 4,
+    ".wolf/qa/pm2-lifecycle-cleanup.md": 1
+  },
+  "files_written": [
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts",
+      "action": "edit",
+      "tokens": 160,
+      "at": "2026-07-18T23:33:31.750Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts",
+      "action": "edit",
+      "tokens": 62,
+      "at": "2026-07-18T23:33:39.912Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts",
+      "action": "edit",
+      "tokens": 146,
+      "at": "2026-07-18T23:33:50.365Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts",
+      "action": "edit",
+      "tokens": 105,
+      "at": "2026-07-18T23:33:59.474Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts",
+      "action": "edit",
+      "tokens": 157,
+      "at": "2026-07-18T23:34:09.365Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/update.ts",
+      "action": "edit",
+      "tokens": 14,
+      "at": "2026-07-18T23:34:14.327Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/update.ts",
+      "action": "edit",
+      "tokens": 10,
+      "at": "2026-07-18T23:34:20.940Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/dashboard.ts",
+      "action": "create",
+      "tokens": 1031,
+      "at": "2026-07-18T23:34:44.599Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts",
+      "action": "edit",
+      "tokens": 34,
+      "at": "2026-07-18T23:35:08.448Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts",
+      "action": "edit",
+      "tokens": 50,
+      "at": "2026-07-18T23:35:16.387Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts",
+      "action": "edit",
+      "tokens": 41,
+      "at": "2026-07-18T23:35:27.436Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/daemon-cmd.ts",
+      "action": "edit",
+      "tokens": 67,
+      "at": "2026-07-18T23:35:33.349Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/dashboard.ts",
+      "action": "edit",
+      "tokens": 20,
+      "at": "2026-07-18T23:35:39.801Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/dashboard.ts",
+      "action": "edit",
+      "tokens": 104,
+      "at": "2026-07-18T23:35:49.212Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/daemon/wolf-daemon.ts",
+      "action": "edit",
+      "tokens": 52,
+      "at": "2026-07-18T23:35:55.029Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/daemon/wolf-daemon.ts",
+      "action": "edit",
+      "tokens": 49,
+      "at": "2026-07-18T23:36:02.792Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/daemon/wolf-daemon.ts",
+      "action": "edit",
+      "tokens": 92,
+      "at": "2026-07-18T23:36:25.452Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/daemon/wolf-daemon.ts",
+      "action": "edit",
+      "tokens": 35,
+      "at": "2026-07-18T23:36:32.784Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/pm2-lifecycle-cleanup.md",
+      "action": "edit",
+      "tokens": 22,
+      "at": "2026-07-18T23:39:08.173Z"
+    }
+  ]
+}

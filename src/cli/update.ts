@@ -11,7 +11,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getRegisteredProjects, registerProject, type RegisteredProject } from "./registry.js";
-import { applyReviewerProfile, migrateReviewCompanionConfig, normalizeReviewerProfile } from "./init.js";
+import { applyReviewerProfile, migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from "./init.js";
+import { cleanupOpenWolfPm2, listPm2Processes } from "./daemon-cmd.js";
 import { readJSON, writeJSON, readText, writeText, safeCopyFile } from "../utils/fs-safe.js";
 import { ensureDir } from "../utils/paths.js";
 
@@ -74,9 +75,13 @@ interface UpdateResult {
 
 export async function updateCommand(options: { dryRun?: boolean; force?: boolean; project?: string; profile?: string }): Promise<void> {
   const version = getVersion();
-  const projects = getRegisteredProjects(true);
+  const dryRun = options.dryRun ?? false;
+  // Keep missing projects long enough to correlate and remove their owned PM2
+  // registrations before registry validation drops them.
+  const allProjects = getRegisteredProjects(false);
+  const projects = allProjects.filter(project => fs.existsSync(path.join(project.root, ".wolf")));
 
-  if (projects.length === 0) {
+  if (allProjects.length === 0) {
     console.log("No registered OpenWolf projects found.");
     console.log("Run 'openwolf init' in a project directory to register it.");
     return;
@@ -104,14 +109,35 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
     normalizeReviewerProfile(options.profile);
   }
 
-  console.log(`OpenWolf v${version} — updating ${targets.length} project(s)${options.dryRun ? " (dry run)" : ""}...\n`);
+  console.log(`OpenWolf v${version} — updating ${targets.length} project(s)${dryRun ? " (dry run)" : ""}...\n`);
 
   const results: UpdateResult[] = [];
+  const pm2Processes = listPm2Processes();
+  const daemonRootsToRemove: string[] = [];
+  let daemonPreserved = 0;
+  let daemonNotRunning = 0;
 
   for (const project of targets) {
-    const result = await updateProject(project, version, options.dryRun ?? false, options.profile);
+    const result = await updateProject(project, version, dryRun, options.profile);
     results.push(result);
+    if (result.status !== "updated") continue;
+    const config = readJSON<unknown>(path.join(project.root, ".wolf", "config.json"), {});
+    if (shouldAutoStartDaemon(config)) {
+      daemonPreserved++;
+      continue;
+    }
+    daemonRootsToRemove.push(project.root);
   }
+
+  const cleanup = cleanupOpenWolfPm2({
+    projectRoots: daemonRootsToRemove,
+    pruneStale: !options.project,
+    dryRun: dryRun,
+    processes: pm2Processes,
+  });
+
+  // Trigger normal registry validation only after stale PM2 correlation.
+  if (!dryRun) getRegisteredProjects(true);
 
   // Summary
   console.log("\n─── Update Summary ───");
@@ -137,6 +163,13 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
       console.log(`    ${r.project.name} — ${r.message}`);
     }
   }
+
+  console.log("\n  Daemon migration:");
+  console.log(`    ${dryRun ? "Would remove" : "Removed"}: ${cleanup.removed.length}`);
+  console.log(`    Preserved by explicit auto_start: ${daemonPreserved}`);
+  daemonNotRunning = cleanup.notFound.length;
+  console.log(`    Not running: ${daemonNotRunning}`);
+  console.log(`    Stale owned entries found: ${cleanup.staleFound}`);
   console.log("");
 }
 

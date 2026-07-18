@@ -30,9 +30,23 @@ Claude Code currently executes hooks from `.wolf/hooks/*.js` through `.claude/se
 
 Runtime files such as logs, ledgers, session state, design captures, and generated QA reductions are intentionally ignored by git.
 
+## Optional background services
+
+Wolfpack's coding-quality controls run through Claude Code hooks and do not require PM2. Git discipline, simplicity checks, review gates, QA reductions, memory, bug learning, and anatomy guidance remain active with no daemon running.
+
+The dashboard, scheduled cron jobs, heartbeat, and live dashboard file broadcasts are disabled by default. Start them only when needed:
+
+```bash
+openwolf dashboard       # starts the managed service and opens the dashboard
+openwolf daemon start    # starts background scheduling/API/watcher services
+openwolf daemon stop     # removes the project daemon from PM2
+```
+
+An explicitly started service remains active until `openwolf daemon stop`. To restore legacy init-time startup for one project, set `openwolf.daemon.auto_start` to `true` in `.wolf/config.json`. Fleet updates remove ownership-proven Wolfpack PM2 entries for default-disabled projects while preserving explicit opt-ins and unrelated PM2 processes.
+
 ## Version
 
-Current baseline: `1.2.0-custom.1`.
+See `VERSION` for the current custom release.
 
 ## Verification
 

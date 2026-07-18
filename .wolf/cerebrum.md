@@ -29,6 +29,7 @@
 - PM2 daemon liveness requires `status: "online"` plus a positive integer `pid`; stopped or pid-less PM2 rows are stale and should not count as active daemons.
 - Daemon startup/heartbeat paths must refuse missing project/runtime directories and avoid recreating manually deleted project roots by writing `.wolf` state during shutdown.
 - Redteam plugin files live outside this repo at `~/.claude/plugins/marketplaces/tony-local/plugins/redteam/`; QA reductions for external edits made from this repo still belong in this project's `.wolf/qa`.
+- Wolfpack's coding-quality controls are hook-based and do not require PM2; the dashboard, cron scheduler, heartbeat, and live broadcasts are optional background services.
 
 ## Do-Not-Repeat
 
@@ -47,6 +48,8 @@
 - [2026-07-18] Git-init nudge for non-git repos must bypass the materiality gate (min_written_files, min_changed_lines, material_paths) because scope_excludes like `/tmp/**` can filter all writes and make `material=false` even when legitimate work was done. Use `hasAnyWrites` (unfiltered) to decide.
 - [2026-07-18] Simplicity nudge added: fires at 500+ output tokens, max 1/session, reminding assistant to check YAGNI, readability, and efficiency. Configurable via `openwolf.simplicity`.
 - [2026-07-18] `tryConsumeNudgeSlot(capN=0)` must mean "unlimited" (no cap), not "zero allowed". The `??` operator already distinguishes `0` from `undefined`, but the slot consumer itself must short-circuit `capN === 0` before `prior >= capN` to avoid blocking all nudges when a user explicitly sets `max_fires_per_session: 0`.
+- [2026-07-18] PM2 daemon ownership must require all three signals: an `openwolf-` process name, the `wolf-daemon.js` executable, and a matching absolute project root/cwd. An environment variable alone is not safe deletion proof.
+- [2026-07-18] Keep Wolfpack PM2 daemons and the dashboard disabled by default. Explicit dashboard startup must use managed PM2 lifecycle and HTTP health identity, never an unmanaged detached child or a bare TCP-port readiness check.
 
 ## Decision Log
 

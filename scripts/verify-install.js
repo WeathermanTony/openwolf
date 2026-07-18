@@ -127,6 +127,18 @@ function deepEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+async function checkOptionalDaemonDefaults() {
+  for (const file of ['src/config/default-config.json', 'src/templates/config.json', 'templates/wolf/config.json']) {
+    const parsed = await parseJson(file);
+    if (parsed?.openwolf?.daemon?.auto_start !== false) {
+      failures.push(`${file} must default openwolf.daemon.auto_start to false`);
+    }
+    if (parsed?.openwolf?.dashboard?.enabled !== false) {
+      failures.push(`${file} must default openwolf.dashboard.enabled to false`);
+    }
+  }
+}
+
 async function checkClaimCalibrationConfig() {
   for (const file of ['.wolf/config.json', 'src/config/default-config.json', 'templates/wolf/config.json']) {
     const parsed = await parseJson(file);
@@ -281,12 +293,19 @@ async function checkFreshInitScaffoldOutput() {
     const cerebrum = await readFile(path.join(dir, '.wolf', 'cerebrum.md'), 'utf8');
     const anatomy = await readFile(path.join(dir, '.wolf', 'anatomy.md'), 'utf8');
     const gateLog = JSON.parse(await readFile(path.join(dir, '.wolf', 'qa', '_gate-log.json'), 'utf8'));
+    const config = JSON.parse(await readFile(path.join(dir, '.wolf', 'config.json'), 'utf8'));
     const protocolUpgrade = await readFile(path.join(dir, '.wolf', 'PROTOCOL-UPGRADE-2026-06.md'), 'utf8');
     checkNoScaffoldLeakMarkers('fresh init .wolf/cerebrum.md', cerebrum);
     checkNoScaffoldLeakMarkers('fresh init .wolf/anatomy.md', anatomy);
     checkNoScaffoldLeakMarkers('fresh init .wolf/qa/_gate-log.json', JSON.stringify(gateLog));
     if (!Array.isArray(gateLog.entries) || gateLog.entries.length !== 0) {
       failures.push('fresh init .wolf/qa/_gate-log.json should be an empty scaffold log');
+    }
+    if (config?.openwolf?.daemon?.auto_start !== false || config?.openwolf?.dashboard?.enabled !== false) {
+      failures.push('fresh init must disable daemon auto-start and dashboard by default');
+    }
+    if (!result.stdout.includes('Wolfpack quality hooks are active')) {
+      failures.push('fresh init output must distinguish active quality hooks from optional background services');
     }
     for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Buglog schema bump']) {
       if (!protocolUpgrade.includes(heading)) {
@@ -442,6 +461,7 @@ for (const file of ['.wolf/hooks/package.json', 'templates/wolf/hooks/package.js
   await checkHookPackage(file);
 }
 
+await checkOptionalDaemonDefaults();
 await checkClaimCalibrationConfig();
 await checkReviewCompletionWorkflow();
 await checkCleanProjectTemplates();

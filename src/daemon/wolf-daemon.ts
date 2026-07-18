@@ -291,6 +291,7 @@ function releaseDaemonSingleton(): void {
 acquireDaemonSingleton();
 
 const startTime = Date.now();
+const dashboardEnabled = config.openwolf.dashboard.enabled || process.env.OPENWOLF_DASHBOARD_ENABLED === "1";
 const wsClients = new Set<WebSocket>();
 
 // Express server
@@ -300,7 +301,7 @@ app.use(express.json());
 // Serve dashboard static files
 // In dist: dist/src/daemon/wolf-daemon.js → ../../../dist/dashboard/
 const dashboardDir = path.resolve(__dirname, "..", "..", "..", "dist", "dashboard");
-if (fs.existsSync(dashboardDir)) {
+if (dashboardEnabled && fs.existsSync(dashboardDir)) {
   app.get("/", (_req, res) => sendDashboardIndex(res));
   app.use(express.static(dashboardDir, { index: false }));
 }
@@ -371,6 +372,7 @@ app.get("/api/health", (_req, res) => {
   const taskCount = Array.isArray(cronManifest.tasks) ? cronManifest.tasks.length : 0;
   res.json({
     status: "healthy",
+    project_root: projectRoot,
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
     last_heartbeat: cronState.last_heartbeat ?? null,
     tasks: taskCount,
@@ -431,14 +433,16 @@ app.post("/api/cron/run/:taskId", requireDashboardAuth, (req, res) => {
 });
 
 // SPA fallback
-app.get("/{*path}", (_req, res) => {
-  const indexPath = path.join(dashboardDir, "index.html");
-  if (fs.existsSync(indexPath)) {
-    sendDashboardIndex(res);
-  } else {
-    res.status(404).json({ error: "Dashboard not built. Run: pnpm build:dashboard" });
-  }
-});
+if (dashboardEnabled) {
+  app.get("/{*path}", (_req, res) => {
+    const indexPath = path.join(dashboardDir, "index.html");
+    if (fs.existsSync(indexPath)) {
+      sendDashboardIndex(res);
+    } else {
+      res.status(404).json({ error: "Dashboard not built. Run: pnpm build:dashboard" });
+    }
+  });
+}
 
 // Start HTTP server
 const port = config.openwolf.dashboard.port;
@@ -453,9 +457,9 @@ server.on("error", (err) => {
 });
 
 // WebSocket server
-const wss = new WebSocketServer({ server, path: "/ws" });
+const wss = dashboardEnabled ? new WebSocketServer({ server, path: "/ws" }) : null;
 
-wss.on("connection", (ws, req) => {
+wss?.on("connection", (ws, req) => {
   if (!authenticateWebSocketRequest(req)) {
     ws.close(1008, "Unauthorized");
     return;

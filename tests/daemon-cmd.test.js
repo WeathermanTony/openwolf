@@ -3,9 +3,21 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { isActivePm2Process } from '../dist/src/cli/daemon-cmd.js';
+import { isActivePm2Process, ownedPm2ProcessForRoot } from '../dist/src/cli/daemon-cmd.js';
 import { shouldStartDaemonForProject } from '../dist/src/daemon/startup-guard.js';
-import { migrateReviewCompanionConfig, normalizeReviewerProfile } from '../dist/src/cli/init.js';
+import { migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from '../dist/src/cli/init.js';
+
+test('daemon auto-start is disabled unless explicitly true', () => {
+  assert.equal(shouldAutoStartDaemon(undefined), false);
+  assert.equal(shouldAutoStartDaemon(null), false);
+  assert.equal(shouldAutoStartDaemon({}), false);
+  assert.equal(shouldAutoStartDaemon({ openwolf: [] }), false);
+  assert.equal(shouldAutoStartDaemon({ openwolf: { daemon: null } }), false);
+  assert.equal(shouldAutoStartDaemon({ openwolf: { daemon: {} } }), false);
+  assert.equal(shouldAutoStartDaemon({ openwolf: { daemon: { auto_start: false } } }), false);
+  assert.equal(shouldAutoStartDaemon({ openwolf: { daemon: { auto_start: 'true' } } }), false);
+  assert.equal(shouldAutoStartDaemon({ openwolf: { daemon: { auto_start: true } } }), true);
+});
 
 test('PM2 daemon activity requires online status and a live pid', () => {
   assert.equal(isActivePm2Process(null), false);
@@ -14,6 +26,36 @@ test('PM2 daemon activity requires online status and a live pid', () => {
   assert.equal(isActivePm2Process({ pm2_env: { status: 'online' } }), false);
   assert.equal(isActivePm2Process({ pm2_env: { status: 'online' }, pid: 0 }), false);
   assert.equal(isActivePm2Process({ pm2_env: { status: 'online' }, pid: 1234 }), true);
+});
+
+test('PM2 ownership requires an exact recorded project root', () => {
+  const processes = [
+    {
+      name: 'openwolf-same-aaaaaaaa',
+      pid: 101,
+      pm2_env: {
+        status: 'online',
+        pm_id: 1,
+        pm_cwd: '/projects/one/same',
+        pm_exec_path: '/opt/wolf-daemon.js',
+        OPENWOLF_PROJECT_ROOT: '/projects/one/same',
+      },
+    },
+    {
+      name: 'openwolf-same-bbbbbbbb',
+      pid: 202,
+      pm2_env: {
+        status: 'online',
+        pm_id: 2,
+        pm_cwd: '/projects/two/same',
+        pm_exec_path: '/opt/wolf-daemon.js',
+        OPENWOLF_PROJECT_ROOT: '/projects/two/same',
+      },
+    },
+  ];
+  assert.equal(ownedPm2ProcessForRoot(processes, '/projects/one/same')?.pid, 101);
+  assert.equal(ownedPm2ProcessForRoot(processes, '/projects/two/same')?.pid, 202);
+  assert.equal(ownedPm2ProcessForRoot(processes, '/projects/three/same'), null);
 });
 
 test('daemon refuses to start when project runtime directory was deleted', async () => {

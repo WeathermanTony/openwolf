@@ -220,3 +220,99 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 16:45 | Fixed tryConsumeNudgeSlot: capN===0 means unlimited nudges | src/hooks/stop.ts, .wolf/hooks/stop.js, templates/wolf/hooks/stop.js, src/hooks/stop.js | Added capN===0 short-circuit before prior>=capN check; also includes autonomy nudge ReDoS guards, nudge-response markers, ?? for max_fires_per_session | ~200 |
+| 16:47 | Rebuilt, synced all mirrors, ran tests+verify | stop.ts, stop.js, shared.js, templates/, .wolf/ | All 30 tests pass, verify clean | ~1200 |
+| 16:47 | Added QA reduction for capN=0 fix | .wolf/qa/tryconsumenudgeslot-cap0.md | Falsification test confirms capN=0 always allows, positive caps still enforce | ~500 |
+| 16:48 | Completed review-0062 with current-byte provenance | .wolf/reviewlog.json | review-0062 marked completed, ChatGPT reviewer, 2 files verified | ~50 |
+| 16:48 | Updated .wolf/cerebrum.md with Do-Not-Repeat entry | .wolf/cerebrum.md | tryConsumeNudgeSlot capN=0 lesson logged | ~50 |
+| 16:48 | Committed all changes | git commit | 293c33d: Fix tryConsumeNudgeSlot: capN===0 means unlimited nudges | ~100 |
+| 16:48 | Session end: 6 writes across 5 files (stop.ts, cerebrum.md, qa, reviewlog, memory) | 2 reads | ~2100 tok |
+| 17:05 | Investigated WSL2 memory and PM2/Wolfpack daemons | PM2 process list, daemon source | Found 9 live Wolfpack daemons plus PM2 using ~765 MiB RSS; quality hooks do not depend on daemon | ~2500 |
+| 17:25 | Made PM2 daemon and dashboard disabled by default and on-demand | init.ts, daemon-cmd.ts, dashboard.ts, update.ts, status.ts, configs, daemon | Added strict ownership cleanup, managed dashboard lifecycle, health identity, fleet migration, status/docs/tests | ~8500 |
+| 17:35 | Ran simplification and high-effort workflow review; fixed verified lifecycle issues | daemon-cmd.ts, dashboard.ts, update.ts, wolf-daemon.ts | Tightened ownership, removed duplicate records, made cleanup resilient, scoped stale pruning, honored dashboard disabled state, used HTTP identity readiness | ~5000 |
+| 17:42 | Released and deployed Wolfpack 1.2.0-custom.7 | VERSION, package files, 79 registered projects | 79/79 updated; removed 45 PM2 entries including 16 stale; PM2 registry now empty; full tests and verifier pass | ~2500 |
+
+| 16:49 | Session end: 1 writes across 1 files (tryconsumenudgeslot-cap0.md) | 0 reads | ~835 tok |
+| 16:49 | Session end: 1 writes across 1 files (tryconsumenudgeslot-cap0.md) | 0 reads | ~835 tok |
+| 17:39 | Session end: 1 writes across 1 files (tryconsumenudgeslot-cap0.md) | 1 reads | ~835 tok |
+
+## Session: 2026-07-18 18:51
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:06 | Created ../../../../../home/tony/.claude/plans/fizzy-doodling-pascal.md | — | ~2880 |
+| 19:09 | Edited src/config/default-config.json | 7→8 lines | ~48 |
+| 19:09 | Edited src/templates/config.json | 7→8 lines | ~48 |
+| 19:09 | Edited templates/wolf/config.json | 7→8 lines | ~48 |
+| 19:09 | Edited src/cli/init.ts | modified if() | ~338 |
+| 19:09 | Edited src/cli/init.ts | added 1 condition(s) | ~249 |
+| 19:09 | Edited src/cli/init.ts | 4→5 lines | ~74 |
+| 19:09 | Edited src/cli/init.ts | added 3 condition(s) | ~581 |
+| 19:10 | Edited src/cli/init.ts | 2→2 lines | ~40 |
+| 19:10 | Edited tests/daemon-cmd.test.js | inline fix | ~35 |
+| 19:10 | Edited tests/daemon-cmd.test.js | expanded (+12 lines) | ~231 |
+| 19:10 | Edited src/cli/init.ts | modified normalizeDaemonConfig() | ~20 |
+| 19:11 | Edited src/cli/daemon-cmd.ts | inline fix | ~16 |
+| 19:11 | Edited src/cli/daemon-cmd.ts | inline fix | ~24 |
+| 19:11 | Edited src/cli/daemon-cmd.ts | inline fix | ~28 |
+| 19:11 | Edited src/cli/daemon-cmd.ts | inline fix | ~12 |
+| 19:12 | Created src/cli/dashboard.ts | — | ~712 |
+| 19:12 | Edited src/daemon/wolf-daemon.ts | 3→4 lines | ~38 |
+| 19:12 | Edited src/cli/daemon-cmd.ts | 12→13 lines | ~80 |
+| 19:13 | Edited src/cli/daemon-cmd.ts | added nullish coalescing | ~846 |
+| 19:14 | Edited src/cli/update.ts | added 1 import(s) | ~100 |
+| 19:14 | Edited src/cli/update.ts | 2→5 lines | ~92 |
+| 19:14 | Edited src/cli/update.ts | added 4 condition(s) | ~306 |
+| 19:14 | Edited src/cli/update.ts | added 1 condition(s) | ~180 |
+| 19:14 | Edited src/cli/init.ts | inline fix | ~27 |
+| 19:14 | Edited src/cli/init.ts | added 1 condition(s) | ~73 |
+| 19:15 | Edited src/cli/status.ts | added 2 import(s) | ~47 |
+| 19:15 | Edited src/cli/status.ts | modified if() | ~352 |
+| 19:15 | Edited src/cli/index.ts | "Show daemon health, last " → "Show quality hooks, optio" | ~23 |
+| 19:16 | Edited README.md | expanded (+14 lines) | ~278 |
+| 19:16 | Edited tests/daemon-cmd.test.js | inline fix | ~26 |
+| 19:16 | Edited tests/daemon-cmd.test.js | added optional chaining | ~281 |
+| 19:22 | Edited src/cli/daemon-cmd.ts | modified getPm2Process() | ~62 |
+| 19:22 | Edited src/cli/daemon-cmd.ts | modified getOpenWolfPm2Process() | ~83 |
+| 19:22 | Edited src/cli/daemon-cmd.ts | 5→5 lines | ~30 |
+| 19:22 | Edited src/cli/daemon-cmd.ts | 2→4 lines | ~54 |
+| 19:22 | Edited src/cli/daemon-cmd.ts | modified staleOpenWolfPm2Processes() | ~32 |
+| 19:22 | Edited src/cli/daemon-cmd.ts | modified staleOpenWolfPm2Processes() | ~122 |
+| 19:23 | Edited src/cli/daemon-cmd.ts | inline fix | ~17 |
+| 19:23 | Edited src/cli/dashboard.ts | modified waitForPort() | ~64 |
+| 19:23 | Edited src/cli/status.ts | 4→4 lines | ~41 |
+| 19:23 | Edited src/cli/update.ts | added nullish coalescing | ~32 |
+| 19:23 | Edited src/cli/update.ts | inline fix | ~2 |
+| 19:23 | Edited src/cli/update.ts | inline fix | ~3 |
+| 19:23 | Edited src/cli/update.ts | inline fix | ~2 |
+| 19:23 | Edited src/cli/update.ts | added nullish coalescing | ~21 |
+| 19:24 | Edited src/cli/update.ts | 2→1 lines | ~13 |
+| 19:24 | Edited src/cli/update.ts | 2→1 lines | ~11 |
+| 19:24 | Edited src/cli/update.ts | 3→3 lines | ~49 |
+| 19:24 | Edited src/cli/update.ts | inline fix | ~21 |
+| 19:25 | Edited scripts/verify-install.js | added optional chaining | ~164 |
+| 19:25 | Edited scripts/verify-install.js | 1→2 lines | ~21 |
+| 19:25 | Edited scripts/verify-install.js | 2→3 lines | ~88 |
+| 19:25 | Edited scripts/verify-install.js | added optional chaining | ~163 |
+| 19:26 | Edited scripts/verify-install.js | modified checkOptionalDaemonDefaults() | ~47 |
+| 19:27 | Edited src/cli/init.ts | added 1 condition(s) | ~80 |
+| 19:27 | Edited src/cli/daemon-cmd.ts | modified catch() | ~178 |
+| 19:30 | Edited src/cli/update.ts | modified if() | ~54 |
+| 19:33 | Edited src/cli/daemon-cmd.ts | modified recordedProjectRoot() | ~160 |
+| 19:33 | Edited src/cli/daemon-cmd.ts | modified sameProjectRoot() | ~62 |
+| 19:33 | Edited src/cli/daemon-cmd.ts | modified ownedPm2ProcessesForRoot() | ~146 |
+| 19:33 | Edited src/cli/daemon-cmd.ts | ownedPm2ProcessForRoot() → ownedPm2ProcessesForRoot() | ~105 |
+| 19:34 | Edited src/cli/daemon-cmd.ts | added error handling | ~157 |
+| 19:34 | Edited src/cli/update.ts | "error" → "updated" | ~14 |
+| 19:34 | Edited src/cli/update.ts | inline fix | ~10 |
+| 19:34 | Created src/cli/dashboard.ts | — | ~1031 |
+| 19:35 | Edited src/cli/daemon-cmd.ts | 2→3 lines | ~34 |
+| 19:35 | Edited src/cli/daemon-cmd.ts | modified ensurePm2Daemon() | ~50 |
+| 19:35 | Edited src/cli/daemon-cmd.ts | 1→5 lines | ~41 |
+| 19:35 | Edited src/cli/daemon-cmd.ts | added optional chaining | ~67 |
+| 19:35 | Edited src/cli/dashboard.ts | inline fix | ~20 |
+| 19:35 | Edited src/cli/dashboard.ts | 9→7 lines | ~104 |
+| 19:35 | Edited src/daemon/wolf-daemon.ts | 2→3 lines | ~52 |
+| 19:36 | Edited src/daemon/wolf-daemon.ts | 4→4 lines | ~49 |
+| 19:36 | Edited src/daemon/wolf-daemon.ts | added 1 condition(s) | ~92 |
+| 19:36 | Edited src/daemon/wolf-daemon.ts | added optional chaining | ~35 |

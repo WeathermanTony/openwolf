@@ -9,7 +9,7 @@ import { ensureDir } from "../utils/paths.js";
 import { isWindows } from "../utils/platform.js";
 import { registerProject } from "./registry.js";
 import { allocateProjectPorts, isPortFree } from "../utils/port-allocator.js";
-import { ensurePm2Daemon, hasOpenWolfPm2Daemon } from "./daemon-cmd.js";
+import { cleanupOpenWolfPm2, ensurePm2Daemon, hasOpenWolfPm2Daemon } from "./daemon-cmd.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -139,29 +139,22 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
     seedIdentity(wolfDir, projectRoot);
   }
 
-  // --- Per-project port allocation ---
-  // Templates ship with the legacy default (dashboard 18791, daemon 18790).
-  // Pick a deterministic, free port pair for this project so multiple
-  // projects can run wolf-daemon concurrently without EADDRINUSE crashloops.
   const configPath = path.join(wolfDir, "config.json");
-  const cfg = readJSON<{ openwolf?: { daemon?: { port?: number }; dashboard?: { port?: number } } }>(
-    configPath,
-    { openwolf: { daemon: { port: 18790 }, dashboard: { port: 18791 } } }
-  );
-  cfg.openwolf = cfg.openwolf && typeof cfg.openwolf === "object" ? cfg.openwolf : {};
-  cfg.openwolf.daemon = cfg.openwolf.daemon && typeof cfg.openwolf.daemon === "object" ? cfg.openwolf.daemon : {};
-  cfg.openwolf.dashboard = cfg.openwolf.dashboard && typeof cfg.openwolf.dashboard === "object" ? cfg.openwolf.dashboard : {};
-  cfg.openwolf.daemon.port = typeof cfg.openwolf.daemon.port === "number" ? cfg.openwolf.daemon.port : 18790;
-  cfg.openwolf.dashboard.port = typeof cfg.openwolf.dashboard.port === "number" ? cfg.openwolf.dashboard.port : 18791;
-  if (!isUpgrade || !hasOpenWolfPm2Daemon(projectRoot)) {
+  const cfg = readJSON<unknown>(configPath, {});
+  const daemonAutoStart = shouldAutoStartDaemon(cfg);
+
+  // Port allocation is only needed when the user explicitly opted into an
+  // always-on daemon. On-demand commands allocate ports when they start it.
+  if (daemonAutoStart && (!isUpgrade || !hasOpenWolfPm2Daemon(projectRoot))) {
+    const normalized = normalizeDaemonConfig(cfg);
     try {
-      const dashboardFree = await isPortFree(cfg.openwolf.dashboard.port);
-      const daemonFree = await isPortFree(cfg.openwolf.daemon.port);
+      const dashboardFree = await isPortFree(normalized.openwolf.dashboard.port);
+      const daemonFree = await isPortFree(normalized.openwolf.daemon.port);
       if (!dashboardFree || !daemonFree) {
         const { daemon, dashboard } = await allocateProjectPorts(projectRoot);
-        cfg.openwolf.daemon.port = daemon;
-        cfg.openwolf.dashboard.port = dashboard;
-        writeJSON(configPath, cfg);
+        normalized.openwolf.daemon.port = daemon;
+        normalized.openwolf.dashboard.port = dashboard;
+        writeJSON(configPath, normalized);
         console.log(`  ✓ Allocated per-project ports: daemon=${daemon}, dashboard=${dashboard}`);
       }
     } catch (e) {
@@ -240,10 +233,17 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
 
   const verifyInstallMode = process.env.OPENWOLF_VERIFY_INSTALL === "1";
 
-  // --- Daemon ---
-  let daemonStatus = "start manually with: openwolf daemon start";
+  // --- Optional daemon ---
+  let daemonStatus = "disabled by default; start on demand with: openwolf daemon start";
   if (verifyInstallMode) {
-    daemonStatus = "skipped during install verification";
+    daemonStatus = "disabled by default (install verification)";
+  } else if (!daemonAutoStart) {
+    if (isUpgrade) {
+      const cleanup = cleanupOpenWolfPm2({ projectRoots: [projectRoot] });
+      if (cleanup.removed.length > 0) {
+        daemonStatus = `disabled by default; removed ${cleanup.removed[0]} from PM2`;
+      }
+    }
   } else {
     try {
       const pm2Cmd = isWindows() ? "where pm2" : "which pm2";
@@ -251,13 +251,13 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
       try {
         const result = ensurePm2Daemon(projectRoot, { silent: true });
         daemonStatus = result.status === "already-running"
-          ? `already registered via pm2 (${result.name})`
-          : `${result.status} via pm2 (${result.name})`;
+          ? `auto-start enabled; already registered via pm2 (${result.name})`
+          : `auto-start enabled; ${result.status} via pm2 (${result.name})`;
       } catch {
-        daemonStatus = "pm2 found but daemon start failed. Try: openwolf daemon start";
+        daemonStatus = "auto-start enabled, but daemon start failed. Try: openwolf daemon start";
       }
     } catch {
-      daemonStatus = "pm2 not found. Install with: pnpm add -g pm2";
+      daemonStatus = "auto-start enabled, but pm2 is not installed";
     }
   }
 
@@ -296,8 +296,9 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
     console.log(`  ✓ Reviewer profile: ${reviewerProfile}`);
   }
   console.log(`  ✓ Daemon: ${daemonStatus}`);
+  console.log(`  ✓ Dashboard: available on demand with: openwolf dashboard`);
   console.log("");
-  console.log("  You're ready. Just use 'claude' as normal — Wolfpack is watching.");
+  console.log("  You're ready. Wolfpack quality hooks are active whenever you use Claude Code.");
   console.log("");
 }
 
@@ -377,6 +378,35 @@ export function normalizeReviewerProfile(profile?: string): "us-only" | "open" |
 export const LEGACY_CODEX_COMMAND_DEFAULT = "codex exec --full-auto";
 export const REVIEW_COMPANION_DEFAULT = "provider companion";
 
+export function shouldAutoStartDaemon(config: unknown): boolean {
+  if (!config || typeof config !== "object" || Array.isArray(config)) return false;
+  const openwolf = (config as Record<string, unknown>).openwolf;
+  if (!openwolf || typeof openwolf !== "object" || Array.isArray(openwolf)) return false;
+  const daemon = (openwolf as Record<string, unknown>).daemon;
+  if (!daemon || typeof daemon !== "object" || Array.isArray(daemon)) return false;
+  return (daemon as Record<string, unknown>).auto_start === true;
+}
+
+function normalizeDaemonConfig(config: unknown): Record<string, any> {
+  const cfg = config && typeof config === "object" && !Array.isArray(config)
+    ? { ...(config as Record<string, any>) }
+    : {};
+  cfg.openwolf = cfg.openwolf && typeof cfg.openwolf === "object" && !Array.isArray(cfg.openwolf)
+    ? { ...cfg.openwolf }
+    : {};
+  cfg.openwolf.daemon = cfg.openwolf.daemon && typeof cfg.openwolf.daemon === "object" && !Array.isArray(cfg.openwolf.daemon)
+    ? { ...cfg.openwolf.daemon }
+    : {};
+  cfg.openwolf.dashboard = cfg.openwolf.dashboard && typeof cfg.openwolf.dashboard === "object" && !Array.isArray(cfg.openwolf.dashboard)
+    ? { ...cfg.openwolf.dashboard }
+    : {};
+  cfg.openwolf.daemon.auto_start = cfg.openwolf.daemon.auto_start === true;
+  cfg.openwolf.daemon.port = typeof cfg.openwolf.daemon.port === "number" ? cfg.openwolf.daemon.port : 18790;
+  cfg.openwolf.dashboard.enabled = cfg.openwolf.dashboard.enabled === true;
+  cfg.openwolf.dashboard.port = typeof cfg.openwolf.dashboard.port === "number" ? cfg.openwolf.dashboard.port : 18791;
+  return cfg;
+}
+
 export function migrateReviewCompanionConfig(config: unknown): Record<string, any> {
   const cfg = config && typeof config === "object" && !Array.isArray(config)
     ? { ...(config as Record<string, any>) }
@@ -446,8 +476,8 @@ function generateTemplate(destPath: string, file: string): void {
         cron: { enabled: true, max_retry_attempts: 3, dead_letter_enabled: true, heartbeat_interval_minutes: 30, use_claude_p: true, api_key_env: null },
         memory: { consolidation_after_days: 7, max_entries_before_consolidation: 200 },
         cerebrum: { max_tokens: 2000, reflection_frequency: "weekly" },
-        daemon: { port: 18790, log_level: "info", auth_token: null },
-        dashboard: { enabled: true, port: 18791 },
+        daemon: { auto_start: false, port: 18790, log_level: "info", auth_token: null },
+        dashboard: { enabled: false, port: 18791 },
         designqc: { enabled: true, viewports: [{ name: "desktop", width: 1440, height: 900 }, { name: "mobile", width: 375, height: 812 }], max_screenshots: 6, chrome_path: null },
         size_discipline: {
           enabled: true,
