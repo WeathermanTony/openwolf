@@ -1565,6 +1565,12 @@ function maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, transcrip
     const last = readLastAssistantText(transcriptPath);
     if (!last?.text || last.text.length < cfg.min_text_chars)
         return false;
+    // Skip if the assistant is responding to a previous nudge (not asking to continue).
+    // Nudge responses contain markers like "Wolfpack", "🐺", "nudge", "false positive",
+    // "yielding" — matching these would re-fire the nudge on the response itself.
+    const nudgeResponseMarkers = [/\bWolfpack\b/i, /🐺/, /\bnudge\b/i, /\bfalse positive\b/i, /\byielding\b/i];
+    if (nudgeResponseMarkers.some(re => re.test(last.text)))
+        return false;
     let matched = false;
     for (const src of cfg.patterns) {
         try {
