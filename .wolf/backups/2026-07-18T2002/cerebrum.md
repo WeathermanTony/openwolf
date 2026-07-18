@@ -46,7 +46,6 @@
 - [2026-07-14] Regexes that target literal `.` or `:/` pathspecs must not end with `\b`; use a separator lookahead such as `(?=\s|$|;|&|\|)` or destructive Git forms like `git checkout -- .` silently miss.
 - [2026-07-18] Git-init nudge for non-git repos must bypass the materiality gate (min_written_files, min_changed_lines, material_paths) because scope_excludes like `/tmp/**` can filter all writes and make `material=false` even when legitimate work was done. Use `hasAnyWrites` (unfiltered) to decide.
 - [2026-07-18] Simplicity nudge added: fires at 500+ output tokens, max 1/session, reminding assistant to check YAGNI, readability, and efficiency. Configurable via `openwolf.simplicity`.
-- [2026-07-18] `tryConsumeNudgeSlot(capN=0)` must mean "unlimited" (no cap), not "zero allowed". The `??` operator already distinguishes `0` from `undefined`, but the slot consumer itself must short-circuit `capN === 0` before `prior >= capN` to avoid blocking all nudges when a user explicitly sets `max_fires_per_session: 0`.
 
 ## Decision Log
 

@@ -109,6 +109,9 @@ function exitWithStopHookResult(block) {
     process.exit(0);
 }
 function tryConsumeNudgeSlot(sessionFile, field, capN) {
+    // capN === 0 means "no cap" — unlimited nudges allowed.
+    if (capN === 0)
+        return true;
     const release = acquireFileLock(sessionFile);
     if (!release)
         return false;
@@ -1567,14 +1570,30 @@ function maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, transcrip
         return false;
     // Skip if the assistant is responding to a previous nudge (not asking to continue).
     // Nudge responses contain markers like "Wolfpack", "🐺", "nudge", "false positive",
-    // "yielding" — matching these would re-fire the nudge on the response itself.
-    const nudgeResponseMarkers = [/\bWolfpack\b/i, /🐺/, /\bnudge\b/i, /\bfalse positive\b/i, /\byielding\b/i];
+    // "yielding", or the autonomy nudge's own framing "next step is (clear|not clear)".
+    const nudgeResponseMarkers = [/\bWolfpack\b/i, /🐺/, /\bnudge\b/i, /\bfalse positive\b/i, /\byielding\b/i, /\bnext step is (?:clear|not clear)\b/i];
     if (nudgeResponseMarkers.some(re => re.test(last.text)))
         return false;
+    // Guard against ReDoS in user-configured patterns: reject nested-quantifier forms
+    // like (a+)+, (a*)*, (a+){25}, alternation-with-quantifier like (a|aa)+ or (a|aa){25},
+    // and nested forms like ^((a|aa))+$ or ^((a|aa)){25}$. Cap text length to limit
+    // worst-case backtracking. Scan prefix + suffix so asks at the end aren't missed.
+    const DANGEROUS_PATTERN = /\([^)]*[*+?][^)]*\)[*+?{]|\([^)]*\|[^)]*\)[*+?{]/;
+    // Alternation inside a parenthesized group that is itself quantified (by *+? or {n})
+    // — catches nested forms like ^((a|aa))+$ or ^((a|aa)){25}$ that DANGEROUS_PATTERN misses.
+    const hasQuantifiedAlternation = (src) => src.includes("|") && /\)[*+?{]/.test(src);
+    const MAX_TEXT_LEN = 10000;
+    const testText = last.text.length > MAX_TEXT_LEN
+        ? last.text.slice(0, MAX_TEXT_LEN / 2) + last.text.slice(-MAX_TEXT_LEN / 2)
+        : last.text;
     let matched = false;
     for (const src of cfg.patterns) {
+        if (DANGEROUS_PATTERN.test(src))
+            continue;
+        if (hasQuantifiedAlternation(src))
+            continue;
         try {
-            if (new RegExp(src, "i").test(last.text)) {
+            if (new RegExp(src, "i").test(testText)) {
                 matched = true;
                 break;
             }
@@ -1583,7 +1602,7 @@ function maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, transcrip
     }
     if (!matched)
         return false;
-    if (!tryConsumeNudgeSlot(sessionFile, "autonomy_continuation_warnings", cfg.max_fires_per_session || STOP_NUDGE_PER_SESSION_CAP))
+    if (!tryConsumeNudgeSlot(sessionFile, "autonomy_continuation_warnings", cfg.max_fires_per_session ?? STOP_NUDGE_PER_SESSION_CAP))
         return false;
     emitStopHookFeedback(autonomyContinuationMessage());
     return true;

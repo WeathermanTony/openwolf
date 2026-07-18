@@ -11,9 +11,10 @@ import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFi
 // with verify-conclusions' max_fires_per_session. Hard-coded for now;
 // promote to config if a project needs to tune it.
 const STOP_NUDGE_PER_SESSION_CAP = 3;
-const stopHookMessages: string[] = [];
-function emitStopHookFeedback(message: string): void {
-    if (message) stopHookMessages.push(message);
+const stopHookMessages = [];
+function emitStopHookFeedback(message) {
+    if (message)
+        stopHookMessages.push(message);
 }
 /**
  * Atomically claim a per-session nudge slot for the given counter field.
@@ -35,7 +36,6 @@ function emitStopHookFeedback(message: string): void {
  * silently rather than nudge without a log entry" behavior; the slot is
  * effectively given to whoever wins the next contention.
  */
-
 function compactList(items, max = 3) {
     const shown = items.slice(0, max).join(", ");
     const more = items.length > max ? ` +${items.length - max} more` : "";
@@ -90,7 +90,6 @@ function formatConclusionNudge({ id, matchedCount, minAssumptions }, _msgCfg) {
     return `Wolfpack conclusion [${id}]: last turn matched ${matchedCount} conclusion pattern(s).\n` +
         `Action: add .wolf/qa reduction with ≥${minAssumptions} assumptions, riskiest falsifier, and actual output before finalizing.\n`;
 }
-
 function exitWithStopHookResult(block) {
     if (stopHookMessages.length > 0) {
         const additionalContext = stopHookMessages.join("").trimEnd();
@@ -110,9 +109,6 @@ function exitWithStopHookResult(block) {
     process.exit(0);
 }
 function tryConsumeNudgeSlot(sessionFile, field, capN) {
-    // capN === 0 means "no cap" — unlimited nudges allowed.
-    if (capN === 0)
-        return true;
     const release = acquireFileLock(sessionFile);
     if (!release)
         return false;
@@ -581,8 +577,12 @@ function recentBashCommands(lastAssistant, transcriptPath) {
         let sawAssistant = false;
         for (let i = lines.length - 1; i >= 0; i--) {
             let entry;
-            try { entry = JSON.parse(lines[i]); }
-            catch { continue; }
+            try {
+                entry = JSON.parse(lines[i]);
+            }
+            catch {
+                continue;
+            }
             if (sawAssistant && entry.type === "user")
                 break;
             if (entry.type !== "assistant")
@@ -1572,13 +1572,13 @@ function maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, transcrip
     if (nudgeResponseMarkers.some(re => re.test(last.text)))
         return false;
     // Guard against ReDoS in user-configured patterns: reject nested-quantifier forms
-    // like (a+)+, (a*)*, (a+){25}, alternation-with-quantifier like (a|aa)+ or (a|aa){25},
-    // and nested forms like ^((a|aa))+$ or ^((a|aa)){25}$. Cap text length to limit
-    // worst-case backtracking. Scan prefix + suffix so asks at the end aren't missed.
-    const DANGEROUS_PATTERN = /\([^)]*[*+?][^)]*\)[*+?{]|\([^)]*\|[^)]*\)[*+?{]/;
-    // Alternation inside a parenthesized group that is itself quantified (by *+? or {n})
-    // — catches nested forms like ^((a|aa))+$ or ^((a|aa)){25}$ that DANGEROUS_PATTERN misses.
-    const hasQuantifiedAlternation = (src) => src.includes("|") && /\)[*+?{]/.test(src);
+    // like (a+)+, (a*)*, alternation-with-quantifier like (a|aa)+ or ^((a|aa))+$.
+    // Cap text length to limit worst-case backtracking. Scan prefix + suffix so asks
+    // at the end aren't missed.
+    const DANGEROUS_PATTERN = /\([^)]*[*+?][^)]*\)[*+?]|\([^)]*\|[^)]*\)[*+?]/;
+    // Alternation inside a parenthesized group that is itself quantified — catches
+    // nested forms like ^((a|aa))+$ that DANGEROUS_PATTERN misses.
+    const hasQuantifiedAlternation = (src) => src.includes("|") && /\)[*+?]/.test(src);
     const MAX_TEXT_LEN = 10000;
     const testText = last.text.length > MAX_TEXT_LEN
         ? last.text.slice(0, MAX_TEXT_LEN / 2) + last.text.slice(-MAX_TEXT_LEN / 2)
@@ -1599,7 +1599,7 @@ function maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, transcrip
     }
     if (!matched)
         return false;
-    if (!tryConsumeNudgeSlot(sessionFile, "autonomy_continuation_warnings", cfg.max_fires_per_session ?? STOP_NUDGE_PER_SESSION_CAP))
+    if (!tryConsumeNudgeSlot(sessionFile, "autonomy_continuation_warnings", cfg.max_fires_per_session || STOP_NUDGE_PER_SESSION_CAP))
         return false;
     emitStopHookFeedback(autonomyContinuationMessage());
     return true;
@@ -1725,7 +1725,6 @@ function claimCalibrationNudgeMessage(id, categories) {
 function isCalibrationLikeType(type) {
     return type === "claim_calibration" || type === "scientific_mode";
 }
-
 function claimStateSignature(sessionEntry, labels) {
     const written = [...new Set((sessionEntry.writes ?? []).map(w => w.file))]
         .filter(file => typeof file === "string" && isCodeFile(file));
@@ -1827,7 +1826,6 @@ function maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, transcriptPa
     emitStopHookFeedback(claimCalibrationNudgeMessage(nextId, categories));
     return true;
 }
-
 function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transcriptPath) {
     const cfg = getQualityGateConfig();
     if (!cfg.enabled)
@@ -1986,3 +1984,4 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
     return true;
 }
 main().catch(() => exitWithStopHookResult(false));
+//# sourceMappingURL=stop.js.map
