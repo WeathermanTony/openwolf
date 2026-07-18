@@ -1,0 +1,128 @@
+{
+  "session_id": "session-2026-07-18-1033",
+  "started": "2026-07-18T14:33:38.611Z",
+  "files_read": {
+    "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts": {
+      "count": 13,
+      "tokens": 26241,
+      "first_read": "2026-07-18T14:33:43.729Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/tests/review-completion.test.js": {
+      "count": 4,
+      "tokens": 8365,
+      "first_read": "2026-07-18T14:34:47.714Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.js": {
+      "count": 1,
+      "tokens": 25592,
+      "first_read": "2026-07-18T14:35:44.632Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts": {
+      "count": 10,
+      "tokens": 17747,
+      "first_read": "2026-07-18T14:35:55.392Z"
+    }
+  },
+  "files_written": [
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 1262,
+      "at": "2026-07-18T14:38:17.579Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/review-completion.test.js",
+      "action": "edit",
+      "tokens": 630,
+      "at": "2026-07-18T14:40:43.915Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/review-completion.test.js",
+      "action": "edit",
+      "tokens": 233,
+      "at": "2026-07-18T14:41:11.033Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/git-init-nudge.md",
+      "action": "create",
+      "tokens": 458,
+      "at": "2026-07-18T14:42:38.340Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts",
+      "action": "edit",
+      "tokens": 113,
+      "at": "2026-07-18T14:44:24.939Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts",
+      "action": "edit",
+      "tokens": 254,
+      "at": "2026-07-18T14:44:39.132Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 348,
+      "at": "2026-07-18T14:44:54.007Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 106,
+      "at": "2026-07-18T14:45:06.404Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 121,
+      "at": "2026-07-18T14:45:22.737Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/simplicity-nudge.md",
+      "action": "create",
+      "tokens": 906,
+      "at": "2026-07-18T14:48:03.828Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/simplicity-config.md",
+      "action": "create",
+      "tokens": 444,
+      "at": "2026-07-18T14:50:19.797Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/buglog.json",
+      "action": "edit",
+      "tokens": 268,
+      "at": "2026-07-18T14:50:41.274Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 117,
+      "at": "2026-07-18T18:54:04.470Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 68,
+      "at": "2026-07-18T18:54:30.045Z"
+    }
+  ],
+  "edit_counts": {
+    "src/hooks/stop.ts": 6,
+    "tests/review-completion.test.js": 2,
+    ".wolf/qa/git-init-nudge.md": 1,
+    "src/hooks/shared.ts": 2,
+    ".wolf/qa/simplicity-nudge.md": 1,
+    ".wolf/qa/simplicity-config.md": 1,
+    ".wolf/buglog.json": 1
+  },
+  "anatomy_hits": 4,
+  "anatomy_misses": 0,
+  "repeated_reads_warned": 24,
+  "cerebrum_warnings": 0,
+  "stop_count": 2,
+  "buglog_warnings": 1,
+  "simplicity_warnings": 1
+}

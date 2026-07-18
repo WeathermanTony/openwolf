@@ -169,6 +169,7 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
     }
   }
 
+  migrateReviewCompanionConfigFile(configPath);
   applyReviewerProfile(configPath, options.profile);
 
   // --- Token ledger: set created_at only if empty ---
@@ -373,6 +374,34 @@ export function normalizeReviewerProfile(profile?: string): "us-only" | "open" |
   throw new Error(`Unknown Wolfpack profile "${profile}". Use "gov", "open", or "budget".`);
 }
 
+export const LEGACY_CODEX_COMMAND_DEFAULT = "codex exec --full-auto";
+export const REVIEW_COMPANION_DEFAULT = "provider companion";
+
+export function migrateReviewCompanionConfig(config: unknown): Record<string, any> {
+  const cfg = config && typeof config === "object" && !Array.isArray(config)
+    ? { ...(config as Record<string, any>) }
+    : {};
+  cfg.openwolf = cfg.openwolf && typeof cfg.openwolf === "object" && !Array.isArray(cfg.openwolf)
+    ? { ...cfg.openwolf }
+    : {};
+  cfg.openwolf.review_hook = cfg.openwolf.review_hook && typeof cfg.openwolf.review_hook === "object" && !Array.isArray(cfg.openwolf.review_hook)
+    ? { ...cfg.openwolf.review_hook }
+    : {};
+  const reviewHook = cfg.openwolf.review_hook;
+  if (typeof reviewHook.review_companion !== "string" || reviewHook.review_companion.trim().length === 0) {
+    reviewHook.review_companion = REVIEW_COMPANION_DEFAULT;
+  }
+  if (reviewHook.codex_command === LEGACY_CODEX_COMMAND_DEFAULT) {
+    delete reviewHook.codex_command;
+  }
+  return cfg;
+}
+
+export function migrateReviewCompanionConfigFile(configPath: string): void {
+  const existing = readJSON<unknown>(configPath, {});
+  writeJSON(configPath, migrateReviewCompanionConfig(existing));
+}
+
 export function applyReviewerProfile(configPath: string, profile?: string): "us-only" | "open" | "budget" | undefined {
   const reviewerProfile = normalizeReviewerProfile(profile);
   if (!reviewerProfile) return undefined;
@@ -433,7 +462,7 @@ function generateTemplate(destPath: string, file: string): void {
           enabled: true,
           min_diff_lines: 40,
           always_review_paths: ["**/auth/**", "**/payment/**", "**/migrations/**"],
-          codex_command: "codex exec --full-auto",
+          review_companion: "provider companion",
           max_review_rounds: 5,
           nudge_only: true,
         },

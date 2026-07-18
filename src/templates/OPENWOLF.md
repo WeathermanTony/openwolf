@@ -205,25 +205,40 @@ When the user asks to change, pick, migrate, or "reframe" their project's UI fra
 
 ## Reviewer Profiles
 
-Use `wolfpack init --profile gov` for government or compliance-sensitive projects. This sets review nudges to advertise only US-based reviewers. Use `wolfpack init --profile open` for unrestricted projects where broader installed reviewers such as GLM are acceptable. Use `wolfpack init --profile budget` when token-rich GLM 5.2, Kimi, MiMo, and MiniMax should be preferred while Claude/ChatGPT/Codex are reserved for escalation or final arbitration. The profile controls Wolfpack's visible recommendations only; it does not enforce network, model, or account access. The compatibility `openwolf init --profile ...` command remains supported.
+Use `wolfpack init --profile gov` for government or compliance-sensitive projects; review nudges must select only companions backed by US-based providers. Use `wolfpack init --profile open` for unrestricted projects where the broader installed provider set is eligible. Use `wolfpack init --profile budget` to prefer token-rich GLM, Kimi, MiMo, and MiniMax companions while reserving Claude/ChatGPT companions for escalation or final arbitration. Profiles constrain selection policy; they do not change the standardized companion interface or enforce network, model, account, or filesystem isolation. The compatibility `openwolf init --profile ...` command remains supported.
 
-## Review Gate Lifecycle
+## Companion-Owned Review Lifecycle
 
-When the Stop hook creates a pending review in `.wolf/reviewlog.json`, do not mark it completed by editing JSON manually. After an independent reviewer approves the current bytes, run:
+Wolfpack decides when review is required, records the bounded current file set and Wolfpack hashes, and emits the applicable profile policy. A standardized provider companion performs the review:
 
-```bash
-node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --summary "<outcome>"
+```text
+<provider companion> review --file <path>... [--diff <patch>]
 ```
 
-The helper verifies the pending entry's `content_hashes` still match current files so repeated review nudges can coalesce safely. Practical rules:
+Ask for critical flaws only. Require concrete evidence and a falsifier for every finding. Explicit `--file` inputs are context discipline that limits ordinary discovery and token use; they are **not an OS/filesystem sandbox**. Do not invoke direct provider CLIs, discover the broad repository, or manually create/copy/remove a staging workspace. The companion owns staging, subprocess control, redaction, hashing, cleanup, provider transport, and its own receipts.
 
-1. **Review the bytes you will close.** If the independent reviewer finds an issue and you edit a reviewed file, that file now has a new hash; re-review the new bytes before completing the review.
-2. **Pending reviews coalesce on Stop.** If a pending review already exists for the session, the Stop hook unions the file list and refreshes `content_hashes` for currently written files. This is intentional: the next nudge points at the latest bytes.
-3. **A refused close is usually correct.** `reviewed file hashes changed or file set drifted` means the helper detected edits after the pending review was filed. Let the next Stop refresh/coalesce, re-review the current files, then run the helper again.
-4. **Lock errors are transient.** `could not lock reviewlog.json` usually means the Stop hook and helper raced on the same file; rerun the helper after a moment.
-5. **The file list can be broader than the new issue.** Coalescing unions files across the pending review window, and some files may already be covered by prior completed reviews at the same hash. Review the listed current files, but don't assume every listed path is newly suspicious.
+When the Stop hook creates a pending review in `.wolf/reviewlog.json`, never mark it completed by editing JSON manually:
 
-Natural cadence: run the independent review; if it is clean, complete immediately. If it finds issues, fix them, allow the next Stop to refresh the pending hash set, re-review, then complete.
+1. Review the listed current files with the provider companion.
+2. If edits or `REVIEW_STALE` change the pending bytes, refresh:
+   ```bash
+   node .wolf/hooks/complete-review.js review-NNNN --refresh
+   ```
+3. Re-run the companion against the actual refreshed files.
+4. After observing that current-byte review, complete:
+   ```bash
+   node .wolf/hooks/complete-review.js review-NNNN --reviewed-current --reviewer <name> --summary "<outcome>"
+   ```
+
+Companion receipt hashes currently use a different representation from Wolfpack's `--reviewed-hash` manifest. Do not pass a companion receipt hash as `--reviewed-hash`; retain that option only for workflows that explicitly produced Wolfpack's own manifest hash. Pending reviews may coalesce, lock errors may be transient, and the listed file set may include files already covered at the same current hash.
+
+## Operational Verification
+
+Use `/ops:live-debug` as the default bounded workflow for collecting evidence from explicit process, log, file, and HTTP targets. Use `/ops:deploy-verify` as the default workflow for an explicit deployment target, including local/served byte evidence where applicable.
+
+Keep health and functional probes independent. A health probe shows that a process or service responds; a functional probe exercises the user-facing or API behavior that matters. A green health endpoint alone does not verify a deployment.
+
+The provider-neutral ops plugin owns target bounds, subprocess handling, log/file/HTTP collection, redaction, hashing, static-asset linkage, cache checks, and falsifier output. Wolfpack selects and instructs; it must not duplicate those facilities in hooks or scripts. Keep all targets explicit and bounded rather than scanning unrelated processes, logs, hosts, or repositories.
 
 ## Session End
 

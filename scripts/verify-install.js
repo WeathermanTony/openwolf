@@ -162,6 +162,17 @@ async function checkReviewCompletionWorkflow() {
     if (!content.includes('hooks", "complete-review.js"') && !content.includes('.wolf/hooks/complete-review.js')) {
       failures.push(`${file} must point review completion to an absolute or project .wolf/hooks/complete-review.js helper path`);
     }
+    for (const marker of ['provider companion review', 'Critical flaws only', 'evidence and a falsifier', '--reviewed-current']) {
+      if (!content.includes(marker)) failures.push(`${file} missing standardized review marker: ${marker}`);
+    }
+    for (const forbidden of ['codex exec --full-auto', 'codex_command']) {
+      if (content.includes(forbidden)) failures.push(`${file} contains active legacy review transport: ${forbidden}`);
+    }
+  }
+  for (const file of ['.wolf/config.json', 'src/config/default-config.json', 'src/templates/config.json', 'templates/wolf/config.json']) {
+    const content = await readRequiredText(file);
+    if (content.includes('codex exec --full-auto')) failures.push(`${file} contains the legacy Codex default`);
+    if (!content.includes('"review_companion"')) failures.push(`${file} missing review_companion config`);
   }
 }
 
@@ -202,10 +213,13 @@ async function checkCleanProjectTemplates() {
 async function checkProtocolUpgradeDocs() {
   for (const file of ['.wolf/OPENWOLF.md', 'src/templates/OPENWOLF.md', 'templates/wolf/OPENWOLF.md']) {
     const content = await readRequiredText(file);
-    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy']) {
+    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Companion-Owned Review Lifecycle', '## Operational Verification']) {
       if (!content.includes(heading)) {
         failures.push(`${file} missing protocol section ${heading}`);
       }
+    }
+    for (const marker of ['/ops:live-debug', '/ops:deploy-verify', 'health and functional probes', 'not an OS/filesystem sandbox', 'receipt hashes currently use a different representation']) {
+      if (!content.includes(marker)) failures.push(`${file} missing review/ops protocol marker: ${marker}`);
     }
     for (const field of ['"commit": null', '"reduction":']) {
       if (!content.includes(field)) {

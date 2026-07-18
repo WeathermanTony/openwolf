@@ -755,7 +755,7 @@ const REVIEW_HOOK_DEFAULTS = {
     min_diff_lines: 40,
     always_review_paths: ["**/auth/**", "**/payment/**", "**/migrations/**"],
     scope_excludes: DEFAULT_GATE_EXCLUDES,
-    codex_command: "codex exec --full-auto",
+    review_companion: "provider companion",
     max_review_rounds: 5,
     nudge_only: true,
 };
@@ -888,6 +888,12 @@ const GIT_DISCIPLINE_DEFAULTS = {
         "document version",
         "package version",
     ],
+};
+const SIMPLICITY_DEFAULTS = {
+    enabled: true,
+    nudge_only: true,
+    min_output_tokens: 500,
+    max_fires_per_session: 1,
 };
 const CLAIM_CALIBRATION_DEFAULTS = {
     enabled: true,
@@ -1080,7 +1086,9 @@ export function getReviewHookConfig() {
         scope_excludes: mergeWithWolfDocExcludes(cfg.scope_excludes, cfg.allow_wolf_doc_review, REVIEW_HOOK_DEFAULTS.scope_excludes),
         allow_wolf_doc_review: cfg.allow_wolf_doc_review,
         coalesce_lookback: cfg.coalesce_lookback,
-        codex_command: cfg.codex_command ?? REVIEW_HOOK_DEFAULTS.codex_command,
+        review_companion: typeof cfg.review_companion === "string" && cfg.review_companion.trim().length > 0
+            ? cfg.review_companion.trim()
+            : REVIEW_HOOK_DEFAULTS.review_companion,
         max_review_rounds: cfg.max_review_rounds ?? REVIEW_HOOK_DEFAULTS.max_review_rounds,
         nudge_only: cfg.nudge_only ?? REVIEW_HOOK_DEFAULTS.nudge_only,
         nudge_cap: cfg.nudge_cap,
@@ -1121,6 +1129,16 @@ export function getGitDisciplineConfig() {
         commit_patterns: Array.isArray(cfg.commit_patterns) ? cfg.commit_patterns : GIT_DISCIPLINE_DEFAULTS.commit_patterns,
         status_markers: Array.isArray(cfg.status_markers) ? cfg.status_markers : GIT_DISCIPLINE_DEFAULTS.status_markers,
         version_markers: Array.isArray(cfg.version_markers) ? cfg.version_markers : GIT_DISCIPLINE_DEFAULTS.version_markers,
+    };
+}
+export function getSimplicityConfig() {
+    const root = loadConfig();
+    const cfg = (root && typeof root === "object" ? root.openwolf?.simplicity : undefined) ?? {};
+    return {
+        enabled: cfg.enabled ?? SIMPLICITY_DEFAULTS.enabled,
+        nudge_only: cfg.nudge_only ?? SIMPLICITY_DEFAULTS.nudge_only,
+        min_output_tokens: finiteNumber(cfg.min_output_tokens, SIMPLICITY_DEFAULTS.min_output_tokens, { min: 0, max: 100000 }),
+        max_fires_per_session: finiteNumber(cfg.max_fires_per_session, SIMPLICITY_DEFAULTS.max_fires_per_session, { min: 0, max: 100 }),
     };
 }
 export function getClaimCalibrationConfig() {

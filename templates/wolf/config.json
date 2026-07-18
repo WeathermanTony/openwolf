@@ -108,7 +108,7 @@
         "**/payment/**",
         "**/migrations/**"
       ],
-      "codex_command": "codex exec --full-auto",
+      "review_companion": "provider companion",
       "max_review_rounds": 5,
       "nudge_only": true
     },

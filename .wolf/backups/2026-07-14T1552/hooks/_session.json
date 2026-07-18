@@ -1,0 +1,236 @@
+{
+  "session_id": "session-2026-07-14-0744",
+  "started": "2026-07-14T11:44:08.267Z",
+  "files_read": {
+    "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts": {
+      "count": 6,
+      "tokens": 24804,
+      "first_read": "2026-07-14T11:51:51.850Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/config/default-config.json": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-14T11:51:51.897Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/VERSION": {
+      "count": 1,
+      "tokens": 4,
+      "first_read": "2026-07-14T11:51:52.199Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts": {
+      "count": 7,
+      "tokens": 17446,
+      "first_read": "2026-07-14T11:56:39.886Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/templates/wolf/config.json": {
+      "count": 1,
+      "tokens": 1306,
+      "first_read": "2026-07-14T11:57:01.101Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/update.ts": {
+      "count": 2,
+      "tokens": 5704,
+      "first_read": "2026-07-14T14:09:46.899Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/templates/config.json": {
+      "count": 1,
+      "tokens": 1306,
+      "first_read": "2026-07-14T14:11:51.611Z"
+    }
+  },
+  "files_written": [
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts",
+      "action": "edit",
+      "tokens": 470,
+      "at": "2026-07-14T11:57:25.458Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts",
+      "action": "edit",
+      "tokens": 538,
+      "at": "2026-07-14T11:57:39.642Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 115,
+      "at": "2026-07-14T11:57:48.316Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 141,
+      "at": "2026-07-14T11:58:01.160Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 37,
+      "at": "2026-07-14T11:58:18.875Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 78,
+      "at": "2026-07-14T11:58:24.483Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 174,
+      "at": "2026-07-14T11:58:34.232Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 1330,
+      "at": "2026-07-14T11:59:03.031Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 48,
+      "at": "2026-07-14T12:02:32.948Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/git-version-discipline-nudge.md",
+      "action": "create",
+      "tokens": 1361,
+      "at": "2026-07-14T12:03:48.649Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 64,
+      "at": "2026-07-14T12:05:19.520Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 40,
+      "at": "2026-07-14T12:08:37.753Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/git-version-discipline-nudge.md",
+      "action": "edit",
+      "tokens": 25,
+      "at": "2026-07-14T12:12:19.893Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts",
+      "action": "edit",
+      "tokens": 101,
+      "at": "2026-07-14T14:03:23.897Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts",
+      "action": "edit",
+      "tokens": 195,
+      "at": "2026-07-14T14:03:33.970Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts",
+      "action": "edit",
+      "tokens": 643,
+      "at": "2026-07-14T14:04:03.368Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 253,
+      "at": "2026-07-14T14:04:16.417Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 590,
+      "at": "2026-07-14T14:04:37.532Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 149,
+      "at": "2026-07-14T14:04:47.783Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 92,
+      "at": "2026-07-14T14:07:11.035Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 614,
+      "at": "2026-07-14T14:07:42.588Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 61,
+      "at": "2026-07-14T14:07:48.622Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/stop.ts",
+      "action": "edit",
+      "tokens": 102,
+      "at": "2026-07-14T14:07:59.012Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/update.ts",
+      "action": "edit",
+      "tokens": 131,
+      "at": "2026-07-14T14:10:06.027Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/update.ts",
+      "action": "edit",
+      "tokens": 313,
+      "at": "2026-07-14T14:10:16.839Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/git-version-discipline-nudge.md",
+      "action": "edit",
+      "tokens": 75,
+      "at": "2026-07-14T14:13:16.018Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/git-version-discipline-nudge.md",
+      "action": "edit",
+      "tokens": 304,
+      "at": "2026-07-14T14:13:27.923Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/hooks/shared.ts",
+      "action": "edit",
+      "tokens": 24,
+      "at": "2026-07-14T14:19:34.869Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/git-version-discipline-nudge.md",
+      "action": "edit",
+      "tokens": 26,
+      "at": "2026-07-14T14:24:14.661Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/git-version-discipline-nudge.md",
+      "action": "edit",
+      "tokens": 170,
+      "at": "2026-07-14T14:24:25.594Z"
+    }
+  ],
+  "edit_counts": {
+    "src/hooks/shared.ts": 6,
+    "src/hooks/stop.ts": 16,
+    ".wolf/qa/git-version-discipline-nudge.md": 6,
+    "src/cli/update.ts": 2
+  },
+  "anatomy_hits": 6,
+  "anatomy_misses": 0,
+  "repeated_reads_warned": 12,
+  "cerebrum_warnings": 0,
+  "stop_count": 13,
+  "autonomy_continuation_warnings": 2,
+  "git_discipline_warnings": 3
+}

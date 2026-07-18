@@ -1,0 +1,178 @@
+{
+  "session_id": "session-2026-07-06-1911",
+  "started": "2026-07-06T23:11:22.405Z",
+  "files_read": {
+    "/mnt/j/projectshome/projects/customopenwolf/tests/review-cmd.test.js": {
+      "count": 2,
+      "tokens": 1230,
+      "first_read": "2026-07-06T23:11:50.684Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/review-cmd.ts": {
+      "count": 2,
+      "tokens": 1561,
+      "first_read": "2026-07-06T23:11:57.823Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/index.ts": {
+      "count": 1,
+      "tokens": 1503,
+      "first_read": "2026-07-06T23:15:36.544Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/src/cli/qa-cmd.ts": {
+      "count": 1,
+      "tokens": 1289,
+      "first_read": "2026-07-06T23:18:08.929Z"
+    },
+    "/mnt/j/projectshome/projects/customopenwolf/tests/qa-cmd.test.js": {
+      "count": 1,
+      "tokens": 587,
+      "first_read": "2026-07-06T23:18:21.517Z"
+    }
+  },
+  "files_written": [
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/review-cmd.test.js",
+      "action": "edit",
+      "tokens": 25,
+      "at": "2026-07-06T23:12:04.364Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/review-cmd.test.js",
+      "action": "edit",
+      "tokens": 669,
+      "at": "2026-07-06T23:12:26.798Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/review-cmd.test.js",
+      "action": "edit",
+      "tokens": 126,
+      "at": "2026-07-06T23:13:23.800Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/qa-cmd.ts",
+      "action": "create",
+      "tokens": 1289,
+      "at": "2026-07-06T23:15:24.509Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/index.ts",
+      "action": "edit",
+      "tokens": 164,
+      "at": "2026-07-06T23:15:45.044Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/qa-cmd.test.js",
+      "action": "create",
+      "tokens": 587,
+      "at": "2026-07-06T23:16:01.320Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/qa-status-cli.md",
+      "action": "create",
+      "tokens": 682,
+      "at": "2026-07-06T23:17:40.521Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/qa-cmd.ts",
+      "action": "edit",
+      "tokens": 27,
+      "at": "2026-07-06T23:18:15.376Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/qa-cmd.test.js",
+      "action": "edit",
+      "tokens": 127,
+      "at": "2026-07-06T23:18:31.453Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/qa-cmd.test.js",
+      "action": "edit",
+      "tokens": 57,
+      "at": "2026-07-06T23:18:37.647Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/trace-cmd.ts",
+      "action": "create",
+      "tokens": 887,
+      "at": "2026-07-06T23:23:12.345Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/cerebrum-cmd.ts",
+      "action": "create",
+      "tokens": 723,
+      "at": "2026-07-06T23:23:32.896Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/index.ts",
+      "action": "edit",
+      "tokens": 253,
+      "at": "2026-07-06T23:23:45.682Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/trace-cerebrum-cmd.test.js",
+      "action": "create",
+      "tokens": 852,
+      "at": "2026-07-06T23:24:08.934Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/review-provenance-cli.md",
+      "action": "create",
+      "tokens": 906,
+      "at": "2026-07-06T23:26:21.389Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/.wolf/qa/trace-cerebrum-cli.md",
+      "action": "create",
+      "tokens": 798,
+      "at": "2026-07-06T23:26:45.081Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/review-cmd.ts",
+      "action": "edit",
+      "tokens": 236,
+      "at": "2026-07-06T23:29:22.840Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/review-cmd.ts",
+      "action": "edit",
+      "tokens": 28,
+      "at": "2026-07-06T23:29:30.271Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/src/cli/review-cmd.ts",
+      "action": "edit",
+      "tokens": 35,
+      "at": "2026-07-06T23:29:37.619Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/review-cmd.test.js",
+      "action": "edit",
+      "tokens": 125,
+      "at": "2026-07-06T23:30:00.428Z"
+    },
+    {
+      "file": "/mnt/j/projectshome/projects/customopenwolf/tests/review-cmd.test.js",
+      "action": "edit",
+      "tokens": 44,
+      "at": "2026-07-06T23:30:08.060Z"
+    }
+  ],
+  "edit_counts": {
+    "tests/review-cmd.test.js": 5,
+    "src/cli/qa-cmd.ts": 2,
+    "src/cli/index.ts": 2,
+    "tests/qa-cmd.test.js": 3,
+    ".wolf/qa/qa-status-cli.md": 1,
+    "src/cli/trace-cmd.ts": 1,
+    "src/cli/cerebrum-cmd.ts": 1,
+    "tests/trace-cerebrum-cmd.test.js": 1,
+    ".wolf/qa/review-provenance-cli.md": 1,
+    ".wolf/qa/trace-cerebrum-cli.md": 1,
+    "src/cli/review-cmd.ts": 3
+  },
+  "anatomy_hits": 5,
+  "anatomy_misses": 0,
+  "repeated_reads_warned": 2,
+  "cerebrum_warnings": 1,
+  "stop_count": 8,
+  "autonomy_continuation_warnings": 1
+}

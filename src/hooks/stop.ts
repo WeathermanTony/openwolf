@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getClaimCalibrationConfig, getHookMessageConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 // Per-session firing cap shared by the buglog-missing and cerebrum-freshness
 // feedback nudges. They have no per-state hash to dedup against (unlike the
@@ -44,29 +44,41 @@ function compactList(items, max = 3) {
 function isVerboseHookMessages(cfg) {
     return cfg.verbosity === "verbose" || cfg.include_provider_examples === true;
 }
-function reviewerGuidance(msgCfg, codexCommand) {
+function reviewerGuidance(msgCfg) {
     if (msgCfg.reviewer_profile === "budget") {
-        return `Reviewers: budget profile — prefer token-rich models first: GLM 5.2 as daily-driver/reasoning grader, plus Kimi, MiMo, and MiniMax for token-intensive research and independent finder coverage. Reserve Claude/ChatGPT/Codex for escalation, final arbitration, or tasks that require them. Re-review after edits/refresh; do not edit reviewlog by hand.`;
+        return `Profile: budget — use standardized GLM, Kimi, MiMo, or MiniMax companions first; reserve Claude/ChatGPT companions for escalation or final arbitration.`;
     }
     if (msgCfg.reviewer_profile === "open") {
-        return `Reviewers: for open/unrestricted work, use a diverse panel: GLM for high-context reasoning/grading, MiniMax/MiMo/DeepSeek/Qwen for cheap independent finder coverage, Kimi for alternate-family contrast, one OpenAI-family lane (Codex or ChatGPT), plus Claude/Grok for critic/security perspectives. If one hangs, try another model family. Re-review after edits/refresh; do not edit reviewlog by hand.`;
+        return `Profile: open — any installed standardized provider companion is eligible; use diverse provider families when multiple independent reviews are useful.`;
     }
-    return `Reviewers: use US-based reviewers only for this project: Codex/OpenAI (${codexCommand}), ChatGPT/OpenAI, Claude/Anthropic, Grok/xAI, or manual review. Avoid non-US reviewer plugins for this project. Re-review after edits/refresh; do not edit reviewlog by hand.`;
+    return `Profile: gov/US-only — use only standardized companions backed by US-based providers (Claude, ChatGPT, or Grok); do not route review to non-US providers.`;
 }
-function formatReviewNudge({ id, reason, files, repeat, reviewLogPath, completeCommand, refreshCommand, codexCommand, wolfDir }, msgCfg) {
+function shellQuote(value) {
+    return `'${String(value).replace(/'/g, `'"'"'`)}'`;
+}
+function companionReviewCommand(files, maxFiles) {
+    const selected = files.slice(0, maxFiles).map((file) => `--file ${shellQuote(file)}`).join(" ");
+    const overflow = files.length > maxFiles ? " --file '<each remaining listed path>'" : "";
+    return `provider companion review ${selected}${overflow} [--diff <patch>]`.trim();
+}
+function formatReviewNudge({ id, reason, files, repeat, reviewLogPath, completeCommand, refreshCommand }, msgCfg) {
     const fileList = compactList(files, msgCfg.max_files);
+    const reviewCommand = companionReviewCommand(files, msgCfg.max_files);
     const repeatText = repeat ? ` Repeat ${repeat}.` : "";
     const base = `Wolfpack review [${id}]: ${reason}. Files: ${fileList}.${repeatText}\n`;
+    const contract = `Use ${reviewCommand}. Critical flaws only; require concrete evidence and a falsifier for every finding.`;
+    const staleHint = `If REVIEW_STALE: ${refreshCommand}; re-run the companion on actual current bytes; then complete with --reviewed-current.`;
     if (isVerboseHookMessages(msgCfg)) {
         return base +
-            `Action: run an independent reviewer before stopping, then complete: ${completeCommand}\n` +
-            `If completion says REVIEW_STALE, refresh first: ${refreshCommand}; then re-review current bytes and complete with --reviewed-current.\n` +
-            `Review log: ${reviewLogPath}\n` +
-            `${reviewerGuidance(msgCfg, codexCommand)}\n`;
+            `Action: ${contract}\n` +
+            `The companion owns staging, subprocess control, redaction, hashing, cleanup, and provider transport. Do not run direct Codex commands, discover the broad repo, or manually mkdir/cp/rm a review workspace.\n` +
+            `${staleHint}\n` +
+            `After observing the current-byte review: ${completeCommand}\n` +
+            `Companion receipt hashes are not Wolfpack --reviewed-hash manifests. Review log: ${reviewLogPath}\n` +
+            `${reviewerGuidance(msgCfg)} Do not edit reviewlog by hand.\n`;
     }
-    const staleHint = ` If completion says REVIEW_STALE, refresh first: ${refreshCommand}; then re-review current bytes and complete with --reviewed-current.`;
-    const hint = msgCfg.verbosity === "standard" ? `${staleHint} ${reviewerGuidance(msgCfg, codexCommand)}` : staleHint;
-    return base + `Action: run an independent reviewer, then complete: ${completeCommand}.${hint}\n`;
+    const profileHint = ` ${reviewerGuidance(msgCfg)}`;
+    return base + `Action: ${contract} ${staleHint} Complete: ${completeCommand}.${profileHint}\n`;
 }
 function formatQualityNudge({ id, count, qaDirDisplay, files, minAssumptions, requireRunOutput }, msgCfg) {
     const fileList = compactList(files, msgCfg.max_files);
@@ -403,8 +415,15 @@ async function main() {
             nudgeFired = true;
     }
     catch { }
-    // Review-hook nudge: log session to reviewlog.json and prompt for Codex
-    // review when thresholds are crossed. Silent no-op on error — never blocks.
+    // Simplicity nudge: after significant output, remind to check for unnecessary
+    // complexity, YAGNI violations, and performance trade-offs.
+    try {
+        if (maybeNudgeSimplicity(wolfDir, session, sessionEntry, sessionFile))
+            nudgeFired = true;
+    }
+    catch { }
+    // Review-hook nudge: log session to reviewlog.json and prompt for a bounded
+    // provider-companion review when thresholds are crossed. Silent no-op on error.
     try {
         if (maybeNudgeReview(wolfDir, session, sessionEntry))
             nudgeFired = true;
@@ -599,6 +618,8 @@ function maybeNudgeGitDiscipline(wolfDir, session, sessionEntry, sessionFile, tr
     const cfg = getGitDisciplineConfig();
     if (!cfg.enabled)
         return false;
+    const hasAnyWrites = sessionEntry.writes.length > 0;
+    const gitRoot = gitRootForProject();
     const excludeRegexes = cfg.scope_excludes.map(globToRegex);
     const written = [...new Set(sessionEntry.writes.map(w => w.file))]
         .filter(file => !excludeRegexes.some(re => re.test(file)));
@@ -621,15 +642,19 @@ function maybeNudgeGitDiscipline(wolfDir, session, sessionEntry, sessionFile, tr
     const sawDestructive = cfg.warn_destructive_commands && destructiveGitSeen(commands, cfg.destructive_patterns);
     const sawCommitWithoutCachedDiff = cfg.require_cached_diff_before_commit && commitSeen(commands, cfg.commit_patterns) && !cachedDiffSeen(commands);
     const needsStatusBlock = material && cfg.require_status_block;
-    if ((!needsStatusBlock || hasStatusBlock) && hasVersionImpact && !sawBroadStaging && !sawDestructive && !sawCommitWithoutCachedDiff)
+    // When there is no git repository and work was done, always nudge to initialize one.
+    // The materiality gate only applies when a git repo already exists.
+    const shouldNudge = !gitRoot && hasAnyWrites;
+    if (!shouldNudge && (!needsStatusBlock || hasStatusBlock) && hasVersionImpact && !sawBroadStaging && !sawDestructive && !sawCommitWithoutCachedDiff)
         return false;
     if (!tryConsumeNudgeSlot(sessionFile, "git_discipline_warnings", cfg.max_fires_per_session))
         return false;
-    const gitRoot = gitRootForProject();
     const branch = gitRoot ? gitBranch(gitRoot) : "not-a-git-repo";
     const statusLines = gitRoot ? gitStatusPorcelain(gitRoot) : [];
     const statusSummary = statusLines.length ? compactList(statusLines, 6) : "clean or unavailable";
     const missing = [];
+    if (!gitRoot)
+        missing.push("initialize a git repo to track revisions");
     if (needsStatusBlock && !hasStatusBlock)
         missing.push("git status/diff summary");
     if (!hasVersionImpact)
@@ -640,7 +665,27 @@ function maybeNudgeGitDiscipline(wolfDir, session, sessionEntry, sessionFile, tr
         missing.push("confirm destructive Git operation or use a safer alternative");
     if (sawCommitWithoutCachedDiff)
         missing.push("inspect `git diff --cached` before committing");
-    emitStopHookFeedback(`🐺 Wolfpack git/version: ${missing.join("; ")}. Branch: ${branch}. Written: ${compactList(relWritten, 6)}. Git status: ${statusSummary}.\nAction: before stopping, include a Git/version status block with changed files, pre-existing/untracked state, verification, commit-readiness, and version impact (or why no bump/revision is needed).\n`);
+    const actionText = gitRoot
+        ? "Action: before stopping, include a Git/version status block with changed files, pre-existing/untracked state, verification, commit-readiness, and version impact (or why no bump/revision is needed).\n"
+        : "Action: before stopping, run `git init` if this is not a git repository. Git is useful for tracking revisions in documents, research, and code — not just code projects. Then include a Git/version status block with changed files, pre-existing/untracked state, verification, commit-readiness, and version impact (or why no bump/revision is needed).\n";
+    emitStopHookFeedback(`🐺 Wolfpack git/version: ${missing.join("; ")}. Branch: ${branch}. Written: ${compactList(relWritten, 6)}. Git status: ${statusSummary}.\n${actionText}`);
+    return true;
+}
+function maybeNudgeSimplicity(wolfDir, session, sessionEntry, sessionFile) {
+    const cfg = getSimplicityConfig();
+    if (!cfg.enabled)
+        return false;
+    const outputTokens = sessionEntry.totals.output_tokens_estimated || 0;
+    if (outputTokens < cfg.min_output_tokens)
+        return false;
+    if (!tryConsumeNudgeSlot(sessionFile, "simplicity_warnings", cfg.max_fires_per_session))
+        return false;
+    emitStopHookFeedback(`🐺 Wolfpack simplicity: ${outputTokens} output tokens this session. Before stopping, ask:\n` +
+        "- Did I write more code than needed? (YAGNI — You Aren't Gonna Need It)\n" +
+        "- Is this the simplest solution that solves the problem?\n" +
+        "- Will someone else understand this at a glance?\n" +
+        "- Is this the most efficient approach — or am I trading simplicity for premature optimization?\n" +
+        "Action: if any answer is 'no', simplify before finishing.\n");
     return true;
 }
 function maybeNudgeReview(wolfDir, session, sessionEntry) {
@@ -677,7 +722,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             const existingPending = session.session_id
                 ? reviewLog.reviews.find(r => r.session_id === session.session_id && r.status === "pending")
                 : undefined;
-            const pending = existingPending ?? [...reviewLog.reviews].reverse().find(r => r.status === "pending" && Array.isArray(r.files) && r.files.some((file) => writtenFiles.includes(file)));
+            const pending = existingPending ?? [...reviewLog.reviews].reverse().find(r => r.status === "pending" && Array.isArray(r.files) && r.files.some((file) => writtenFiles.map(normalizeFilePath).includes(normalizeFilePath(file))));
             if (!pending)
                 return false;
             const currentHashes = hashFilesAtRest(writtenFiles);
@@ -996,17 +1041,14 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
         return false;
     // Emit advisory nudge through Stop-hook JSON feedback (stdout + exit 0).
     //
-    // Suggests known reviewer companions and a generic installed-plugin fallback.
-    // The local AI plugin set changes over time, so avoid hardcoding every vendor;
-    // assistants should inspect available slash commands/subagents and use any
-    // suitable installed reviewer plugin when present. The assistant picks one
-    // (or runs multiple for independent takes) and iterates until production-ready.
+    // Wolfpack selects the bounded current-byte file set and profile policy.
+    // Standardized provider companions own execution, staging, redaction, cleanup,
+    // and transport; the hook only emits the review contract.
     if (reviewCfg.nudge_only) {
         const msgCfg = getHookMessageConfig();
-        const cmd = redactSecrets(reviewCfg.codex_command);
         const repeat = nudgeCountForState > 1 ? `${nudgeCountForState}/${Math.max(1, reviewCfg.nudge_cap || 3)} for same file state` : "";
-        const reviewHelper = path.join(wolfDir, "hooks", "complete-review.js");
-        const completeCommand = `node ${reviewHelper} ${nextId} --reviewer <name> --summary "<outcome>"`;
+        const reviewHelper = shellQuote(path.join(wolfDir, "hooks", "complete-review.js"));
+        const completeCommand = `node ${reviewHelper} ${nextId} --reviewed-current --reviewer <name> --summary '<outcome>'`;
         const refreshCommand = `node ${reviewHelper} ${nextId} --refresh`;
         emitStopHookFeedback(formatReviewNudge({
             id: nextId,
@@ -1016,21 +1058,15 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             reviewLogPath,
             completeCommand,
             refreshCommand,
-            codexCommand: cmd,
-            wolfDir,
         }, msgCfg));
         return true;
     }
     return false;
 }
 /**
- * Strip likely-secret material from a shell-command string before including it
- * in Stop-hook JSON feedback (which lands in the next-turn assistant context,
- * and may be uploaded to telemetry). The redactor is conservative: it catches the most
- * common shapes (env-var assignments with token-like values, --token/--api-key
- * flag values, bare tokens with `sk-`/`ghp_`/etc. prefixes) and leaves the
- * rest alone. The risk model here is the user putting a token directly into
- * `openwolf.review_hook.codex_command` config — not a determined exfiltrator.
+ * Strip likely-secret material from display strings before including them in
+ * Stop-hook JSON feedback. Retained as a generic safety utility for other hook
+ * messages; review companions now own command execution and transport redaction.
  */
 function redactSecrets(cmd) {
     if (!cmd)
@@ -1134,7 +1170,10 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
         }
     }
     // Mtime-on-disk suppression: buglog newer than the latest multi-edit.
-    if (buglogMtimeMs > latestRelevantEditMs && latestRelevantEditMs > 0)
+    // If we can't determine when the multi-edit happened (no parseable timestamps
+    // in files_written), but the buglog exists on disk, conservatively suppress —
+    // we have no evidence the buglog is stale.
+    if (buglogMtimeMs > 0 && (latestRelevantEditMs === 0 || buglogMtimeMs > latestRelevantEditMs))
         return false;
     // In-session buglog-write suppression — must be AT OR AFTER the latest
     // multi-edit. An earlier-in-the-session buglog write that predates a later

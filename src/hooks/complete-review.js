@@ -7,7 +7,7 @@ function usage() {
     console.error('Usage: node .wolf/hooks/complete-review.js review-NNNN [--reviewer <name>] [--summary <text>]');
     console.error('       node .wolf/hooks/complete-review.js review-NNNN --refresh');
     console.error('       node .wolf/hooks/complete-review.js review-NNNN --reviewed-current --reviewer <name> --summary <text>');
-    console.error('       node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --reviewed-hash <manifest-hash> --summary <text>');
+    console.error('       node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --reviewed-hash <wolfpack-manifest-hash> --summary <text>');
 }
 function parseArgs(argv) {
     const out = { id: "", reviewer: "manual", summary: "", refresh: false, reviewedCurrent: false, reviewedHash: "" };
@@ -93,8 +93,7 @@ function classifyDrift(file, storedHash, currentHash) {
 }
 function formatReviewStaleMessage(id, storedHashes, currentHashes, mismatchedFiles, missingReviewedFiles) {
     const refreshCommand = `node .wolf/hooks/complete-review.js ${id} --refresh`;
-    const completeCommand = `node .wolf/hooks/complete-review.js ${id} --reviewer <name> --reviewed-hash <manifest-hash> --summary "<outcome>"`;
-    const fallbackCommand = `node .wolf/hooks/complete-review.js ${id} --reviewed-current --reviewer <name> --summary "<outcome>"`;
+    const completeCommand = `node .wolf/hooks/complete-review.js ${id} --reviewed-current --reviewer <name> --summary "<outcome>"`;
     const driftDetails = [
         ...mismatchedFiles.map((file) => {
             const stored = storedHashes?.[file];
@@ -120,9 +119,9 @@ function formatReviewStaleMessage(id, storedHashes, currentHashes, mismatchedFil
     return `REVIEW_STALE: ${id} no longer matches current file bytes. Refusing to complete because the independent review may have covered older content.\n` +
         `Next:\n` +
         `  1. Refresh the pending review receipt: ${refreshCommand}\n` +
-        `  2. Rerun the independent review on the current files.\n` +
-        `  3. Complete after review: ${completeCommand}\n` +
-        `Fallback after manual current-byte review: ${fallbackCommand}\n` +
+        `  2. Rerun a provider companion with review --file <current-path>... on the actual current files.\n` +
+        `  3. After observing that current-byte review, complete: ${completeCommand}\n` +
+        `Companion receipt hashes are not compatible with Wolfpack --reviewed-hash manifests.\n` +
         `Drift: ${[...driftDetails, ...possibleRenames].join("; ")}`;
 }
 function markSupersededPendingReviews(reviewLog, completedReview) {
@@ -189,11 +188,10 @@ try {
         writeJSON(reviewLogPath, reviewLog);
         const manifestHash = hashReviewManifest(review.files, contentHashes);
         console.log(`OpenWolf refreshed ${id} content_hashes for ${Object.keys(contentHashes).length} file(s).`);
-        console.log(`Current review manifest hash: ${manifestHash}`);
-        console.log("Next: rerun the independent review on current bytes, then complete with:");
-        console.log(`  node .wolf/hooks/complete-review.js ${id} --reviewer <name> --reviewed-hash ${manifestHash} --summary "<outcome>"`);
-        console.log("Fallback if you manually verified current bytes:");
+        console.log(`Current Wolfpack manifest hash: ${manifestHash}`);
+        console.log("Next: rerun a provider companion with review --file <current-path>... on the actual current bytes, then complete with:");
         console.log(`  node .wolf/hooks/complete-review.js ${id} --reviewed-current --reviewer <name> --summary "<outcome>"`);
+        console.log("Do not pass a companion receipt hash to --reviewed-hash; the receipt representations are not compatible.");
     }
     else {
         const mismatchedFiles = Object.entries(contentHashes)

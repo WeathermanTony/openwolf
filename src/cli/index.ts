@@ -31,7 +31,7 @@ export function createProgram(): Command {
   program
     .command("init")
     .description("Initialize .wolf/ in current project")
-    .option("--profile <name>", "Reviewer recommendation profile: gov or open")
+    .option("--profile <name>", "Reviewer recommendation profile: gov, open, or budget")
     .action(initCommand);
 
   program
@@ -120,7 +120,7 @@ export function createProgram(): Command {
     .description("Update all registered OpenWolf projects to latest version")
     .option("--dry-run", "Show what would be updated without making changes")
     .option("--project <name>", "Update only a specific project (partial name match)")
-    .option("--profile <name>", "Reviewer recommendation profile: gov or open")
+    .option("--profile <name>", "Reviewer recommendation profile: gov, open, or budget")
     .option("--list", "List all registered projects")
     .action(async (opts: { dryRun?: boolean; project?: string; profile?: string; list?: boolean }) => {
       const { updateCommand, listProjects } = await import("./update.js");

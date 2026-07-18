@@ -11,7 +11,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getRegisteredProjects, registerProject, type RegisteredProject } from "./registry.js";
-import { applyReviewerProfile, normalizeReviewerProfile } from "./init.js";
+import { applyReviewerProfile, migrateReviewCompanionConfig, normalizeReviewerProfile } from "./init.js";
 import { readJSON, writeJSON, readText, writeText, safeCopyFile } from "../utils/fs-safe.js";
 import { ensureDir } from "../utils/paths.js";
 
@@ -350,8 +350,8 @@ function mergeConfigDefaults(srcPath: string, destPath: string): void {
   if (!fs.existsSync(srcPath) || !fs.existsSync(destPath)) return;
   const defaults = readJSON<Record<string, unknown>>(srcPath, {});
   const existing = readJSON<Record<string, unknown>>(destPath, {});
-  const merged = mergeMissingDefaults(existing, defaults) as Record<string, unknown>;
-  writeJSON(destPath, merged);
+  const merged = mergeMissingDefaults(existing, defaults);
+  writeJSON(destPath, migrateReviewCompanionConfig(merged));
 }
 
 function updateQaDirectory(templatesDir: string, wolfDir: string): void {

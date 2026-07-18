@@ -217,6 +217,9 @@ test('complete-review refuses stale pending hashes with refresh instructions', a
     assert.equal(result.status, 4);
     assert.match(result.stderr, /REVIEW_STALE/);
     assert.match(result.stderr, /--refresh/);
+    assert.match(result.stderr, /review --file <current-path>/);
+    assert.match(result.stderr, /--reviewed-current/);
+    assert.match(result.stderr, /receipt hashes are not compatible/);
     assert.match(result.stderr, /stored=/);
     assert.match(result.stderr, /current=/);
 
@@ -238,6 +241,9 @@ test('complete-review refresh updates current-byte receipt without completing', 
     const refreshed = runHelper(dir, 'review-0001', ['--refresh']);
     assert.equal(refreshed.status, 0, refreshed.stderr);
     assert.match(refreshed.stdout, /OpenWolf refreshed review-0001/);
+    assert.match(refreshed.stdout, /review --file <current-path>/);
+    assert.match(refreshed.stdout, /--reviewed-current/);
+    assert.match(refreshed.stdout, /receipt hash.*not compatible/i);
 
     let review = (await readReviewLog(dir)).reviews[0];
     assert.equal(review.status, 'pending');
@@ -250,8 +256,12 @@ test('complete-review refresh updates current-byte receipt without completing', 
     assert.match(unsafe.stderr, /REVIEW_STALE/);
     assert.match(unsafe.stderr, /--reviewed-current/);
 
-    const manifestHash = sha256(JSON.stringify([[file, sha256('new bytes\n')]]));
-    const completed = runHelper(dir, 'review-0001', ['--reviewed-hash', manifestHash], 'test');
+    const incompatibleReceiptHash = sha256('companion-receipt-representation');
+    const incompatible = runHelper(dir, 'review-0001', ['--reviewed-hash', incompatibleReceiptHash], 'test');
+    assert.equal(incompatible.status, 7);
+    assert.match(incompatible.stderr, /REVIEW_HASH_MISMATCH/);
+
+    const completed = runHelper(dir, 'review-0001', ['--reviewed-current'], 'test');
     assert.equal(completed.status, 0, completed.stderr);
     review = (await readReviewLog(dir)).reviews[0];
     assert.equal(review.status, 'completed');
@@ -393,6 +403,187 @@ test('stop hook nudges autonomy continuation on obvious next-step language', asy
     assert.doesNotMatch(second.stdout, /Wolfpack autonomy:/);
   } finally {
     await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('stop hook nudges git-init when project is not a git repository', async () => {
+  await assertStopSourceAndRuntimeContract();
+  const dir = await fixture();
+  try {
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    const target = path.join(dir, 'README.md');
+    await writeFile(target, '# Research notes\n');
+    await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: {
+      review_hook: { enabled: false },
+      quality_gate: { enabled: false },
+      claim_calibration: { enabled: false },
+      autonomy_continuation: { enabled: false },
+      git_discipline: { enabled: true, max_fires_per_session: 3, min_written_files: 1, min_changed_lines: 1 },
+    } }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+      session_id: 'sess-git-init',
+      started: '2099-06-13T17:00:00.000Z',
+      files_read: {},
+      files_written: [{ file: target, at: '2099-06-13T17:00:00.000Z', tokens: 200, action: 'edit' }],
+      edit_counts: { [target]: 1 },
+      anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+      cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+    }, null, 2));
+    const transcript = path.join(dir, 'transcript.jsonl');
+    await writeFile(transcript, assistantTranscript('Done.'));
+
+    const result = runStopHook(dir, transcript, 'sess-git-init');
+    assert.equal(result.status, 0, result.stderr);
+    const text = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
+    assert.match(text, /initialize a git repo to track revisions/);
+    assert.match(text, /not-a-git-repo/);
+    assert.match(text, /run `git init`/);
+    assert.match(text, /Git is useful for tracking revisions in documents, research, and code/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('stop hook omits git-init nudge when project is already a git repository', async () => {
+  await assertStopSourceAndRuntimeContract();
+  const dir = await fixture();
+  try {
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    await mkdir(path.join(dir, 'src'), { recursive: true });
+    const target = path.join(dir, 'src', 'feature.js');
+    await writeFile(target, 'export const secured = true;\n');
+    // Initialize a real git repo
+    spawnSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
+    spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir, stdio: 'ignore' });
+    spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir, stdio: 'ignore' });
+    await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: {
+      review_hook: { enabled: false },
+      quality_gate: { enabled: false },
+      claim_calibration: { enabled: false },
+      autonomy_continuation: { enabled: false },
+      git_discipline: { enabled: true, max_fires_per_session: 3, min_written_files: 1, min_changed_lines: 1, scope_excludes: [] },
+    } }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+      session_id: 'sess-git-exists',
+      started: '2099-06-13T17:00:00.000Z',
+      files_read: {},
+      files_written: [{ file: target, at: '2099-06-13T17:00:00.000Z', tokens: 200, action: 'edit' }],
+      edit_counts: { [target]: 1 },
+      anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+      cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+    }, null, 2));
+    const transcript = path.join(dir, 'transcript.jsonl');
+    await writeFile(transcript, assistantTranscript('Done.'));
+
+    const result = runStopHook(dir, transcript, 'sess-git-exists');
+    assert.equal(result.status, 0, result.stderr);
+    const text = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
+    assert.doesNotMatch(text, /initialize a git repo to track revisions/);
+    assert.doesNotMatch(text, /not-a-git-repo/);
+    assert.doesNotMatch(text, /run `git init`/);
+    assert.match(text, /git status\/diff summary/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('stop hook emits bounded companion guidance for every verbosity and reviewer profile', async () => {
+  await assertStopSourceAndRuntimeContract();
+  const cases = [
+    ['compact', 'us-only', /Critical flaws only/, /gov\/US-only/],
+    ['standard', 'open', /evidence and a falsifier/, /Profile: open/],
+    ['verbose', 'budget', /companion owns staging/, /Profile: budget/],
+  ];
+  for (const [verbosity, profile, contractPattern, profilePattern] of cases) {
+    const dir = await fixture();
+    try {
+      await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+      const target = path.join(dir, 'auth', 'feature.js');
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, 'export const secured = true;\n');
+      await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({
+        openwolf: {
+          review_hook: {
+            enabled: true,
+            min_diff_lines: 1,
+            scope_excludes: [],
+            codex_command: 'codex exec --full-auto --secret should-never-appear',
+            nudge_only: true,
+          },
+          hook_messages: { verbosity, reviewer_profile: profile, max_files: 3 },
+          quality_gate: { enabled: false },
+          claim_calibration: { enabled: false },
+          autonomy_continuation: { enabled: false },
+          git_discipline: { enabled: false },
+        },
+      }, null, 2));
+      await writeFile(path.join(dir, '.wolf', 'reviewlog.json'), JSON.stringify({ version: 1, reviews: [] }, null, 2));
+      await writeFile(path.join(dir, '.wolf', 'buglog.json'), JSON.stringify({ version: 1, bugs: [] }, null, 2));
+      await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+        session_id: `sess-${verbosity}-${profile}`,
+        started: '2099-06-13T17:00:00.000Z',
+        files_read: {},
+        files_written: [{ file: target, at: '2099-06-13T17:00:00.000Z', tokens: 200, action: 'edit' }],
+        edit_counts: { [target]: 1 },
+        anatomy_hits: 0,
+        anatomy_misses: 0,
+        repeated_reads_warned: 0,
+        cerebrum_warnings: 0,
+        buglog_warnings: 0,
+        stop_count: 0,
+      }, null, 2));
+      const transcript = path.join(dir, 'transcript.jsonl');
+      await writeFile(transcript, assistantTranscript('Implemented the requested review change.'));
+
+      const result = runStopHook(dir, transcript, `sess-${verbosity}-${profile}`);
+      assert.equal(result.status, 0, result.stderr);
+      const text = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
+      assert.match(text, /provider companion review --file/);
+      assert.match(text, /--file '\/.*auth\/feature\.js'/);
+      assert.match(text, /\[--diff <patch>\]/);
+      assert.match(text, contractPattern);
+      assert.match(text, profilePattern);
+      assert.doesNotMatch(text, /codex exec|should-never-appear/i);
+      assert.doesNotMatch(text, /git clone|scan the repository/i);
+      if (verbosity === 'verbose') assert.match(text, /Do not run direct Codex commands, discover the broad repo, or manually mkdir\/cp\/rm/);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+});
+
+test('stop hook shell-quotes companion file arguments', async () => {
+  await assertStopSourceAndRuntimeContract();
+  const fixtureRoot = await fixture();
+  const dir = path.join(fixtureRoot, "project $(touch helper-pwn) 'quoted'");
+  try {
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    const target = path.join(dir, "auth", "$(touch ow-review-pwn)'s.js");
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, 'export const safe = true;\n');
+    await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: {
+      review_hook: { enabled: true, min_diff_lines: 1, scope_excludes: [], nudge_only: true },
+      hook_messages: { verbosity: 'compact', reviewer_profile: 'us-only' },
+      quality_gate: { enabled: false }, claim_calibration: { enabled: false },
+      autonomy_continuation: { enabled: false }, git_discipline: { enabled: false },
+    } }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'reviewlog.json'), JSON.stringify({ version: 1, reviews: [] }));
+    await writeFile(path.join(dir, '.wolf', 'buglog.json'), JSON.stringify({ version: 1, bugs: [] }));
+    await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+      session_id: 'sess-shell-quote', started: '2099-06-13T17:00:00.000Z', files_read: {},
+      files_written: [{ file: target, at: '2099-06-13T17:00:00.000Z', tokens: 200, action: 'edit' }],
+      edit_counts: { [target]: 1 }, anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+      cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+    }, null, 2));
+    const transcript = path.join(dir, 'transcript.jsonl');
+    await writeFile(transcript, assistantTranscript('Implemented a safe review change.'));
+    const result = runStopHook(dir, transcript, 'sess-shell-quote');
+    assert.equal(result.status, 0, result.stderr);
+    const text = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
+    assert.match(text, /--file '\/.*\$\(touch ow-review-pwn\)'"'"'s\.js'/);
+    assert.match(text, /node '\/.*project \$\(touch helper-pwn\) '"'"'quoted'"'"'\/\.wolf\/hooks\/complete-review\.js'/);
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true });
   }
 });
 
