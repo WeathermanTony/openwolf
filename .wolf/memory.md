@@ -360,3 +360,9 @@
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
 | 21:05 | Fixed review findings: scoped update cleans missing-project PM2, stale cross-root daemon lock reclaimed, dashboard index token no longer exposed | src/cli/update.ts, src/daemon/wolf-daemon.ts, src/cli/dashboard.ts | build, 34 tests, verifier passed | ~8k |
+| 21:20 | Completed reviews 0063/0064 (CLEAN) and committed lifecycle fixes | cf0d09a, .wolf/reviewlog.json | commit landed on feature/autonomy-continuation | ~2k |
+| 21:35 | Deployed custom.8 fleet-wide: 79 projects updated, 40 re-created PM2 daemons removed, PM2 registry empty | VERSION, package.json, registry | commit landed; backups captured | ~3k |
+| 21:38 | Edited src/hooks/shared.ts | expanded (+10 lines) | ~203 |
+| 21:42 | Edited tests/review-completion.test.js | inline fix | ~12 |
+| 21:43 | Edited tests/review-completion.test.js | modified stopHookReviewFixture() | ~797 |
+| 22:00 | Upstreamed Windows scratchpad review-nudge fix: new excludes in shared.ts + 3 mirrors, 2 regression tests + .txt control | src/hooks/shared.ts, tests/review-completion.test.js | tests pass, falsifier verified | ~6k |

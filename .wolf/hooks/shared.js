@@ -638,6 +638,16 @@ const SIZE_DISCIPLINE_DEFAULTS = {
 const SCRATCH_PATH_EXCLUDES = [
     "/tmp/**",
     "**/tmp/**",
+    // Windows scratch: the Claude Code session scratchpad lives under
+    // %LOCALAPPDATA%\Temp\claude\...\scratchpad\ — directory "Temp" (capital,
+    // and the word "Temp" != "tmp"), which the Unix-only patterns above never
+    // matched (globToRegex is anchored + case-sensitive). Without these, every
+    // throwaway scratch file on Windows counted as reviewable production work
+    // and re-fired the review nudge indefinitely. Found and proven by a QA
+    // reduction in the computertuning project; see
+    // .wolf/qa/scratch-path-excludes-windows.md.
+    "**/scratchpad/**",
+    "**/AppData/Local/Temp/**",
     "**/*-falsify.js",
     "**/*-falsify.mjs",
     "**/*-falsify.ts",

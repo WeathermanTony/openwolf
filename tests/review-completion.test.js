@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, rm, utimes } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { tmpdir, homedir } from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -403,6 +403,65 @@ test('stop hook nudges autonomy continuation on obvious next-step language', asy
     assert.doesNotMatch(second.stdout, /Wolfpack autonomy:/);
   } finally {
     await rm(dir, { recursive: true, force: true });
+  }
+});
+
+async function stopHookReviewFixture(files) {
+  const dir = await mkdtemp(path.join(homedir(), 'ow-review-scope-'));
+  await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+  for (const file of files) {
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, 'x\n');
+  }
+  await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: {
+    review_hook: { enabled: true, min_diff_lines: 1, max_review_rounds: 3 },
+    quality_gate: { enabled: false },
+    claim_calibration: { enabled: false },
+    autonomy_continuation: { enabled: false },
+    git_discipline: { enabled: false },
+    simplicity: { enabled: false },
+  } }, null, 2));
+  await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+    session_id: 'sess-review-scope',
+    started: '2099-06-13T17:00:00.000Z',
+    files_read: {},
+    files_written: files.map(file => ({ file, at: '2099-06-13T17:00:00.000Z', tokens: 200, action: 'edit' })),
+    edit_counts: Object.fromEntries(files.map(file => [file, 1])),
+    anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+    cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+  }, null, 2));
+  const transcript = path.join(dir, 'transcript.jsonl');
+  await writeFile(transcript, assistantTranscript('Done.'));
+  return { dir, transcript };
+}
+
+test('stop hook review nudge excludes Windows scratchpad and Temp paths', async () => {
+  // Fixture must live outside /tmp — **/tmp/** would otherwise exclude every
+  // path vacuously and prove nothing about the Windows patterns.
+  const base = await mkdtemp(path.join(homedir(), 'ow-review-scope-'));
+  const scratchFiles = [
+    path.join(base, 'AppData', 'Local', 'Temp', 'claude', 'sess', 'scratchpad', 'note.txt'),
+    path.join(base, 'work', 'scratchpad', 'draft.txt'),
+  ];
+  const { dir, transcript } = await stopHookReviewFixture(scratchFiles);
+  try {
+    const result = runStopHook(dir, transcript, 'sess-review-scope');
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(result.stdout, /Wolfpack review/);
+  } finally {
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
+test('stop hook review nudge still fires for production files outside scratch paths', async () => {
+  const base = await mkdtemp(path.join(homedir(), 'ow-review-scope-'));
+  const { dir, transcript } = await stopHookReviewFixture([path.join(base, 'src', 'engine.py')]);
+  try {
+    const result = runStopHook(dir, transcript, 'sess-review-scope');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Wolfpack review/);
+  } finally {
+    await rm(base, { recursive: true, force: true });
   }
 });
 
