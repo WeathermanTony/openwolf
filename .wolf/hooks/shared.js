@@ -643,11 +643,12 @@ const SCRATCH_PATH_EXCLUDES = [
     // and the word "Temp" != "tmp"), which the Unix-only patterns above never
     // matched (globToRegex is anchored + case-sensitive). Without these, every
     // throwaway scratch file on Windows counted as reviewable production work
-    // and re-fired the review nudge indefinitely. Found and proven by a QA
-    // reduction in the computertuning project; see
-    // .wolf/qa/scratch-path-excludes-windows.md.
+    // and re-fired the review nudge indefinitely. The Temp pattern is scoped to
+    // the claude/ scratch root: a bare **/AppData/Local/Temp/** would also
+    // silence a real checkout that happens to live under Windows Temp
+    // (review-0065 finding). See .wolf/qa/scratch-path-excludes-windows.md.
     "**/scratchpad/**",
-    "**/AppData/Local/Temp/**",
+    "**/AppData/Local/Temp/claude/**",
     "**/*-falsify.js",
     "**/*-falsify.mjs",
     "**/*-falsify.ts",

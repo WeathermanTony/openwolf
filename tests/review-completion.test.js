@@ -465,6 +465,22 @@ test('stop hook review nudge still fires for production files outside scratch pa
   }
 });
 
+test('stop hook review nudge still fires for a real checkout under a Windows-Temp-shaped path', async () => {
+  // The Temp exclusion is scoped to the claude/ scratch root only; a project
+  // living elsewhere under AppData/Local/Temp keeps its review obligations.
+  const base = await mkdtemp(path.join(homedir(), 'ow-review-scope-'));
+  const { dir, transcript } = await stopHookReviewFixture([
+    path.join(base, 'AppData', 'Local', 'Temp', 'project', 'src', 'auth', 'session.ts'),
+  ]);
+  try {
+    const result = runStopHook(dir, transcript, 'sess-review-scope');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Wolfpack review/);
+  } finally {
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
 test('stop hook nudges git-init when project is not a git repository', async () => {
   await assertStopSourceAndRuntimeContract();
   const dir = await fixture();

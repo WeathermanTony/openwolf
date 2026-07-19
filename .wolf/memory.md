@@ -366,3 +366,7 @@
 | 21:42 | Edited tests/review-completion.test.js | inline fix | ~12 |
 | 21:43 | Edited tests/review-completion.test.js | modified stopHookReviewFixture() | ~797 |
 | 22:00 | Upstreamed Windows scratchpad review-nudge fix: new excludes in shared.ts + 3 mirrors, 2 regression tests + .txt control | src/hooks/shared.ts, tests/review-completion.test.js | tests pass, falsifier verified | ~6k |
+| 21:46 | Session end: 4 writes across 3 files (shared.ts, review-completion.test.js, scratch-path-excludes-windows.md) | 3 reads | ~54616 tok |
+| 21:48 | Edited src/hooks/shared.ts | 10→11 lines | ~216 |
+| 21:48 | Edited tests/review-completion.test.js | 11→16 lines | ~220 |
+| 21:48 | Edited tests/review-completion.test.js | expanded (+11 lines) | ~365 |
