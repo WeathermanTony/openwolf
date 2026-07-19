@@ -370,3 +370,22 @@
 | 21:48 | Edited src/hooks/shared.ts | 10→11 lines | ~216 |
 | 21:48 | Edited tests/review-completion.test.js | 11→16 lines | ~220 |
 | 21:48 | Edited tests/review-completion.test.js | expanded (+11 lines) | ~365 |
+| 22:30 | Fixed review-0065 finding: Temp exclude narrowed to claude/ root; review completed CLEAN; committed | src/hooks/shared.ts, tests/review-completion.test.js | 37 tests + verifier pass | ~5k |
+| 21:52 | Session end: 10 writes across 3 files (shared.ts, review-completion.test.js, scratch-path-excludes-windows.md) | 3 reads | ~55753 tok |
+| 22:45 | Deployed custom.9 fleet-wide: 79 projects updated, 0 PM2 removals needed | VERSION, package.json | registry clean since custom.8 | ~3k |
+| 22:05 | Session end: 10 writes across 3 files (shared.ts, review-completion.test.js, scratch-path-excludes-windows.md) | 3 reads | ~55753 tok |
+| 01:50 | Session end: 10 writes across 3 files (shared.ts, review-completion.test.js, scratch-path-excludes-windows.md) | 3 reads | ~55753 tok |
+| 01:53 | Session end: 10 writes across 3 files (shared.ts, review-completion.test.js, scratch-path-excludes-windows.md) | 3 reads | ~55753 tok |
+| 01:53 | Session end: 10 writes across 3 files (shared.ts, review-completion.test.js, scratch-path-excludes-windows.md) | 3 reads | ~55753 tok |
+| 01:55 | Session end: 10 writes across 3 files (shared.ts, review-completion.test.js, scratch-path-excludes-windows.md) | 3 reads | ~55753 tok |
+| 01:55 | Session end: 10 writes across 3 files (shared.ts, review-completion.test.js, scratch-path-excludes-windows.md) | 3 reads | ~55753 tok |
+| 02:00 | Session end: 10 writes across 3 files (shared.ts, review-completion.test.js, scratch-path-excludes-windows.md) | 3 reads | ~55753 tok |
+
+## Session: 2026-07-19 02:03
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 02:09 | Created tests/queue-watch.test.js | — | ~2012 |
+| 06:30 | Completed pending reviews: chatgpt companion CLEAN on stop.ts+shared.ts watchdog diff; review-0066 completed, review-0059 refreshed+completed | .wolf/reviewlog.json | both verified current-byte | ~2k |
+| 06:30 | Added 14 falsifier tests for queue watchdog (drop detection, attachment delivery, Esc window, dedup ordinals, injection reminder) | tests/queue-watch.test.js | 14/14 pass, 51/51 full suite | ~3k |
+| 06:35 | Bookkeeping: bug-434 (revised root cause) + bug-435 logged, cerebrum Do-Not-Repeat (absence-of-evidence) + queue-lifecycle learning | .wolf/buglog.json, .wolf/cerebrum.md | logged | ~1k |

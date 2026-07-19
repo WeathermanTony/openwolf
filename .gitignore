@@ -54,3 +54,8 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+.wolf/backups/
+.wolf/queue-drops.json
+.wolf/**/queue-drops.json
+.wolf/queue-injections.json
+.wolf/**/queue-injections.json

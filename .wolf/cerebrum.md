@@ -30,6 +30,7 @@
 - Daemon startup/heartbeat paths must refuse missing project/runtime directories and avoid recreating manually deleted project roots by writing `.wolf` state during shutdown.
 - Redteam plugin files live outside this repo at `~/.claude/plugins/marketplaces/tony-local/plugins/redteam/`; QA reductions for external edits made from this repo still belong in this project's `.wolf/qa`.
 - Wolfpack's coding-quality controls are hook-based and do not require PM2; the dashboard, cron scheduler, heartbeat, and live broadcasts are optional background services.
+- Claude Code client queue lifecycle in transcripts: `queue-operation` `remove` (with content) = taken from queue for mid-turn injection; `dequeue` (no content) = consumed for next-turn delivery; delivery of a mid-turn message is a `{type:"attachment", attachment:{type:"queued_command", prompt}}` entry surfaced as "The user sent a new message while you were working". ~95% of removes in a busy session are harness-internal `<task-notification>` traffic. Watchdog config: `openwolf.queue_drop_watch` (shared.ts `getQueueDropWatchConfig`); tests in tests/queue-watch.test.js.
 
 ## Do-Not-Repeat
 
@@ -52,6 +53,7 @@
 - [2026-07-18] PM2 daemon ownership must require all three signals: an `openwolf-` process name, the `wolf-daemon.js` executable, and a matching absolute project root/cwd. An environment variable alone is not safe deletion proof.
 - [2026-07-18] Keep Wolfpack PM2 daemons and the dashboard disabled by default. Explicit dashboard startup must use managed PM2 lifecycle and HTTP health identity, never an unmanaged detached child or a bare TCP-port readiness check.
 - [2026-07-18] Project identity plus healthy status does not prove dashboard readiness: a background-only daemon exposes health while intentionally omitting UI routes. Health/readiness must also report and require `dashboard_enabled: true` before `openwolf dashboard` takes its reuse fast path.
+- [2026-07-19] Absence of evidence in the channels you checked is not evidence of absence. The original bug-434 forensics enumerated only `type:"user"` transcript entries and concluded mid-turn messages were silently discarded; the client actually delivers them as `{type:"attachment", attachment:{type:"queued_command"}}` entries. Before concluding loss, enumerate ALL entry types the channel can emit. (bug-434, reduction: .wolf/qa/queue-drop-watchdog.md)
 
 ## Decision Log
 

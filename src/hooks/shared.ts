@@ -1078,6 +1078,270 @@ export function readLastAssistantText(transcriptPath, maxBytes = 256 * 1024) {
     }
 }
 
+const QUEUE_DROP_WATCH_DEFAULTS = {
+    enabled: true,
+    injection_reminder: true,
+    max_warn_per_stop: 3,
+    preview_chars: 120,
+    tail_bytes: 512 * 1024,
+    log_max_entries: 200,
+    interrupt_suppress_ms: 15000,
+};
+export function getQueueDropWatchConfig() {
+    const root = loadConfig();
+    const cfg = (root && typeof root === "object" ? root.openwolf?.queue_drop_watch : undefined) ?? {};
+    return {
+        enabled: cfg.enabled ?? QUEUE_DROP_WATCH_DEFAULTS.enabled,
+        injection_reminder: cfg.injection_reminder ?? QUEUE_DROP_WATCH_DEFAULTS.injection_reminder,
+        max_warn_per_stop: finiteNumber(cfg.max_warn_per_stop, QUEUE_DROP_WATCH_DEFAULTS.max_warn_per_stop, { min: 1, max: 20 }),
+        preview_chars: finiteNumber(cfg.preview_chars, QUEUE_DROP_WATCH_DEFAULTS.preview_chars, { min: 20, max: 500 }),
+        tail_bytes: finiteNumber(cfg.tail_bytes, QUEUE_DROP_WATCH_DEFAULTS.tail_bytes, { min: 64 * 1024, max: 8 * 1024 * 1024 }),
+        log_max_entries: finiteNumber(cfg.log_max_entries, QUEUE_DROP_WATCH_DEFAULTS.log_max_entries, { min: 10, max: 5000 }),
+        interrupt_suppress_ms: finiteNumber(cfg.interrupt_suppress_ms, QUEUE_DROP_WATCH_DEFAULTS.interrupt_suppress_ms, { min: 0, max: 120000 }),
+    };
+}
+/**
+ * Detect user messages the Claude Code client silently discarded from its
+ * input queue (bug-434). When a tool_result lands mid-loop while a user
+ * message sits queued, the client logs {"type":"queue-operation",
+ * "operation":"remove","content":...} and the message never reaches the API —
+ * the model never sees it and the user is not told. A delivered queued message
+ * instead logs "operation":"dequeue" (no content) followed by a normal
+ * type:"user" transcript entry.
+ *
+ * Scans the transcript tail and returns drops: remove events whose content
+ *  - is not harness-internal (`<task-notification>` traffic is ~95% of removes
+ *    in a busy session and is normal queue consumption, not loss), and
+ *  - does not appear as a later user turn (the user re-pasted and it went
+ *    through — no warning needed), and
+ *  - is not within interrupt_suppress_ms of a "[Request interrupted by user]"
+ *    entry (Esc may legitimately clear the queue).
+ *
+ * Returns [{timestamp, preview, hash}] oldest-first; `hash` keys on
+ * content+timestamp so a re-sent message dropped AGAIN warns again (a
+ * content-only key would blind exactly the recurrence this watcher exists to
+ * catch). Silent no-op ([]) on any read/parse error. Tail-window caveat: if a
+ * drop and its later re-paste are separated by more than tailBytes of
+ * transcript, the drop looks unrecovered and will warn once; the
+ * .wolf/queue-drops.json `seen` store dedups repeats.
+ */
+export function detectDroppedQueueMessages(transcriptPath, tailBytes = QUEUE_DROP_WATCH_DEFAULTS.tail_bytes, interruptSuppressMs = QUEUE_DROP_WATCH_DEFAULTS.interrupt_suppress_ms, previewChars = QUEUE_DROP_WATCH_DEFAULTS.preview_chars) {
+    try {
+        if (!transcriptPath || !fs.existsSync(transcriptPath))
+            return [];
+        const stat = fs.statSync(transcriptPath);
+        if (stat.size === 0)
+            return [];
+        const readSize = Math.min(stat.size, tailBytes);
+        const startOffset = Math.max(0, stat.size - readSize);
+        const fd = fs.openSync(transcriptPath, "r");
+        const buf = Buffer.alloc(readSize);
+        try {
+            fs.readSync(fd, buf, 0, readSize, startOffset);
+        }
+        finally {
+            fs.closeSync(fd);
+        }
+        let tail = buf.toString("utf-8");
+        if (startOffset > 0) {
+            const firstNewline = tail.indexOf("\n");
+            if (firstNewline >= 0)
+                tail = tail.slice(firstNewline + 1);
+        }
+        const norm = (s) => String(s).replace(/\s+/g, " ").trim();
+        const userTurns = []; // {norm, idx} — normalized user-turn texts, file order
+        const interruptTimes = []; // epoch ms of Esc-interrupt entries
+        const removes = []; // {timestamp, ms, content, idx}
+        const lines = tail.split("\n");
+        for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+            const t = lines[lineIdx].trim();
+            if (!t)
+                continue;
+            let entry;
+            try {
+                entry = JSON.parse(t);
+            }
+            catch {
+                continue;
+            }
+            if (entry.type === "queue-operation" && entry.operation === "remove") {
+                const content = typeof entry.content === "string" ? entry.content : "";
+                if (!content.trim() || content.startsWith("<task-notification>"))
+                    continue;
+                removes.push({
+                    timestamp: typeof entry.timestamp === "string" ? entry.timestamp : "",
+                    ms: Date.parse(entry.timestamp || "") || 0,
+                    content,
+                    idx: lineIdx,
+                });
+                continue;
+            }
+            if (entry.type === "user") {
+                const c = entry.message?.content;
+                const text = typeof c === "string" ? c
+                    : Array.isArray(c) ? c.map(b => (typeof b === "string" ? b : b?.text) || "").join("\n")
+                        : "";
+                // Exact-match the interrupt marker: a user pasting a log excerpt
+                // that CONTAINS "[Request interrupted by user]" is not an Esc.
+                if (text.trim() === "[Request interrupted by user]") {
+                    const ms = Date.parse(entry.timestamp || "");
+                    if (ms)
+                        interruptTimes.push(ms);
+                }
+                else if (text.trim()) {
+                    userTurns.push({ norm: norm(text), idx: lineIdx });
+                }
+            }
+            // Mid-turn delivery: the client injects queued messages into the
+            // running turn as {type:"attachment", attachment:{type:"queued_command",
+            // prompt:<content>}} entries right after the queue "remove". This is
+            // the NORMAL delivery path for messages sent mid-turn (surfaced to the
+            // model as "The user sent a new message while you were working") — NOT
+            // a drop. Empirically EVERY non-task-notification remove across 68
+            // transcripts had exactly one of these or a later user turn (0 true
+            // drops; bug-434's original "silent discard" reading predates knowledge
+            // of this entry type). Missing it made the watchdog cry wolf on every
+            // real mid-turn message (live false positives 2026-07-19).
+            if (entry.type === "attachment" && entry.attachment?.type === "queued_command") {
+                const prompt = typeof entry.attachment.prompt === "string" ? entry.attachment.prompt : "";
+                if (prompt.trim())
+                    userTurns.push({ norm: norm(prompt), idx: lineIdx });
+            }
+        }
+        const drops = [];
+        // Occurrence ordinals for identical (content, timestamp) remove pairs:
+        // if the client ever stamps two removes of the same content with the
+        // same timestamp (or reuses the queued-message time), the dedup hash
+        // must still distinguish them or the re-drop goes invisible (GLM
+        // review-0117 round-2 LOW #3). The ordinal counts EVERY same-pair
+        // remove in file order — including recovered and Esc-suppressed
+        // siblings — so it is a pure function of position among identical
+        // pairs, not of skip decisions that can flip as the tail window
+        // slides. Counting only reached-stage removes lets a sibling whose
+        // recovery evidence slid out of the tail steal ordinal #0, re-hashing
+        // (and re-warning) a drop that was already warned (GLM round-3 LOW).
+        const pairCounts = new Map();
+        for (const r of removes) {
+            const full = norm(r.content);
+            if (!full)
+                continue;
+            const pairKey = full + "|" + r.timestamp;
+            const occurrence = pairCounts.get(pairKey) ?? 0;
+            pairCounts.set(pairKey, occurrence + 1);
+            // Delivered later (re-paste went through) → recovered, no warning.
+            // The user turn must come AFTER the remove in file order (an earlier
+            // delivered copy of the same text does not recover a later drop of
+            // the re-send), and the match must be EXACT — a prefix test marks a
+            // drop recovered when a DIFFERENT later message merely shares an
+            // 80-char prefix (realistic for repeated slash commands), silently
+            // hiding real loss (GLM review-0117 round-2 MEDIUM #1). Real
+            // deliveries match exactly (verified on the 2026-07-19 evidence
+            // transcript's Phonology re-paste). Over-warning on near-misses is
+            // the safe direction; under-warning defeats the watcher.
+            const recovered = userTurns.some(u => u.idx > r.idx && u.norm === full);
+            if (recovered)
+                continue;
+            // Esc clears the queue AT interrupt time, so only a remove AT or
+            // AFTER an interrupt can be an intentional clear. A symmetric
+            // window would erase drops that PRECEDE the user's "why are you
+            // ignoring me" Esc — the natural reaction to bug-434 (kimi
+            // review-0117 MEDIUM #3). 2s epsilon covers log-ordering jitter.
+            if (interruptSuppressMs > 0 && r.ms
+                && interruptTimes.some(t => r.ms >= t - 2000 && r.ms - t <= interruptSuppressMs))
+                continue;
+            drops.push({
+                timestamp: r.timestamp,
+                preview: full.slice(0, previewChars),
+                // Key on content+timestamp(+occurrence): a re-sent message
+                // dropped AGAIN must warn again — content-only dedup blinds
+                // exactly the recurrence this watcher exists to catch (kimi
+                // review-0117 HIGH #2).
+                hash: crypto.createHash("sha256").update(`${pairKey}#${occurrence}`).digest("hex").slice(0, 16),
+            });
+        }
+        return drops;
+    }
+    catch {
+        return [];
+    }
+}
+
+/**
+ * Detect user messages the client INJECTED mid-turn (bug-434 revised: the
+ * client does not discard queued messages — it delivers them as
+ * {type:"attachment", attachment:{type:"queued_command", prompt}} entries
+ * alongside the next tool result, surfaced as "The user sent a new message
+ * while you were working"). Delivery is reliable; ATTENTION is the gap — a
+ * focused model can leave injected content unaddressed for hours (observed:
+ * VirtualSuzi session, 2.5h). This detector powers a once-per-injection
+ * attention reminder, NOT a loss warning.
+ *
+ * Scans the transcript tail and returns injections: queued_command attachment
+ * prompts that are not harness-internal (`<task-notification>` traffic is
+ * routine and already surfaced by the harness itself). Returns
+ * [{timestamp, preview, hash}] oldest-first; hash keys on content+timestamp
+ * (dedup only needs to warn once per distinct injection). Silent no-op ([])
+ * on any read/parse error.
+ */
+export function detectMidturnInjections(transcriptPath, tailBytes = QUEUE_DROP_WATCH_DEFAULTS.tail_bytes, previewChars = QUEUE_DROP_WATCH_DEFAULTS.preview_chars) {
+    try {
+        const st = fs.statSync(transcriptPath);
+        const start = Math.max(0, st.size - tailBytes);
+        const fd = fs.openSync(transcriptPath, "r");
+        let buf;
+        try {
+            buf = Buffer.alloc(st.size - start);
+            fs.readSync(fd, buf, 0, buf.length, start);
+        }
+        finally {
+            fs.closeSync(fd);
+        }
+        let text = buf.toString("utf8");
+        if (start > 0) {
+            const nl = text.indexOf("\n");
+            text = nl >= 0 ? text.slice(nl + 1) : "";
+        }
+        const norm = s => (s || "").replace(/\s+/g, " ").trim();
+        const injections = [];
+        // Position-based occurrence ordinals for identical (content, timestamp)
+        // pairs — same scheme as detectDroppedQueueMessages: without it, two
+        // distinct injections of identical text with equal (or missing)
+        // timestamps hash identically and the second never reminds (GLM
+        // review MEDIUM). Pure function of file order, stable across tail slides.
+        const pairCounts = new Map();
+        for (const line of text.split("\n")) {
+            if (!line.includes("queued_command"))
+                continue;
+            let entry;
+            try {
+                entry = JSON.parse(line);
+            }
+            catch {
+                continue;
+            }
+            if (entry.type !== "attachment" || entry.attachment?.type !== "queued_command")
+                continue;
+            const prompt = typeof entry.attachment.prompt === "string" ? entry.attachment.prompt : "";
+            const full = norm(prompt);
+            if (!full || full.startsWith("<task-notification>"))
+                continue;
+            const ts = typeof entry.timestamp === "string" ? entry.timestamp : "";
+            const pairKey = full + "|" + ts;
+            const occurrence = pairCounts.get(pairKey) ?? 0;
+            pairCounts.set(pairKey, occurrence + 1);
+            injections.push({
+                timestamp: ts,
+                preview: full.slice(0, previewChars),
+                hash: crypto.createHash("sha256").update(`${pairKey}#${occurrence}`).digest("hex").slice(0, 16),
+            });
+        }
+        return injections;
+    }
+    catch {
+        return [];
+    }
+}
+
 export function getHookMessageConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.hook_messages : undefined) ?? {};

@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 // Per-session firing cap shared by the buglog-missing and cerebrum-freshness
 // feedback nudges. They have no per-state hash to dedup against (unlike the
@@ -89,6 +89,134 @@ function formatQualityNudge({ id, count, qaDirDisplay, files, minAssumptions, re
 function formatConclusionNudge({ id, matchedCount, minAssumptions }, _msgCfg) {
     return `Wolfpack conclusion [${id}]: last turn matched ${matchedCount} conclusion pattern(s).\n` +
         `Action: add .wolf/qa reduction with ≥${minAssumptions} assumptions, riskiest falsifier, and actual output before finalizing.\n`;
+}
+/**
+ * Queue-drop watchdog (bug-434, root cause REVISED 2026-07-19). Original
+ * framing: the client silently discards queued user messages mid-loop.
+ * Falsified after production false positives: mid-turn messages are delivered
+ * as queued_command attachments (see detectMidturnInjections) — 68
+ * transcripts, 55 removes, 0 true drops. A remove with NO attachment AND NO
+ * later user turn is still a genuine anomaly (true drop or future CLI
+ * regression), so this tripwire stays: it warns once per distinct drop event
+ * (content+timestamp hash deduped in .wolf/queue-drops.json's `seen` store),
+ * telling the model WHAT was lost so it can ask the user to re-send.
+ */
+function maybeWarnQueueDrops(wolfDir, session, transcriptPath) {
+    const cfg = getQueueDropWatchConfig();
+    if (!cfg.enabled || !transcriptPath)
+        return false;
+    const drops = detectDroppedQueueMessages(transcriptPath, cfg.tail_bytes, cfg.interrupt_suppress_ms, cfg.preview_chars);
+    if (drops.length === 0)
+        return false;
+    const logPath = path.join(wolfDir, "queue-drops.json");
+    const release = acquireFileLock(logPath);
+    if (!release)
+        return false;
+    let fresh = [];
+    try {
+        const log = readJSON(logPath, { version: 1, drops: [], seen: [] });
+        if (!Array.isArray(log.drops))
+            log.drops = [];
+        // Dedup state lives in `seen`, NOT reconstructed from `drops`: drops is
+        // truncated to log_max_entries, and an evicted hash would make the same
+        // still-in-tail drop "fresh" again → re-warn → re-append → re-evict, a
+        // self-sustaining block loop (kimi review-0117 MEDIUM #4). `seen` keeps
+        // bare hashes (tiny) so it can hold far more keys than drops holds full
+        // entries. Migrates: on first run after upgrade, seed from drops.
+        if (!Array.isArray(log.seen))
+            log.seen = log.drops.map(d => d.hash).filter(Boolean);
+        const seenSet = new Set(log.seen);
+        fresh = drops.filter(d => !seenSet.has(d.hash));
+        if (fresh.length === 0)
+            return false;
+        for (const d of fresh) {
+            log.drops.push({
+                ...d,
+                transcript: path.basename(transcriptPath),
+                session_id: session.session_id || "",
+                warned_at: new Date().toISOString(),
+            });
+            log.seen.push(d.hash);
+        }
+        if (log.drops.length > cfg.log_max_entries)
+            log.drops = log.drops.slice(-cfg.log_max_entries);
+        // Generous cap on the dedup store: 10× the entry cap. A transcript tail
+        // holds far fewer removes than this, so a still-visible drop can never
+        // become "fresh" again through eviction.
+        const seenCap = Math.max(cfg.log_max_entries * 10, 2000);
+        if (log.seen.length > seenCap)
+            log.seen = log.seen.slice(-seenCap);
+        writeJSON(logPath, log);
+    }
+    finally {
+        release();
+    }
+    const shown = fresh.slice(0, cfg.max_warn_per_stop);
+    const previews = shown.map(d => `"${d.preview}" (${d.timestamp ? d.timestamp.slice(11, 19) + "Z" : "time unknown"})`).join("; ");
+    const more = fresh.length > shown.length ? ` +${fresh.length - shown.length} more in log` : "";
+    emitStopHookFeedback(`⚠️ Wolfpack queue-watch: Claude Code silently discarded ${fresh.length} queued user message(s) mid-turn — they never reached the model (client-side queue bug, bug-434): ${previews}${more}.\nAction: tell the user exactly which message(s) were dropped and ask them to re-send. Do NOT pretend you saw the content. Full log: ${logPath}\n`);
+    return true;
+}
+
+/**
+ * Attention reminder for user messages the client INJECTED mid-turn
+ * (queued_command attachments — bug-434 revised: delivery is reliable, but a
+ * focused model can leave injected content unaddressed for hours; observed
+ * 2.5h in the VirtualSuzi session). Fires once per distinct injection
+ * (content+timestamp hash deduped in .wolf/queue-injections.json's `seen`
+ * store), blocking the stop once so the model either addresses the message or
+ * explicitly confirms it already did. If the model addressed it, the cost is
+ * one dismissive line; if not, the user gets their answer — the asymmetry
+ * justifies the block.
+ *
+ * Returns true iff a reminder was emitted.
+ */
+function maybeNudgeMidturnInjections(wolfDir, session, transcriptPath) {
+    const cfg = getQueueDropWatchConfig();
+    if (!cfg.enabled || !cfg.injection_reminder || !transcriptPath)
+        return false;
+    const injections = detectMidturnInjections(transcriptPath, cfg.tail_bytes, cfg.preview_chars);
+    if (injections.length === 0)
+        return false;
+    const logPath = path.join(wolfDir, "queue-injections.json");
+    const release = acquireFileLock(logPath);
+    if (!release)
+        return false;
+    let fresh = [];
+    try {
+        const log = readJSON(logPath, { version: 1, injections: [], seen: [] });
+        if (!Array.isArray(log.injections))
+            log.injections = [];
+        if (!Array.isArray(log.seen))
+            log.seen = log.injections.map(d => d.hash).filter(Boolean);
+        const seenSet = new Set(log.seen);
+        fresh = injections.filter(d => !seenSet.has(d.hash));
+        if (fresh.length === 0)
+            return false;
+        for (const d of fresh) {
+            log.injections.push({
+                ...d,
+                transcript: path.basename(transcriptPath),
+                session_id: session.session_id || "",
+                warned_at: new Date().toISOString(),
+            });
+            log.seen.push(d.hash);
+        }
+        if (log.injections.length > cfg.log_max_entries)
+            log.injections = log.injections.slice(-cfg.log_max_entries);
+        const seenCap = Math.max(cfg.log_max_entries * 10, 2000);
+        if (log.seen.length > seenCap)
+            log.seen = log.seen.slice(-seenCap);
+        writeJSON(logPath, log);
+    }
+    finally {
+        release();
+    }
+    const shown = fresh.slice(0, cfg.max_warn_per_stop);
+    const previews = shown.map(d => `"${d.preview}" (${d.timestamp ? d.timestamp.slice(11, 19) + "Z" : "time unknown"})`).join("; ");
+    const more = fresh.length > shown.length ? ` +${fresh.length - shown.length} more in log` : "";
+    emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} user message(s) arrived mid-turn (injected alongside a tool result): ${previews}${more}.\nAction: if you have ALREADY addressed each message above in this turn, say so in one line and stop. Otherwise address the unaddressed one(s) now — mid-turn injections are easy to miss when focused (bug-434 revised: the client DOES deliver these; attention is the gap). Do not ask the user to re-send. Full log: ${logPath}\n`);
+    return true;
 }
 
 function exitWithStopHookResult(block) {
@@ -266,6 +394,12 @@ async function main() {
                 nudgeFired = true;
             }
             if (maybeNudgeGitDiscipline(wolfDir, session, emptyEntry, sessionFile, hookPayload.transcript_path)) {
+                nudgeFired = true;
+            }
+            if (maybeWarnQueueDrops(wolfDir, session, hookPayload.transcript_path)) {
+                nudgeFired = true;
+            }
+            if (maybeNudgeMidturnInjections(wolfDir, session, hookPayload.transcript_path)) {
                 nudgeFired = true;
             }
         }
@@ -452,6 +586,12 @@ async function main() {
             nudgeFired = true;
         }
         if (maybeNudgeAutonomyContinuation(wolfDir, session, sessionFile, hookPayload.transcript_path)) {
+            nudgeFired = true;
+        }
+        if (maybeWarnQueueDrops(wolfDir, session, hookPayload.transcript_path)) {
+            nudgeFired = true;
+        }
+        if (maybeNudgeMidturnInjections(wolfDir, session, hookPayload.transcript_path)) {
             nudgeFired = true;
         }
     }
