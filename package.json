@@ -1,6 +1,6 @@
 {
   "name": "customopenwolf",
-  "version": "1.2.0-custom.9",
+  "version": "1.2.0-custom.10",
   "description": "Wolfpack: Claude Code workflow harness built on the OpenWolf runtime namespace",
   "type": "module",
   "bin": {
