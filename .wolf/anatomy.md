@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-19T06:09:12.327Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-19T06:25:34.603Z
 > Files: 155 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
@@ -141,7 +141,7 @@
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~17922 tok)
 - `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~18130 tok)
 - `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~26726 tok)
-- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~26707 tok)
+- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~28483 tok)
 
 ## src/scanner/
 

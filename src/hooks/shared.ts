@@ -906,7 +906,7 @@ const GIT_DISCIPLINE_DEFAULTS = {
 const SIMPLICITY_DEFAULTS = {
     enabled: true,
     nudge_only: true,
-    min_output_tokens: 500,
+    min_output_tokens: 2500,
     max_fires_per_session: 1,
 };
 const CLAIM_CALIBRATION_DEFAULTS = {

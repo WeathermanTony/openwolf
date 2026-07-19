@@ -389,3 +389,15 @@
 | 06:30 | Completed pending reviews: chatgpt companion CLEAN on stop.ts+shared.ts watchdog diff; review-0066 completed, review-0059 refreshed+completed | .wolf/reviewlog.json | both verified current-byte | ~2k |
 | 06:30 | Added 14 falsifier tests for queue watchdog (drop detection, attachment delivery, Esc window, dedup ordinals, injection reminder) | tests/queue-watch.test.js | 14/14 pass, 51/51 full suite | ~3k |
 | 06:35 | Bookkeeping: bug-434 (revised root cause) + bug-435 logged, cerebrum Do-Not-Repeat (absence-of-evidence) + queue-lifecycle learning | .wolf/buglog.json, .wolf/cerebrum.md | logged | ~1k |
+| 02:22 | Edited src/hooks/stop.ts | providers() → only() | ~126 |
+| 02:22 | Edited src/hooks/stop.ts | 14→13 lines | ~317 |
+| 02:23 | Edited src/hooks/stop.ts | modified formatQualityNudge() | ~215 |
+| 02:23 | Edited src/hooks/stop.ts | "⚠️ Wolfpack queue-watch: " → "⚠️ Wolfpack queue-watch: " | ~74 |
+| 02:23 | Edited src/hooks/stop.ts | "📬 Wolfpack queue-watch: " → "📬 Wolfpack queue-watch: " | ~78 |
+| 02:23 | Edited src/hooks/stop.ts | impact() → block() | ~92 |
+| 02:24 | Edited src/hooks/stop.ts | 6→1 lines | ~48 |
+| 02:24 | Edited src/hooks/stop.ts | "⚠️ Wolfpack: Files edited" → "⚠️ Wolfpack: files edited" | ~43 |
+| 02:24 | Edited src/hooks/stop.ts | "💡 Wolfpack: cerebrum.md " → "💡 Wolfpack: cerebrum.md " | ~53 |
+| 02:25 | Edited src/hooks/stop.ts | modified nudge() | ~360 |
+| 07:05 | Terse nudge consolidation: all stop-hook formatters compressed, simplicity 500→2500 + advisory-yields-to-actionable suppression | src/hooks/stop.ts, src/hooks/shared.ts | A/B 2237→1463 chars (-35%), 51/51 tests, verifier pass | ~8k |
+| 07:10 | Bookkeeping: bug-436 logged, cerebrum decision log + stale simplicity entry updated, QA reduction terse-nudge-consolidation.md | .wolf/buglog.json, .wolf/cerebrum.md | logged | ~2k |

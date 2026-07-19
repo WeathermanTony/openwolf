@@ -46,12 +46,12 @@ function isVerboseHookMessages(cfg) {
 }
 function reviewerGuidance(msgCfg) {
     if (msgCfg.reviewer_profile === "budget") {
-        return `Profile: budget — use standardized GLM, Kimi, MiMo, or MiniMax companions first; reserve Claude/ChatGPT companions for escalation or final arbitration.`;
+        return `Profile: budget — GLM/Kimi/MiMo/MiniMax companions first; Claude/ChatGPT for escalation.`;
     }
     if (msgCfg.reviewer_profile === "open") {
-        return `Profile: open — any installed standardized provider companion is eligible; use diverse provider families when multiple independent reviews are useful.`;
+        return `Profile: open — any installed standardized provider companion is eligible.`;
     }
-    return `Profile: gov/US-only — use only standardized companions backed by US-based providers (Claude, ChatGPT, or Grok); do not route review to non-US providers.`;
+    return `Profile: gov/US-only — US-based provider companions only (Claude, ChatGPT, Grok).`;
 }
 function shellQuote(value) {
     return `'${String(value).replace(/'/g, `'"'"'`)}'`;
@@ -77,18 +77,15 @@ function formatReviewNudge({ id, reason, files, repeat, reviewLogPath, completeC
             `Companion receipt hashes are not Wolfpack --reviewed-hash manifests. Review log: ${reviewLogPath}\n` +
             `${reviewerGuidance(msgCfg)} Do not edit reviewlog by hand.\n`;
     }
-    const profileHint = ` ${reviewerGuidance(msgCfg)}`;
-    return base + `Action: ${contract} ${staleHint} Complete: ${completeCommand}.${profileHint}\n`;
+    return base + `Action: ${contract} ${staleHint} Complete: ${completeCommand}. ${reviewerGuidance(msgCfg)}\n`;
 }
 function formatQualityNudge({ id, count, qaDirDisplay, files, minAssumptions, requireRunOutput }, msgCfg) {
     const fileList = compactList(files, msgCfg.max_files);
     const output = requireRunOutput ? "actual falsification output" : "why each assumption holds";
-    return `Wolfpack quality [${id}]: ${count} edited code file(s) lack current adversarial reduction in ${qaDirDisplay}. Files: ${fileList}.\n` +
-        `Action: add .wolf/qa reduction with ≥${minAssumptions} assumptions and ${output} before claiming done.\n`;
+    return `Wolfpack quality [${id}]: ${count} edited file(s) lack a current reduction in ${qaDirDisplay}: ${fileList}. Add ≥${minAssumptions} assumptions + ${output} before claiming done.\n`;
 }
 function formatConclusionNudge({ id, matchedCount, minAssumptions }, _msgCfg) {
-    return `Wolfpack conclusion [${id}]: last turn matched ${matchedCount} conclusion pattern(s).\n` +
-        `Action: add .wolf/qa reduction with ≥${minAssumptions} assumptions, riskiest falsifier, and actual output before finalizing.\n`;
+    return `Wolfpack conclusion [${id}]: ${matchedCount} conclusion pattern(s) in last turn — add a .wolf/qa reduction (≥${minAssumptions} assumptions, riskiest falsifier, actual output) before finalizing.\n`;
 }
 /**
  * Queue-drop watchdog (bug-434, root cause REVISED 2026-07-19). Original
@@ -154,7 +151,7 @@ function maybeWarnQueueDrops(wolfDir, session, transcriptPath) {
     const shown = fresh.slice(0, cfg.max_warn_per_stop);
     const previews = shown.map(d => `"${d.preview}" (${d.timestamp ? d.timestamp.slice(11, 19) + "Z" : "time unknown"})`).join("; ");
     const more = fresh.length > shown.length ? ` +${fresh.length - shown.length} more in log` : "";
-    emitStopHookFeedback(`⚠️ Wolfpack queue-watch: Claude Code silently discarded ${fresh.length} queued user message(s) mid-turn — they never reached the model (client-side queue bug, bug-434): ${previews}${more}.\nAction: tell the user exactly which message(s) were dropped and ask them to re-send. Do NOT pretend you saw the content. Full log: ${logPath}\n`);
+    emitStopHookFeedback(`⚠️ Wolfpack queue-watch: ${fresh.length} queued user message(s) never reached the model: ${previews}${more}. Tell the user exactly which were dropped and ask them to re-send — do NOT pretend you saw the content. Log: ${logPath}\n`);
     return true;
 }
 /**
@@ -214,7 +211,7 @@ function maybeNudgeMidturnInjections(wolfDir, session, transcriptPath) {
     const shown = fresh.slice(0, cfg.max_warn_per_stop);
     const previews = shown.map(d => `"${d.preview}" (${d.timestamp ? d.timestamp.slice(11, 19) + "Z" : "time unknown"})`).join("; ");
     const more = fresh.length > shown.length ? ` +${fresh.length - shown.length} more in log` : "";
-    emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} user message(s) arrived mid-turn (injected alongside a tool result): ${previews}${more}.\nAction: if you have ALREADY addressed each message above in this turn, say so in one line and stop. Otherwise address the unaddressed one(s) now — mid-turn injections are easy to miss when focused (bug-434 revised: the client DOES deliver these; attention is the gap). Do not ask the user to re-send. Full log: ${logPath}\n`);
+    emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} user message(s) arrived mid-turn: ${previews}${more}. If you already addressed each, say so in one line; otherwise address the unaddressed one(s) now — do not ask the user to re-send. Log: ${logPath}\n`);
     return true;
 }
 function exitWithStopHookResult(block) {
@@ -550,18 +547,14 @@ async function main() {
             nudgeFired = true;
     }
     catch { }
-    // Simplicity nudge: after significant output, remind to check for unnecessary
-    // complexity, YAGNI violations, and performance trade-offs.
-    try {
-        if (maybeNudgeSimplicity(wolfDir, session, sessionEntry, sessionFile))
-            nudgeFired = true;
-    }
-    catch { }
     // Review-hook nudge: log session to reviewlog.json and prompt for a bounded
     // provider-companion review when thresholds are crossed. Silent no-op on error.
+    let actionableNudgeFired = false;
     try {
-        if (maybeNudgeReview(wolfDir, session, sessionEntry))
+        if (maybeNudgeReview(wolfDir, session, sessionEntry)) {
             nudgeFired = true;
+            actionableNudgeFired = true;
+        }
     }
     catch { }
     // Quality gate: nudge when an edited code file lacks a current adversarial
@@ -569,7 +562,17 @@ async function main() {
     // emits Stop-hook JSON feedback with decision:"block" so Claude Code feeds
     // it into the next assistant turn instead of ending silently.
     try {
-        if (maybeNudgeQualityGate(wolfDir, session, sessionEntry))
+        if (maybeNudgeQualityGate(wolfDir, session, sessionEntry)) {
+            nudgeFired = true;
+            actionableNudgeFired = true;
+        }
+    }
+    catch { }
+    // Simplicity nudge (advisory): after significant output, remind to check for
+    // unnecessary complexity. Suppressed when an actionable gate (review or
+    // quality) already fired this stop — one obligation at a time.
+    try {
+        if (!actionableNudgeFired && maybeNudgeSimplicity(wolfDir, session, sessionEntry, sessionFile))
             nudgeFired = true;
     }
     catch { }
@@ -811,8 +814,8 @@ function maybeNudgeGitDiscipline(wolfDir, session, sessionEntry, sessionFile, tr
     if (sawCommitWithoutCachedDiff)
         missing.push("inspect `git diff --cached` before committing");
     const actionText = gitRoot
-        ? "Action: before stopping, include a Git/version status block with changed files, pre-existing/untracked state, verification, commit-readiness, and version impact (or why no bump/revision is needed).\n"
-        : "Action: before stopping, run `git init` if this is not a git repository. Git is useful for tracking revisions in documents, research, and code — not just code projects. Then include a Git/version status block with changed files, pre-existing/untracked state, verification, commit-readiness, and version impact (or why no bump/revision is needed).\n";
+        ? "Action: include a git/version status block (changed files, untracked/pre-existing state, verification, commit-readiness, version impact or why none).\n"
+        : "Action: run `git init` — revision tracking helps beyond code — then include the same git/version status block.\n";
     emitStopHookFeedback(`🐺 Wolfpack git/version: ${missing.join("; ")}. Branch: ${branch}. Written: ${compactList(relWritten, 6)}. Git status: ${statusSummary}.\n${actionText}`);
     return true;
 }
@@ -825,12 +828,7 @@ function maybeNudgeSimplicity(wolfDir, session, sessionEntry, sessionFile) {
         return false;
     if (!tryConsumeNudgeSlot(sessionFile, "simplicity_warnings", cfg.max_fires_per_session))
         return false;
-    emitStopHookFeedback(`🐺 Wolfpack simplicity: ${outputTokens} output tokens this session. Before stopping, ask:\n` +
-        "- Did I write more code than needed? (YAGNI — You Aren't Gonna Need It)\n" +
-        "- Is this the simplest solution that solves the problem?\n" +
-        "- Will someone else understand this at a glance?\n" +
-        "- Is this the most efficient approach — or am I trading simplicity for premature optimization?\n" +
-        "Action: if any answer is 'no', simplify before finishing.\n");
+    emitStopHookFeedback(`🐺 Wolfpack simplicity: ${outputTokens} output tokens this session — check YAGNI, readability, efficiency; simplify if any fall short.\n`);
     return true;
 }
 function maybeNudgeReview(wolfDir, session, sessionEntry) {
@@ -1362,7 +1360,7 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     if (!tryConsumeNudgeSlot(sessionFile, "buglog_warnings", STOP_NUDGE_PER_SESSION_CAP)) {
         return false;
     }
-    emitStopHookFeedback(`⚠️ Wolfpack: Files edited 3+ times this session (${multiEditDisplay.join(", ")}) but buglog.json was not updated. If you fixed bugs, please log them.\n`);
+    emitStopHookFeedback(`⚠️ Wolfpack: files edited 3+ times (${multiEditDisplay.join(", ")}) but buglog.json not updated — log any bugs fixed.\n`);
     return true;
 }
 /**
@@ -1381,7 +1379,7 @@ function checkCerebrumFreshness(wolfDir, session, sessionFile) {
             if (!tryConsumeNudgeSlot(sessionFile, "cerebrum_warnings", STOP_NUDGE_PER_SESSION_CAP)) {
                 return false;
             }
-            emitStopHookFeedback(`💡 Wolfpack: cerebrum.md hasn't been updated in ${Math.floor(hoursSinceUpdate)}h. Did you learn any user preferences, conventions, or gotchas this session? Consider updating .wolf/cerebrum.md.\n`);
+            emitStopHookFeedback(`💡 Wolfpack: cerebrum.md not updated in ${Math.floor(hoursSinceUpdate)}h — record any preferences, conventions, or gotchas learned this session.\n`);
             return true;
         }
     }

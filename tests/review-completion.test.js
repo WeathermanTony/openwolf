@@ -513,7 +513,7 @@ test('stop hook nudges git-init when project is not a git repository', async () 
     assert.match(text, /initialize a git repo to track revisions/);
     assert.match(text, /not-a-git-repo/);
     assert.match(text, /run `git init`/);
-    assert.match(text, /Git is useful for tracking revisions in documents, research, and code/);
+    assert.match(text, /revision tracking helps beyond code/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -696,13 +696,13 @@ test('stop hook suppresses repeated buglog nudges after explicit false-positive 
     const firstPayload = JSON.parse(first.stdout);
     assert.equal(firstPayload.decision, 'block');
     assert.equal(firstPayload.reason, 'Wolfpack feedback');
-    assert.doesNotMatch(firstPayload.reason, /Files edited 3\+ times/);
-    assert.match(firstPayload.hookSpecificOutput.additionalContext, /Files edited 3\+ times/);
+    assert.doesNotMatch(firstPayload.reason, /files edited 3\+ times/);
+    assert.match(firstPayload.hookSpecificOutput.additionalContext, /files edited 3\+ times/);
 
     await writeFile(transcript, assistantTranscript('Buglog nudge is a false positive: these edits were not bug fixes, so no buglog entry warranted.'));
     const acknowledged = runStopHook(dir, transcript, 'sess-buglog');
     assert.equal(acknowledged.status, 0, acknowledged.stderr);
-    assert.doesNotMatch(acknowledged.stdout, /Files edited 3\+ times/);
+    assert.doesNotMatch(acknowledged.stdout, /files edited 3\+ times/);
 
     const stored = JSON.parse(await readFile(sessionFile, 'utf8'));
     assert.equal(Object.keys(stored.buglog_false_positive_acks).length, 1);
@@ -716,7 +716,7 @@ test('stop hook suppresses repeated buglog nudges after explicit false-positive 
     assert.equal(changed.status, 0, changed.stderr);
     const changedPayload = JSON.parse(changed.stdout);
     assert.equal(changedPayload.decision, 'block');
-    assert.match(changedPayload.hookSpecificOutput.additionalContext, /Files edited 3\+ times/);
+    assert.match(changedPayload.hookSpecificOutput.additionalContext, /files edited 3\+ times/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
