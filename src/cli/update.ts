@@ -87,23 +87,25 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
     return;
   }
 
-  // Filter to specific project if requested
-  let targets = projects;
+  // Filter against all registrations so a scoped update can clean a missing project's owned daemon.
+  let selected = allProjects;
   if (options.project) {
     const search = options.project.toLowerCase();
-    targets = projects.filter(p =>
+    selected = allProjects.filter(p =>
       p.name.toLowerCase().includes(search) ||
       p.root.toLowerCase().includes(search)
     );
-    if (targets.length === 0) {
+    if (selected.length === 0) {
       console.log(`No registered project matching "${options.project}".`);
       console.log("Registered projects:");
-      for (const p of projects) {
+      for (const p of allProjects) {
         console.log(`  - ${p.name} (${p.root})`);
       }
       return;
     }
   }
+  const targets = selected.filter(project => fs.existsSync(path.join(project.root, ".wolf")));
+  const missingSelectedRoots = selected.filter(project => !fs.existsSync(path.join(project.root, ".wolf"))).map(project => project.root);
 
   if (options.profile) {
     normalizeReviewerProfile(options.profile);
@@ -113,7 +115,7 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
 
   const results: UpdateResult[] = [];
   const pm2Processes = listPm2Processes();
-  const daemonRootsToRemove: string[] = [];
+  const daemonRootsToRemove: string[] = [...missingSelectedRoots];
   let daemonPreserved = 0;
   let daemonNotRunning = 0;
 

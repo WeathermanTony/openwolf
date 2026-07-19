@@ -116,6 +116,30 @@ function tokenIsValid(token: string | null): boolean {
   return token !== null && timingSafeTokenEqual(token, daemonAuthToken);
 }
 
+function requestHasDashboardSession(req: Request): boolean {
+  const cookies = req.header("cookie") ?? "";
+  const token = cookies.split(";").map(part => part.trim()).find(part => part.startsWith("openwolf_token="))?.slice("openwolf_token=".length);
+  return tokenIsValid(token ? decodeURIComponent(token) : null);
+}
+
+function requireDashboardBootstrap(req: Request, res: Response, next: NextFunction): void {
+  if (!requestHasValidHost(req) || !requestHasAllowedOrigin(req)) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const queryToken = typeof req.query.token === "string" ? req.query.token : null;
+  if (tokenIsValid(queryToken)) {
+    res.setHeader("Set-Cookie", `openwolf_token=${encodeURIComponent(queryToken!)}; HttpOnly; SameSite=Strict; Path=/`);
+    next();
+    return;
+  }
+  if (!requestHasDashboardSession(req)) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  next();
+}
+
 function requireDashboardAuth(req: Request, res: Response, next: NextFunction): void {
   if (!requestHasValidHost(req) || !requestHasAllowedOrigin(req)) {
     res.status(403).json({ error: "Forbidden" });
@@ -251,7 +275,7 @@ function acquireDaemonSingleton(): void {
   })();
 
   if (existingRaw !== null
-    && ((existing !== null && normalizeProjectRoot(existing.projectRoot) === normalizedProjectRoot && !isPidAlive(existing.pid)) || malformedLockIsOld)) {
+    && ((existing !== null && !isPidAlive(existing.pid)) || malformedLockIsOld)) {
     logger.warn(existing !== null
       ? `Reclaiming stale daemon lock from pid ${existing.pid}`
       : "Reclaiming malformed stale daemon lock");
@@ -291,7 +315,8 @@ function releaseDaemonSingleton(): void {
 acquireDaemonSingleton();
 
 const startTime = Date.now();
-const dashboardEnabled = config.openwolf.dashboard.enabled || process.env.OPENWOLF_DASHBOARD_ENABLED === "1";
+const dashboardMode = process.env.OPENWOLF_DASHBOARD_ENABLED;
+const dashboardEnabled = dashboardMode === "1" || (dashboardMode !== "0" && config.openwolf.dashboard.enabled);
 const wsClients = new Set<WebSocket>();
 
 // Express server
@@ -301,8 +326,9 @@ app.use(express.json());
 // Serve dashboard static files
 // In dist: dist/src/daemon/wolf-daemon.js → ../../../dist/dashboard/
 const dashboardDir = path.resolve(__dirname, "..", "..", "..", "dist", "dashboard");
-if (dashboardEnabled && fs.existsSync(dashboardDir)) {
-  app.get("/", (_req, res) => sendDashboardIndex(res));
+const dashboardAvailable = dashboardEnabled && fs.existsSync(path.join(dashboardDir, "index.html"));
+if (dashboardAvailable) {
+  app.get("/", requireDashboardBootstrap, (_req, res) => sendDashboardIndex(res));
   app.use(express.static(dashboardDir, { index: false }));
 }
 
@@ -373,6 +399,8 @@ app.get("/api/health", (_req, res) => {
   res.json({
     status: "healthy",
     project_root: projectRoot,
+    dashboard_enabled: dashboardEnabled,
+    dashboard_available: dashboardAvailable,
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
     last_heartbeat: cronState.last_heartbeat ?? null,
     tasks: taskCount,
@@ -434,7 +462,7 @@ app.post("/api/cron/run/:taskId", requireDashboardAuth, (req, res) => {
 
 // SPA fallback
 if (dashboardEnabled) {
-  app.get("/{*path}", (_req, res) => {
+  app.get("/{*path}", requireDashboardBootstrap, (_req, res) => {
     const indexPath = path.join(dashboardDir, "index.html");
     if (fs.existsSync(indexPath)) {
       sendDashboardIndex(res);

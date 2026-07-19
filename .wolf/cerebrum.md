@@ -50,6 +50,7 @@
 - [2026-07-18] `tryConsumeNudgeSlot(capN=0)` must mean "unlimited" (no cap), not "zero allowed". The `??` operator already distinguishes `0` from `undefined`, but the slot consumer itself must short-circuit `capN === 0` before `prior >= capN` to avoid blocking all nudges when a user explicitly sets `max_fires_per_session: 0`.
 - [2026-07-18] PM2 daemon ownership must require all three signals: an `openwolf-` process name, the `wolf-daemon.js` executable, and a matching absolute project root/cwd. An environment variable alone is not safe deletion proof.
 - [2026-07-18] Keep Wolfpack PM2 daemons and the dashboard disabled by default. Explicit dashboard startup must use managed PM2 lifecycle and HTTP health identity, never an unmanaged detached child or a bare TCP-port readiness check.
+- [2026-07-18] Project identity plus healthy status does not prove dashboard readiness: a background-only daemon exposes health while intentionally omitting UI routes. Health/readiness must also report and require `dashboard_enabled: true` before `openwolf dashboard` takes its reuse fast path.
 
 ## Decision Log
 

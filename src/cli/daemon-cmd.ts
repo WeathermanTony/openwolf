@@ -102,6 +102,10 @@ export function isActivePm2Process(proc: Pm2ProcessInfo | null): proc is Pm2Proc
   return typeof pid === "number" && Number.isInteger(pid) && pid > 0;
 }
 
+export function isDashboardPm2Process(proc: Pm2ProcessInfo | null): boolean {
+  return proc?.pm2_env?.OPENWOLF_DASHBOARD_ENABLED === "1";
+}
+
 export function getOpenWolfPm2Process(projectRoot: string, processes = listPm2Processes()): Pm2ProcessInfo | null {
   const hash = getPm2Process(processes, getPm2NameForRoot(projectRoot), projectRoot);
   const legacy = getPm2Process(processes, getLegacyPm2Name(projectRoot), projectRoot);
@@ -211,15 +215,15 @@ export function hasOpenWolfPm2Daemon(projectRoot: string): boolean {
   return isActivePm2Process(getOpenWolfPm2Process(projectRoot));
 }
 
-export function ensurePm2Daemon(projectRoot: string, options: { silent?: boolean; dashboard?: boolean } = {}): Pm2EnsureResult {
+export function ensurePm2Daemon(projectRoot: string, options: { silent?: boolean; dashboard?: boolean; forceRestart?: boolean } = {}): Pm2EnsureResult {
   const name = getPm2NameForRoot(projectRoot);
   const daemonScript = path.resolve(__dirname, "..", "daemon", "wolf-daemon.js");
   const existing = getOpenWolfPm2Process(projectRoot);
   const existingName = existing?.name ?? name;
   const existingStatus = existing?.pm2_env?.status;
 
-  const dashboardModeMatches = existing?.pm2_env?.OPENWOLF_DASHBOARD_ENABLED === (options.dashboard ? "1" : "0");
-  if (isActivePm2Process(existing) && existingName === name && hasStopExitCodeZero(existing) && dashboardModeMatches) {
+  const dashboardModeMatches = isDashboardPm2Process(existing) === Boolean(options.dashboard);
+  if (!options.forceRestart && isActivePm2Process(existing) && existingName === name && hasStopExitCodeZero(existing) && dashboardModeMatches) {
     if (!options.silent) {
       console.log(`  ✓ Daemon already registered: ${existingName} (status ${existingStatus ?? "unknown"}, pid ${existing.pid ?? "unknown"})`);
     }
@@ -380,19 +384,14 @@ export async function daemonRestart(): Promise<void> {
     await prepareDaemonPorts(wolfDir, projectRoot);
   }
 
-  // First try PM2
+  // Preserve the existing runtime mode when restarting through PM2.
   if (hasPm2()) {
     const proc = getOpenWolfPm2Process(projectRoot);
-    const name = proc?.name ?? getPm2NameForRoot(projectRoot);
     if (proc) {
       try {
-        execSync(`pm2 delete ${pm2Target(proc, name)}`, { stdio: "ignore" });
-        execSync(`pm2 start ${shellQuote(path.resolve(__dirname, "..", "daemon", "wolf-daemon.js"))} --name ${shellQuote(getPm2NameForRoot(projectRoot))} --cwd ${shellQuote(projectRoot)} --stop-exit-codes 0`, {
-          stdio: "ignore",
-          env: { ...process.env, OPENWOLF_PROJECT_ROOT: projectRoot },
-        });
-        execSync("pm2 save", { stdio: "ignore" });
-        console.log(`  ✓ Daemon restarted (PM2): ${name}`);
+        const dashboard = isDashboardPm2Process(proc);
+        const result = ensurePm2Daemon(projectRoot, { silent: true, dashboard, forceRestart: true });
+        console.log(`  ✓ Daemon restarted (PM2): ${result.name}`);
         return;
       } catch {
         // PM2 process restart failed — fall through

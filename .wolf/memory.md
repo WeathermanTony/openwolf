@@ -316,3 +316,47 @@
 | 19:36 | Edited src/daemon/wolf-daemon.ts | 4→4 lines | ~49 |
 | 19:36 | Edited src/daemon/wolf-daemon.ts | added 1 condition(s) | ~92 |
 | 19:36 | Edited src/daemon/wolf-daemon.ts | added optional chaining | ~35 |
+| 19:43 | Session end: 19 writes across 5 files (daemon-cmd.ts, update.ts, dashboard.ts, wolf-daemon.ts, pm2-lifecycle-cleanup.md) | 8 reads | ~35062 tok |
+
+## Session: 2026-07-18 19:47
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:48 | Edited src/cli/dashboard.ts | modified isExpectedDashboardHealth() | ~274 |
+| 19:48 | Edited src/daemon/wolf-daemon.ts | 3→4 lines | ~46 |
+| 19:48 | Edited tests/daemon-cmd.test.js | added 1 import(s) | ~71 |
+| 19:48 | Edited tests/daemon-cmd.test.js | expanded (+19 lines) | ~355 |
+| 19:49 | Fixed review finding: dashboard readiness now requires dashboard-enabled health; added regression test and refreshed reductions | src/cli/dashboard.ts, src/daemon/wolf-daemon.ts, tests/daemon-cmd.test.js, .wolf/qa/* | 33 tests and install verifier passed | ~13k |
+| 20:03 | Edited src/cli/daemon-cmd.ts | modified if() | ~142 |
+| 20:03 | Edited src/cli/daemon-cmd.ts | inline fix | ~18 |
+| 20:03 | Edited src/cli/daemon-cmd.ts | modified isActivePm2Process() | ~120 |
+| 20:04 | Edited src/cli/daemon-cmd.ts | inline fix | ~16 |
+| 20:04 | Edited tests/daemon-cmd.test.js | inline fix | ~33 |
+| 20:04 | Edited tests/daemon-cmd.test.js | expanded (+7 lines) | ~135 |
+| 20:06 | Fixed second review finding: PM2 restart preserves explicit dashboard mode through centralized lifecycle | src/cli/daemon-cmd.ts, tests/daemon-cmd.test.js, .wolf/qa/pm2-lifecycle-cleanup.md | 34 tests and verifier passed | ~9k |
+| 20:06 | Edited src/cli/daemon-cmd.ts | inline fix | ~44 |
+| 20:06 | Edited src/cli/daemon-cmd.ts | inline fix | ~42 |
+| 20:07 | Edited src/cli/daemon-cmd.ts | inline fix | ~29 |
+| 20:23 | Fixed third review finding: explicit daemon restart now forces process replacement while retaining mode | src/cli/daemon-cmd.ts, .wolf/qa/pm2-lifecycle-cleanup.md | build, 34 tests, verifier passed | ~6k |
+| 20:16 | Edited src/daemon/wolf-daemon.ts | 2→3 lines | ~61 |
+| 20:16 | Edited src/daemon/wolf-daemon.ts | modified if() | ~61 |
+| 20:16 | Edited src/daemon/wolf-daemon.ts | 2→3 lines | ~30 |
+| 20:16 | Edited src/cli/dashboard.ts | 2→3 lines | ~82 |
+| 20:16 | Edited tests/daemon-cmd.test.js | 2→3 lines | ~25 |
+| 20:16 | Edited tests/daemon-cmd.test.js | expanded (+7 lines) | ~118 |
+| 20:39 | Fixed review findings: PM2 background mode overrides legacy config and readiness requires built dashboard UI | src/daemon/wolf-daemon.ts, src/cli/dashboard.ts, tests/daemon-cmd.test.js, .wolf/qa/* | build, 34 tests, verifier passed | ~7k |
+| 20:28 | Session end: 34 writes across 7 files (dashboard.ts, wolf-daemon.ts, daemon-cmd.test.js, dashboard-on-demand.md, dashboard-disabled-runtime.md) | 4 reads | ~14805 tok |
+| 20:34 | Edited src/daemon/wolf-daemon.ts | 2→2 lines | ~32 |
+| 20:34 | Edited src/cli/update.ts | modified if() | ~242 |
+| 20:36 | Edited src/cli/update.ts | inline fix | ~19 |
+| 20:38 | Edited src/daemon/wolf-daemon.ts | added optional chaining | ~367 |
+| 20:38 | Edited src/daemon/wolf-daemon.ts | inline fix | ~24 |
+| 20:39 | Edited src/daemon/wolf-daemon.ts | inline fix | ~19 |
+| 20:39 | Edited src/cli/dashboard.ts | added optional chaining | ~111 |
+| 21:10 | Fixed companion findings: scoped stale cleanup, moved-project dead lock recovery, authenticated dashboard bootstrap | src/cli/update.ts, src/daemon/wolf-daemon.ts, src/cli/dashboard.ts, .wolf/qa/* | build, 34 tests, verifier passed | ~10k |
+
+## Session: 2026-07-19 21:21
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:05 | Fixed review findings: scoped update cleans missing-project PM2, stale cross-root daemon lock reclaimed, dashboard index token no longer exposed | src/cli/update.ts, src/daemon/wolf-daemon.ts, src/cli/dashboard.ts | build, 34 tests, verifier passed | ~8k |

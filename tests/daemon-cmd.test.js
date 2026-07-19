@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { isActivePm2Process, ownedPm2ProcessForRoot } from '../dist/src/cli/daemon-cmd.js';
+import { isActivePm2Process, isDashboardPm2Process, ownedPm2ProcessForRoot } from '../dist/src/cli/daemon-cmd.js';
+import { isExpectedDashboardHealth } from '../dist/src/cli/dashboard.js';
 import { shouldStartDaemonForProject } from '../dist/src/daemon/startup-guard.js';
 import { migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from '../dist/src/cli/init.js';
 
@@ -26,6 +27,40 @@ test('PM2 daemon activity requires online status and a live pid', () => {
   assert.equal(isActivePm2Process({ pm2_env: { status: 'online' } }), false);
   assert.equal(isActivePm2Process({ pm2_env: { status: 'online' }, pid: 0 }), false);
   assert.equal(isActivePm2Process({ pm2_env: { status: 'online' }, pid: 1234 }), true);
+});
+
+test('PM2 dashboard mode is preserved only for the explicit enabled marker', () => {
+  assert.equal(isDashboardPm2Process(null), false);
+  assert.equal(isDashboardPm2Process({ pm2_env: {} }), false);
+  assert.equal(isDashboardPm2Process({ pm2_env: { OPENWOLF_DASHBOARD_ENABLED: '0' } }), false);
+  assert.equal(isDashboardPm2Process({ pm2_env: { OPENWOLF_DASHBOARD_ENABLED: '1' } }), true);
+});
+
+test('dashboard readiness rejects a healthy background-only daemon', () => {
+  const projectRoot = path.resolve('/projects/example');
+  assert.equal(isExpectedDashboardHealth(200, JSON.stringify({
+    status: 'healthy',
+    project_root: projectRoot,
+    dashboard_enabled: false,
+    dashboard_available: false,
+  }), projectRoot), false);
+  assert.equal(isExpectedDashboardHealth(200, JSON.stringify({
+    status: 'healthy',
+    project_root: projectRoot,
+    dashboard_enabled: true,
+    dashboard_available: false,
+  }), projectRoot), false);
+  assert.equal(isExpectedDashboardHealth(200, JSON.stringify({
+    status: 'healthy',
+    project_root: projectRoot,
+    dashboard_enabled: true,
+    dashboard_available: true,
+  }), projectRoot), true);
+  assert.equal(isExpectedDashboardHealth(200, JSON.stringify({
+    status: 'healthy',
+    project_root: path.resolve('/projects/other'),
+    dashboard_enabled: true,
+  }), projectRoot), false);
 });
 
 test('PM2 ownership requires an exact recorded project root', () => {

@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-18T23:36:32.703Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-19T00:39:28.187Z
 > Files: 154 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
@@ -44,8 +44,8 @@
 - `bug-cmd.ts` — Exports bugSearch (~310 tok)
 - `cerebrum-cmd.ts` — Exports lintCerebrum, cerebrumLint (~723 tok)
 - `cron-cmd.ts` — Exports cronList, cronRun, cronRetry (~1448 tok)
-- `daemon-cmd.ts` — Exports getPm2NameForRoot, hasPm2, Pm2ProcessInfo, listPm2Processes + 12 more (~4317 tok)
-- `dashboard.ts` — Exports dashboardCommand (~1012 tok)
+- `daemon-cmd.ts` — Exports getPm2NameForRoot, hasPm2, Pm2ProcessInfo, listPm2Processes + 13 more (~4280 tok)
+- `dashboard.ts` — Exports isExpectedDashboardHealth, dashboardCommand (~1171 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `index.ts` — Exports createProgram (~2267 tok)
 - `init.ts` — Exports initCommand (~10228 tok)
@@ -55,7 +55,7 @@
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1298 tok)
 - `trace-cmd.ts` — Exports traceCommand (~887 tok)
-- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6430 tok)
+- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6523 tok)
 
 ## src/config/
 
@@ -67,7 +67,7 @@
 - `file-watcher.ts` — Exports startFileWatcher (~678 tok)
 - `health.ts` — Exports getHealth (~336 tok)
 - `startup-guard.ts` — Exports shouldStartDaemonForProject (~101 tok)
-- `wolf-daemon.ts` — API routes: GET (2 endpoints) (~6346 tok)
+- `wolf-daemon.ts` — API routes: GET (2 endpoints) (~6671 tok)
 
 ## src/dashboard/app/
 
@@ -244,7 +244,7 @@
 
 ## tests/
 
-- `daemon-cmd.test.js` — Declares processes (~1404 tok)
+- `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
 - `qa-cmd.test.js` — sha256: fixture (~656 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
 - `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 6 more (~8394 tok)

@@ -20,22 +20,25 @@ function normalizeRoot(root: string): string {
   try { return fs.realpathSync.native(root); } catch { return path.resolve(root); }
 }
 
+export function isExpectedDashboardHealth(statusCode: number | undefined, body: string, projectRoot: string): boolean {
+  try {
+    const parsed = JSON.parse(body) as { status?: string; project_root?: string; dashboard_enabled?: boolean; dashboard_available?: boolean };
+    return statusCode === 200 && parsed.status === "healthy"
+      && parsed.dashboard_enabled === true && parsed.dashboard_available === true
+      && typeof parsed.project_root === "string"
+      && normalizeRoot(parsed.project_root) === normalizeRoot(projectRoot);
+  } catch {
+    return false;
+  }
+}
+
 function isExpectedDashboard(port: number, projectRoot: string): Promise<boolean> {
   return new Promise((resolve) => {
     const req = http.get({ hostname: "127.0.0.1", port, path: "/api/health", timeout: 1000 }, (res) => {
       let body = "";
       res.setEncoding("utf8");
       res.on("data", chunk => { if (body.length < 8192) body += chunk; });
-      res.on("end", () => {
-        try {
-          const parsed = JSON.parse(body) as { status?: string; project_root?: string };
-          resolve(res.statusCode === 200 && parsed.status === "healthy"
-            && typeof parsed.project_root === "string"
-            && normalizeRoot(parsed.project_root) === normalizeRoot(projectRoot));
-        } catch {
-          resolve(false);
-        }
-      });
+      res.on("end", () => resolve(isExpectedDashboardHealth(res.statusCode, body, projectRoot)));
     });
     req.once("timeout", () => { req.destroy(); resolve(false); });
     req.once("error", () => resolve(false));
@@ -96,7 +99,10 @@ export async function dashboardCommand(): Promise<void> {
 }
 
 async function openDashboard(port: number): Promise<void> {
-  const url = `http://localhost:${port}`;
+  const projectRoot = findProjectRoot();
+  const config = readJSON<{ openwolf?: { daemon?: { auth_token?: string | null } } }>(path.join(projectRoot, ".wolf", "config.json"), {});
+  const token = config.openwolf?.daemon?.auth_token;
+  const url = `http://localhost:${port}/${token ? `?token=${encodeURIComponent(token)}` : ""}`;
   console.log(`  Opening ${url}...`);
   try {
     const { default: open } = await import("open");
