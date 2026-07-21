@@ -3,15 +3,6 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
-## Session: 2026-06-19 12:53
-> Consolidated session (0 actions)
-
-## Session: 2026-06-20 14:06
-> Consolidated session (0 actions)
-
-## Session: 2026-06-21 03:00
-> Consolidated session (0 actions)
-
 ## Session: 2026-06-28 03:00
 > Consolidated session (0 actions)
 
@@ -415,3 +406,6 @@
 | 17:44 | Edited src/hooks/stop.ts | 5→5 lines | ~132 |
 | 17:45 | Edited tests/review-completion.test.js | 6→9 lines | ~167 |
 | 07-21 | Fixed bug-437 (PowerShell AI feedback): git gate PATH false positive — resolveGitBin + git-not-found state + commit suppression, 2 falsifier tests | src/hooks/stop.ts, src/hooks/shared.ts, tests/review-completion.test.js | 53/53 tests, verifier pass | ~8k |
+| 17:55 | Session end: 21 writes across 5 files (queue-watch.test.js, stop.ts, terse-nudge-consolidation.md, review-completion.test.js, git-discipline-not-found-vs-not-repo.md) | 4 reads | ~65482 tok |
+| 17:55 | Session end: 21 writes across 5 files (queue-watch.test.js, stop.ts, terse-nudge-consolidation.md, review-completion.test.js, git-discipline-not-found-vs-not-repo.md) | 4 reads | ~65482 tok |
+| 07-21 | Deployed custom.11 fleet-wide: 79/79 verified at custom.11 with bug-437 fix in hooks, 0 PM2 daemons | VERSION, registry | full-fleet byte verification | ~3k |
