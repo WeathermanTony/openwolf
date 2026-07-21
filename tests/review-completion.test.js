@@ -562,6 +562,99 @@ test('stop hook omits git-init nudge when project is already a git repository', 
   }
 });
 
+test('stop hook reports git-not-found instead of advising git init when git is unresolvable', async () => {
+  await assertStopSourceAndRuntimeContract();
+  const dir = await fixture();
+  try {
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    const target = path.join(dir, 'README.md');
+    await writeFile(target, '# Research notes\n');
+    await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: {
+      review_hook: { enabled: false },
+      quality_gate: { enabled: false },
+      claim_calibration: { enabled: false },
+      autonomy_continuation: { enabled: false },
+      git_discipline: { enabled: true, max_fires_per_session: 3, min_written_files: 1, min_changed_lines: 1 },
+    } }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+      session_id: 'sess-git-missing',
+      started: '2099-06-13T17:00:00.000Z',
+      files_read: {},
+      files_written: [{ file: target, at: '2099-06-13T17:00:00.000Z', tokens: 200, action: 'edit' }],
+      edit_counts: { [target]: 1 },
+      anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+      cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+    }, null, 2));
+    const transcript = path.join(dir, 'transcript.jsonl');
+    await writeFile(transcript, assistantTranscript('Done.'));
+
+    // Strip PATH so bare "git" cannot resolve (the Windows stale-shell case):
+    // the hook must NOT advise `git init` on a repo it simply cannot see.
+    const result = spawnSync(process.execPath, [stopHook], {
+      cwd: dir,
+      env: { ...process.env, CLAUDE_PROJECT_DIR: dir, PATH: '/nonexistent', WOLFPACK_GIT_BIN: '' },
+      input: JSON.stringify({ session_id: 'sess-git-missing', transcript_path: transcript }),
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const text = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
+    assert.match(text, /git not found on hook PATH/);
+    assert.match(text, /git-not-found/);
+    assert.doesNotMatch(text, /initialize a git repo/);
+    assert.doesNotMatch(text, /run `git init`/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('stop hook suppresses git-init nudge when a commit landed this session', async () => {
+  await assertStopSourceAndRuntimeContract();
+  const dir = await fixture();
+  try {
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    const target = path.join(dir, 'README.md');
+    await writeFile(target, '# Research notes\n');
+    await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: {
+      review_hook: { enabled: false },
+      quality_gate: { enabled: false },
+      claim_calibration: { enabled: false },
+      autonomy_continuation: { enabled: false },
+      git_discipline: { enabled: true, max_fires_per_session: 3, min_written_files: 1, min_changed_lines: 1 },
+    } }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+      session_id: 'sess-git-commit',
+      started: '2099-06-13T17:00:00.000Z',
+      files_read: {},
+      files_written: [{ file: target, at: '2099-06-13T17:00:00.000Z', tokens: 200, action: 'edit' }],
+      edit_counts: { [target]: 1 },
+      anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+      cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+    }, null, 2));
+    const transcript = path.join(dir, 'transcript.jsonl');
+    // Commit activity proves a repo exists even though this fixture is not one —
+    // the init advice must be suppressed while the rest of the gate still works.
+    await writeFile(transcript, JSON.stringify({
+      type: 'assistant',
+      message: { content: [
+        { type: 'tool_use', name: 'Bash', input: { command: "git add README.md && git commit -m 'wip'" } },
+        { type: 'text', text: 'Committed.' },
+      ] },
+    }) + '\n');
+
+    const result = runStopHook(dir, transcript, 'sess-git-commit');
+    assert.equal(result.status, 0, result.stderr);
+    const text = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
+    assert.doesNotMatch(text, /initialize a git repo/);
+    assert.doesNotMatch(text, /run `git init`/);
+    // Safety items must survive the init suppression (fixture lives under /tmp,
+    // so the status-block materiality gate is vacuously off; the cached-diff
+    // item is the transcript-based proof the gate still fired).
+    assert.match(text, /inspect `git diff --cached`/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('stop hook emits bounded companion guidance for every verbosity and reviewer profile', async () => {
   await assertStopSourceAndRuntimeContract();
   const cases = [

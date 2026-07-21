@@ -844,6 +844,7 @@ const GIT_DISCIPLINE_DEFAULTS = {
     discourage_broad_staging: true,
     require_cached_diff_before_commit: true,
     warn_destructive_commands: true,
+    git_bin: null,
     scope_excludes: DEFAULT_GATE_EXCLUDES,
     user_visible_paths: [
         "package.json",
@@ -1399,6 +1400,7 @@ export function getGitDisciplineConfig() {
         discourage_broad_staging: cfg.discourage_broad_staging ?? GIT_DISCIPLINE_DEFAULTS.discourage_broad_staging,
         require_cached_diff_before_commit: cfg.require_cached_diff_before_commit ?? GIT_DISCIPLINE_DEFAULTS.require_cached_diff_before_commit,
         warn_destructive_commands: cfg.warn_destructive_commands ?? GIT_DISCIPLINE_DEFAULTS.warn_destructive_commands,
+        git_bin: typeof cfg.git_bin === "string" && cfg.git_bin.trim() ? cfg.git_bin.trim() : GIT_DISCIPLINE_DEFAULTS.git_bin,
         scope_excludes: mergeWithWolfDocExcludes(cfg.scope_excludes, cfg.allow_wolf_doc_review, GIT_DISCIPLINE_DEFAULTS.scope_excludes),
         allow_wolf_doc_review: cfg.allow_wolf_doc_review,
         user_visible_paths: Array.isArray(cfg.user_visible_paths) ? cfg.user_visible_paths : GIT_DISCIPLINE_DEFAULTS.user_visible_paths,

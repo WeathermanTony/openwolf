@@ -658,23 +658,62 @@ function relToProject(file) {
     const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
     return path.relative(projectDir, file).replace(/\\/g, "/");
 }
-function gitRootForProject() {
+// Resolve a usable git binary once per hook process. Bare "git" is a PATH
+// lookup, and on Windows the hook child process can inherit a PATH that lacks
+// Git even when it is on the Machine/User PATH (e.g. Claude Code launched from
+// a stale shell) — that made gitRootForProject report "not-a-git-repo" and
+// advise `git init` on actively-committed repos (PowerShell-session feedback,
+// 2026-07-21). Order: explicit overrides, PATH, well-known install locations.
+let resolvedGitBin; // undefined = not yet tried; null = unresolvable; string = usable
+function resolveGitBin(cfg) {
+    if (resolvedGitBin !== undefined)
+        return resolvedGitBin;
+    const candidates = [];
+    if (process.env.WOLFPACK_GIT_BIN)
+        candidates.push(process.env.WOLFPACK_GIT_BIN);
+    if (cfg?.git_bin)
+        candidates.push(cfg.git_bin);
+    candidates.push("git");
+    if (process.platform === "win32") {
+        const localAppData = process.env.LOCALAPPDATA;
+        candidates.push("C:\\Program Files\\Git\\cmd\\git.exe", "C:\\Program Files (x86)\\Git\\cmd\\git.exe");
+        if (localAppData)
+            candidates.push(path.join(localAppData, "Programs", "Git", "cmd", "git.exe"));
+    }
+    for (const bin of candidates) {
+        try {
+            execFileSync(bin, ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 2000 });
+            resolvedGitBin = bin;
+            return bin;
+        }
+        catch { }
+    }
+    resolvedGitBin = null;
+    return null;
+}
+// Three-way result: "ok" (repo found), "not-a-repo" (git works, rev-parse
+// failed), "git-not-found" (no usable binary — never advise `git init` here;
+// the repo may exist and the hook simply cannot see it).
+function gitRootForProject(gitBin) {
+    if (!gitBin)
+        return { status: "git-not-found", root: null };
     const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
     try {
-        return execFileSync("git", ["rev-parse", "--show-toplevel"], {
+        const root = execFileSync(gitBin, ["rev-parse", "--show-toplevel"], {
             cwd: projectDir,
             encoding: "utf8",
             stdio: ["ignore", "pipe", "ignore"],
             timeout: 2000,
         }).trim();
+        return { status: "ok", root };
     }
     catch {
-        return null;
+        return { status: "not-a-repo", root: null };
     }
 }
-function gitStatusPorcelain(gitRoot) {
+function gitStatusPorcelain(gitBin, gitRoot) {
     try {
-        return execFileSync("git", ["status", "--short", "--untracked-files=normal"], {
+        return execFileSync(gitBin, ["status", "--short", "--untracked-files=normal"], {
             cwd: gitRoot,
             encoding: "utf8",
             stdio: ["ignore", "pipe", "ignore"],
@@ -685,9 +724,9 @@ function gitStatusPorcelain(gitRoot) {
         return [];
     }
 }
-function gitBranch(gitRoot) {
+function gitBranch(gitBin, gitRoot) {
     try {
-        return execFileSync("git", ["branch", "--show-current"], {
+        return execFileSync(gitBin, ["branch", "--show-current"], {
             cwd: gitRoot,
             encoding: "utf8",
             stdio: ["ignore", "pipe", "ignore"],
@@ -765,7 +804,10 @@ function maybeNudgeGitDiscipline(wolfDir, session, sessionEntry, sessionFile, tr
     if (!cfg.enabled)
         return false;
     const hasAnyWrites = sessionEntry.writes.length > 0;
-    const gitRoot = gitRootForProject();
+    const gitBin = resolveGitBin(cfg);
+    const gitInfo = gitRootForProject(gitBin);
+    const gitRoot = gitInfo.root;
+    const gitNotFound = gitInfo.status === "git-not-found";
     const excludeRegexes = cfg.scope_excludes.map(globToRegex);
     const written = [...new Set(sessionEntry.writes.map(w => w.file))]
         .filter(file => !excludeRegexes.some(re => re.test(file)));
@@ -786,24 +828,30 @@ function maybeNudgeGitDiscipline(wolfDir, session, sessionEntry, sessionFile, tr
     const hasVersionImpact = !needsVersionImpact || markerPresent(text, cfg.version_markers);
     const sawBroadStaging = cfg.discourage_broad_staging && broadStagingSeen(commands);
     const sawDestructive = cfg.warn_destructive_commands && destructiveGitSeen(commands, cfg.destructive_patterns);
-    const sawCommitWithoutCachedDiff = cfg.require_cached_diff_before_commit && commitSeen(commands, cfg.commit_patterns) && !cachedDiffSeen(commands);
+    const sawCommit = commitSeen(commands, cfg.commit_patterns);
+    const sawCommitWithoutCachedDiff = cfg.require_cached_diff_before_commit && sawCommit && !cachedDiffSeen(commands);
     const needsStatusBlock = material && cfg.require_status_block;
-    // When there is no git repository and work was done, always nudge to initialize one.
-    // The materiality gate only applies when a git repo already exists.
-    const shouldNudge = !gitRoot && hasAnyWrites;
+    // When there is no git repository and work was done, always nudge to initialize one
+    // — but only when git is invokable and rev-parse genuinely failed, and no commit
+    // landed this session (commit activity proves a repo exists even when this hook's
+    // git view is broken). When no git binary is resolvable at all, nudge about the
+    // misconfiguration instead of advising `git init` on a repo we cannot see.
+    const shouldNudge = hasAnyWrites && (gitNotFound || (!gitRoot && !sawCommit));
     if (!shouldNudge && (!needsStatusBlock || hasStatusBlock) && hasVersionImpact && !sawBroadStaging && !sawDestructive && !sawCommitWithoutCachedDiff)
         return false;
     if (!tryConsumeNudgeSlot(sessionFile, "git_discipline_warnings", cfg.max_fires_per_session))
         return false;
-    const branch = gitRoot ? gitBranch(gitRoot) : "not-a-git-repo";
-    const statusLines = gitRoot ? gitStatusPorcelain(gitRoot) : [];
+    const branch = gitRoot ? gitBranch(gitBin, gitRoot) : (gitNotFound ? "git-not-found" : "not-a-git-repo");
+    const statusLines = gitRoot ? gitStatusPorcelain(gitBin, gitRoot) : [];
     const statusSummary = statusLines.length ? compactList(statusLines, 6) : "clean or unavailable";
     const missing = [];
-    if (!gitRoot)
+    if (gitNotFound)
+        missing.push("git not found on hook PATH — set openwolf.git_discipline.git_bin or add Git to the Claude Code process PATH");
+    else if (!gitRoot && !sawCommit)
         missing.push("initialize a git repo to track revisions");
-    if (needsStatusBlock && !hasStatusBlock)
+    if (!gitNotFound && needsStatusBlock && !hasStatusBlock)
         missing.push("git status/diff summary");
-    if (!hasVersionImpact)
+    if (!gitNotFound && !hasVersionImpact)
         missing.push("version/changelog/document revision impact");
     if (sawBroadStaging)
         missing.push("replace broad `git add .`/`git add -A` with path-specific staging");
@@ -811,9 +859,11 @@ function maybeNudgeGitDiscipline(wolfDir, session, sessionEntry, sessionFile, tr
         missing.push("confirm destructive Git operation or use a safer alternative");
     if (sawCommitWithoutCachedDiff)
         missing.push("inspect `git diff --cached` before committing");
-    const actionText = gitRoot
-        ? "Action: include a git/version status block (changed files, untracked/pre-existing state, verification, commit-readiness, version impact or why none).\n"
-        : "Action: run `git init` — revision tracking helps beyond code — then include the same git/version status block.\n";
+    const actionText = gitNotFound
+        ? "Action: git/version checks skipped until git is resolvable from the hook process.\n"
+        : (gitRoot || sawCommit)
+            ? "Action: include a git/version status block (changed files, untracked/pre-existing state, verification, commit-readiness, version impact or why none).\n"
+            : "Action: run `git init` — revision tracking helps beyond code — then include the same git/version status block.\n";
     emitStopHookFeedback(`🐺 Wolfpack git/version: ${missing.join("; ")}. Branch: ${branch}. Written: ${compactList(relWritten, 6)}. Git status: ${statusSummary}.\n${actionText}`);
     return true;
 }

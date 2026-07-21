@@ -55,6 +55,7 @@
 - [2026-07-18] Keep Wolfpack PM2 daemons and the dashboard disabled by default. Explicit dashboard startup must use managed PM2 lifecycle and HTTP health identity, never an unmanaged detached child or a bare TCP-port readiness check.
 - [2026-07-18] Project identity plus healthy status does not prove dashboard readiness: a background-only daemon exposes health while intentionally omitting UI routes. Health/readiness must also report and require `dashboard_enabled: true` before `openwolf dashboard` takes its reuse fast path.
 - [2026-07-19] Absence of evidence in the channels you checked is not evidence of absence. The original bug-434 forensics enumerated only `type:"user"` transcript entries and concluded mid-turn messages were silently discarded; the client actually delivers them as `{type:"attachment", attachment:{type:"queued_command"}}` entries. Before concluding loss, enumerate ALL entry types the channel can emit. (bug-434, reduction: .wolf/qa/queue-drop-watchdog.md)
+- [2026-07-21] Hooks must never treat "tool not found" as "check failed": bare `execFileSync("git", ...)` PATH lookups fail on Windows when Claude Code inherits a stale-shell PATH, and ENOENT conflated with rev-parse failure made the git gate advise `git init` on real repos (bug-437). Resolve binaries robustly (env/config override → PATH → well-known install locations) and keep tool-missing, check-failed, and check-passed as distinct states with distinct advice.
 
 ## Decision Log
 
