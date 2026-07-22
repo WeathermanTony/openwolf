@@ -2854,7 +2854,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-21T21:38:50.279Z",
-      "commit": "3eb01aa",
+      "commit": "291ef62",
       "reduction": null,
       "status": "resolved"
     },
@@ -2991,6 +2991,46 @@
       "last_seen": "2026-07-22T03:38:40.966Z",
       "commit": null,
       "reduction": ".wolf/qa/feedback-harness-improvements.md (companion review round: init with template absent wrote 647-byte policy file)"
+    },
+    {
+      "id": "bug-444",
+      "timestamp": "2026-07-22T03:47:02.855Z",
+      "error_message": "Type error",
+      "file": "src/cli/update.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T03:47:02.855Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-439",
+      "timestamp": "2026-07-22T03:51:22.635Z",
+      "error_message": "openwolf update silently skipped .wolf/.gitignore propagation when the .gitignore template file was missing from the install layout, leaving fleet projects on stale buglog-ignoring policy (companion review round 2, MEDIUM)",
+      "file": "src/cli/update.ts",
+      "root_cause": "update.ts ALWAYS_OVERWRITE loop copies only when the template file exists and had no fallback branch, unlike init.ts which routes missing templates through generateTemplate. Asymmetric failure handling meant the new nested ignore policy would propagate via init but never via update in a broken packaging layout.",
+      "fix": "Exported generateTemplate from init.ts and call it as the fallback for .gitignore in update.ts when the template file is absent, so update writes the same embedded 25-pattern policy.",
+      "status": "resolved",
+      "tags": [
+        "update",
+        "templates",
+        "gitignore",
+        "companion-review"
+      ],
+      "related_bugs": [
+        "bug-438"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T03:51:22.636Z",
+      "commit": null,
+      "reduction": ".wolf/qa/feedback-harness-improvements.md (round 2/3: fixture project with stale policy + template absent -> update wrote 647-byte embedded policy, buglog.json no longer ignored)"
     }
   ]
 }

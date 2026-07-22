@@ -11,7 +11,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getRegisteredProjects, registerProject, type RegisteredProject } from "./registry.js";
-import { applyReviewerProfile, migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from "./init.js";
+import { applyReviewerProfile, generateTemplate, migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from "./init.js";
 import { cleanupOpenWolfPm2, listPm2Processes } from "./daemon-cmd.js";
 import { readJSON, writeJSON, readText, writeText, safeCopyFile } from "../utils/fs-safe.js";
 import { ensureDir } from "../utils/paths.js";
@@ -219,6 +219,11 @@ async function updateProject(
       const destPath = path.join(wolfDir, file);
       if (fs.existsSync(srcPath)) {
         safeCopyFile(srcPath, destPath);
+      } else if (file === ".gitignore") {
+        // Missing-template packaging layout: fall back to the embedded policy
+        // (same as init) instead of silently leaving a stale .wolf/.gitignore
+        // that may still ignore durable knowledge like buglog.json.
+        generateTemplate(destPath, file);
       }
     }
     console.log(`    ✓ Templates updated (${ALWAYS_OVERWRITE.join(", ")})`);

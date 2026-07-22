@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T03:35:58.470Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T03:47:21.921Z
 > Files: 157 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
@@ -48,14 +48,14 @@
 - `dashboard.ts` — Exports isExpectedDashboardHealth, dashboardCommand (~1171 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `index.ts` — Exports createProgram (~2267 tok)
-- `init.ts` — Exports initCommand (~10513 tok)
+- `init.ts` — Exports initCommand (~10515 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~852 tok)
 - `review-cmd.ts` — Exports reviewList, reviewShow, reviewHash, reviewComplete (~1646 tok)
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1298 tok)
 - `trace-cmd.ts` — Exports traceCommand (~887 tok)
-- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6527 tok)
+- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6621 tok)
 
 ## src/config/
 
