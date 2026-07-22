@@ -2932,7 +2932,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-22T03:09:40.403Z",
-      "commit": null,
+      "commit": "737378c",
       "reduction": null,
       "status": "resolved"
     },
@@ -3050,6 +3050,82 @@
       "last_seen": "2026-07-22T03:57:16.826Z",
       "commit": null,
       "reduction": "2026-07-21 session: registered a fixture with {name, path} instead of {name, root}; updateCommand crashed at dist/src/cli/update.js:68 before processing any project"
+    },
+    {
+      "id": "bug-445",
+      "timestamp": "2026-07-22T04:10:36.288Z",
+      "error_message": "Missing error handling in maybeNudgeReview",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T04:10:36.288Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-446",
+      "timestamp": "2026-07-22T04:13:01.603Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Had '\\/.*auth\\/feature\\.js'",
+      "fix": "Changed to 'auth\\/feature\\.js'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-22T04:13:15.006Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-447",
+      "timestamp": "2026-07-22T04:14:03.086Z",
+      "error_message": "Missing await",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T04:14:03.086Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-441",
+      "timestamp": "2026-07-22T04:15:54.811Z",
+      "error_message": "review nudge reports ~76 lines changed on a 1-line comment edit; small follow-up edits spawn fresh review rounds (Grok feedback: over-sensitivity)",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "maybeNudgeReview computed approxLines from sessionEntry.totals.output_tokens_estimated, which is session-CUMULATIVE. Once cumulative output crossed min_diff_lines, every later stop with writes re-triggered the size gate and attributed all prior work to the new edit.",
+      "fix": "Session-baseline delta: each review entry records covered_tokens = session output already under a review obligation; the size trigger uses (cumulative - max covered_tokens for this session)/17, so only genuinely new work counts. Also compressed the nudge with project-relative paths (986 -> 768 chars measured).",
+      "status": "resolved",
+      "tags": [
+        "stop-hook",
+        "review",
+        "token-discipline",
+        "grok-feedback"
+      ],
+      "related_bugs": [
+        "bug-436"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T04:15:54.811Z",
+      "commit": null,
+      "reduction": ".wolf/qa/review-baseline-delta.md"
     }
   ]
 }

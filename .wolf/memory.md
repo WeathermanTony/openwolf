@@ -433,3 +433,11 @@
 | 23:47 | Edited src/cli/update.ts | inline fix | ~42 |
 | 23:56 | custom.12 fleet deploy: 80/80 verified, review-0069 completed, bug-438/439 logged | VERSION, registry, fleet .wolf | fleet green | ~20k |
 | 23:57 | Session end: 20 writes across 7 files (stop.ts, .gitignore, update.ts, init.ts, review-completion.test.js) | 6 reads | ~68753 tok |
+| 23:58 | Session end: 20 writes across 7 files (stop.ts, .gitignore, update.ts, init.ts, review-completion.test.js) | 6 reads | ~68753 tok |
+| 00:10 | Edited src/hooks/stop.ts | added error handling | ~707 |
+| 00:12 | Edited src/hooks/stop.ts | 5→4 lines | ~82 |
+| 00:13 | Edited tests/review-completion.test.js | 2→2 lines | ~34 |
+| 00:13 | Edited tests/review-completion.test.js | 2→2 lines | ~42 |
+| 00:14 | Edited tests/review-completion.test.js | modified reviewBaselineFixture() | ~999 |
+| 00:17 | Edited src/hooks/stop.ts | added 1 condition(s) | ~255 |
+| 00:25 | Grok feedback: bug-441 baseline delta + relative paths in review nudge; 986→768 chars; companion 2x CLEAN | stop.ts, tests | 59/59 green | ~15k |

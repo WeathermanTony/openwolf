@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T03:47:21.921Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T04:17:18.181Z
 > Files: 157 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
@@ -141,7 +141,7 @@
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~17922 tok)
 - `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~18130 tok)
 - `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~26726 tok)
-- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~29631 tok)
+- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~30336 tok)
 
 ## src/scanner/
 
@@ -250,5 +250,5 @@
 - `qa-cmd.test.js` — sha256: fixture (~656 tok)
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
-- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~12410 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~13368 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)

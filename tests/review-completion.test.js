@@ -564,6 +564,75 @@ test('stop hook simplicity nudge omits the lens hint when edit counts are low', 
   }
 });
 
+async function reviewBaselineFixture({ sessionTokens, coveredTokens }) {
+  // Fixture for bug-441: a completed review from THIS session already covers
+  // coveredTokens of output; only (sessionTokens - coveredTokens) is new work.
+  const base = await mkdtemp(path.join(homedir(), 'ow-review-baseline-'));
+  const dir = base;
+  await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+  const target = path.join(base, 'src', 'feature.ts');
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, 'export const x = 1;\n');
+  await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: {
+    review_hook: { enabled: true, min_diff_lines: 40, nudge_only: true },
+    quality_gate: { enabled: false },
+    claim_calibration: { enabled: false },
+    autonomy_continuation: { enabled: false },
+    git_discipline: { enabled: false },
+    simplicity: { enabled: false },
+  } }, null, 2));
+  await writeFile(path.join(dir, '.wolf', 'reviewlog.json'), JSON.stringify({ version: 1, reviews: [{
+    id: 'review-0001',
+    session_id: 'sess-baseline',
+    status: 'completed',
+    files: [target],
+    covered_tokens: coveredTokens,
+    content_hashes: {},
+  }] }, null, 2));
+  await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+    session_id: 'sess-baseline',
+    started: '2099-06-13T17:00:00.000Z',
+    files_read: {},
+    files_written: [{ file: target, at: '2099-06-13T17:00:00.000Z', tokens: sessionTokens, action: 'edit' }],
+    edit_counts: { [target]: 1 },
+    anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+    cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+  }, null, 2));
+  const transcript = path.join(dir, 'transcript.jsonl');
+  await writeFile(transcript, assistantTranscript('Done.'));
+  return { dir, transcript, target };
+}
+
+test('stop hook review trigger measures new work since last review, not session-cumulative output', async () => {
+  // 1040 cumulative tokens with 1000 already covered → ~2 new lines < 40:
+  // the 1-line-comment-edit case from the Grok feedback must NOT spawn a review.
+  const { dir, transcript } = await reviewBaselineFixture({ sessionTokens: 1040, coveredTokens: 1000 });
+  try {
+    const result = runStopHook(dir, transcript, 'sess-baseline');
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(result.stdout, /Wolfpack review/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('stop hook review nudge fires on new-work delta and records covered_tokens', async () => {
+  // 2000 cumulative with 1000 covered → 1000 new tokens ≈ 59 lines ≥ 40 → fires.
+  const { dir, transcript } = await reviewBaselineFixture({ sessionTokens: 2000, coveredTokens: 1000 });
+  try {
+    const result = runStopHook(dir, transcript, 'sess-baseline');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Wolfpack review/);
+    assert.match(result.stdout, /~59 new lines since last review/);
+    const log = JSON.parse(await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8'));
+    const pending = log.reviews.find(r => r.status === 'pending');
+    assert.ok(pending, 'a new pending review should exist');
+    assert.equal(pending.covered_tokens, 2000, 'pending covers all session output so far');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('stop hook review nudge excludes Windows scratchpad and Temp paths', async () => {
   // Fixture must live outside /tmp — **/tmp/** would otherwise exclude every
   // path vacuously and prove nothing about the Windows patterns.
@@ -836,7 +905,7 @@ test('stop hook emits bounded companion guidance for every verbosity and reviewe
       assert.equal(result.status, 0, result.stderr);
       const text = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
       assert.match(text, /provider companion review --file/);
-      assert.match(text, /--file '\/.*auth\/feature\.js'/);
+      assert.match(text, /--file 'auth\/feature\.js'/);
       assert.match(text, /\[--diff <patch>\]/);
       assert.match(text, contractPattern);
       assert.match(text, profilePattern);
@@ -877,8 +946,8 @@ test('stop hook shell-quotes companion file arguments', async () => {
     const result = runStopHook(dir, transcript, 'sess-shell-quote');
     assert.equal(result.status, 0, result.stderr);
     const text = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
-    assert.match(text, /--file '\/.*\$\(touch ow-review-pwn\)'"'"'s\.js'/);
-    assert.match(text, /node '\/.*project \$\(touch helper-pwn\) '"'"'quoted'"'"'\/\.wolf\/hooks\/complete-review\.js'/);
+    assert.match(text, /--file 'auth\/\$\(touch ow-review-pwn\)'"'"'s\.js'/);
+    assert.match(text, /node '\.wolf\/hooks\/complete-review\.js'/);
   } finally {
     await rm(fixtureRoot, { recursive: true, force: true });
   }

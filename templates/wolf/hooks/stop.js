@@ -915,7 +915,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
         return false;
     // Approximate lines-changed from output-token estimate: code averages
     // ~3.5 chars/token, ~60 chars/line → ~17 tokens/line.
-    const approxLines = Math.round(sessionEntry.totals.output_tokens_estimated / 17);
+    const cumulativeTokens = sessionEntry.totals.output_tokens_estimated;
     const allWrittenFiles = [...new Set(sessionEntry.writes.map(w => w.file))];
     // Filter out scratch/driver/test files: editing a one-off falsifier under
     // /tmp/ or a *.test.ts spec isn't a production-review obligation. Without
@@ -924,12 +924,32 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const writtenFiles = allWrittenFiles.filter(f => !excludeRegexes.some(re => re.test(f)));
     if (writtenFiles.length === 0)
         return false;
+    const reviewLogPath = path.join(wolfDir, "reviewlog.json");
+    // Session-baseline delta (bug-441): approxLines is session-CUMULATIVE, so a
+    // 1-line comment edit late in a busy session reported "~76 lines changed"
+    // and spawned a fresh review round for work already covered by a completed
+    // review (Grok feedback 2026-07-22). Each review entry records
+    // covered_tokens = session output already under a review obligation; only
+    // output beyond the max covered value counts toward the size trigger.
+    let coveredTokens = 0;
+    try {
+        const priorLog = readJSON(reviewLogPath, { version: 1, reviews: [] });
+        if (Array.isArray(priorLog.reviews)) {
+            for (const r of priorLog.reviews) {
+                if (r && r.session_id && r.session_id === session.session_id
+                    && typeof r.covered_tokens === "number" && r.covered_tokens > coveredTokens) {
+                    coveredTokens = r.covered_tokens;
+                }
+            }
+        }
+    }
+    catch { /* advisory baseline read; 0 keeps legacy cumulative behavior */ }
+    const effectiveLines = Math.max(0, Math.round((cumulativeTokens - coveredTokens) / 17));
     const pathRegexes = reviewCfg.always_review_paths.map(globToRegex);
     const matchedPaths = writtenFiles.filter(f => pathRegexes.some(re => re.test(f)));
-    const sizeTrigger = approxLines >= reviewCfg.min_diff_lines;
+    const sizeTrigger = effectiveLines >= reviewCfg.min_diff_lines;
     const pathTrigger = matchedPaths.length > 0;
     if (!sizeTrigger && !pathTrigger) {
-        const reviewLogPath = path.join(wolfDir, "reviewlog.json");
         const releaseReviewLock = acquireFileLock(reviewLogPath);
         if (!releaseReviewLock)
             return false;
@@ -946,7 +966,14 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 return false;
             const currentHashes = hashFilesAtRest(writtenFiles);
             pending.ended = sessionEntry.ended;
-            pending.approx_lines_changed = Math.max(pending.approx_lines_changed ?? 0, approxLines);
+            pending.approx_lines_changed = Math.max(pending.approx_lines_changed ?? 0, effectiveLines);
+            // Only advance the baseline on a SAME-session pending. A cross-session
+            // pending's covered_tokens belongs to that session's token counter;
+            // writing this session's (larger) cumulative would poison the other
+            // session's baseline and permanently suppress its size trigger.
+            if (pending.session_id && pending.session_id === session.session_id) {
+                pending.covered_tokens = Math.max(pending.covered_tokens ?? 0, cumulativeTokens);
+            }
             pending.files = [...new Set([...(pending.files ?? []), ...writtenFiles])];
             pending.reason = "follow-up edit below review threshold";
             setReviewCurrentByteReceipt(pending, pending.files, {
@@ -966,7 +993,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             }
             writeJSON(reviewLogPath, reviewLog);
             if (refreshNudge)
-                emitStopHookFeedback(`🔄 Wolfpack review refresh [${pending.id}]: refreshed pending review hashes for ${Object.keys(currentHashes).length} file(s). Review log: ${reviewLogPath}\n`);
+                emitStopHookFeedback(`🔄 Wolfpack review refresh [${pending.id}]: refreshed pending review hashes for ${Object.keys(currentHashes).length} file(s). Review log: .wolf/reviewlog.json\n`);
         }
         finally {
             releaseReviewLock();
@@ -976,14 +1003,13 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const trigger = sizeTrigger && pathTrigger ? "size+path" : sizeTrigger ? "size" : "path";
     const reasonParts = [];
     if (sizeTrigger)
-        reasonParts.push(`~${approxLines} lines changed (threshold ${reviewCfg.min_diff_lines})`);
+        reasonParts.push(`~${effectiveLines} new lines since last review (threshold ${reviewCfg.min_diff_lines})`);
     if (pathTrigger)
         reasonParts.push(`sensitive path(s): ${matchedPaths.slice(0, 3).join(", ")}`);
     const reason = reasonParts.join("; ");
     // Append to reviewlog.json under a file lock so concurrent stop hooks
     // (possible if Claude Code dispatches them in parallel) cannot lose updates.
     // Coalesce with any existing pending entry for the same session_id.
-    const reviewLogPath = path.join(wolfDir, "reviewlog.json");
     const releaseReviewLock = acquireFileLock(reviewLogPath);
     if (!releaseReviewLock) {
         // Couldn't acquire lock — skip the nudge entirely. Emitting a nudge
@@ -1132,7 +1158,8 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             // v1 → false-positive coalesce skips a never-reviewed state). See
             // Codex round-final finding #1.
             existingPending.ended = sessionEntry.ended;
-            existingPending.approx_lines_changed = Math.max(existingPending.approx_lines_changed, approxLines);
+            existingPending.approx_lines_changed = Math.max(existingPending.approx_lines_changed, effectiveLines);
+            existingPending.covered_tokens = Math.max(existingPending.covered_tokens ?? 0, cumulativeTokens);
             existingPending.files = [...new Set([...existingPending.files, ...writtenFiles])];
             existingPending.reason = reason;
             existingPending.trigger = trigger;
@@ -1175,7 +1202,8 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 session_id: session.session_id,
                 ended: sessionEntry.ended,
                 files: writtenFiles,
-                approx_lines_changed: approxLines,
+                approx_lines_changed: effectiveLines,
+                covered_tokens: cumulativeTokens,
                 reason,
                 status: "pending",
                 trigger,
@@ -1266,13 +1294,24 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     if (reviewCfg.nudge_only) {
         const msgCfg = getHookMessageConfig();
         const repeat = nudgeCountForState > 1 ? `${nudgeCountForState}/${Math.max(1, reviewCfg.nudge_cap || 3)} for same file state` : "";
-        const reviewHelper = shellQuote(path.join(wolfDir, "hooks", "complete-review.js"));
+        // Project-relative paths keep the nudge short (absolute paths made the
+        // review nudge the longest remaining block after terse consolidation).
+        // The companion and complete-review both resolve relative paths from
+        // the invocation cwd — the model's natural cwd is the project root,
+        // and a wrong cwd fails loudly (file-not-found), never silently.
+        const projectRoot = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+        const toDisplay = (f) => {
+            const rel = path.relative(projectRoot, f);
+            return rel && !rel.startsWith("..") && !path.isAbsolute(rel) ? rel : f;
+        };
+        const relFiles = writtenFiles.map(toDisplay);
+        const reviewHelper = shellQuote(toDisplay(path.join(wolfDir, "hooks", "complete-review.js")));
         const completeCommand = `node ${reviewHelper} ${nextId} --reviewed-current --reviewer <name> --summary '<outcome>'`;
         const refreshCommand = `node ${reviewHelper} ${nextId} --refresh`;
         emitStopHookFeedback(formatReviewNudge({
             id: nextId,
             reason,
-            files: writtenFiles,
+            files: relFiles,
             repeat,
             reviewLogPath,
             completeCommand,
