@@ -111,6 +111,53 @@ test('complete-review completes pending review when stored hashes match current 
   }
 });
 
+function runCheck(dir, id = 'review-0001') {
+  // --check must work WITHOUT --reviewer/--summary (read-only dry run).
+  return spawnSync(process.execPath, [helper, id, '--check'], {
+    cwd: dir,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+    encoding: 'utf8',
+  });
+}
+
+test('complete-review --check reports CURRENT and mutates nothing when hashes match', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'const answer = 42;\n');
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'pending', files: [file], content_hashes: { [file]: sha256('const answer = 42;\n') } }]);
+
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    const result = runCheck(dir);
+    assert.equal(result.status, 0, `stdout=${result.stdout} stderr=${result.stderr}`);
+    assert.match(result.stdout, /CURRENT/);
+    assert.doesNotMatch(result.stdout, /STALE/);
+    const after = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    assert.equal(after, before, '--check must not mutate the review log');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review --check reports STALE with exit 4 when bytes drifted', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'const answer = 42;\n');
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'pending', files: [file], content_hashes: { [file]: sha256('const answer = 42;\n') } }]);
+    // Drift the file after the pending review was recorded.
+    await writeFile(file, 'const answer = 43;\n');
+
+    const result = runCheck(dir);
+    assert.equal(result.status, 4, `stdout=${result.stdout} stderr=${result.stderr}`);
+    assert.match(result.stdout, /STALE/);
+    const review = (await readReviewLog(dir)).reviews[0];
+    assert.equal(review.status, 'pending', '--check must leave the review pending');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 
 
 test('complete-review records reviewed-hash provenance when manifest hash matches', async () => {
@@ -434,6 +481,88 @@ async function stopHookReviewFixture(files) {
   await writeFile(transcript, assistantTranscript('Done.'));
   return { dir, transcript };
 }
+
+test('stop hook simplicity nudge names the most-edited file when it is notable', async () => {
+  // Simplicity enabled (default 2500-token threshold), all actionable gates
+  // disabled so advisory suppression doesn't apply. files_written sums to
+  // 2700 tokens; one file has 6 edits → the lens hint must name it.
+  const base = await mkdtemp(path.join(homedir(), 'ow-simplicity-lens-'));
+  try {
+    const dir = base;
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    const hot = path.join(base, 'src', 'hot.py');
+    const others = [path.join(base, 'src', 'a.py'), path.join(base, 'src', 'b.py')];
+    for (const f of [hot, ...others]) {
+      await mkdir(path.dirname(f), { recursive: true });
+      await writeFile(f, 'x\n');
+    }
+    await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: {
+      review_hook: { enabled: false },
+      quality_gate: { enabled: false },
+      claim_calibration: { enabled: false },
+      autonomy_continuation: { enabled: false },
+      git_discipline: { enabled: false },
+      simplicity: { enabled: true },
+    } }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+      session_id: 'sess-simplicity-lens',
+      started: '2099-06-13T17:00:00.000Z',
+      files_read: {},
+      files_written: [hot, ...others].map(file => ({ file, at: '2099-06-13T17:00:00.000Z', tokens: 900, action: 'edit' })),
+      edit_counts: { [hot]: 6, [others[0]]: 1, [others[1]]: 1 },
+      anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+      cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+    }, null, 2));
+    const transcript = path.join(dir, 'transcript.jsonl');
+    await writeFile(transcript, assistantTranscript('Done.'));
+
+    const result = runStopHook(dir, transcript, 'sess-simplicity-lens');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Wolfpack simplicity/);
+    assert.match(result.stdout, /Most-edited: .*hot\.py \(6 edits/);
+  } finally {
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
+test('stop hook simplicity nudge omits the lens hint when edit counts are low', async () => {
+  const base = await mkdtemp(path.join(homedir(), 'ow-simplicity-lens-'));
+  try {
+    const dir = base;
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    const files = [path.join(base, 'src', 'a.py'), path.join(base, 'src', 'b.py'), path.join(base, 'src', 'c.py')];
+    for (const f of files) {
+      await mkdir(path.dirname(f), { recursive: true });
+      await writeFile(f, 'x\n');
+    }
+    await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: {
+      review_hook: { enabled: false },
+      quality_gate: { enabled: false },
+      claim_calibration: { enabled: false },
+      autonomy_continuation: { enabled: false },
+      git_discipline: { enabled: false },
+      simplicity: { enabled: true },
+    } }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+      session_id: 'sess-simplicity-plain',
+      started: '2099-06-13T17:00:00.000Z',
+      files_read: {},
+      files_written: files.map(file => ({ file, at: '2099-06-13T17:00:00.000Z', tokens: 900, action: 'edit' })),
+      edit_counts: Object.fromEntries(files.map(file => [file, 1])),
+      anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+      cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+    }, null, 2));
+    const transcript = path.join(dir, 'transcript.jsonl');
+    await writeFile(transcript, assistantTranscript('Done.'));
+
+    const result = runStopHook(dir, transcript, 'sess-simplicity-plain');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Wolfpack simplicity/);
+    assert.doesNotMatch(result.stdout, /Most-edited:/);
+  } finally {
+    await rm(base, { recursive: true, force: true });
+  }
+});
 
 test('stop hook review nudge excludes Windows scratchpad and Temp paths', async () => {
   // Fixture must live outside /tmp — **/tmp/** would otherwise exclude every

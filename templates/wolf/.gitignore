@@ -1,0 +1,43 @@
+# Wolfpack-managed ignore policy for .wolf/ runtime state.
+# Durable knowledge stays trackable: OPENWOLF.md, cerebrum.md, memory.md,
+# anatomy.md, identity.md, config.json, buglog.json, qa/_README.md,
+# qa/_template.md. Everything below is churn/state — safe to ignore.
+
+# logs
+*.log
+**/*.log
+
+# daemon / cron / scheduler state
+*-state.json
+**/*-state.json
+cron-state.json
+cron-manifest.json
+token-ledger.json
+cerebrum-stats.json
+suggestions.json
+
+# review lifecycle state (receipts live in companion output; log is churn)
+reviewlog.json
+
+# design QC captures and reports
+designqc-report.json
+designqc-captures/
+
+# lock files
+*.lock
+*.lock.reclaim
+**/*.lock
+**/*.lock.reclaim
+
+# session + gate internals
+hooks/_session.json
+qa/_gate-log.json
+qa/*.md
+!qa/_README.md
+!qa/_template.md
+
+# backups + queue-watch dedup stores
+backups/
+queue-drops.json
+queue-injections.json
+archive/

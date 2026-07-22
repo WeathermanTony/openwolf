@@ -36,8 +36,7 @@ pnpm-debug.log*
 .wolf/**/suggestions.json
 .wolf/reviewlog.json
 .wolf/**/reviewlog.json
-.wolf/buglog.json
-.wolf/**/buglog.json
+# buglog.json is durable knowledge — tracked on purpose (do NOT ignore it)
 .wolf/designqc-report.json
 .wolf/**/designqc-report.json
 .wolf/designqc-captures/

@@ -30,7 +30,7 @@ function getVersion(): string {
 }
 
 // Files that are safe to overwrite (protocol/config)
-const ALWAYS_OVERWRITE = ["OPENWOLF.md", "PROTOCOL-UPGRADE-2026-06.md", "reframe-frameworks.md"];
+const ALWAYS_OVERWRITE = ["OPENWOLF.md", "PROTOCOL-UPGRADE-2026-06.md", "reframe-frameworks.md", ".gitignore"];
 const CREATE_IF_MISSING = ["config.json"];
 
 // Files that contain user data — NEVER overwrite, only create if missing

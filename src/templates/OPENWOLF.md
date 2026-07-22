@@ -102,6 +102,7 @@ Wolfpack's value comes from learning across sessions. You MUST update `.wolf/cer
   "file": "file that was fixed",
   "root_cause": "why it broke",
   "fix": "what you changed to fix it",
+  "status": "open | resolved",
   "tags": ["relevant", "keywords"],
   "related_bugs": [],
   "occurrences": 1,
@@ -110,6 +111,8 @@ Wolfpack's value comes from learning across sessions. You MUST update `.wolf/cer
   "reduction": ".wolf/qa/<proof>.md or command/test transcript"
 }
 ```
+
+`status` is `open` while the bug is being investigated and `resolved` once a fix is verified (commit + reduction linked). Mark it `resolved` at the same time you backfill `commit`.
 
 **The threshold is LOW.** When in doubt, log it. A false positive in the bug log costs nothing. A missed bug means repeating the same mistake later.
 
@@ -137,7 +140,7 @@ The quality gate exists because AI-written code routinely ships with **unexamine
 
 1. **Name ≥3 concrete assumptions** the code is making (default `min_assumptions: 3`). Vague claims like "input is valid" don't count — write the specific shape, type, range, or invariant.
 2. **Reduce one assumption to a runnable test** that would *falsify* it if wrong, and **paste the actual run output** (default `require_run_output: true`).
-3. **Set frontmatter `target-hash: <sha256 of the file at reduction time>`** so the gate knows the reduction is current for this version of the code.
+3. **Set frontmatter `target-hash: <sha256 of the file at reduction time>`** so the gate knows the reduction is current for this version of the code, and **`reproduction_command:`** with the exact one-liner that produces the run output, so future sessions can re-run the falsifier directly.
 
 **Soft mode (default):** the Stop hook nudges via stderr when an edited code file lacks a current reduction; it never blocks. The nudge enters the next-turn context so you see it and can respond. Each decision is logged to `.wolf/qa/_gate-log.json` (retention-trimmed into `.wolf/archive/`).
 

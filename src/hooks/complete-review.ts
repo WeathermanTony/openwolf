@@ -7,12 +7,13 @@ import { acquireFileLock } from "../utils/size-discipline.js";
 function usage() {
     console.error('Usage: node .wolf/hooks/complete-review.js review-NNNN [--reviewer <name>] [--summary <text>]');
     console.error('       node .wolf/hooks/complete-review.js review-NNNN --refresh');
+    console.error('       node .wolf/hooks/complete-review.js review-NNNN --check   (read-only: do stored hashes match current bytes?)');
     console.error('       node .wolf/hooks/complete-review.js review-NNNN --reviewed-current --reviewer <name> --summary <text>');
     console.error('       node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --reviewed-hash <wolfpack-manifest-hash> --summary <text>');
 }
 
 function parseArgs(argv) {
-    const out = { id: "", reviewer: "manual", summary: "", refresh: false, reviewedCurrent: false, reviewedHash: "" };
+    const out = { id: "", reviewer: "manual", summary: "", refresh: false, reviewedCurrent: false, reviewedHash: "", check: false };
     const args = [...argv];
     if (args.includes("--help") || args.includes("-h")) {
         usage();
@@ -29,6 +30,9 @@ function parseArgs(argv) {
         }
         else if (arg === "--refresh") {
             out.refresh = true;
+        }
+        else if (arg === "--check") {
+            out.check = true;
         }
         else if (arg === "--reviewed-current") {
             out.reviewedCurrent = true;
@@ -71,12 +75,12 @@ function fail(message, code = EXIT_GENERIC) {
     process.exit(code);
 }
 
-const { id, reviewer, summary, refresh, reviewedCurrent, reviewedHash } = parseArgs(process.argv.slice(2));
+const { id, reviewer, summary, refresh, reviewedCurrent, reviewedHash, check } = parseArgs(process.argv.slice(2));
 if (!/^review-\d+$/.test(id)) {
     usage();
     fail("review id must look like review-0001", EXIT_USAGE);
 }
-if (!refresh && (!reviewer || reviewer.trim().length === 0)) {
+if (!refresh && !check && (!reviewer || reviewer.trim().length === 0)) {
     fail("--reviewer must not be empty", EXIT_USAGE);
 }
 if (refresh && reviewedHash) {
@@ -191,6 +195,20 @@ try {
         fail(`refusing to complete ${id}; unreadable review file(s): ${unreadableFiles.join(", ")}`, EXIT_UNREADABLE);
     }
 
+    if (check) {
+        // Read-only drift report: do stored (reviewed/refreshed) hashes match
+        // current bytes? Exit 0 = current, EXIT_HASH_DRIFT = stale. No mutation.
+        const stored = reviewHashes || {};
+        const rows = review.files.map((file) => {
+            const kind = classifyDrift(file, stored[file], contentHashes[file]);
+            return `  ${kind} ${file} stored=${String(stored[file]).slice(0, 16)} current=${String(contentHashes[file]).slice(0, 16)}`;
+        });
+        const stale = review.files.some((file) => stored[file] !== contentHashes[file]);
+        console.log(`OpenWolf ${id}: ${stale ? "STALE — current bytes differ from stored hashes; refresh + re-review before completing" : "CURRENT — stored hashes match current bytes"}.`);
+        for (const row of rows)
+            console.log(row);
+        process.exit(stale ? EXIT_HASH_DRIFT : 0);
+    }
     if (refresh) {
         setReviewCurrentByteReceipt(review, review.files, contentHashes);
         review.refreshed_at = new Date().toISOString();

@@ -2,6 +2,7 @@
 target: <relative path to the file this reduction is about>
 target-hash: <sha256 of the target file — `sha256sum <file> | awk '{print $1}'`>
 created: YYYY-MM-DD
+reproduction_command: <one-liner someone else can run to reproduce the falsifier, e.g. `node --test tests/foo.test.js`>
 ---
 
 # <short title>
@@ -40,7 +41,7 @@ or
 
 ## Run output
 
-Paste the **actual** output here. Not a description of what should happen — what did happen.
+Paste the **actual** output here. Not a description of what should happen — what did happen. The `reproduction_command` in the frontmatter should be the exact command that produced this output, so a future session can re-run it without reverse-engineering the reduction.
 
 ```
 <paste real output>

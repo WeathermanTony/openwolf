@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-21T21:45:41.413Z
-> Files: 155 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T03:35:58.470Z
+> Files: 157 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
@@ -10,7 +10,7 @@
 ## ./
 
 - `.editorconfig` — Editor configuration (~51 tok)
-- `.gitignore` — Git ignore rules (~252 tok)
+- `.gitignore` — Git ignore rules (~295 tok)
 - `CLAUDE.md` — Wolfpack (~74 tok)
 - `package-lock.json` — npm lock file (~69275 tok)
 - `package.json` — Node.js package manifest (~577 tok)
@@ -32,7 +32,7 @@
 
 ## scripts/
 
-- `verify-install.js` — root: rel, fileExists, parseJson + 10 more (~5035 tok)
+- `verify-install.js` — root: rel, fileExists, parseJson + 10 more (~5051 tok)
 
 ## src/buglog/
 
@@ -48,14 +48,14 @@
 - `dashboard.ts` — Exports isExpectedDashboardHealth, dashboardCommand (~1171 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `index.ts` — Exports createProgram (~2267 tok)
-- `init.ts` — Exports initCommand (~10228 tok)
+- `init.ts` — Exports initCommand (~10513 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~852 tok)
 - `review-cmd.ts` — Exports reviewList, reviewShow, reviewHash, reviewComplete (~1646 tok)
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1298 tok)
 - `trace-cmd.ts` — Exports traceCommand (~887 tok)
-- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6523 tok)
+- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6527 tok)
 
 ## src/config/
 
@@ -141,7 +141,7 @@
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~17922 tok)
 - `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~18130 tok)
 - `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~26726 tok)
-- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~29268 tok)
+- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~29631 tok)
 
 ## src/scanner/
 
@@ -151,6 +151,7 @@
 
 ## src/templates/
 
+- `.gitignore` — Git ignore rules (~234 tok)
 - `anatomy.md` — anatomy.md (~54 tok)
 - `buglog.json` (~10 tok)
 - `cerebrum.md` — Cerebrum (~164 tok)
@@ -206,6 +207,7 @@
 
 ## templates/wolf/
 
+- `.gitignore` — nested .wolf ignore policy: churn ignored, buglog/durable docs trackable (~120 tok)
 - `anatomy.md` — anatomy.md (~54 tok)
 - `cerebrum.md` — Cerebrum (~164 tok)
 - `config.json` (~1876 tok)
@@ -248,5 +250,5 @@
 - `qa-cmd.test.js` — sha256: fixture (~656 tok)
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
-- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 6 more (~10690 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~12410 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)

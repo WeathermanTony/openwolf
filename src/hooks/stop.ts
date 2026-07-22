@@ -876,7 +876,33 @@ function maybeNudgeSimplicity(wolfDir, session, sessionEntry, sessionFile) {
         return false;
     if (!tryConsumeNudgeSlot(sessionFile, "simplicity_warnings", cfg.max_fires_per_session))
         return false;
-    emitStopHookFeedback(`🐺 Wolfpack simplicity: ${outputTokens} output tokens this session — check YAGNI, readability, efficiency; simplify if any fall short.\n`);
+    // Targeted lens: raw volume alone is a weak signal; point at the concrete
+    // artifact most likely to carry the bloat (highest edit count this
+    // session, skipping scratch/test files) so the check starts somewhere.
+    let hint = "";
+    const editCounts = session.edit_counts && typeof session.edit_counts === "object" && !Array.isArray(session.edit_counts)
+        ? session.edit_counts
+        : {};
+    const lensExcludeRegexes = getQualityGateConfig().buglog_scan_excludes.map(globToRegex);
+    let bestFile = "", bestN = 0;
+    for (const [file, count] of Object.entries(editCounts)) {
+        if (typeof count === "number" && count > bestN && !lensExcludeRegexes.some(re => re.test(file))) {
+            bestN = count;
+            bestFile = file;
+        }
+    }
+    if (bestFile && bestN >= 3) {
+        let kb = 0;
+        try {
+            kb = Math.round(fs.statSync(bestFile).size / 1024);
+        }
+        catch { /* file may have been deleted or renamed mid-session */ }
+        if (bestN >= 5 || kb >= 8) {
+            const display = path.relative(process.cwd(), bestFile) || path.basename(bestFile);
+            hint = ` Most-edited: ${display} (${bestN} edits${kb ? `, ${kb}KB` : ""}) — check it for bloat first.`;
+        }
+    }
+    emitStopHookFeedback(`🐺 Wolfpack simplicity: ${outputTokens} output tokens this session — check YAGNI, readability, efficiency; simplify if any fall short.${hint}\n`);
     return true;
 }
 function maybeNudgeReview(wolfDir, session, sessionEntry) {

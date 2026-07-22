@@ -30,6 +30,7 @@ const ALWAYS_OVERWRITE = [
   "OPENWOLF.md",
   "PROTOCOL-UPGRADE-2026-06.md",
   "reframe-frameworks.md",
+  ".gitignore",
 ];
 
 // Files that contain user/session data — only create if missing, never overwrite
@@ -528,6 +529,11 @@ function generateTemplate(destPath: string, file: string): void {
     "cron-state.json": JSON.stringify({ last_heartbeat: null, engine_status: "initialized", execution_log: [], dead_letter_queue: [], upcoming: [] }, null, 2),
     "designqc-report.json": JSON.stringify({ captured_at: null, captures: [], total_size_kb: 0, estimated_tokens: 0 }, null, 2),
     "suggestions.json": JSON.stringify({ suggestions: [], generated_at: null }, null, 2),
+    // Embedded fallback for the nested .wolf ignore policy — mirrors
+    // src/templates/.gitignore. Without this, an upgrade on a packaging layout
+    // missing the template would overwrite an existing .wolf/.gitignore with
+    // zero bytes (companion review 2026-07-21, MEDIUM).
+    ".gitignore": `# Wolfpack-managed ignore policy for .wolf/ runtime state.\n# Durable knowledge stays trackable: OPENWOLF.md, cerebrum.md, memory.md,\n# anatomy.md, identity.md, config.json, buglog.json, qa/_README.md,\n# qa/_template.md. Everything below is churn/state — safe to ignore.\n\n*.log\n**/*.log\n*-state.json\n**/*-state.json\ncron-state.json\ncron-manifest.json\ntoken-ledger.json\ncerebrum-stats.json\nsuggestions.json\nreviewlog.json\ndesignqc-report.json\ndesignqc-captures/\n*.lock\n*.lock.reclaim\n**/*.lock\n**/*.lock.reclaim\nhooks/_session.json\nqa/_gate-log.json\nqa/*.md\n!qa/_README.md\n!qa/_template.md\nbackups/\nqueue-drops.json\nqueue-injections.json\narchive/\n`,
   };
 
   const content = templates[file] ?? "";

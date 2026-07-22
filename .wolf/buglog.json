@@ -1,0 +1,2996 @@
+{
+  "version": 1,
+  "bugs": [
+    {
+      "id": "bug-141",
+      "timestamp": "2026-06-30T01:36:23.561Z",
+      "error_message": "Significant refactor of ",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 7→10 lines (3 removed) | Also: assert.equal(first.status, 2, first.stderr);; assert.match(first.stderr, /Files edited 3\\+ times | Also: assert.equal(changed.status, 2, changed.stderr);; assert.match(changed.stderr, /Files edited 3\\+ tim",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-30T01:36:55.518Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-149",
+      "timestamp": "2026-06-30T02:35:02.672Z",
+      "error_message": "Stop hook JSON block payload without a top-level reason produced generic Blocked by hook feedback and violated the Claude Code Stop-hook contract.",
+      "file": "src/hooks/stop.ts; src/hooks/stop.js; templates/wolf/hooks/stop.js; .wolf/hooks/stop.js; tests/review-completion.test.js",
+      "root_cause": "The duplicate-message fix removed the top-level reason while still setting decision: block, leaving the Stop-hook JSON payload incompatible with the documented blocking shape.",
+      "fix": "Restored a short non-duplicative reason (OpenWolf feedback), kept detailed nudge text only in hookSpecificOutput.additionalContext, and extended tests to assert the reason is present and not the full nudge.",
+      "tags": [
+        "stop-hook",
+        "json-contract",
+        "claude-code",
+        "feedback",
+        "review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-30T02:35:02.672Z",
+      "commit": null,
+      "reduction": ".wolf/qa/stop-hook-json-feedback.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-150",
+      "timestamp": "2026-06-30T02:36:57.884Z",
+      "error_message": "Missing await",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-30T02:36:57.884Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-151",
+      "timestamp": "2026-07-01T22:56:03.753Z",
+      "error_message": "Type error",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-01T22:56:03.753Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-152",
+      "timestamp": "2026-07-01T22:57:45.119Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../../../../home/tony/.claude/plugins/marketplaces/tony-local/plugins/redteam/commands/redteam.md",
+      "root_cause": "Had `codex,grok,chatgpt`",
+      "fix": "Changed to `codex`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-01T22:58:08.592Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-153",
+      "timestamp": "2026-07-01T22:58:48.742Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../../../../home/tony/.claude/plugins/marketplaces/tony-local/plugins/redteam/agents/redteam-panel.md",
+      "root_cause": "Had `codex,grok,glm,mimo`",
+      "fix": "Changed to `codex`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-01T22:58:48.742Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-154",
+      "timestamp": "2026-07-01T23:02:07.501Z",
+      "error_message": "Wrong reference: stderr should be feedback",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Used \"stderr\" instead of \"feedback\"",
+      "fix": "Changed stderr → feedback",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-01T23:02:07.501Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-155",
+      "timestamp": "2026-07-01T23:02:23.645Z",
+      "error_message": "Wrong return value",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Was returning: false so the hook doesn't drive exit 2.",
+      "fix": "Now returns: false so the hook doesn't emit a JSON block.",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-01T23:02:23.645Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-156",
+      "timestamp": "2026-07-01T23:09:22.998Z",
+      "error_message": "Missing guard clause",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "No early return/throw for edge case: !cmd",
+      "fix": "Added guard clause: if (!cmd)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-01T23:09:22.998Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-157",
+      "timestamp": "2026-07-01T23:11:53.203Z",
+      "error_message": "All-model redteam found Stop-hook stale stderr/exit-2 comments, redactSecrets dropping shell separators in displayed commands, and a latent missing autonomy_continuation_warnings default.",
+      "file": "src/hooks/stop.ts; src/hooks/stop.js; templates/wolf/hooks/stop.js; .wolf/hooks/stop.js; tests/review-completion.test.js; redteam plugin docs",
+      "root_cause": "The Stop hook migrated to stdout JSON exit-0 feedback while comments still described the older stderr/exit-2 model; redactSecrets used a non-delimited value match that consumed shell separators; defaultSession omitted warning counters later added by normalization.",
+      "fix": "Updated comments to describe JSON block feedback, changed redaction to stop at and preserve shell delimiters, added buglog/autonomy warning counters to defaultSession, added reducer tests, and updated redteam open-profile roster guidance.",
+      "tags": [
+        "redteam",
+        "stop-hook",
+        "redaction",
+        "comments",
+        "defaults",
+        "plugins"
+      ],
+      "related_bugs": [
+        "bug-149"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-01T23:11:53.203Z",
+      "commit": null,
+      "reduction": ".wolf/qa/redteam-adoption-stop-hook.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-158",
+      "timestamp": "2026-07-02T00:00:26.035Z",
+      "error_message": "Wrong return value",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Was returning: proc !== null && status !== \"stopped\" && status !=",
+      "fix": "Now returns: proc !== null && status === \"online\" && Number.isI",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-02T00:00:26.035Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-159",
+      "timestamp": "2026-07-02T00:02:19.616Z",
+      "error_message": "Missing guard clause",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "No early return/throw for edge case: proc === null || proc.pm2_env?.status !== \"online\"",
+      "fix": "Added guard clause: if (proc === null || proc.pm2_env?.status !=)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-02T00:02:19.616Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-160",
+      "timestamp": "2026-07-02T00:04:22.877Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/daemon-cmd.test.js",
+      "root_cause": "Had '../src/cli/daemon-cmd.js'",
+      "fix": "Changed to '../dist/src/cli/daemon-cmd.js'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-02T00:04:22.877Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-161",
+      "timestamp": "2026-07-02T00:06:15.357Z",
+      "error_message": "PM2 OpenWolf process list accumulated stale stopped and pid-less online daemon entries; old liveness logic treated any non-stopped/non-errored PM2 entry as active and daemon stop left stopped rows behind.",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "isActivePm2Process only checked that status was not stopped/errored, so pid-less online PM2 metadata could suppress restart/repair paths, and daemonStop used pm2 stop instead of deleting the project daemon from PM2.",
+      "fix": "Require status online plus a positive integer pid for active PM2 daemon liveness, and change daemonStop to pm2 delete plus pm2 save so manual stops do not leave stopped entries accumulating.",
+      "tags": [
+        "pm2",
+        "daemon",
+        "stale-process",
+        "liveness"
+      ],
+      "related_bugs": [
+        "bug-010"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-02T00:06:15.357Z",
+      "commit": null,
+      "reduction": ".wolf/qa/pm2-stale-daemons.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-162",
+      "timestamp": "2026-07-03T17:17:55.646Z",
+      "error_message": "Significant refactor of ",
+      "file": "package.json",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→6 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:17:55.646Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-163",
+      "timestamp": "2026-07-03T17:18:13.516Z",
+      "error_message": "Incorrect value in code",
+      "file": "bin/openwolf.ts",
+      "root_cause": "Had `OpenWolf requires Node.js 20 or higher. You are r",
+      "fix": "Changed to `Wolfpack requires Node.js 20 or higher. You are r",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:18:13.516Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-164",
+      "timestamp": "2026-07-03T17:18:20.687Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/cli/init.ts",
+      "root_cause": "Had `Upgrading OpenWolf to v${version}...`",
+      "fix": "Changed to `Upgrading Wolfpack to v${version}...`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 5,
+      "last_seen": "2026-07-03T17:19:31.980Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-165",
+      "timestamp": "2026-07-03T17:18:42.682Z",
+      "error_message": "Wrong reference: OpenWolf should be Wolfpack",
+      "file": "src/cli/init.ts",
+      "root_cause": "Used \"OpenWolf\" instead of \"Wolfpack\"",
+      "fix": "Changed OpenWolf → Wolfpack",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 5,
+      "last_seen": "2026-07-03T17:23:06.766Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-166",
+      "timestamp": "2026-07-03T17:19:43.956Z",
+      "error_message": "Wrong reference: OpenWolf should be Wolfpack",
+      "file": "src/dashboard/app/index.html",
+      "root_cause": "Used \"OpenWolf\" instead of \"Wolfpack\"",
+      "fix": "Changed OpenWolf → Wolfpack",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:19:43.957Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-167",
+      "timestamp": "2026-07-03T17:19:50.065Z",
+      "error_message": "Wrong reference: OpenWolf should be Wolfpack",
+      "file": "src/dashboard/app/App.tsx",
+      "root_cause": "Used \"OpenWolf\" instead of \"Wolfpack\"",
+      "fix": "Changed OpenWolf → Wolfpack",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:19:50.066Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-168",
+      "timestamp": "2026-07-03T17:19:58.067Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/dashboard/app/App.tsx",
+      "root_cause": "Had \"OpenWolf\"",
+      "fix": "Changed to \"Wolfpack\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:19:58.067Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-169",
+      "timestamp": "2026-07-03T17:20:05.006Z",
+      "error_message": "Wrong reference: OpenWolf should be Wolfpack",
+      "file": "src/dashboard/app/components/layout/Sidebar.tsx",
+      "root_cause": "Used \"OpenWolf\" instead of \"Wolfpack\"",
+      "fix": "Changed OpenWolf → Wolfpack",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:20:05.006Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-170",
+      "timestamp": "2026-07-03T17:20:19.931Z",
+      "error_message": "CSS fix: color",
+      "file": "src/dashboard/app/components/layout/Sidebar.tsx",
+      "root_cause": "color: \"var(--accent)\" → \"var(--text-faint)\"",
+      "fix": "Changed color: \"var(--accent)\" → \"var(--text-faint)\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:20:19.931Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-171",
+      "timestamp": "2026-07-03T17:22:19.815Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/dashboard/app/components/panels/TokenUsage.tsx",
+      "root_cause": "Had \"Claude CLI (without OpenWolf)\"",
+      "fix": "Changed to \"Claude CLI (without Wolfpack)\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:22:19.815Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-172",
+      "timestamp": "2026-07-03T17:22:25.590Z",
+      "error_message": "Wrong reference: OpenWolf should be Wolfpack",
+      "file": "src/dashboard/app/components/panels/TokenUsage.tsx",
+      "root_cause": "Used \"OpenWolf\" instead of \"Wolfpack\"",
+      "fix": "Changed OpenWolf → Wolfpack",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:22:25.590Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-173",
+      "timestamp": "2026-07-03T17:22:35.776Z",
+      "error_message": "Wrong reference: OpenWolf should be Wolfpack",
+      "file": "src/dashboard/app/components/panels/DesignQC.tsx",
+      "root_cause": "Used \"OpenWolf\" instead of \"Wolfpack\"",
+      "fix": "Changed OpenWolf → Wolfpack",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:22:35.776Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-174",
+      "timestamp": "2026-07-03T17:22:52.910Z",
+      "error_message": "Wrong reference: OpenWolf should be Wolfpack",
+      "file": "src/templates/claude-rules-openwolf.md",
+      "root_cause": "Used \"OpenWolf\" instead of \"Wolfpack\"",
+      "fix": "Changed OpenWolf → Wolfpack",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:22:52.910Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-175",
+      "timestamp": "2026-07-03T17:25:10.512Z",
+      "error_message": "User reported the OpenWolf name is misleading for the heavily modified workflow and could cause his brother to think vanilla OpenWolf would produce the same results at work.",
+      "file": "package.json; src/cli/init.ts; src/dashboard/app; README.md; src/templates",
+      "root_cause": "The user-facing brand still presented the customized local workflow as OpenWolf even though the fork now includes substantial additional memory, review, QA, redteam, daemon, and autonomy behavior beyond vanilla OpenWolf.",
+      "fix": "Added Wolfpack as the user-facing brand and CLI alias while preserving openwolf/.wolf compatibility internals; updated init output, dashboard copy, README, and install templates to describe Wolfpack as the customized harness built on the OpenWolf runtime namespace.",
+      "tags": [
+        "branding",
+        "wolfpack",
+        "openwolf-compatibility",
+        "onboarding"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:25:10.513Z",
+      "commit": null,
+      "reduction": ".wolf/qa/wolfpack-brand-alias.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-176",
+      "timestamp": "2026-07-03T17:30:50.757Z",
+      "error_message": "Wolfpack brand migration did not update existing CLAUDE.md files that already contained the old OpenWolf snippet.",
+      "file": "src/cli/init.ts",
+      "root_cause": "Init only prepended the snippet when CLAUDE.md did not include OpenWolf, so old OpenWolf bootstrap text blocked the Wolfpack replacement.",
+      "fix": "Replace the known old OpenWolf CLAUDE.md snippet with the current Wolfpack snippet during init/upgrade.",
+      "tags": [
+        "branding",
+        "upgrade",
+        "claude-md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-03T17:30:50.757Z",
+      "commit": null,
+      "reduction": ".wolf/qa/wolfpack-init.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-177",
+      "timestamp": "2026-07-04T23:35:57.189Z",
+      "error_message": "Missing error handling in shouldStartDaemonForProject",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-04T23:35:57.189Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-178",
+      "timestamp": "2026-07-04T23:36:36.372Z",
+      "error_message": "Missing await",
+      "file": "tests/daemon-cmd.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-04T23:36:36.372Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-179",
+      "timestamp": "2026-07-04T23:37:20.698Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/daemon-cmd.test.js",
+      "root_cause": "Had '../dist/src/daemon/wolf-daemon.js'",
+      "fix": "Changed to '../dist/src/daemon/startup-guard.js'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-04T23:37:20.698Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-180",
+      "timestamp": "2026-07-04T23:42:45.280Z",
+      "error_message": "User reported deleted Paul test projects reappeared with only a .wolf subfolder; PM2 still had online daemons for /mnt/j/projecthomepaul/test and /mnt/j/projecthomepaul/paultest-7-3-2026.",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Running PM2 daemons for deleted project roots continued writing daemon.log/cron-state under the configured .wolf path. fs-safe/logger helpers create parent directories on writes, so heartbeat/shutdown state writes could recreate the deleted project root with only .wolf runtime files.",
+      "fix": "Add a startup guard requiring both project root and .wolf to exist before daemon startup; during heartbeat, detect missing runtime and shut down with skipStateWrite so the daemon does not recreate .wolf files. Removed the reported stale PM2 and registry entries.",
+      "tags": [
+        "pm2",
+        "daemon",
+        "deleted-project",
+        "recreated-directory",
+        "projecthomepaul"
+      ],
+      "related_bugs": [
+        "bug-161"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-04T23:42:45.280Z",
+      "commit": null,
+      "reduction": ".wolf/qa/deleted-project-daemon-guard.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-181",
+      "timestamp": "2026-07-04T23:50:18.604Z",
+      "error_message": "Stop hook repeatedly flagged init.ts, Sidebar.tsx, and wolf-daemon.ts as edited 3+ times without a fresh buglog update after Wolfpack branding and deleted-project daemon fixes.",
+      "file": "src/cli/init.ts; src/dashboard/app/components/layout/Sidebar.tsx; src/daemon/wolf-daemon.ts",
+      "root_cause": "The session mixed branding iterations with a real daemon bug fix; the real deleted-project daemon bug was logged as bug-180, but the repeated-edit heuristic still needed an explicit current-session buglog acknowledgement covering all repeatedly edited files.",
+      "fix": "Added this explicit buglog entry tying init.ts/Sidebar.tsx to the Wolfpack branding migration and wolf-daemon.ts to the deleted-project daemon guard, with reductions proving both changes.",
+      "tags": [
+        "buglog",
+        "stop-hook",
+        "wolfpack-branding",
+        "pm2",
+        "daemon"
+      ],
+      "related_bugs": [
+        "bug-162",
+        "bug-180"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-04T23:50:18.604Z",
+      "commit": null,
+      "reduction": ".wolf/qa/wolfpack-init.md; .wolf/qa/wolfpack-dashboard-sidebar.md; .wolf/qa/deleted-project-daemon-guard.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-182",
+      "timestamp": "2026-07-05T06:44:30.373Z",
+      "error_message": "Type error",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-05T06:44:30.373Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-183",
+      "timestamp": "2026-07-05T09:45:15.798Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Had `Reviewers: budget profile — prefer token-rich mod",
+      "fix": "Changed to `Reviewers: budget profile — prefer token-rich mod",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-05T09:45:30.082Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-184",
+      "timestamp": "2026-07-05T15:13:23.863Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Had `Reviewers: budget profile — prefer token-rich mod",
+      "fix": "Changed to `Reviewers: budget profile — prefer token-rich mod",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-05T15:13:23.863Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-185",
+      "timestamp": "2026-07-06T21:21:36.532Z",
+      "error_message": "User observed an Adventists project Stop hook line: \"Stop hook error: OpenWolf feedback\" while Wolfpack feedback was expected.",
+      "file": "/mnt/j/projectshome/projects/adventists/.wolf/hooks/stop.js; templates/wolf/hooks/stop.js",
+      "root_cause": "The Adventists project has a partially updated Wolfpack runtime: .wolf/OPENWOLF.md is Wolfpack-branded, but its installed stop.js still uses the old top-level JSON block reason \"OpenWolf feedback\". The hook appears to use the decision:block JSON contract, not the old stderr/exit-2 contract; Claude Code may render the block reason under an \"error\" heading.",
+      "fix": "Diagnosed as a stale installed runtime branding/update issue plus likely AI misinterpretation of replayed reviewer output; update the project runtime from the current customopenwolf build so installed stop hooks use \"Wolfpack feedback\".",
+      "tags": [
+        "wolfpack",
+        "stop-hook",
+        "branding",
+        "runtime-sync",
+        "diagnostic"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-06T21:21:36.532Z",
+      "commit": null,
+      "reduction": "grep -n \"OpenWolf feedback\\|Wolfpack feedback\\|process.exit(2)\\|decision.*block\" /mnt/j/projectshome/projects/adventists/.wolf/hooks/stop.js /mnt/j/projectshome/projects/customopenwolf/templates/wolf/hooks/stop.js",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-186",
+      "timestamp": "2026-07-06T22:47:42.765Z",
+      "error_message": "npm test failed after reviewed-hash change: review-completion test expected stale message to include --reviewed-current fallback.",
+      "file": "src/hooks/complete-review.ts; tests/review-completion.test.js",
+      "root_cause": "The stale completion guidance was updated to prefer --reviewed-hash but dropped the legacy --reviewed-current fallback string that existing tests and manual workflows still expect.",
+      "fix": "Restored fallback --reviewed-current guidance while keeping --reviewed-hash as the recommended completion command.",
+      "tags": [
+        "test-failure",
+        "review",
+        "reviewed-hash",
+        "backward-compatibility"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-06T22:47:42.765Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-187",
+      "timestamp": "2026-07-06T23:15:45.093Z",
+      "error_message": "Missing await",
+      "file": "src/cli/index.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-06T23:15:45.093Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-188",
+      "timestamp": "2026-07-06T23:18:15.425Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/cli/qa-cmd.ts",
+      "root_cause": "Had \"UNKNOWN\"",
+      "fix": "Changed to \"BROKEN\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-06T23:18:15.425Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-189",
+      "timestamp": "2026-07-06T23:19:34.706Z",
+      "error_message": "Independent review found `wolfpack qa status --check` would exit 0 for a reduction with target-hash but no target.",
+      "file": "src/cli/qa-cmd.ts; tests/qa-cmd.test.js",
+      "root_cause": "Missing target was classified as UNKNOWN after the broken-problem branch, and UNKNOWN was intentionally excluded from --check failure status.",
+      "fix": "Classified missing target as BROKEN and added a regression fixture for a reduction that has target-hash but no target.",
+      "tags": [
+        "qa-status",
+        "review",
+        "check-mode",
+        "malformed-reduction"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-06T23:19:34.706Z",
+      "commit": null,
+      "reduction": ".wolf/qa/qa-status-cli.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-190",
+      "timestamp": "2026-07-06T23:23:45.731Z",
+      "error_message": "Missing await",
+      "file": "src/cli/index.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-06T23:23:45.731Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-191",
+      "timestamp": "2026-07-06T23:29:22.885Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/cli/review-cmd.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-06T23:29:22.885Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-192",
+      "timestamp": "2026-07-06T23:29:37.669Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/cli/review-cmd.ts",
+      "root_cause": "Had `Reviewed hash: ${review.reviewed_hash ?? review.r",
+      "fix": "Changed to `Reviewed hash: ${reviewedHash}`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-06T23:29:37.669Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-193",
+      "timestamp": "2026-07-06T23:31:21.832Z",
+      "error_message": "Independent review found `wolfpack review list/show` mislabeled current-byte receipt hashes as reviewed-hash provenance.",
+      "file": "src/cli/review-cmd.ts; tests/review-cmd.test.js",
+      "root_cause": "reviewList and reviewShow treated any receipt.reviewed_hash as independent review provenance, but current-byte receipts also store a manifest hash for pending/refreshed state.",
+      "fix": "Added reviewedProvenanceHash() to require top-level reviewed_hash or receipt.kind === \"reviewed-byte\" before showing hash-provenance / Reviewed hash, and added regression assertions using a current-byte receipt.",
+      "tags": [
+        "review-cli",
+        "reviewed-hash",
+        "provenance",
+        "review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-06T23:31:21.832Z",
+      "commit": null,
+      "reduction": ".wolf/qa/review-provenance-cli.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-194",
+      "timestamp": "2026-07-14T11:57:39.694Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T11:57:39.694Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-195",
+      "timestamp": "2026-07-14T11:58:01.206Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Had \"./shared.js\"",
+      "fix": "Changed to \"node:child_process\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T11:58:01.206Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-196",
+      "timestamp": "2026-07-14T11:59:03.074Z",
+      "error_message": "Missing error handling in relToProject",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T11:59:03.074Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-197",
+      "timestamp": "2026-07-14T12:02:32.994Z",
+      "error_message": "Wrong return value",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Was returning: normalizeFilePath(path.relative(projectDir, file))",
+      "fix": "Now returns: path.relative(projectDir, file).replace(/\\\\/g, \"/\"",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T12:02:32.994Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-198",
+      "timestamp": "2026-07-14T12:05:19.566Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 7→4 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T12:05:19.566Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-199",
+      "timestamp": "2026-07-14T12:08:37.798Z",
+      "error_message": "Wrong return value",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Was returning: toolUses.some(t => t?.name === \"Bash\" && /\\bgit\\s+",
+      "fix": "Now returns: toolUses.some(t => t?.name === \"Bash\" && /\\bgit\\s+",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T12:08:37.798Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-200",
+      "timestamp": "2026-07-14T12:09:45.246Z",
+      "error_message": "Wolfpack git/version gate falsely nudged on prose warning \"do not use git add .\" and reviewer found broad-staging regex missed actual `git add .` while matching `.gitignore`.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "broadStagingSeen initially scanned final prose as well as Bash tool commands, then its Bash-only regex used a trailing word boundary after `.`; that missed `git add .` and matched path-specific `.gitignore`.",
+      "fix": "Restricted broad-staging detection to Bash tool-use commands only and changed the regex to require an argument terminator with (?=\\s|$|;|&|\\|), so `git add .`, `-A`, and `--all` are flagged while `.gitignore` and path-specific staging are not.",
+      "tags": [
+        "git-discipline",
+        "stop-hook",
+        "regex",
+        "review",
+        "false-positive"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T12:09:45.247Z",
+      "commit": null,
+      "reduction": ".wolf/qa/git-version-discipline-nudge.md; npm run verify; inline regex table test",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-201",
+      "timestamp": "2026-07-14T14:04:16.466Z",
+      "error_message": "Wrong return value",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Was returning: toolUses.some(t => t?.name === \"Bash\" && /\\bgit\\s+",
+      "fix": "Now returns: (lastAssistant?.toolUses || [])",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T14:04:16.466Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-202",
+      "timestamp": "2026-07-14T14:04:37.604Z",
+      "error_message": "Wrong operator: === should be >=",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Used \"===\" instead of \">=\"",
+      "fix": "Changed operator === → >=",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T14:04:37.604Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-203",
+      "timestamp": "2026-07-14T14:07:42.640Z",
+      "error_message": "Missing error handling in recentBashCommands",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T14:07:42.640Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-204",
+      "timestamp": "2026-07-14T14:10:16.888Z",
+      "error_message": "Type error",
+      "file": "src/cli/update.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T14:10:16.888Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-205",
+      "timestamp": "2026-07-14T14:19:34.965Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Had \"\\\\bgit\\\\s+(?:checkout|restore)\\\\s+(?:--\\\\s+)?(?:\\",
+      "fix": "Changed to \"\\\\bgit\\\\s+(?:checkout|restore)\\\\s+(?:--\\\\s+)?(?:\\",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T14:19:34.965Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-206",
+      "timestamp": "2026-07-14T14:24:39.343Z",
+      "error_message": "Independent deploy review found destructive Git checkout/restore pattern missed `git checkout -- .`, `git checkout .`, `git restore .`, and `git checkout -- :/`.",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "The checkout/restore destructive regex ended with a word boundary after alternatives that can end in `.` or `/`, both non-word characters, so the most common destructive pathspec forms did not match.",
+      "fix": "Replaced the trailing word boundary with a separator lookahead `(?=\\s|$|;|&|\\|)` and synced the corrected pattern into config defaults, templates, runtime hooks, and current .wolf config.",
+      "tags": [
+        "git-discipline",
+        "destructive-command",
+        "regex",
+        "review",
+        "stop-hook"
+      ],
+      "related_bugs": [
+        "bug-114"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T14:24:39.343Z",
+      "commit": null,
+      "reduction": ".wolf/qa/git-version-discipline-nudge.md; destructive checkout/restore regex table; npm run verify",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-207",
+      "timestamp": "2026-07-17T00:44:52.270Z",
+      "error_message": "Type error",
+      "file": "src/cli/init.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T00:44:52.270Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-208",
+      "timestamp": "2026-07-17T00:45:02.399Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/cli/init.ts",
+      "root_cause": "Had \"codex exec --full-auto\"",
+      "fix": "Changed to \"provider companion\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T00:45:02.399Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-209",
+      "timestamp": "2026-07-17T00:45:24.040Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/config/default-config.json",
+      "root_cause": "Had \"codex_command\"",
+      "fix": "Changed to \"review_companion\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T00:45:24.040Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-210",
+      "timestamp": "2026-07-17T00:45:24.779Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/templates/config.json",
+      "root_cause": "Had \"codex_command\"",
+      "fix": "Changed to \"review_companion\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-17T00:45:25.547Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-211",
+      "timestamp": "2026-07-17T00:46:21.989Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/complete-review.ts",
+      "root_cause": "Had '       node .wolf/hooks/complete-review.js review",
+      "fix": "Changed to '       node .wolf/hooks/complete-review.js review",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-07-17T00:46:37.485Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-212",
+      "timestamp": "2026-07-17T00:47:31.475Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/templates/OPENWOLF.md",
+      "root_cause": "11 lines replaced/restructured",
+      "fix": "Rewrote 22→37 lines (11 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T00:47:31.475Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-213",
+      "timestamp": "2026-07-17T00:48:54.603Z",
+      "error_message": "Significant refactor of ",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 3→7 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T00:48:54.603Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-214",
+      "timestamp": "2026-07-17T00:49:17.528Z",
+      "error_message": "Missing await",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T00:49:17.528Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-215",
+      "timestamp": "2026-07-17T00:52:01.620Z",
+      "error_message": "Type error",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T00:52:01.620Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-216",
+      "timestamp": "2026-07-16T00:00:00Z",
+      "error_message": "npm run verify failed because generated Stop hooks still contained the deprecated codex_command name in an obsolete redaction comment.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "The active transport was removed, but a stale comment still named the retired config key and the new install verifier correctly treated any active-hook occurrence as legacy guidance drift.",
+      "fix": "Reworded the redaction utility comment to be provider-neutral, rebuilt TypeScript, redeployed all generated Stop hook copies, and reran tests/install verification.",
+      "tags": [
+        "review-companion",
+        "verify-install",
+        "generated-hooks",
+        "legacy-codex"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-16T00:00:00Z",
+      "commit": null,
+      "reduction": ".wolf/qa/review-companion-ops.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-217",
+      "timestamp": "2026-07-17T00:54:44.005Z",
+      "error_message": "Wrong return value Follow-up review also found the emitted complete-review helper path was unquoted.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Was returning: `provider companion review ${selected}${overflow} ",
+      "fix": "Now returns: `'${String(value).replace(/'/g, `'\"'\"'`)}'`; The helper path and summary placeholder are now shell-quoted, with a project-path metacharacter regression assertion.",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T00:54:44.005Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-218",
+      "timestamp": "2026-07-17T00:54:50.579Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Had \"standard\"",
+      "fix": "Changed to ` ${reviewerGuidance(msgCfg)}`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-17T00:57:57.927Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-219",
+      "timestamp": "2026-07-17T00:55:22.532Z",
+      "error_message": "Missing await",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T00:55:22.532Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-217",
+      "timestamp": "2026-07-16T00:00:00Z",
+      "error_message": "Independent review found emitted provider-companion --file arguments used JSON double quotes, allowing shell expansion, and compact default nudges omitted the gov/US-only profile restriction.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "JSON quoting is not POSIX shell quoting because command substitutions and variable expansion remain active inside double quotes; profile guidance was conditionally emitted only for standard/verbose despite compact being the default.",
+      "fix": "Added POSIX single-quote escaping for file arguments, added a metacharacter filename regression test, and emit profile guidance in compact, standard, and verbose nudges.",
+      "tags": [
+        "review-companion",
+        "shell-quoting",
+        "gov-profile",
+        "compact-nudge",
+        "security"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-16T00:00:00Z",
+      "commit": null,
+      "reduction": ".wolf/qa/review-companion-ops.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-220",
+      "timestamp": "2026-07-18T14:15:23.869Z",
+      "error_message": "Missing await",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T14:15:23.869Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-221",
+      "timestamp": "2026-07-18T14:44:39.184Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T14:44:39.184Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-222",
+      "timestamp": "2026-07-18T14:44:54.051Z",
+      "error_message": "Missing guard clause",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "No early return/throw for edge case: !cfg.enabled",
+      "fix": "Added guard clause: if (!cfg.enabled)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T14:44:54.051Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-223",
+      "timestamp": "2026-07-18T14:45:06.449Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T14:45:06.450Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-094",
+      "timestamp": "2026-07-18T11:30:00.000Z",
+      "error_message": "Git-init nudge test failed: stop hook produced empty stdout in non-git repo fixture",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "maybeNudgeGitDiscipline computed gitRoot AFTER the materiality early-return; when test fixture was in /tmp/, scope_excludes filtered all writes, making material=false, causing early return before gitRoot check",
+      "fix": "Moved gitRoot computation before materiality gate; added hasAnyWrites (unfiltered) check so non-git repos bypass materiality when any work was done",
+      "tags": [
+        "test-design",
+        "scope-excludes",
+        "materiality-gate",
+        "git-discipline"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T11:30:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/git-init-nudge.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-224",
+      "timestamp": "2026-07-18T18:54:04.519Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Condition was: if (buglogMtimeMs > latestRelevantEditMs && latestRele)",
+      "fix": "Changed to: if (buglogMtimeMs > 0 && (latestRelevantEditMs === 0 |)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T18:54:04.519Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-225",
+      "timestamp": "2026-07-18T19:00:00.000Z",
+      "error_message": "Review refresh missed pending reviews due to path normalization mismatch",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "pending.files contained normalized paths from setReviewCurrentByteReceipt, but writtenFiles had raw paths from sessionEntry.writes; Array.includes() failed when paths differed by normalization (e.g., ./src/app.ts vs /abs/path/src/app.ts)",
+      "fix": "Changed writtenFiles.includes(file) to writtenFiles.map(normalizeFilePath).includes(normalizeFilePath(file)) so both sides are normalized before comparison",
+      "tags": [
+        "path-normalization",
+        "review-refresh",
+        "stop.ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T19:00:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/stop-ts-bugfixes.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-226",
+      "timestamp": "2026-07-18T19:49:42.196Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 32→39 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T19:49:42.196Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-227",
+      "timestamp": "2026-07-18T19:59:04.472Z",
+      "error_message": "Type error",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T19:59:04.472Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-228",
+      "timestamp": "2026-07-18T20:31:30.499Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T20:31:30.499Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-229",
+      "timestamp": "2026-07-18T23:09:26.194Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/cli/init.ts",
+      "root_cause": "19 lines replaced/restructured",
+      "fix": "Rewrote 31→24 lines (19 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:09:26.194Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-230",
+      "timestamp": "2026-07-18T23:09:59.413Z",
+      "error_message": "Type error",
+      "file": "src/cli/init.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:09:59.413Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-231",
+      "timestamp": "2026-07-18T23:11:58.467Z",
+      "error_message": "Wrong reference: autoMigrateLegacyPorts should be prepareDaemonPorts",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Used \"autoMigrateLegacyPorts\" instead of \"prepareDaemonPorts\"",
+      "fix": "Changed autoMigrateLegacyPorts → prepareDaemonPorts",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:11:58.467Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-232",
+      "timestamp": "2026-07-18T23:13:03.968Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:13:03.968Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-233",
+      "timestamp": "2026-07-18T23:14:17.711Z",
+      "error_message": "Missing guard clause",
+      "file": "src/cli/update.ts",
+      "root_cause": "No early return/throw for edge case: result.status === \"error\"",
+      "fix": "Added guard clause: if (result.status === \"error\")",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:14:17.711Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-234",
+      "timestamp": "2026-07-18T23:14:40.243Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/cli/init.ts",
+      "root_cause": "Condition was: if (daemonAutoStart)",
+      "fix": "Changed to: if (!daemonAutoStart)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:14:40.243Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-235",
+      "timestamp": "2026-07-18T23:15:47.276Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/cli/status.ts",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 11→20 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:15:47.277Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-236",
+      "timestamp": "2026-07-18T23:15:53.749Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/cli/index.ts",
+      "root_cause": "Had \"Show daemon health, last session stats, file inte",
+      "fix": "Changed to \"Show quality hooks, optional services, stats, and",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:15:53.749Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-237",
+      "timestamp": "2026-07-18T23:16:35.644Z",
+      "error_message": "Null/undefined access in ",
+      "file": "tests/daemon-cmd.test.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:16:35.644Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-238",
+      "timestamp": "2026-07-18T23:22:13.422Z",
+      "error_message": "Wrong return value",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Was returning: listPm2Processes().find((proc) => proc.name === na",
+      "fix": "Now returns: processes.find((proc) => proc.name === name && sam",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:22:13.423Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-239",
+      "timestamp": "2026-07-18T23:22:41.103Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Condition was: if (!hasPm2()",
+      "fix": "Changed to: if (!options.processes && !hasPm2()",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:22:41.103Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-240",
+      "timestamp": "2026-07-18T23:22:46.463Z",
+      "error_message": "Type error",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:22:46.463Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-241",
+      "timestamp": "2026-07-18T23:23:04.062Z",
+      "error_message": "Wrong reference: skipped should be staleFound",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Used \"skipped\" instead of \"staleFound\"",
+      "fix": "Changed skipped → staleFound",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:23:04.062Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-242",
+      "timestamp": "2026-07-18T23:23:27.018Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/cli/update.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: const dryRun = options.dryRun ?? false;",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-18T23:23:55.045Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-243",
+      "timestamp": "2026-07-18T23:23:34.580Z",
+      "error_message": "Wrong reference: options should be dryRun",
+      "file": "src/cli/update.ts",
+      "root_cause": "Used \"options\" instead of \"dryRun\"",
+      "fix": "Changed options → dryRun",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-07-18T23:23:43.640Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-244",
+      "timestamp": "2026-07-18T23:24:11.481Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/cli/update.ts",
+      "root_cause": "Had `    Stale owned entries found: ${stale.length}`",
+      "fix": "Changed to `    Stale owned entries found: ${cleanup.staleFou",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:24:11.481Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-245",
+      "timestamp": "2026-07-18T23:25:16.864Z",
+      "error_message": "Null/undefined access in ",
+      "file": "scripts/verify-install.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: if (config?.openwolf?.daemon?.auto_start !== false || config; failures.push('fresh init must disable daemon auto-start and",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-18T23:25:44.982Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-246",
+      "timestamp": "2026-07-18T23:25:29.980Z",
+      "error_message": "Wrong reference: checkClaimCalibrationConfig should be checkOptionalDaemonDefaults",
+      "file": "scripts/verify-install.js",
+      "root_cause": "Used \"checkClaimCalibrationConfig\" instead of \"checkOptionalDaemonDefaults\"",
+      "fix": "Changed checkClaimCalibrationConfig → checkOptionalDaemonDefaults",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:25:29.980Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-247",
+      "timestamp": "2026-07-18T23:25:37.072Z",
+      "error_message": "Incorrect value in code",
+      "file": "scripts/verify-install.js",
+      "root_cause": "Had 'PROTOCOL-UPGRADE-2026-06.md'",
+      "fix": "Changed to 'config.json'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-18T23:26:42.590Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-248",
+      "timestamp": "2026-07-18T23:30:36.667Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/cli/update.ts",
+      "root_cause": "Condition was: if (projects.length === 0)",
+      "fix": "Changed to: if (allProjects.length === 0)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:30:36.667Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-249",
+      "timestamp": "2026-07-18T23:33:31.796Z",
+      "error_message": "Missing guard clause",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "No early return/throw for edge case: !wolfProcess",
+      "fix": "Added guard clause: if (!wolfProcess)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:33:31.796Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-250",
+      "timestamp": "2026-07-18T23:33:39.957Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 7→4 lines (5 removed) | Also: return processes.find((proc) => {; }) ?? null;",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-18T23:33:50.420Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-251",
+      "timestamp": "2026-07-18T23:34:09.413Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:34:09.413Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-252",
+      "timestamp": "2026-07-18T23:34:14.372Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/cli/update.ts",
+      "root_cause": "Had \"error\"",
+      "fix": "Changed to \"updated\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:34:14.372Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-253",
+      "timestamp": "2026-07-18T23:34:20.988Z",
+      "error_message": "Wrong reference: true should be options",
+      "file": "src/cli/update.ts",
+      "root_cause": "Used \"true\" instead of \"options\"",
+      "fix": "Changed true → options",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:34:20.988Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-254",
+      "timestamp": "2026-07-18T23:35:33.393Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:35:33.393Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-255",
+      "timestamp": "2026-07-18T23:36:02.842Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Condition was: if (fs.existsSync(dashboardDir)",
+      "fix": "Changed to: if (dashboardEnabled && fs.existsSync(dashboardDir)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:36:02.842Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-256",
+      "timestamp": "2026-07-18T23:36:32.835Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:36:32.835Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-257",
+      "timestamp": "2026-07-18T23:42:07.823Z",
+      "error_message": "Wolfpack automatically started one PM2 daemon per initialized project, consuming substantial WSL2 memory despite the dashboard being unused.",
+      "file": "src/cli/init.ts",
+      "root_cause": "init unconditionally called ensurePm2Daemon whenever PM2 was installed; dashboard startup also used an unmanaged detached process and cleanup lacked strict ownership.",
+      "fix": "Added daemon.auto_start=false and dashboard.enabled=false defaults, gated init startup, moved dashboard to ownership-managed PM2 with health identity, added safe fleet cleanup and deployed custom.7 to 79 projects.",
+      "tags": [
+        "pm2",
+        "daemon",
+        "memory",
+        "dashboard",
+        "wsl2"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:42:07.823Z",
+      "commit": null,
+      "reduction": ".wolf/qa/daemon-default-off.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-258",
+      "timestamp": "2026-07-18T23:48:13.528Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/daemon-cmd.test.js",
+      "root_cause": "Had '../dist/src/daemon/startup-guard.js'",
+      "fix": "Changed to '../dist/src/cli/dashboard.js'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T23:48:13.528Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-259",
+      "timestamp": "2026-07-18T19:49:28-04:00",
+      "error_message": "openwolf dashboard treats a healthy background-only daemon as a ready dashboard",
+      "file": "src/cli/dashboard.ts",
+      "root_cause": "The readiness probe verified healthy status and project identity but the health payload did not expose whether dashboard routes were enabled.",
+      "fix": "Added dashboard_enabled to daemon health and require it to be true before reusing an existing endpoint; added a regression test for background-only, dashboard-enabled, and wrong-project responses.",
+      "tags": [
+        "dashboard",
+        "pm2",
+        "readiness",
+        "state-transition",
+        "review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T19:49:28-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-on-demand.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-260",
+      "timestamp": "2026-07-19T00:03:42.143Z",
+      "error_message": "Wrong operator: ?? should be ===",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Used \"??\" instead of \"===\"",
+      "fix": "Changed operator ?? → ===",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:03:42.143Z",
+      "commit": "cf0d09a",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-260",
+      "timestamp": "2026-07-18T20:06:00-04:00",
+      "error_message": "openwolf daemon restart drops explicit dashboard mode",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "daemonRestart rebuilt the PM2 environment with only OPENWOLF_PROJECT_ROOT and omitted the existing OPENWOLF_DASHBOARD_ENABLED state.",
+      "fix": "Route restart through ensurePm2Daemon and preserve the existing explicit dashboard marker with a tested helper.",
+      "tags": [
+        "daemon",
+        "dashboard",
+        "pm2",
+        "restart",
+        "state-transition",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-259"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T20:06:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/pm2-lifecycle-cleanup.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-261",
+      "timestamp": "2026-07-19T00:06:51.532Z",
+      "error_message": "Wrong reference: Pm2EnsureResult should be forceRestart",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Used \"Pm2EnsureResult\" instead of \"forceRestart\"",
+      "fix": "Changed Pm2EnsureResult → forceRestart",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:06:51.532Z",
+      "commit": "cf0d09a",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-262",
+      "timestamp": "2026-07-19T00:06:56.445Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "Condition was: if (isActivePm2Process(existing)",
+      "fix": "Changed to: if (!options.forceRestart && isActivePm2Process(existi)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:06:56.445Z",
+      "commit": "cf0d09a",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-261",
+      "timestamp": "2026-07-18T20:23:00-04:00",
+      "error_message": "openwolf daemon restart reports success without restarting a healthy daemon",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "daemonRestart delegated to the idempotent ensure path without forcing a restart, so matching active state returned already-running.",
+      "fix": "Added an explicit forceRestart lifecycle option and use it only from daemonRestart while preserving dashboard mode.",
+      "tags": [
+        "daemon",
+        "pm2",
+        "restart",
+        "no-op",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-260"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T20:23:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/pm2-lifecycle-cleanup.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-263",
+      "timestamp": "2026-07-19T00:16:16.326Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Condition was: if (dashboardEnabled && fs.existsSync(dashboardDir)",
+      "fix": "Changed to: if (dashboardAvailable)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:16:16.326Z",
+      "commit": "cf0d09a",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-264",
+      "timestamp": "2026-07-19T00:16:25.611Z",
+      "error_message": "Wrong reference: uptime_seconds should be dashboard_available",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Used \"uptime_seconds\" instead of \"dashboard_available\"",
+      "fix": "Changed uptime_seconds → dashboard_available",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:16:25.611Z",
+      "commit": "cf0d09a",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-265",
+      "timestamp": "2026-07-19T00:16:32.651Z",
+      "error_message": "Wrong return value",
+      "file": "src/cli/dashboard.ts",
+      "root_cause": "Was returning: statusCode === 200 && parsed.status === \"healthy\" ",
+      "fix": "Now returns: statusCode === 200 && parsed.status === \"healthy\"",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:16:32.651Z",
+      "commit": "cf0d09a",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-266",
+      "timestamp": "2026-07-19T00:16:41.342Z",
+      "error_message": "Wrong reference: projectRoot should be dashboard_available",
+      "file": "tests/daemon-cmd.test.js",
+      "root_cause": "Used \"projectRoot\" instead of \"dashboard_available\"",
+      "fix": "Changed projectRoot → dashboard_available",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:16:41.342Z",
+      "commit": "cf0d09a",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-262",
+      "timestamp": "2026-07-18T20:39:00-04:00",
+      "error_message": "managed background daemon can expose dashboard when legacy config enables it",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Runtime dashboard mode used config.enabled OR env=1, so the explicit PM2 env value 0 could not override a true or fallback config.",
+      "fix": "Made explicit PM2 env 0/1 authoritative while retaining config behavior only when the env marker is absent.",
+      "tags": [
+        "dashboard",
+        "pm2",
+        "configuration",
+        "default-off",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-259",
+        "bug-260"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T20:39:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-disabled-runtime.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-263",
+      "timestamp": "2026-07-18T20:39:00-04:00",
+      "error_message": "dashboard readiness succeeds when dashboard UI build is missing",
+      "file": "src/cli/dashboard.ts",
+      "root_cause": "Health readiness reported mode enabled but did not prove dist/dashboard/index.html existed and could be served.",
+      "fix": "Added dashboard_available to daemon health and require it in dashboard readiness before reporting success or opening the browser.",
+      "tags": [
+        "dashboard",
+        "readiness",
+        "missing-build",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-259"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T20:39:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-on-demand.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-267",
+      "timestamp": "2026-07-19T00:34:29.622Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Condition was: if (existingRaw !== null\n    && ((existing !== null &&)",
+      "fix": "Added **/scratchpad/** and **/AppData/Local/Temp/claude/** (scoped to the claude/ scratch root after review-0065 found the bare Temp pattern would silence real checkouts under Windows Temp) to SCRATCH_PATH_EXCLUDES in source and all three JS mirrors; regression tests cover scratch exclusion, production control, and Temp-shaped checkout control.",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-18T22:20:00-04:00",
+      "commit": "18f0f15",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-268",
+      "timestamp": "2026-07-19T00:34:47.481Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/cli/update.ts",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 18→20 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:34:47.481Z",
+      "commit": "18f0f15",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-269",
+      "timestamp": "2026-07-19T00:38:28.520Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:38:28.520Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-270",
+      "timestamp": "2026-07-19T00:39:28.716Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/cli/dashboard.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T00:39:28.716Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-264",
+      "timestamp": "2026-07-18T21:10:00-04:00",
+      "error_message": "Scoped update cannot clean an owned daemon for a missing registered project",
+      "file": "src/cli/update.ts",
+      "root_cause": "Scoped matching filtered missing projects before PM2 correlation and returned before cleanup.",
+      "fix": "Match --project against all registrations, update only extant targets, and pass missing selected roots directly to ownership-safe cleanup.",
+      "tags": [
+        "update",
+        "pm2",
+        "stale",
+        "scoped"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:10:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/daemon-update-migration.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-265",
+      "timestamp": "2026-07-18T21:10:00-04:00",
+      "error_message": "Copied dead daemon lock from another project root blocks startup permanently",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Stale lock reclamation required the stored project root to match even when the stored PID was dead.",
+      "fix": "Reclaim any structurally valid lock whose PID is no longer alive while retaining live-lock duplicate protection.",
+      "tags": [
+        "daemon",
+        "lock",
+        "stale",
+        "startup"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:10:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-disabled-runtime.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-266",
+      "timestamp": "2026-07-18T21:10:00-04:00",
+      "error_message": "Unauthenticated dashboard root discloses the bearer API token",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "The root HTML injected the API token before requiring any bootstrap credential.",
+      "fix": "Require a one-time query token to establish an HttpOnly same-site session before serving token-bearing HTML; the CLI opens that authenticated bootstrap URL.",
+      "tags": [
+        "dashboard",
+        "auth",
+        "token",
+        "security"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:10:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-on-demand.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-264",
+      "timestamp": "2026-07-18T21:05:00-04:00",
+      "error_message": "openwolf update --project <missing> cannot clean that project's PM2 daemon",
+      "file": "src/cli/update.ts",
+      "root_cause": "The --project filter searched only entries with an existing .wolf dir, so a deleted registered project never reached cleanupOpenWolfPm2 despite prune correlation intent.",
+      "fix": "Select against all registry entries, split targets into existing vs missing roots, and include missing selected roots in the scoped PM2 cleanup list.",
+      "tags": [
+        "update",
+        "pm2",
+        "cleanup",
+        "scoped",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-258"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:05:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/daemon-update-migration.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-265",
+      "timestamp": "2026-07-18T21:05:00-04:00",
+      "error_message": "stale daemon.pid from a different project root blocks daemon startup permanently",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "acquireDaemonSingleton only reclaimed stale locks when the recorded root matched the current project; a copied/moved lock with a dead PID from another root fell through to EEXIST and exit(0).",
+      "fix": "Reclaim any valid lock whose PID is dead regardless of recorded root; the .wolf directory itself scopes lock ownership.",
+      "tags": [
+        "daemon",
+        "lock",
+        "singleton",
+        "review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:05:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-disabled-runtime.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-266",
+      "timestamp": "2026-07-18T21:05:00-04:00",
+      "error_message": "unauthenticated GET / discloses daemon auth token to any local client",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "The dashboard index was served without auth and embedded window.__OPENWOLF_DAEMON__.token, letting any local process fetch / and reuse the token against authenticated APIs.",
+      "fix": "Gate / and SPA fallback with requireDashboardBootstrap: token-bearing URL from the CLI sets an HttpOnly cookie; CLI now opens /?token=... to bootstrap the session.",
+      "tags": [
+        "dashboard",
+        "auth",
+        "security",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-259"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:05:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-on-demand.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-271",
+      "timestamp": "2026-07-19T01:38:11.841Z",
+      "error_message": "Type error",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T01:38:11.841Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-272",
+      "timestamp": "2026-07-19T01:43:33.535Z",
+      "error_message": "Missing await",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T01:43:33.535Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-267",
+      "timestamp": "2026-07-18T22:00:00-04:00",
+      "error_message": "review nudge re-fires indefinitely on Windows scratchpad files",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "SCRATCH_PATH_EXCLUDES was Unix-only (/tmp/**, **/tmp/**); globToRegex is anchored and case-sensitive, so %LOCALAPPDATA%\\Temp\\claude\\...\\scratchpad\\ never matched and every Windows scratch file counted as reviewable production work.",
+      "fix": "Added **/scratchpad/** and **/AppData/Local/Temp/** to SCRATCH_PATH_EXCLUDES in source and all three JS mirrors; regression tests run the real stop hook against home-dir fixtures with a production-file control. Originally found and fixed in the computertuning project runtime; upstreamed here.",
+      "tags": [
+        "review-nudge",
+        "windows",
+        "scratch",
+        "false-positive",
+        "cross-platform"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T22:00:00-04:00",
+      "commit": "18f0f15",
+      "reduction": ".wolf/qa/scratch-path-excludes-windows.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-273",
+      "timestamp": "2026-07-19T01:48:48.479Z",
+      "error_message": "Significant refactor of ",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 16→27 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T01:48:48.479Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-268",
+      "timestamp": "2026-07-18T22:20:00-04:00",
+      "error_message": "**/AppData/Local/Temp/** exclude would silence real projects checked out under Windows Temp",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "First-pass Windows scratch fix excluded all of AppData/Local/Temp rather than the claude/ scratch root; SCRATCH_PATH_EXCLUDES feeds review, quality gate, and buglog scan defaults.",
+      "fix": "Narrowed to **/AppData/Local/Temp/claude/** and added a regression test asserting a Temp-shaped real checkout still fires the review nudge.",
+      "tags": [
+        "review-nudge",
+        "windows",
+        "over-broad-exclude",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-267"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T22:20:00-04:00",
+      "commit": "18f0f15",
+      "reduction": ".wolf/qa/scratch-path-excludes-windows.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-434",
+      "timestamp": "2026-07-19T06:30:00-04:00",
+      "error_message": "User input sent mid-turn appears eaten: queued messages seem to never reach the model",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "REVISED root cause: Claude Code DOES deliver mid-turn queued messages as {type:attachment, attachment:{type:queued_command, prompt}} entries after the queue remove. 68 transcripts scanned: 55 non-task-notification removes, every one delivered, 0 true drops. Original forensics only enumerated type:user entries and read absence in checked channels as evidence of absence. Real problems are queue LATENCY (message waits for next tool result) and model ATTENTION (injected content sits unaddressed, e.g. 2.5h in VirtualSuzi session).",
+      "fix": "detectDroppedQueueMessages retained as regression tripwire (remove with NO attachment AND NO later user turn = genuine anomaly); added detectMidturnInjections + maybeNudgeMidturnInjections to remind the model once per delivered mid-turn injection.",
+      "tags": [
+        "queue",
+        "mid-turn",
+        "false-premise",
+        "transcript-forensics",
+        "watchdog"
+      ],
+      "related_bugs": [
+        "bug-435"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T06:30:00-04:00",
+      "commit": "7c78e63",
+      "reduction": ".wolf/qa/queue-drop-watchdog.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-435",
+      "timestamp": "2026-07-19T06:30:00-04:00",
+      "error_message": "Queue-drop watchdog false-positived on every real mid-turn message (live, 2026-07-19)",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "First watchdog version treated every queue remove with content as a silent discard, not knowing queued_command attachments are the normal delivery path.",
+      "fix": "Detector treats attachment prompts as delivered content (exact normalized match, must come after the remove). 4 production false-positive transcripts re-run: 0 drops. Identical-text injections dedup via position-based occurrence ordinal.",
+      "tags": [
+        "queue",
+        "false-positive",
+        "watchdog",
+        "attachment-delivery"
+      ],
+      "related_bugs": [
+        "bug-434"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T06:30:00-04:00",
+      "commit": "7c78e63",
+      "reduction": ".wolf/qa/queue-drop-watchdog.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-436",
+      "timestamp": "2026-07-19T06:22:14.753Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 9→9 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T06:22:14.753Z",
+      "commit": "f5d57ba",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-437",
+      "timestamp": "2026-07-19T06:23:23.964Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Had `⚠️ Wolfpack queue-watch: Claude Code silently dis",
+      "fix": "Changed to `⚠️ Wolfpack queue-watch: ${fresh.length} queued u",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 5,
+      "last_seen": "2026-07-19T06:24:53.203Z",
+      "commit": "34f459c",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-436",
+      "timestamp": "2026-07-19T07:00:00-04:00",
+      "error_message": "Stacked stop-hook nudges inject ~800 tokens/turn of repeated boilerplate; AIs seem too busy to read user input promptly",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Every nudge carried full guidance text (review ~1100 chars, queue-watch ~600, git ~550, simplicity ~460); a 4-nudge stop added ~3000 chars to every subsequent turn. Simplicity default (500 tokens) fired on any substantive session, and advisory nudges stacked with actionable gates.",
+      "fix": "Terse one/two-line nudge format across all gates (verbose mode retains full guidance); simplicity default raised 500->2500; simplicity suppressed when review/quality fired the same stop. A/B measured: 2237->1463 chars (-35%) on a 4-eligible-nudge stop.",
+      "tags": [
+        "nudge",
+        "context-tokens",
+        "simplicity",
+        "consolidation",
+        "ux"
+      ],
+      "related_bugs": [
+        "bug-434"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T07:00:00-04:00",
+      "commit": "f5d57ba",
+      "reduction": ".wolf/qa/terse-nudge-consolidation.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-438",
+      "timestamp": "2026-07-21T21:38:50.279Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-21T21:38:50.279Z",
+      "commit": "3eb01aa",
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-439",
+      "timestamp": "2026-07-21T21:40:04.636Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 7→11 lines (4 removed) | Also: const branch = gitRoot ? gitBranch(gitRoot) : \"not; const statusLines = gitRoot ? gitStatusPorcelain(g",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-21T21:40:24.641Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-440",
+      "timestamp": "2026-07-21T21:43:08.123Z",
+      "error_message": "Function not marked async",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Function uses await but wasn't declared async",
+      "fix": "Added async modifier",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-21T21:43:08.123Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-437",
+      "timestamp": "2026-07-21T00:00:00-04:00",
+      "error_message": "git_discipline Stop-hook nags \"not-a-git-repo\" / \"run git init\" on an actively-committed repo (Windows)",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "gitRootForProject used bare execFileSync(\"git\", ...) — a PATH lookup. Claude Code launched from a stale shell inherits a PATH without Git even when Git is on the Machine PATH; ENOENT was conflated with rev-parse failure, so the hook reported not-a-repo and advised git init. Reported by a PowerShell Claude Code session.",
+      "fix": "resolveGitBin() tries WOLFPACK_GIT_BIN env, git_discipline.git_bin config, PATH, then well-known Windows install locations (Program Files, LOCALAPPDATA). Three-way state: ok / not-a-repo (init advice) / git-not-found (misconfiguration advice, never init). Commit activity in the session transcript suppresses init advice; safety items unaffected.",
+      "tags": [
+        "git-discipline",
+        "windows",
+        "path",
+        "false-positive",
+        "hook-environment"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-21T00:00:00-04:00",
+      "commit": "34f459c",
+      "reduction": ".wolf/qa/git-discipline-not-found-vs-not-repo.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-441",
+      "timestamp": "2026-07-22T03:09:40.403Z",
+      "error_message": "Missing error handling in maybeNudgeSimplicity",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T03:09:40.403Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-442",
+      "timestamp": "2026-07-22T03:17:02.776Z",
+      "error_message": "Significant refactor of ",
+      "file": ".gitignore",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→4 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "unknown"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T03:17:02.776Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-443",
+      "timestamp": "2026-07-22T03:24:01.105Z",
+      "error_message": "Missing await",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T03:24:01.105Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-438",
+      "timestamp": "2026-07-22T03:38:40.966Z",
+      "error_message": "openwolf init upgrade could overwrite .wolf/.gitignore with zero bytes when the .gitignore template file is missing from the install layout (companion review MEDIUM)",
+      "file": "src/cli/init.ts",
+      "root_cause": ".gitignore was added to ALWAYS_OVERWRITE; writeTemplateFile falls through to generateTemplate when the template is absent, and the embedded fallback map had no .gitignore entry, so `templates[file] ?? \"\"` wrote an empty file, clearing existing ignore policy.",
+      "fix": "Added an embedded .gitignore fallback to generateTemplate mirroring src/templates/.gitignore, so a missing template regenerates the full policy instead of zero bytes.",
+      "status": "resolved",
+      "tags": [
+        "init",
+        "templates",
+        "gitignore",
+        "companion-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T03:38:40.966Z",
+      "commit": null,
+      "reduction": ".wolf/qa/feedback-harness-improvements.md (companion review round: init with template absent wrote 647-byte policy file)"
+    }
+  ]
+}
