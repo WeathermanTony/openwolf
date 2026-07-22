@@ -2873,7 +2873,7 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-07-21T21:40:24.641Z",
-      "commit": null,
+      "commit": "82e91ba",
       "reduction": null,
       "status": "resolved"
     },
@@ -3031,6 +3031,25 @@
       "last_seen": "2026-07-22T03:51:22.636Z",
       "commit": null,
       "reduction": ".wolf/qa/feedback-harness-improvements.md (round 2/3: fixture project with stale policy + template absent -> update wrote 647-byte embedded policy, buglog.json no longer ignored)"
+    },
+    {
+      "id": "bug-440",
+      "timestamp": "2026-07-22T03:57:16.826Z",
+      "error_message": "TypeError [ERR_INVALID_ARG_TYPE]: The \"path\" argument must be of type string. Received undefined — openwolf update crashes on a registry entry missing the root field",
+      "file": "src/cli/update.ts",
+      "root_cause": "updateCommand filters/maps registry entries assuming entry.root is always a string (p.root.toLowerCase(), path.join(project.root, ...)); a malformed entry with a missing/renamed key crashes the entire fleet update before any project is processed.",
+      "fix": "",
+      "status": "open",
+      "tags": [
+        "update",
+        "registry",
+        "robustness"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T03:57:16.826Z",
+      "commit": null,
+      "reduction": "2026-07-21 session: registered a fixture with {name, path} instead of {name, root}; updateCommand crashed at dist/src/cli/update.js:68 before processing any project"
     }
   ]
 }
