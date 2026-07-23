@@ -475,3 +475,14 @@
 | 13:49 | Edited src/templates/OPENWOLF.md | modified soft() | ~212 |
 | 13:54 | bug-450 (cross-project churn): added Transport outages paragraph to review lifecycle (2-provider failure = outage, refresh+document+yield, no edit-to-satisfy); GLM review CLEAN on current bytes pre-registered for the pending this edit creates | src/templates/OPENWOLF.md .wolf/buglog.json .wolf/cerebrum.md | fix verified, review completion on nudge arrival | ~18k |
 | 13:54 | Session end: 8 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~37137 tok |
+| 14:51 | Committed protocol updates: 9fe16f2 (round-cap + transport-outage, bug-449/450) + 020b2b6 (backfills); no git remote configured so nothing to push | .wolf/* src/templates/OPENWOLF.md | committed locally | ~1k |
+| 14:51 | Session end: 8 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~37137 tok |
+| 14:54 | Edited src/cli/registry.ts | added 3 condition(s) | ~381 |
+| 14:54 | Created tests/registry.test.js | — | ~1109 |
+
+## Session: 2026-07-23 15:00
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:05 | Wrote QA reduction for bug-440 registry fix (4 assumptions, riskiest = dropping malformed entries loses nothing; falsifier = 62/62 tests + e2e fixture run warning on 2 injected malformed entries) | .wolf/qa/registry-malformed-entry-guard.md | reduction current @94971bb5 | ~2.5k |
+| 15:06 | Updated open bug-440 entry with fix text + reduction link (filtered on status=open to avoid the duplicate resolved bug-440) | .wolf/buglog.json | fix recorded, commit backfill pending | ~300 |

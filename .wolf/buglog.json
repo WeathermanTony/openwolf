@@ -3038,7 +3038,7 @@
       "error_message": "TypeError [ERR_INVALID_ARG_TYPE]: The \"path\" argument must be of type string. Received undefined — openwolf update crashes on a registry entry missing the root field",
       "file": "src/cli/update.ts",
       "root_cause": "updateCommand filters/maps registry entries assuming entry.root is always a string (p.root.toLowerCase(), path.join(project.root, ...)); a malformed entry with a missing/renamed key crashes the entire fleet update before any project is processed.",
-      "fix": "",
+      "fix": "Rewrote readRegistry() in src/cli/registry.ts to filter malformed entries (missing/renamed root or name) at the single read point via isWellFormedEntry guard; warns to stderr with the drop count; the next writeRegistry from any caller (registerProject, update, stale-drop) persists the cleanup to disk. All downstream consumers (update.ts path.join / toLowerCase) are protected without per-call changes.",
       "status": "open",
       "tags": [
         "update",
@@ -3047,9 +3047,9 @@
       ],
       "related_bugs": [],
       "occurrences": 1,
-      "last_seen": "2026-07-22T03:57:16.826Z",
+      "last_seen": "2026-07-23T19:00:56.821Z",
       "commit": null,
-      "reduction": "2026-07-21 session: registered a fixture with {name, path} instead of {name, root}; updateCommand crashed at dist/src/cli/update.js:68 before processing any project"
+      "reduction": ".wolf/qa/registry-malformed-entry-guard.md"
     },
     {
       "id": "bug-445",
@@ -3191,6 +3191,24 @@
       "last_seen": "2026-07-23T17:50:21.405Z",
       "commit": "9fe16f2",
       "reduction": "user-supplied transcript 2026-07-23/24: metatrader 7-21-2026-Work session, review-0019, 8x [1211] failures, 33m57s churn; corroborated locally by MiMo bridge 401 during review-0072"
+    },
+    {
+      "id": "bug-451",
+      "timestamp": "2026-07-23T18:54:25.433Z",
+      "error_message": "Missing guard clause",
+      "file": "src/cli/registry.ts",
+      "root_cause": "No early return/throw for edge case: !parsed || !Array.isArray(parsed.projects",
+      "fix": "Added guard clause: if (!parsed || !Array.isArray(parsed.project)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:54:25.433Z",
+      "commit": null,
+      "reduction": null
     }
   ]
 }

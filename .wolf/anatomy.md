@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T17:49:59.123Z
-> Files: 158 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T18:54:54.316Z
+> Files: 159 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/
 
@@ -54,7 +54,7 @@
 - `index.ts` — Exports createProgram (~2267 tok)
 - `init.ts` — Exports initCommand (~10515 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
-- `registry.ts` — Central registry of all OpenWolf-managed projects. (~852 tok)
+- `registry.ts` — Central registry of all OpenWolf-managed projects. (~1161 tok)
 - `review-cmd.ts` — Exports reviewList, reviewShow, reviewHash, reviewComplete (~1646 tok)
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1298 tok)
@@ -253,6 +253,7 @@
 - `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
 - `qa-cmd.test.js` — sha256: fixture (~656 tok)
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)
+- `registry.test.js` — Tests for bug-440: malformed registry entries (missing root/name) must not (~1109 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
 - `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~13368 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)

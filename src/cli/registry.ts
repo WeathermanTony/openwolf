@@ -29,12 +29,33 @@ export function getRegistryPath(): string {
 
 export function readRegistry(): Registry {
   const registryPath = getRegistryPath();
+  let parsed: Registry;
   try {
     const raw = fs.readFileSync(registryPath, "utf-8");
-    return JSON.parse(raw) as Registry;
+    parsed = JSON.parse(raw) as Registry;
   } catch {
     return { version: 1, projects: [] };
   }
+  if (!parsed || !Array.isArray(parsed.projects)) {
+    return { version: 1, projects: [] };
+  }
+  // Structurally malformed entries (missing/renamed root or name) crash every
+  // consumer downstream (path.join(undefined), p.root.toLowerCase()). Filter
+  // them at the single read point so all commands are protected; the next
+  // writeRegistry from any caller persists the cleanup (bug-440).
+  const valid = parsed.projects.filter(isWellFormedEntry);
+  const dropped = parsed.projects.length - valid.length;
+  if (dropped > 0) {
+    console.error(`OpenWolf: skipped ${dropped} malformed registry ${dropped === 1 ? "entry" : "entries"} (missing name/root) in ${registryPath}; cleanup persists on the next registry write.`);
+  }
+  return { ...parsed, projects: valid };
+}
+
+function isWellFormedEntry(p: unknown): p is RegisteredProject {
+  if (!p || typeof p !== "object") return false;
+  const entry = p as RegisteredProject;
+  return typeof entry.root === "string" && entry.root.length > 0
+    && typeof entry.name === "string" && entry.name.length > 0;
 }
 
 export function writeRegistry(registry: Registry): void {
