@@ -462,3 +462,16 @@
 | 11:40 | gate-00229: wrote severity-rubric-alignment reduction (4 assumptions, A4 stale-vocab sweep falsified-clean, 11/11 runtimes 4-tier); linked as bug-448 reduction | .wolf/qa/severity-rubric-alignment.md .wolf/buglog.json | conclusion now reduction-backed | ~2k |
 | 11:40 | Session end: 5 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~36488 tok |
 | 11:41 | Session end: 5 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~36488 tok |
+| 11:47 | custom.14 fleet deploy: 80/80 byte-verified (OPENWOLF.md now ships Multi-Round Review Convergence), pm2 empty; commits 119312c + bug-448 resolved | VERSION package*.json src/templates/OPENWOLF.md .wolf/* | deploy complete | ~4k |
+| 11:47 | Session end: 5 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~36488 tok |
+| 11:47 | Session end: 5 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~36488 tok |
+| 12:00 | Edited src/templates/OPENWOLF.md | 1→2 lines | ~199 |
+| 12:02 | Writer Harness-Effect article triage: adopted review round-cap (3 rounds w/ new findings → escalate) as convergence item 6; banked delegation-cliff + harness-leverage corroboration; rejected CPM instrumentation + learned routing | src/templates/OPENWOLF.md .wolf/cerebrum.md | template-only, rides next deploy | ~3k |
+| 12:02 | Session end: 6 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~36701 tok |
+| 12:10 | Edited src/templates/OPENWOLF.md | inline fix | ~195 |
+| 12:22 | review-0072 converged: Kimi found 3 item-6 flaws (HIGH wedge claim refuted via stop.ts evidence; 2 MEDIUMs real), item 6 rewritten, Kimi fix-verify + MiniMax arbitration both CLEAN; bug-449 logged. MiMo bridge 401 (expired credential) — user to refresh | src/templates/OPENWOLF.md .wolf/buglog.json | converged | ~40k |
+| 12:22 | Session end: 7 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~36910 tok |
+| 12:23 | Session end: 7 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~36910 tok |
+| 13:49 | Edited src/templates/OPENWOLF.md | modified soft() | ~212 |
+| 13:54 | bug-450 (cross-project churn): added Transport outages paragraph to review lifecycle (2-provider failure = outage, refresh+document+yield, no edit-to-satisfy); GLM review CLEAN on current bytes pre-registered for the pending this edit creates | src/templates/OPENWOLF.md .wolf/buglog.json .wolf/cerebrum.md | fix verified, review completion on nudge arrival | ~18k |
+| 13:54 | Session end: 8 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~37137 tok |

@@ -233,6 +233,8 @@ When the Stop hook creates a pending review in `.wolf/reviewlog.json`, never mar
    node .wolf/hooks/complete-review.js review-NNNN --reviewed-current --reviewer <name> --summary "<outcome>"
    ```
 
+**Transport outages.** A companion transport failure (auth, bridge, or API error with no review verdict) is not a review round. If two different providers fail with transport errors, treat it as an outage and stop retrying: refresh the pending review to current hashes, record the blocker and the exact completion commands in `.wolf/memory.md`, and yield. Do not keep editing the gated file to satisfy the nudge — fresh edits re-arm the trigger and create a self-feeding loop. The gate is soft (`nudge_only`): a pending review never blocks work. Retry the companion next session or on the next legitimate edit.
+
 Companion receipt hashes currently use a different representation from Wolfpack's `--reviewed-hash` manifest. Do not pass a companion receipt hash as `--reviewed-hash`; retain that option only for workflows that explicitly produced Wolfpack's own manifest hash. Pending reviews may coalesce, lock errors may be transient, and the listed file set may include files already covered at the same current hash.
 
 ### Multi-Round Review Convergence
@@ -244,6 +246,7 @@ When fixes require another review round on the same work:
 3. **Severity rubric** (aligned with the companion four-tier scale). CRITICAL = distinct, currently-reachable money/data/correctness path. HIGH = other reachable defect with material impact. MEDIUM = diagnostic, recovery, or unusual-config defect. LOW = latent or dead code. Reject speculative future-extensibility findings unless the changed code already exposes that call surface.
 4. **Stateful diffs.** If the change touches a state machine, order/lifecycle management, or a protocol handler, require a state-transition matrix (operation result × next state × expected invariant) as review evidence.
 5. **Convergence rule.** After all verified findings are fixed: refresh hashes → ONE clean current-byte review from a DIFFERENT provider than the fix-verification reviewer → compile/tests pass → `--reviewed-current` → stop. No further rounds after clean arbitration. The same reviewer may do discovery plus one fix-verification pass; final arbitration must be a different provider.
+6. **Round cap (failure-spend governance).** A round is one companion review pass on the pending review — discovery, fix-verification, and arbitration each count as one. If three rounds on the same root-cause ledger still produce new verified findings, stop the loop and escalate to the user with the finding history — repeated new findings mean the change needs human re-scoping, not another automated round. Escalation leaves the pending review open: it keeps its identity through coalescing, folds into the user's re-scoped changes, and completes normally once a later round converges — no dismissal or manual reviewlog edit is needed or permitted. Review rounds cost real tokens; failure should get cheaper, not more expensive.
 
 Carry verified invariants in the QA reduction and quote them in re-review prompts; the reviewer re-checks only invariants whose functions changed. Wolfpack does not auto-invalidate invariants by line range — a stale "verified" invariant is worse than a re-check.
 
