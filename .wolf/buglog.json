@@ -3126,6 +3126,26 @@
       "last_seen": "2026-07-22T04:15:54.811Z",
       "commit": null,
       "reduction": ".wolf/qa/review-baseline-delta.md"
+    },
+    {
+      "id": "bug-448",
+      "timestamp": "2026-07-23T15:36:53.068Z",
+      "error_message": "OPENWOLF.md severity rubric defined HIGH as top tier with the money/data/correctness definition, but companion runtime contract (companion-runtime.mjs) uses four tiers LOW|MEDIUM|HIGH|CRITICAL — same defect labeled HIGH by OPENWOLF.md and CRITICAL by CLAUDE.md/companions; item-1 tagging rule then under-covered the top tier",
+      "file": "src/templates/OPENWOLF.md",
+      "root_cause": "Rubric vocabulary was taken from the external feedback text (3-tier, HIGH-top) instead of the actual companion runtime contract (4-tier, CRITICAL-top); first fix also edited only item 3 while claiming item 1 was fixed",
+      "fix": "Rubric rewritten to four tiers (CRITICAL = distinct currently-reachable money/data/correctness path; HIGH = other reachable defect with material impact); item 1 now reads \"does not mint a new CRITICAL/HIGH\"; verified by GLM fix-verification + MiniMax final arbitration CLEAN on current bytes",
+      "status": "open",
+      "tags": [
+        "docs",
+        "severity-rubric",
+        "companion-contract",
+        "review-protocol"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T15:36:53.068Z",
+      "commit": null,
+      "reduction": ".wolf/qa/severity-rubric-alignment.md (+ review-0071 companion rounds: GLM discovery/fix-verify, MiniMax arbitration CLEAN @c58c0de8)"
     }
   ]
 }

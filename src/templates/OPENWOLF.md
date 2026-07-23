@@ -235,6 +235,18 @@ When the Stop hook creates a pending review in `.wolf/reviewlog.json`, never mar
 
 Companion receipt hashes currently use a different representation from Wolfpack's `--reviewed-hash` manifest. Do not pass a companion receipt hash as `--reviewed-hash`; retain that option only for workflows that explicitly produced Wolfpack's own manifest hash. Pending reviews may coalesce, lock errors may be transient, and the listed file set may include files already covered at the same current hash.
 
+### Multi-Round Review Convergence
+
+When fixes require another review round on the same work:
+
+1. **Root-cause ledger.** Track root causes found so far in the QA reduction (e.g. `partial-close lifecycle`). Every re-review prompt lists them; the reviewer must tag each finding with a root-cause key and mark it NEW or EXISTING-incomplete. A reformulation extends the existing entry — it is not a new finding and does not mint a new CRITICAL/HIGH.
+2. **Delta-aware prompts.** Round 2+ prompts scope to unresolved findings plus changed hunks. Never re-request a broad whole-file review after round one.
+3. **Severity rubric** (aligned with the companion four-tier scale). CRITICAL = distinct, currently-reachable money/data/correctness path. HIGH = other reachable defect with material impact. MEDIUM = diagnostic, recovery, or unusual-config defect. LOW = latent or dead code. Reject speculative future-extensibility findings unless the changed code already exposes that call surface.
+4. **Stateful diffs.** If the change touches a state machine, order/lifecycle management, or a protocol handler, require a state-transition matrix (operation result × next state × expected invariant) as review evidence.
+5. **Convergence rule.** After all verified findings are fixed: refresh hashes → ONE clean current-byte review from a DIFFERENT provider than the fix-verification reviewer → compile/tests pass → `--reviewed-current` → stop. No further rounds after clean arbitration. The same reviewer may do discovery plus one fix-verification pass; final arbitration must be a different provider.
+
+Carry verified invariants in the QA reduction and quote them in re-review prompts; the reviewer re-checks only invariants whose functions changed. Wolfpack does not auto-invalidate invariants by line range — a stale "verified" invariant is worse than a re-check.
+
 ## Operational Verification
 
 Use `/ops:live-debug` as the default bounded workflow for collecting evidence from explicit process, log, file, and HTTP targets. Use `/ops:deploy-verify` as the default workflow for an explicit deployment target, including local/served byte evidence where applicable.

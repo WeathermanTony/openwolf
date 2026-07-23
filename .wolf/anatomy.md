@@ -1,7 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T04:17:18.181Z
-> Files: 157 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T15:33:03.113Z
+> Files: 158 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../../home/tony/.claude/
+
+- `CLAUDE.md` — Claude Code Behaviour Guidelines (~4318 tok)
 
 ## ../../../../../home/tony/.claude/plans/
 
@@ -163,7 +167,7 @@
 - `designqc-report.json` (~26 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~3984 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~4535 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 - `reviewlog.json` (~11 tok)
@@ -213,7 +217,7 @@
 - `config.json` (~1876 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~3984 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~4500 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 

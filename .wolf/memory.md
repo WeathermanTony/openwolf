@@ -450,3 +450,15 @@
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
 | 08:40 | custom.13 fleet deploy: 80/80 projects byte-verified (stop.js, complete-review.js, .gitignore, OPENWOLF.md), pm2 empty, backup at .wolf/backups/2026-07-22T0834 | VERSION package*.json .wolf/buglog.json | deploy complete | ~2k |
+| 12:53 | Diagnosed "Stop hook error: Wolfpack feedback" in metatrader project: benign — CLI 2.1.217 renders decision:block reason as "Stop hook error:"; verified no re-fire (seen 23/23), 3 hooks = wolfpack+ralph-loop+codex | .wolf/cerebrum.md | no bug, learning logged | ~3k |
+| 11:18 | Edited src/templates/OPENWOLF.md | expanded (+12 lines) | ~578 |
+| 11:19 | Edited ../../../../../home/tony/.claude/CLAUDE.md | 2→7 lines | ~139 |
+| 11:21 | Triaged multi-round review-loop feedback: adopted 6/7 as OPENWOLF.md "Multi-Round Review Convergence" protocol + global CLAUDE.md bullet; rejected auto-clustering/line-range invalidation machinery; 3 OPENWOLF.md mirrors synced | src/templates/OPENWOLF.md .wolf/cerebrum.md ~/.claude/CLAUDE.md | docs-only, fleet propagation = custom.14 (needs approval) | ~4k |
+| 11:22 | Session end: 2 writes across 2 files (OPENWOLF.md, CLAUDE.md) | 3 reads | ~35162 tok |
+| 11:27 | Edited src/templates/OPENWOLF.md | inline fix | ~102 |
+| 11:33 | Edited src/templates/OPENWOLF.md | inline fix | ~29 |
+| 11:37 | review-0071 converged: GLM found severity-scale mismatch (bug-448), rubric aligned to companion 4-tier scale, GLM fix-verify caught item-1 residual, MiniMax arbitration CLEAN on current bytes; review completed --reviewed-current | src/templates/OPENWOLF.md .wolf/buglog.json .wolf/cerebrum.md | converged per new protocol | ~30k |
+| 11:38 | Session end: 4 writes across 2 files (OPENWOLF.md, CLAUDE.md) | 3 reads | ~35303 tok |
+| 11:40 | gate-00229: wrote severity-rubric-alignment reduction (4 assumptions, A4 stale-vocab sweep falsified-clean, 11/11 runtimes 4-tier); linked as bug-448 reduction | .wolf/qa/severity-rubric-alignment.md .wolf/buglog.json | conclusion now reduction-backed | ~2k |
+| 11:40 | Session end: 5 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~36488 tok |
+| 11:41 | Session end: 5 writes across 3 files (OPENWOLF.md, CLAUDE.md, severity-rubric-alignment.md) | 3 reads | ~36488 tok |
