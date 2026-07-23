@@ -486,3 +486,4 @@
 |------|--------|---------|---------|--------|
 | 15:05 | Wrote QA reduction for bug-440 registry fix (4 assumptions, riskiest = dropping malformed entries loses nothing; falsifier = 62/62 tests + e2e fixture run warning on 2 injected malformed entries) | .wolf/qa/registry-malformed-entry-guard.md | reduction current @94971bb5 | ~2.5k |
 | 15:06 | Updated open bug-440 entry with fix text + reduction link (filtered on status=open to avoid the duplicate resolved bug-440) | .wolf/buglog.json | fix recorded, commit backfill pending | ~300 |
+| 15:08 | Committed bug-440 fix 154ceaa (registry.ts + registry.test.js + buglog + memory + anatomy); backfill commit 3a97002 marks bug-440 resolved — pattern: never amend, backfill in second commit | 5 files + .wolf/buglog.json | bug-440 resolved, 62/62 tests green | ~1k |
