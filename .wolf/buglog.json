@@ -3134,7 +3134,7 @@
       "file": "src/templates/OPENWOLF.md",
       "root_cause": "Rubric vocabulary was taken from the external feedback text (3-tier, HIGH-top) instead of the actual companion runtime contract (4-tier, CRITICAL-top); first fix also edited only item 3 while claiming item 1 was fixed",
       "fix": "Rubric rewritten to four tiers (CRITICAL = distinct currently-reachable money/data/correctness path; HIGH = other reachable defect with material impact); item 1 now reads \"does not mint a new CRITICAL/HIGH\"; verified by GLM fix-verification + MiniMax final arbitration CLEAN on current bytes",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "docs",
         "severity-rubric",
@@ -3144,7 +3144,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-23T15:36:53.068Z",
-      "commit": null,
+      "commit": "119312c",
       "reduction": ".wolf/qa/severity-rubric-alignment.md (+ review-0071 companion rounds: GLM discovery/fix-verify, MiniMax arbitration CLEAN @c58c0de8)"
     }
   ]
