@@ -3039,7 +3039,7 @@
       "file": "src/cli/update.ts",
       "root_cause": "updateCommand filters/maps registry entries assuming entry.root is always a string (p.root.toLowerCase(), path.join(project.root, ...)); a malformed entry with a missing/renamed key crashes the entire fleet update before any project is processed.",
       "fix": "Rewrote readRegistry() in src/cli/registry.ts to filter malformed entries (missing/renamed root or name) at the single read point via isWellFormedEntry guard; warns to stderr with the drop count; the next writeRegistry from any caller (registerProject, update, stale-drop) persists the cleanup to disk. All downstream consumers (update.ts path.join / toLowerCase) are protected without per-call changes.",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "update",
         "registry",
@@ -3047,8 +3047,8 @@
       ],
       "related_bugs": [],
       "occurrences": 1,
-      "last_seen": "2026-07-23T19:00:56.821Z",
-      "commit": null,
+      "last_seen": "2026-07-23T19:02:37.303Z",
+      "commit": "154ceaa",
       "reduction": ".wolf/qa/registry-malformed-entry-guard.md"
     },
     {
