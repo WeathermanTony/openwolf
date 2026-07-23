@@ -3154,7 +3154,7 @@
       "file": "src/templates/OPENWOLF.md",
       "root_cause": "Item written from the feedback article concept without grounding in the actual review lifecycle mechanics (coalescing retains identity, nudge triggers need new uncovered lines, refresh nudge is signature-gated); reviewer-facing definitions were left implicit",
       "fix": "Item 6 rewritten: round defined as one companion review pass (discovery/fix-verification/arbitration each count), cap keyed to root-cause ledger (stable across review identities), terminal semantics stated (pending stays open, coalesces with re-scoped changes, completes normally). Verified by Kimi fix-verification + MiniMax arbitration, both CLEAN",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "docs",
         "review-protocol",
@@ -3166,7 +3166,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-07-23T16:22:09.671Z",
-      "commit": null,
+      "commit": "9fe16f2",
       "reduction": "review-0072 companion rounds 2026-07-23: Kimi discovery (3 findings) + fix-verification CLEAN, MiniMax arbitration CLEAN (OPENWOLF.md@884c086c); hook-behavior refutation evidence stop.ts:945-994,1149-1168"
     },
     {
@@ -3176,7 +3176,7 @@
       "file": "src/templates/OPENWOLF.md",
       "root_cause": "OPENWOLF.md documented no infrastructure-blocked path for the review lifecycle and no transport retry budget; assistants infer they must satisfy the gate, so gate nudge -> edit-to-satisfy -> re-fire became a self-feeding loop. Soft-gate semantics (nudge_only, pending never blocks) were not stated at the lifecycle point of use",
       "fix": "Added Transport outages paragraph to the review lifecycle: transport failure is not a review round; two providers failing with transport errors = outage -> stop retrying, refresh hashes, record blocker + completion commands in memory.md, yield; do not edit the gated file to satisfy the nudge; retry next session or next legitimate edit",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "docs",
         "review-protocol",
@@ -3189,7 +3189,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-07-23T17:50:21.405Z",
-      "commit": null,
+      "commit": "9fe16f2",
       "reduction": "user-supplied transcript 2026-07-23/24: metatrader 7-21-2026-Work session, review-0019, 8x [1211] failures, 33m57s churn; corroborated locally by MiMo bridge 401 during review-0072"
     }
   ]
