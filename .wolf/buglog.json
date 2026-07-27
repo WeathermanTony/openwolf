@@ -4042,7 +4042,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:24:46.329Z",
-      "commit": null,
+      "commit": "001bd7a",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     },
     {
@@ -4063,7 +4063,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:24:46.329Z",
-      "commit": null,
+      "commit": "001bd7a",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     },
     {
@@ -4084,7 +4084,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:24:46.329Z",
-      "commit": null,
+      "commit": "001bd7a",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     },
     {
@@ -4105,7 +4105,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:24:46.329Z",
-      "commit": null,
+      "commit": "001bd7a",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     },
     {
@@ -4123,6 +4123,67 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:29:21.155Z",
+      "commit": null,
+      "reduction": null,
+      "status": "resolved"
+    },
+    {
+      "id": "bug-501",
+      "timestamp": "2026-07-27T16:32:01.606Z",
+      "error_message": "Review size trigger could compute 0 lines and silently not fire, despite real in-scope work. Self-found while reviewing my own bug-498 fix; no user report.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "The scoped-attribution fix set its sawTokenField flag from ANY write carrying a tokens field -- including writes excluded by review scope_excludes -- while scopedTokens only summed IN-SCOPE writes. A _session.json spanning the upgrade, whose only in-scope write predates per-write token recording but which also contains an excluded write that has the field, took the scoped path and summed 0. Measured: sawTokenField true, scoped 0, effectiveLines 0, gate does not fire. The guard and the value it guarded were computed over different populations.",
+      "fix": "Decide per-scope and require attribution to be COMPLETE: count in-scope writes, and only trust the sum when every in-scope write carries a finite tokens field; otherwise fall back to sessionEntry.totals.output_tokens_estimated. Partial data now over-reports (visible) instead of under-reporting (silent). The four covered_tokens_basis stamp sites were repointed to the same attributionComplete condition -- stamping the scoped marker while storing a session-total value would write a mislabeled baseline, reintroducing the unit-mixing bug one layer down. Regression test added with 4 negative controls (small in-scope edit still 5 lines not 3000; large still fires; partial falls back; no-tokens falls back).",
+      "status": "resolved",
+      "tags": [
+        "nudge",
+        "review",
+        "token-attribution",
+        "silent-false-negative",
+        "self-review",
+        "fallback-scope"
+      ],
+      "related_bugs": [
+        "bug-498"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:32:01.606Z",
+      "commit": "94134e2",
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-502",
+      "timestamp": "2026-07-27T16:33:23.097Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 18→28 lines (9 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:33:23.097Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-503",
+      "timestamp": "2026-07-27T16:35:47.316Z",
+      "error_message": "Type error",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:35:47.317Z",
       "commit": null,
       "reduction": null
     }

@@ -1226,21 +1226,45 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     //   sawTokenField: true  scoped: 0  -> effectiveLines: 0  fires: false
     // Deciding per-scope means a partially-migrated _session.json falls back to
     // the session total (over-reports, visible) instead of to silence.
-    let inScopeWrites = 0;
-    for (const w of sessionEntry.writes) {
-        if (!inScope.has(normalizeFilePath(w.file)))
-            continue;
-        inScopeWrites++;
-        if (typeof w.tokens === "number" && Number.isFinite(w.tokens)) {
+    // ONE definition of "this write carries usable attribution", used by both
+    // the accumulator and the completeness check below. Two copies of this
+    // predicate is how the population mismatch this fix addresses arose in the
+    // first place.
+    //
+    // Negative is rejected alongside NaN/Infinity. `estimateTokens` computes
+    // `Math.ceil(len / ratio)` and cannot emit one, so this is unreachable from
+    // the producer — but a hand-edited or corrupted `_session.json` would make
+    // the sum shrink, and a shrinking sum fails toward 0 lines, i.e. toward a
+    // silently-dead gate. One clause buys out the whole failure direction.
+    const hasUsableTokens = (w) => typeof w.tokens === "number"
+        && Number.isFinite(w.tokens)
+        && w.tokens >= 0;
+    const scopedWrites = sessionEntry.writes.filter(w => inScope.has(normalizeFilePath(w.file)));
+    for (const w of scopedWrites) {
+        if (hasUsableTokens(w)) {
             sawTokenField = true;
             scopedTokens += w.tokens;
         }
     }
     // Require EVERY in-scope write to carry the field before trusting the sum;
     // a partial set undercounts by exactly the un-migrated writes.
-    const attributionComplete = sawTokenField && inScopeWrites > 0
-        && sessionEntry.writes.filter(w => inScope.has(normalizeFilePath(w.file)))
-            .every(w => typeof w.tokens === "number" && Number.isFinite(w.tokens));
+    //
+    // `scopedTokens > 0` closes an all-zero hole (minimax review of review-0077,
+    // confirmed reachable): `estimateTokens` measures `content || new_string`,
+    // so a pure DELETION — an Edit whose new_string is empty — records
+    // `tokens: 0`. Every in-scope write being a deletion is therefore a real
+    // state, and it produced attributionComplete=true with a 0-token sum, i.e.
+    // 0 lines and no size trigger. Deleting 500 lines is precisely the change
+    // that most needs review, and the gate went silent on it.
+    //
+    // Guard the SUM, not the individual value: rejecting `tokens: 0` per-write
+    // (the reviewer's suggested fix) would misclassify a legitimate measurement
+    // as malformed. A zero total means "attribution tells us nothing here", so
+    // fall back to the session total — over-report, visibly.
+    const attributionComplete = sawTokenField
+        && scopedWrites.length > 0
+        && scopedWrites.every(hasUsableTokens)
+        && scopedTokens > 0;
     const cumulativeTokens = attributionComplete
         ? scopedTokens
         : sessionEntry.totals.output_tokens_estimated;

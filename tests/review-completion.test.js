@@ -1165,8 +1165,10 @@ test('review size trigger falls back when in-scope attribution is incomplete', (
   const decide = (writes, sessionTotal) => {
     const inScope = new Set(writes.map((w) => w.file).filter((f) => !excluded.some((re) => re.test(f))).map(norm));
     const scopedWrites = writes.filter((w) => inScope.has(norm(w.file)));
-    const hasTok = (w) => typeof w.tokens === 'number' && Number.isFinite(w.tokens);
-    const complete = scopedWrites.length > 0 && scopedWrites.some(hasTok) && scopedWrites.every(hasTok);
+    // Mirrors hasUsableTokens in stop.ts maybeNudgeReview.
+    const hasTok = (w) => typeof w.tokens === 'number' && Number.isFinite(w.tokens) && w.tokens >= 0;
+    const complete = scopedWrites.length > 0 && scopedWrites.some(hasTok) && scopedWrites.every(hasTok)
+      && scopedWrites.reduce((a, w) => a + (hasTok(w) ? w.tokens : 0), 0) > 0;
     const tokens = complete ? scopedWrites.reduce((a, w) => a + w.tokens, 0) : sessionTotal;
     return { complete, lines: Math.max(0, Math.round(tokens / 17)) };
   };
@@ -1191,4 +1193,32 @@ test('review size trigger falls back when in-scope attribution is incomplete', (
   const partial = decide([{ file: '/p/src/a.ts', tokens: 900 }, { file: '/p/src/b.ts' }], 51000);
   assert.equal(partial.complete, false, 'a partial token set must not be trusted');
   assert.ok(partial.lines >= 40, 'partial data over-reports (visible) rather than under-reports (silent)');
+
+  // Malformed values must fail toward firing, not toward a silent 0. Negative
+  // is unreachable from estimateTokens (Math.ceil of a non-negative length) but
+  // a corrupted _session.json would shrink the sum, and a shrinking sum fails
+  // toward a dead gate.
+  for (const bad of [NaN, Infinity, -500]) {
+    const r = decide([{ file: '/p/src/a.ts', tokens: bad }], 51000);
+    assert.equal(r.complete, false, `tokens=${bad} must not count as usable attribution`);
+    assert.ok(r.lines >= 40, `tokens=${bad} must fall back and fire, not silently report 0`);
+  }
+
+  // ...but a legitimate 0 (an emptied file) is real data, not a malformed
+  // value, and must still be trusted. Guarding must not overreach.
+  // A pure DELETION records tokens: 0 -- estimateTokens measures
+  // `content || new_string`, and an Edit that removes a block has an empty
+  // new_string. So "every in-scope write is a deletion" is a REAL state, and it
+  // must not silently skip the gate: deleting 500 lines is exactly the change
+  // that most needs review. Found by minimax review of review-0077.
+  const allZero = decide([{ file: '/p/src/a.ts', tokens: 0 }], 5000);
+  assert.equal(allZero.complete, false, 'a zero-token sum tells us nothing; do not trust it');
+  assert.ok(allZero.lines >= 40, 'an all-deletion session must fall back and fire, not go silent');
+
+  // ...but guard the SUM, not the individual value. A deletion alongside a real
+  // edit is still accurate attribution and must NOT fall back to the session
+  // total -- otherwise the original over-reporting bug returns.
+  const mixed = decide([{ file: '/p/src/a.ts', tokens: 0 }, { file: '/p/src/b.ts', tokens: 100 }], 51000);
+  assert.equal(mixed.complete, true, 'a zero write among real ones is valid data');
+  assert.equal(mixed.lines, 6, 'must use scoped attribution, not the 51000-token session total');
 });
