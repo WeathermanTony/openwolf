@@ -329,13 +329,15 @@ function createBackup(wolfDir: string): string {
     const hooksBackup = path.join(backupDir, "hooks");
     ensureDir(hooksBackup);
     try {
-      const hookFiles = fs.readdirSync(hooksDir);
-      for (const f of hookFiles) {
-        const src = path.join(hooksDir, f);
-        if (fs.statSync(src).isFile()) {
-          safeCopyFile(src, path.join(hooksBackup, f));
-        }
-      }
+      // Recurse: hooks/ now contains a nested nudges/ tree. A flat copy backed
+      // up only top-level files, so a rollback could not restore the nudge
+      // modules and would leave stop.js importing modules that no longer exist.
+      //
+      // Back up EVERY file, not just .js: hooks/package.json carries
+      // {"type":"module"} and is required for ESM resolution, and .mjs helpers
+      // and _session.json state live here too. A backup is a fidelity copy —
+      // the narrower .js filter is right for installing, wrong for restoring.
+      safeCopyDir(hooksDir, hooksBackup, () => true);
     } catch {}
   }
 
@@ -594,12 +596,13 @@ export function restoreCommand(backupName?: string): void {
   // Restore hooks if present
   const hooksBackup = path.join(backupDir, "hooks");
   if (fs.existsSync(hooksBackup)) {
-    const hookFiles = fs.readdirSync(hooksBackup);
     const hooksDir = path.join(wolfDir, "hooks");
     ensureDir(hooksDir);
-    for (const f of hookFiles) {
-      safeCopyFile(path.join(hooksBackup, f), path.join(hooksDir, f));
-    }
+    // Recurse, and copy every file type — must mirror the backup above.
+    // The previous flat loop called safeCopyFile on directory entries with no
+    // isFile() guard, so once hooks/ gained the nested nudges/ tree a restore
+    // threw EISDIR and aborted PART-WAY, leaving hooks/ half rolled back.
+    safeCopyDir(hooksBackup, hooksDir, () => true);
   }
 
   // Restore .claude settings if present

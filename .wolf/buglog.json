@@ -3818,6 +3818,67 @@
       "last_seen": "2026-07-27T01:59:10.009Z",
       "commit": null,
       "reduction": null
+    },
+    {
+      "id": "bug-485",
+      "timestamp": "2026-07-27T02:02:53.321Z",
+      "error_message": "Missing error handling in trimHookLifecycleLog",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T02:02:53.321Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-486",
+      "timestamp": "2026-07-27T02:03:16.579Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/cli/update.ts",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 9→7 lines (7 removed) | Also: // safeCopyDir keeps every .js in the subtree.; safeCopyDir(hooksDir, hooksBackup); | Also: const hookFiles = fs.readdirSync(hooksBackup);; for (const f of hookFiles) {",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-07-27T02:03:36.872Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-487",
+      "timestamp": "2026-07-27T02:05:08.153Z",
+      "error_message": "EISDIR on `openwolf update` rollback: restoreCommand called safeCopyFile on a directory entry, aborting the restore part-way and leaving .wolf/hooks/ half rolled back. Backup separately skipped the nudges/ subtree entirely.",
+      "file": "src/cli/update.ts",
+      "root_cause": "Both the hooks backup (createBackup) and the hooks restore (restoreCommand) used FLAT readdirSync loops. Backup guarded with isFile(), so the new nested nudges/ tree was silently skipped and never backed up. Restore had NO isFile() guard at all, so once hooks/ contained a subdirectory it called safeCopyFile on it and threw EISDIR mid-loop — leaving hooks/ partially restored, which is worse than not restoring at all. This predated the safeCopyDir packaging fix (bug-479) but that fix made it REACHABLE by introducing the first subdirectory under hooks/. Surfaced by a GLM companion review of review-0076, which correctly identified it but classified it out-of-scope as pre-existing; project guidelines reject 'pre-existing' as a reason to skip, so it was verified and fixed.",
+      "fix": "Replaced both flat loops with safeCopyDir(..., () => true). The permissive filter is deliberate and differs from the install-side default of .js-only: a backup is a FIDELITY copy, and hooks/package.json carries {\"type\":\"module\"} required for ESM resolution, plus .mjs helpers and _session.json state. Falsifier: a nested fixture (stop.js, package.json, nudges/engine.js, nudges/rules/review.js) round-trips 4 files backed up -> 4 restored with contents intact and no EISDIR. Before the fix, a mirrored reproduction showed backup capturing only stop.js ('nudges/ MISSING') and restore throwing EISDIR.",
+      "status": "resolved",
+      "tags": [
+        "update",
+        "rollback",
+        "backup",
+        "restore",
+        "eisdir",
+        "packaging",
+        "recursion"
+      ],
+      "related_bugs": [
+        "bug-479"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T02:05:08.153Z",
+      "commit": null,
+      "reduction": ".wolf/qa/hook-nudges-packaging.md"
     }
   ]
 }

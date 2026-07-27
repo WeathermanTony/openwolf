@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T01:59:09.827Z
-> Files: 181 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T02:05:03.405Z
+> Files: 182 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/
 
@@ -13,6 +13,7 @@
 
 ## ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/
 
+- `add-bug-restore.mjs` — Declares p (~644 tok)
 - `add-bug-swallow.mjs` — Declares p (~656 tok)
 - `add-bug474.mjs` — Declares p (~487 tok)
 - `add-bug475.mjs` — Declares p (~551 tok)
@@ -70,7 +71,7 @@
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1298 tok)
 - `trace-cmd.ts` — Exports traceCommand (~887 tok)
-- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6772 tok)
+- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6936 tok)
 
 ## src/config/
 
@@ -156,7 +157,7 @@
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~17922 tok)
 - `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~18130 tok)
 - `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~26726 tok)
-- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~33539 tok)
+- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~33938 tok)
 
 ## src/hooks/nudges/
 

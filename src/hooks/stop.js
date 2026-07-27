@@ -337,9 +337,42 @@ function hookLifecycleLog(event, extra = {}) {
     }
     catch { }
 }
+/**
+ * Bounded retention for the lifecycle log.
+ *
+ * Sibling logs get retention sweeps (`cappedSessionsJson`, `monthlyRotateMarkdown`,
+ * `rollingWindowJson`); this one had none, so it grew forever — ~350 bytes per
+ * Stop, roughly 12 MB/year at 100 stops/day. Slow, but it contradicts the repo's
+ * own size-discipline convention.
+ *
+ * Trimmed at START rather than at exit, deliberately: a killed hook never reaches
+ * exit, and a hook killed mid-trim must not lose the evidence. Keeping the TAIL
+ * preserves the most recent runs, which are the ones being investigated. The
+ * rewrite is atomic (write temp + rename) so a crash cannot leave a half-written
+ * log, and every step is best-effort — diagnostics must never break the hook.
+ */
+const LIFECYCLE_MAX_BYTES = 2 * 1024 * 1024;
+const LIFECYCLE_KEEP_LINES = 2000;
+function trimHookLifecycleLog(file) {
+    try {
+        if (!fs.existsSync(file))
+            return;
+        if (fs.statSync(file).size <= LIFECYCLE_MAX_BYTES)
+            return;
+        const lines = fs.readFileSync(file, "utf-8").split("\n").filter(Boolean);
+        if (lines.length <= LIFECYCLE_KEEP_LINES)
+            return;
+        const kept = lines.slice(-LIFECYCLE_KEEP_LINES).join("\n") + "\n";
+        const tmp = `${file}.trim-${process.pid}`;
+        fs.writeFileSync(tmp, kept, "utf-8");
+        fs.renameSync(tmp, file);
+    }
+    catch { }
+}
 function initHookLifecycleLog(wolfDir) {
     try {
         hookLifecycleFile = path.join(wolfDir, "logs", "hook-lifecycle.jsonl");
+        trimHookLifecycleLog(hookLifecycleFile);
         hookLifecycleLog("start", { ok: false });
         // Catchable signals: record which one, then re-raise with the default
         // disposition so we do not change the process's observable exit.
