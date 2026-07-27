@@ -699,3 +699,11 @@ makes the consequence recoverable, not the cause).
 | 22:05 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/add-bug-restore.mjs | — | ~644 |
 | 22:06 | Edited src/hooks/stop.ts | added 3 condition(s) | ~405 |
 | 22:07 | Session end: 24 writes across 12 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~12771 tok |
+
+## Session: 2026-07-27 22:13
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 22:14 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 0 reads | ~749 tok |
+| 22:14 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 0 reads | ~749 tok |
+| 22:14 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 0 reads | ~749 tok |
