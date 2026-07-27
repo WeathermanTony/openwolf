@@ -3800,6 +3800,24 @@
       "last_seen": "2026-07-27T01:57:51.895Z",
       "commit": null,
       "reduction": ".wolf/qa/hook-lifecycle-instrumentation.md"
+    },
+    {
+      "id": "bug-484",
+      "timestamp": "2026-07-27T01:59:10.009Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T01:59:10.009Z",
+      "commit": null,
+      "reduction": null
     }
   ]
 }
