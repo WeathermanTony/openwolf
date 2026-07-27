@@ -80,6 +80,8 @@
 - [2026-07-26] A fault-injection test MUST assert the injection actually executed. Monkeypatching `fs.writeFileSync` from a test file cannot intercept an ESM live binding inside the module under test — tests 18/19 went green while `injected === 0`, measuring nothing. Fixed with an injectable `io` seam in state.ts + an `assert(injected > 0)` precondition. Same applies to concurrency: `spawnSync` serializes children and cannot exercise a TOCTOU window; use `spawn` with staggered starts.
 - [2026-07-23] Buglog IDs are NOT unique-enforced (bug-440 exists twice: an old resolved async-fix entry and the open registry-crash entry). When updating a buglog entry programmatically, filter on `id` AND `status` and assert exactly one match before writing — a plain `find(b => b.id === ...)` can silently update the wrong entry.
 
+- [2026-07-27] Registering `process.on("uncaughtException")` or `"unhandledRejection"` is NOT passive observation — it REPLACES Node's default disposition. Without a listener an uncaught throw prints a stack and exits 1; with a bare listener the process logs and KEEPS RUNNING, exiting 0 (measured both ways). I shipped this into the Stop hook as "diagnostics" and it silently broke the hook's failure semantics — Claude Code parses hook stdout as a JSON contract, so continuing in a corrupted state can emit output accepted as valid. Always restore the default with `process.exit(1)` inside the handler. Instrument by RECORDING, never by INTERCEPTING. See bug-483 and `.wolf/qa/hook-lifecycle-instrumentation.md`.
+
 ## Decision Log
 
 - 2026-06-09: Use canonical config `openwolf.claim_calibration` and log type `claim_calibration`; keep legacy `openwolf.scientific_mode` config and `scientific_mode` log suppression compatibility during migration.

@@ -684,3 +684,7 @@ makes the consequence recoverable, not the cause).
 | 02:30 | Eliminated 2 of 3 orphan-lock branches: process.exit unreachable in lock span, OOM ruled out (66MB vs 125GB, no dmesg kills) | src/hooks/stop.ts | external signal is last branch standing — by elimination, not observation | ~4k |
 | 02:40 | Added hook lifecycle instrumentation (start/exit/signal JSONL) | src/hooks/stop.ts, .wolf/hooks/find-killed-hooks.mjs | killed hook leaves UNCLOSED record; SIGTERM named; 3 kill timings tested | ~6k |
 | 02:45 | Caught layer-drift: cp added sourcemap footer to src/ and templates/ copies that HEAD lacked | stop.js x3 | restored; diff vs HEAD shows +70 insertions only, no deletions | ~2k |
+| 21:55 | Session end: 14 writes across 10 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~9016 tok |
+| 21:56 | Edited src/hooks/stop.ts | expanded (+9 lines) | ~267 |
+| 21:57 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/add-bug-swallow.mjs | — | ~656 |
+| 21:57 | Session end: 16 writes across 11 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~9986 tok |

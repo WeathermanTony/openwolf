@@ -3757,6 +3757,49 @@
       "last_seen": "2026-07-27T01:51:12.671Z",
       "commit": null,
       "reduction": null
+    },
+    {
+      "id": "bug-482",
+      "timestamp": "2026-07-27T01:56:16.890Z",
+      "error_message": "Type error",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T01:56:16.890Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-483",
+      "timestamp": "2026-07-27T01:57:51.895Z",
+      "error_message": "Self-introduced regression: adding process.on('uncaughtException') to the Stop hook SWALLOWED uncaught exceptions — the process kept running and exited 0 instead of terminating with code 1.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Node's default behavior for an uncaught exception is to print the stack and terminate with exit code 1. Registering ANY 'uncaughtException' listener replaces that default — the process continues running after the handler returns. I added the listener purely for diagnostics (hook lifecycle instrumentation) without realizing it changes control flow. For a Claude Code Stop hook this is serious: Claude Code parses the hook's stdout as a JSON contract, so a hook that continues in a corrupted state after an uncaught exception can emit output that is parsed as a valid result. Same hazard for 'unhandledRejection'. This is the exact failure class the instrumentation was meant to diagnose — a diagnostic that silently changes behavior.",
+      "fix": "Restore the default disposition inside each handler: log the event, then process.exit(1). Measured before: a bare listener printed 'STILL RUNNING after throw' and exited 0. After: handler logs and exits 1, matching Node's no-listener baseline (also measured as exit 1). Verified that main().catch(() => exitWithStopHookResult(false)) is NOT preempted — an attached .catch() means the rejection is handled, so 'unhandledRejection' never fires and the graceful path is preserved. Synced to all 4 layers (src .ts/.js, .wolf/hooks, templates/wolf/hooks) preserving each layer's differing sourcemap-footer convention.",
+      "status": "resolved",
+      "tags": [
+        "regression",
+        "self-introduced",
+        "hooks",
+        "error-handling",
+        "node-semantics",
+        "instrumentation"
+      ],
+      "related_bugs": [
+        "bug-477",
+        "bug-479"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T01:57:51.895Z",
+      "commit": null,
+      "reduction": ".wolf/qa/hook-lifecycle-instrumentation.md"
     }
   ]
 }

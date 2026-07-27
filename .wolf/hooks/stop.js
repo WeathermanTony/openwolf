@@ -341,11 +341,20 @@ function initHookLifecycleLog(wolfDir) {
             }
             catch { }
         }
+        // CRITICAL: merely registering these listeners SWALLOWS the condition —
+        // Node's default (terminate, exit 1) is replaced by "log and keep
+        // running". Measured: with a bare listener a throwing script printed
+        // "STILL RUNNING after throw" and exited 0. For a hook whose stdout is
+        // parsed as a JSON contract, continuing in a corrupted state is worse
+        // than dying. So each handler restores the default disposition by
+        // exiting non-zero. Diagnostics must never change behavior.
         process.on("uncaughtException", (err) => {
             hookLifecycleLog("uncaught", { error: String((err && err.message) || err), ok: false });
+            process.exit(1);
         });
         process.on("unhandledRejection", (err) => {
             hookLifecycleLog("unhandled_rejection", { error: String((err && err.message) || err), ok: false });
+            process.exit(1);
         });
     }
     catch { }

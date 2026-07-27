@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T01:51:16.963Z
-> Files: 180 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T01:57:47.807Z
+> Files: 181 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/
 
@@ -13,6 +13,7 @@
 
 ## ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/
 
+- `add-bug-swallow.mjs` — Declares p (~656 tok)
 - `add-bug474.mjs` — Declares p (~487 tok)
 - `add-bug475.mjs` — Declares p (~551 tok)
 - `add-bug478.mjs` — Declares p (~737 tok)
@@ -155,7 +156,7 @@
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~17922 tok)
 - `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~18130 tok)
 - `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~26726 tok)
-- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~33112 tok)
+- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~33282 tok)
 
 ## src/hooks/nudges/
 
