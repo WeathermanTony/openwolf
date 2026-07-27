@@ -667,3 +667,7 @@ Registry pruned 83 -> 81 (dead fixture entries removed).
 
 STILL OPEN: why Stop hooks crash while holding the reviewlog lock (bug-477
 makes the consequence recoverable, not the cause).
+| 21:17 | Session end: 9 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6082 tok |
+| 21:47 | Session end: 9 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6082 tok |
+| 21:47 | Session end: 9 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6082 tok |
+| 21:47 | Session end: 9 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6082 tok |
