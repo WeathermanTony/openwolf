@@ -282,7 +282,76 @@ function maybeNudgeMidturnInjections(wolfDir, session, transcriptPath) {
     emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} user message(s) arrived mid-turn: ${previews}${more}. If you already addressed each, say so in one line; otherwise address the unaddressed one(s) now — do not ask the user to re-send. Log: ${logPath}\n`);
     return true;
 }
+/**
+ * Hook lifecycle instrumentation — identifies what kills a hook mid-lock.
+ *
+ * Four `could not lock .wolf/reviewlog.json` failures were observed, each with
+ * a DEAD owner pid inside the lock file. A lock only exists if acquireFileLock
+ * ran, and both reviewlog lock sites release in `finally`, so the holder must
+ * have skipped `finally`. JS permits that only via process.exit() inside the
+ * try (ruled out: the exit lives in exitWithStopHookResult, after locks
+ * release), an uncatchable OOM (ruled out: 66MB peak against 125GB free, no
+ * dmesg OOM kills), or an external signal. Signal is the last branch standing
+ * — by elimination, not by observation. This converts it to observation.
+ *
+ * A killed process cannot log its own death, so the record is written at START
+ * and stamped complete at exit. An entry with `ok: false` is a hook that began
+ * and never finished — exactly the artifact that orphans a lock. Signal
+ * handlers name the killer when the signal is catchable; SIGKILL is not, which
+ * is itself diagnostic (an unclosed record with no signal line implies SIGKILL
+ * or an abrupt teardown).
+ */
+const HOOK_START_MS = Date.now();
+const HOOK_RUN_ID = `${process.pid}-${HOOK_START_MS.toString(36)}`;
+let hookLifecycleFile = "";
+function hookLifecycleLog(event, extra = {}) {
+    if (!hookLifecycleFile)
+        return;
+    try {
+        fs.mkdirSync(path.dirname(hookLifecycleFile), { recursive: true });
+        fs.appendFileSync(hookLifecycleFile, JSON.stringify({
+            ts: new Date().toISOString(),
+            run: HOOK_RUN_ID,
+            pid: process.pid,
+            ppid: process.ppid,
+            event,
+            ...extra,
+        }) + "\n", "utf-8");
+    }
+    catch { }
+}
+function initHookLifecycleLog(wolfDir) {
+    try {
+        hookLifecycleFile = path.join(wolfDir, "logs", "hook-lifecycle.jsonl");
+        hookLifecycleLog("start", { ok: false });
+        // Catchable signals: record which one, then re-raise with the default
+        // disposition so we do not change the process's observable exit.
+        for (const sig of ["SIGTERM", "SIGINT", "SIGHUP", "SIGQUIT"]) {
+            try {
+                process.on(sig, () => {
+                    hookLifecycleLog("signal", { signal: sig, ok: false });
+                    process.removeAllListeners(sig);
+                    try {
+                        process.kill(process.pid, sig);
+                    }
+                    catch {
+                        process.exit(1);
+                    }
+                });
+            }
+            catch { }
+        }
+        process.on("uncaughtException", (err) => {
+            hookLifecycleLog("uncaught", { error: String((err && err.message) || err), ok: false });
+        });
+        process.on("unhandledRejection", (err) => {
+            hookLifecycleLog("unhandled_rejection", { error: String((err && err.message) || err), ok: false });
+        });
+    }
+    catch { }
+}
 function exitWithStopHookResult(block) {
+    hookLifecycleLog("exit", { ok: true, blocked: !!block, ms: Date.now() - HOOK_START_MS });
     let budgeted = stopHookMessages;
     try {
         budgeted = applyLegacyBudget(stopHookMessages, getNudgeConfig(loadWolfConfig()));
@@ -416,6 +485,7 @@ function runNudgeEngine(wolfDir, session, sessionEntry, transcriptPath) {
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
+    initHookLifecycleLog(wolfDir);
     const hooksDir = path.join(wolfDir, "hooks");
     const sessionFile = path.join(hooksDir, "_session.json");
     // Claude Code passes {session_id, transcript_path, stop_hook_active} on stdin.

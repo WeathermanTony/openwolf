@@ -671,3 +671,16 @@ makes the consequence recoverable, not the cause).
 | 21:47 | Session end: 9 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6082 tok |
 | 21:47 | Session end: 9 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6082 tok |
 | 21:47 | Session end: 9 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6082 tok |
+| 21:48 | Session end: 10 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6587 tok |
+| 21:49 | Session end: 10 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6587 tok |
+| 21:50 | Session end: 10 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6587 tok |
+| 21:50 | Session end: 10 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6587 tok |
+| 21:51 | Edited src/hooks/stop.ts | added error handling | ~841 |
+| 21:51 | Edited src/hooks/stop.ts | 1→2 lines | ~29 |
+| 21:51 | Edited src/hooks/stop.ts | 3→4 lines | ~40 |
+| 21:51 | Session end: 13 writes across 9 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~7497 tok |
+| 21:53 | Session end: 13 writes across 9 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~7497 tok |
+| 21:54 | Session end: 13 writes across 9 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~7497 tok |
+| 02:30 | Eliminated 2 of 3 orphan-lock branches: process.exit unreachable in lock span, OOM ruled out (66MB vs 125GB, no dmesg kills) | src/hooks/stop.ts | external signal is last branch standing — by elimination, not observation | ~4k |
+| 02:40 | Added hook lifecycle instrumentation (start/exit/signal JSONL) | src/hooks/stop.ts, .wolf/hooks/find-killed-hooks.mjs | killed hook leaves UNCLOSED record; SIGTERM named; 3 kill timings tested | ~6k |
+| 02:45 | Caught layer-drift: cp added sourcemap footer to src/ and templates/ copies that HEAD lacked | stop.js x3 | restored; diff vs HEAD shows +70 insertions only, no deletions | ~2k |

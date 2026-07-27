@@ -3721,6 +3721,42 @@
       "last_seen": "2026-07-27T01:12:04.223Z",
       "commit": null,
       "reduction": ".wolf/qa/hook-nudges-packaging.md"
+    },
+    {
+      "id": "bug-480",
+      "timestamp": "2026-07-27T01:51:06.640Z",
+      "error_message": "Missing error handling in hookLifecycleLog",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T01:51:06.640Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-481",
+      "timestamp": "2026-07-27T01:51:12.671Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Had `${process.pid}-${Date.now().toString(36)}`",
+      "fix": "Changed to `${process.pid}-${HOOK_START_MS.toString(36)}`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T01:51:12.671Z",
+      "commit": null,
+      "reduction": null
     }
   ]
 }
