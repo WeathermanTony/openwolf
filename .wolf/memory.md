@@ -793,3 +793,6 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 12:26 | Session end: 1 writes across 1 files (nudge-obligation-scoping.md) | 0 reads | ~2220 tok |
 | 12:26 | Session end: 1 writes across 1 files (nudge-obligation-scoping.md) | 0 reads | ~2220 tok |
 | 12:27 | Session end: 2 writes across 1 files (nudge-obligation-scoping.md) | 0 reads | ~2244 tok |
+| 12:29 | Edited src/hooks/stop.ts | modified for() | ~469 |
+| 12:30 | Session end: 3 writes across 2 files (nudge-obligation-scoping.md, stop.ts) | 0 reads | ~2713 tok |
+| 12:31 | Session end: 3 writes across 2 files (nudge-obligation-scoping.md, stop.ts) | 0 reads | ~2713 tok |

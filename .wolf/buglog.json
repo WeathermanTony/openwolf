@@ -4107,6 +4107,24 @@
       "last_seen": "2026-07-27T16:24:46.329Z",
       "commit": null,
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-500",
+      "timestamp": "2026-07-27T16:29:21.154Z",
+      "error_message": "Wrong operator: !== should be ===",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Used \"!==\" instead of \"===\"",
+      "fix": "Changed operator !== → ===",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:29:21.155Z",
+      "commit": null,
+      "reduction": null
     }
   ]
 }

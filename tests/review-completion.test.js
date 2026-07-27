@@ -1146,3 +1146,49 @@ test('buglog obligation extensions are configurable for unforeseen languages', a
   assert.equal(carriesBugfixObligation('/p/a.test.ts', { extensions: exts, excludeRegexes }), false);
   assert.equal(carriesBugfixObligation('/p/.wolf/hooks/stop.js', { extensions: exts, excludeRegexes }), true);
 });
+
+// bug-498 follow-on: attribution must be complete before it is trusted.
+// Found by self-check while the companion reviews were running.
+//
+// The review size trigger sums per-write tokens for in-scope files. The first
+// implementation set its "use scoped attribution" flag from ANY write carrying
+// a tokens field — including excluded ones. A session whose only in-scope write
+// predates per-write token recording, but which also contains an excluded write
+// that has the field, took the scoped path, summed 0, and reported 0 lines:
+// the size trigger silently disabled with no error.
+//
+// This is a pure-logic test of the decision rule (no hook subprocess) because
+// the hazard is arithmetic, not I/O: it is about WHICH basis gets chosen.
+test('review size trigger falls back when in-scope attribution is incomplete', () => {
+  const norm = (f) => f.replace(/\\/g, '/').toLowerCase();
+  const excluded = [/\/tmp\//];
+  const decide = (writes, sessionTotal) => {
+    const inScope = new Set(writes.map((w) => w.file).filter((f) => !excluded.some((re) => re.test(f))).map(norm));
+    const scopedWrites = writes.filter((w) => inScope.has(norm(w.file)));
+    const hasTok = (w) => typeof w.tokens === 'number' && Number.isFinite(w.tokens);
+    const complete = scopedWrites.length > 0 && scopedWrites.some(hasTok) && scopedWrites.every(hasTok);
+    const tokens = complete ? scopedWrites.reduce((a, w) => a + w.tokens, 0) : sessionTotal;
+    return { complete, lines: Math.max(0, Math.round(tokens / 17)) };
+  };
+
+  // The defect: only in-scope write lacks tokens, an EXCLUDED write has them.
+  const bug = decide([{ file: '/p/src/b.ts' }, { file: '/tmp/x.mjs', tokens: 40000 }], 51000);
+  assert.equal(bug.complete, false, 'an excluded write must not make attribution look complete');
+  assert.ok(bug.lines >= 40, 'must fall back and still fire rather than silently reporting 0');
+
+  // Negative controls — complete attribution must stay accurate in BOTH
+  // directions, or the fix would just re-enable the original over-reporting.
+  const small = decide([{ file: '/p/src/a.ts', tokens: 85 }, { file: '/tmp/x.mjs', tokens: 40000 }], 51000);
+  assert.equal(small.complete, true);
+  assert.equal(small.lines, 5, 'a 5-line in-scope edit must not inherit the session total');
+  assert.ok(small.lines < 40, 'small in-scope edits must not fire');
+
+  const large = decide([{ file: '/p/src/a.ts', tokens: 3400 }], 51000);
+  assert.equal(large.complete, true);
+  assert.ok(large.lines >= 40, 'a genuinely large in-scope change must still fire');
+
+  // Partially-migrated session: undercount is refused in favor of the total.
+  const partial = decide([{ file: '/p/src/a.ts', tokens: 900 }, { file: '/p/src/b.ts' }], 51000);
+  assert.equal(partial.complete, false, 'a partial token set must not be trusted');
+  assert.ok(partial.lines >= 40, 'partial data over-reports (visible) rather than under-reports (silent)');
+});

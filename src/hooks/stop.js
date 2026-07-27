@@ -1217,14 +1217,31 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const inScope = new Set(writtenFiles.map(normalizeFilePath));
     let scopedTokens = 0;
     let sawTokenField = false;
+    // Only IN-SCOPE writes decide whether attribution is usable. Keying
+    // `sawTokenField` off any write (including excluded ones) was a silent
+    // false negative: a session whose only in-scope write predates per-write
+    // token recording, but which also contains an excluded write that has the
+    // field, would take the scoped path, sum 0, and report 0 lines — disabling
+    // the size trigger with no error. Measured before the fix:
+    //   sawTokenField: true  scoped: 0  -> effectiveLines: 0  fires: false
+    // Deciding per-scope means a partially-migrated _session.json falls back to
+    // the session total (over-reports, visible) instead of to silence.
+    let inScopeWrites = 0;
     for (const w of sessionEntry.writes) {
-        if (typeof w.tokens !== "number" || !Number.isFinite(w.tokens))
+        if (!inScope.has(normalizeFilePath(w.file)))
             continue;
-        sawTokenField = true;
-        if (inScope.has(normalizeFilePath(w.file)))
+        inScopeWrites++;
+        if (typeof w.tokens === "number" && Number.isFinite(w.tokens)) {
+            sawTokenField = true;
             scopedTokens += w.tokens;
+        }
     }
-    const cumulativeTokens = sawTokenField
+    // Require EVERY in-scope write to carry the field before trusting the sum;
+    // a partial set undercounts by exactly the un-migrated writes.
+    const attributionComplete = sawTokenField && inScopeWrites > 0
+        && sessionEntry.writes.filter(w => inScope.has(normalizeFilePath(w.file)))
+            .every(w => typeof w.tokens === "number" && Number.isFinite(w.tokens));
+    const cumulativeTokens = attributionComplete
         ? scopedTokens
         : sessionEntry.totals.output_tokens_estimated;
     const reviewLogPath = path.join(wolfDir, "reviewlog.json");
@@ -1259,7 +1276,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     // A baseline lacking that marker is from the old scheme: ignore it rather
     // than mixing scales. Worst case we re-nudge once on work already covered,
     // which is visible and cheap; the alternative fails closed and silent.
-    if (coveredTokensBasis !== TOKEN_BASIS_SCOPED && sawTokenField) {
+    if (coveredTokensBasis !== TOKEN_BASIS_SCOPED && attributionComplete) {
         coveredTokens = 0;
     }
     const effectiveLines = Math.max(0, Math.round((cumulativeTokens - coveredTokens) / 17));
@@ -1291,7 +1308,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             // session's baseline and permanently suppress its size trigger.
             if (pending.session_id && pending.session_id === session.session_id) {
                 pending.covered_tokens = Math.max(pending.covered_tokens ?? 0, cumulativeTokens);
-                if (sawTokenField)
+                if (attributionComplete)
                     pending.covered_tokens_basis = TOKEN_BASIS_SCOPED;
             }
             pending.files = [...new Set([...(pending.files ?? []), ...writtenFiles])];
@@ -1480,7 +1497,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             existingPending.ended = sessionEntry.ended;
             existingPending.approx_lines_changed = Math.max(existingPending.approx_lines_changed, effectiveLines);
             existingPending.covered_tokens = Math.max(existingPending.covered_tokens ?? 0, cumulativeTokens);
-            if (sawTokenField)
+            if (attributionComplete)
                 existingPending.covered_tokens_basis = TOKEN_BASIS_SCOPED;
             existingPending.files = [...new Set([...existingPending.files, ...writtenFiles])];
             existingPending.reason = reason;
@@ -1526,7 +1543,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 files: writtenFiles,
                 approx_lines_changed: effectiveLines,
                 covered_tokens: cumulativeTokens,
-                ...(sawTokenField ? { covered_tokens_basis: TOKEN_BASIS_SCOPED } : {}),
+                ...(attributionComplete ? { covered_tokens_basis: TOKEN_BASIS_SCOPED } : {}),
                 reason,
                 status: "pending",
                 trigger,
