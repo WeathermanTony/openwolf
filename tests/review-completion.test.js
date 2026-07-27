@@ -589,7 +589,7 @@ test('stop hook simplicity nudge omits the lens hint when edit counts are low', 
   }
 });
 
-async function reviewBaselineFixture({ sessionTokens, coveredTokens }) {
+async function reviewBaselineFixture({ sessionTokens, coveredTokens, coveredBasis }) {
   // Fixture for bug-441: a completed review from THIS session already covers
   // coveredTokens of output; only (sessionTokens - coveredTokens) is new work.
   const base = await mkdtemp(path.join(homedir(), 'ow-review-baseline-'));
@@ -612,6 +612,8 @@ async function reviewBaselineFixture({ sessionTokens, coveredTokens }) {
     status: 'completed',
     files: [target],
     covered_tokens: coveredTokens,
+    // Omitted when coveredBasis is undefined, reproducing a pre-bug-498 entry.
+    ...(coveredBasis ? { covered_tokens_basis: coveredBasis } : {}),
     content_hashes: {},
   }] }, null, 2));
   await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
@@ -631,7 +633,11 @@ async function reviewBaselineFixture({ sessionTokens, coveredTokens }) {
 test('stop hook review trigger measures new work since last review, not session-cumulative output', async () => {
   // 1040 cumulative tokens with 1000 already covered → ~2 new lines < 40:
   // the 1-line-comment-edit case from the Grok feedback must NOT spawn a review.
-  const { dir, transcript } = await reviewBaselineFixture({ sessionTokens: 1040, coveredTokens: 1000 });
+  // The baseline carries the scoped marker, so it is in the same units as this
+  // session's scoped attribution and is subtracted.
+  const { dir, transcript } = await reviewBaselineFixture({
+    sessionTokens: 1040, coveredTokens: 1000, coveredBasis: 'scoped-writes',
+  });
   try {
     const result = runStopHook(dir, transcript, 'sess-baseline');
     assert.equal(result.status, 0, result.stderr);
@@ -643,7 +649,9 @@ test('stop hook review trigger measures new work since last review, not session-
 
 test('stop hook review nudge fires on new-work delta and records covered_tokens', async () => {
   // 2000 cumulative with 1000 covered → 1000 new tokens ≈ 59 lines ≥ 40 → fires.
-  const { dir, transcript } = await reviewBaselineFixture({ sessionTokens: 2000, coveredTokens: 1000 });
+  const { dir, transcript } = await reviewBaselineFixture({
+    sessionTokens: 2000, coveredTokens: 1000, coveredBasis: 'scoped-writes',
+  });
   try {
     const result = runStopHook(dir, transcript, 'sess-baseline');
     assert.equal(result.status, 0, result.stderr);
@@ -653,6 +661,36 @@ test('stop hook review nudge fires on new-work delta and records covered_tokens'
     const pending = log.reviews.find(r => r.status === 'pending');
     assert.ok(pending, 'a new pending review should exist');
     assert.equal(pending.covered_tokens, 2000, 'pending covers all session output so far');
+    assert.equal(pending.covered_tokens_basis, 'scoped-writes',
+      'the stored value is a scoped sum and must be labeled as one');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// An UNMARKED baseline predates scoped attribution and holds session-TOTAL
+// tokens, which include scope-excluded writes and are therefore >= the scoped
+// sum. Subtracting one from the other can clamp to 0 and permanently disable
+// the size trigger -- a silent gate death. The hook cannot tell a "safe" legacy
+// entry (no excluded writes, so the two bases coincide) from an unsafe one,
+// because legacy entries do not record their basis. So it refuses the baseline
+// and over-nudges visibly instead.
+//
+// This behavior existed since bug-498 but was UNREACHABLE while attribution was
+// inert (the tokens/tokens_estimated field mismatch). Fixing that made it live.
+test('stop hook refuses an unmarked legacy baseline rather than mixing token scales', async () => {
+  const { dir, transcript } = await reviewBaselineFixture({ sessionTokens: 2000, coveredTokens: 1000 });
+  try {
+    const result = runStopHook(dir, transcript, 'sess-baseline');
+    assert.equal(result.status, 0, result.stderr);
+    // 2000 scoped tokens, legacy baseline refused → 118 lines, not 59.
+    assert.match(result.stdout, /~118 new lines since last review/,
+      'an unmarked baseline must be dropped, not subtracted across bases');
+    const log = JSON.parse(await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8'));
+    const pending = log.reviews.find(r => r.status === 'pending');
+    assert.ok(pending, 'a new pending review should exist');
+    assert.equal(pending.covered_tokens_basis, 'scoped-writes',
+      'the new entry records its own basis so the next session need not guess');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -1162,14 +1200,31 @@ test('buglog obligation extensions are configurable for unforeseen languages', a
 test('review size trigger falls back when in-scope attribution is incomplete', () => {
   const norm = (f) => f.replace(/\\/g, '/').toLowerCase();
   const excluded = [/\/tmp\//];
-  const decide = (writes, sessionTotal) => {
+  // Drive the REAL production write shape. `sessionEntry.writes` is built in
+  // stop.ts by mapping session.files_written to {file, tokens_estimated, action}
+  // -- the persisted ledger schema. An earlier version of this test built writes
+  // with a `tokens` field instead, matching the (wrong) field name the
+  // implementation read. Both sides shared one mistaken model, so 103 tests
+  // passed while scoped attribution never ran in production even once.
+  //
+  // Tests that re-declare the rule can only confirm their author. This mapper
+  // is the same transformation the hook performs, so a field-name divergence
+  // between producer and consumer now fails the suite instead of hiding in it.
+  const asSessionWrites = (files_written) =>
+    files_written.map((w) => ({ file: w.file, tokens_estimated: w.tokens, action: w.action ?? 'Edit' }));
+  const decide = (files_written, sessionTotal) => {
+    const writes = asSessionWrites(files_written);
     const inScope = new Set(writes.map((w) => w.file).filter((f) => !excluded.some((re) => re.test(f))).map(norm));
     const scopedWrites = writes.filter((w) => inScope.has(norm(w.file)));
-    // Mirrors hasUsableTokens in stop.ts maybeNudgeReview.
-    const hasTok = (w) => typeof w.tokens === 'number' && Number.isFinite(w.tokens) && w.tokens >= 0;
+    // Mirrors writeTokens/hasUsableTokens in stop.ts maybeNudgeReview.
+    const tokOf = (w) => (typeof w.tokens_estimated === 'number' ? w.tokens_estimated : w.tokens);
+    const hasTok = (w) => {
+      const t = tokOf(w);
+      return typeof t === 'number' && Number.isFinite(t) && t >= 0;
+    };
     const complete = scopedWrites.length > 0 && scopedWrites.some(hasTok) && scopedWrites.every(hasTok)
-      && scopedWrites.reduce((a, w) => a + (hasTok(w) ? w.tokens : 0), 0) > 0;
-    const tokens = complete ? scopedWrites.reduce((a, w) => a + w.tokens, 0) : sessionTotal;
+      && scopedWrites.reduce((a, w) => a + (hasTok(w) ? tokOf(w) : 0), 0) > 0;
+    const tokens = complete ? scopedWrites.reduce((a, w) => a + tokOf(w), 0) : sessionTotal;
     return { complete, lines: Math.max(0, Math.round(tokens / 17)) };
   };
 
@@ -1221,4 +1276,111 @@ test('review size trigger falls back when in-scope attribution is incomplete', (
   const mixed = decide([{ file: '/p/src/a.ts', tokens: 0 }, { file: '/p/src/b.ts', tokens: 100 }], 51000);
   assert.equal(mixed.complete, true, 'a zero write among real ones is valid data');
   assert.equal(mixed.lines, 6, 'must use scoped attribution, not the 51000-token session total');
+});
+
+// kimi review, review-0077: the two hooks call ONE shared obligation predicate
+// but naturally hold different path forms -- post-write has the absolute path,
+// the Stop hook has project-relative edit_counts keys. Excludes are ^…$-anchored
+// globs matching a single form, so the shared predicate returned OPPOSITE
+// answers for the same file: a project under /tmp had post-write suppressed by
+// the `/tmp/**` exclude while the Stop hook still fired.
+test('obligation excludes match regardless of which path form the caller holds', async () => {
+  const { carriesBugfixObligation, globToRegex } =
+    await import(path.join(repoRoot, '.wolf/hooks/shared.js'));
+  const exts = new Set(['.sh', '.ts']);
+  const ask = (p, alt) => carriesBugfixObligation(p, {
+    excludeRegexes: ['/tmp/**', 'src/scratch/**'].map(globToRegex),
+    extensions: exts,
+    altPaths: alt,
+  });
+
+  // Absolute-form exclude (/tmp/**) must suppress BOTH callers.
+  assert.equal(ask('/tmp/demo/src/a.sh'), false, 'absolute caller: /tmp/** applies');
+  assert.equal(ask('src/a.sh', ['/tmp/demo/src/a.sh']), false,
+    'relative caller must also see the absolute-form exclude');
+
+  // Relative-form exclude (src/scratch/**) must suppress BOTH callers.
+  assert.equal(ask('src/scratch/x.sh'), false, 'relative caller: src/scratch/** applies');
+  assert.equal(ask('/home/u/proj/src/scratch/x.sh', ['src/scratch/x.sh']), false,
+    'absolute caller must also see the relative-form exclude');
+
+  // A file matching NEITHER exclude must still carry the obligation, in both
+  // forms -- the fix must not become a blanket mute.
+  assert.equal(ask('/home/u/proj/src/a.sh', ['src/a.sh']), true);
+  assert.equal(ask('src/a.sh', ['/home/u/proj/src/a.sh']), true);
+});
+
+// The test above still MIRRORS the rule, so it cannot catch a future divergence
+// between the write producer and the attribution consumer -- which is exactly
+// the defect that slipped through (chatgpt arbitration, review-0077): writes are
+// built with `tokens_estimated`, attribution read `w.tokens`, so
+// attributionComplete was ALWAYS false on the live path and the entire scoped
+// attribution feature was inert in production while its unit tests passed.
+//
+// This asserts the structural invariant against the SHIPPED bytes instead of a
+// reimplementation, so renaming either side fails the suite.
+test('attribution consumer reads the same token field the write producer emits', async () => {
+  const src = await readFile(path.join(repoRoot, 'src/hooks/stop.ts'), 'utf-8');
+
+  // Producer: the session-entry mapper.
+  const producer = /const writes = session\.files_written\.map\(\(w\) => \(\{[\s\S]*?\}\)\);/.exec(src);
+  assert.ok(producer, 'could not locate the sessionEntry.writes producer -- update this test');
+  const producedField = /(\w+):\s*w\.tokens\b/.exec(producer[0]);
+  assert.ok(producedField, 'producer no longer maps a token field');
+  const fieldName = producedField[1];
+
+  // Consumer: the attribution accessor in maybeNudgeReview.
+  const consumer = /const writeTokens = \(w\) =>[\s\S]*?;/.exec(src);
+  assert.ok(consumer, 'could not locate the attribution token accessor -- update this test');
+  assert.ok(
+    consumer[0].includes(`w.${fieldName}`),
+    `attribution reads a different field than the producer emits (producer: "${fieldName}"). `
+    + 'This makes attributionComplete always false and silently disables scoped attribution.',
+  );
+});
+
+// chatgpt arbitration, review-0077 (second finding): covered_tokens and its
+// basis marker were written as two independent statements, letting the stored
+// value and its label disagree in BOTH directions -- each ending in a baseline
+// subtracted across incommensurable scales, 0 effective lines, and a silently
+// dead size trigger.
+test('covered_tokens baseline and its basis marker can never disagree', () => {
+  const SCOPED = 'scoped-writes';
+  const SESSION = 'session-total';
+  // Mirrors advanceCoveredTokens in stop.ts.
+  const advance = (entry, cumulative, complete) => {
+    const incoming = complete ? SCOPED : SESSION;
+    const stored = entry.covered_tokens_basis
+      ?? (typeof entry.covered_tokens === 'number' ? SESSION : null);
+    if (stored === incoming && typeof entry.covered_tokens === 'number') {
+      entry.covered_tokens = Math.max(entry.covered_tokens, cumulative);
+    } else {
+      entry.covered_tokens = cumulative;
+    }
+    entry.covered_tokens_basis = incoming;
+    return entry;
+  };
+  const read = (entry, cumulative, complete) => {
+    const want = complete ? SCOPED : SESSION;
+    const covered = entry.covered_tokens_basis === want ? entry.covered_tokens : 0;
+    return Math.max(0, Math.round((cumulative - covered) / 17));
+  };
+
+  // Direction 1: a stored SCOPED marker must not survive a fallback turn.
+  const d1 = advance({ covered_tokens: 100, covered_tokens_basis: SCOPED }, 10000, false);
+  assert.equal(d1.covered_tokens_basis, SESSION, 'a fallback turn must relabel the baseline it stored');
+  assert.equal(d1.covered_tokens, 10000);
+  assert.ok(read(d1, 800, true) >= 40, 'a later scoped turn must not subtract a session-total baseline');
+
+  // Direction 2: Math.max must not retain an older session-total value while
+  // the current scoped turn stamps SCOPED over it.
+  const d2 = advance({ covered_tokens: 51000 }, 85, true);
+  assert.equal(d2.covered_tokens, 85, 'an incommensurable stored value must be replaced, not max-ed');
+  assert.equal(d2.covered_tokens_basis, SCOPED);
+  assert.ok(read(d2, 3400, true) >= 40, 'a 200-line scoped change must still fire');
+
+  // Same-basis advance keeps monotonic behavior -- the fix must not disable it.
+  const same = advance({ covered_tokens: 500, covered_tokens_basis: SCOPED }, 300, true);
+  assert.equal(same.covered_tokens, 500, 'same-basis baselines still advance monotonically');
+  assert.equal(read(same, 600, true), 6, 'and are still subtracted');
 });

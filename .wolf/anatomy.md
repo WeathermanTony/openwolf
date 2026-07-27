@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T16:35:47.149Z
-> Files: 182 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T16:53:11.511Z
+> Files: 184 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/
 
@@ -18,6 +18,8 @@
 - `add-bug474.mjs` — Declares p (~487 tok)
 - `add-bug475.mjs` — Declares p (~551 tok)
 - `add-bug478.mjs` — Declares p (~737 tok)
+- `add-round4-bugs.mjs` — ` exclude suppressed the post-write nudge while the Stop hook still fired; symmetrically a root-anch (~2337 tok)
+- `add-zero-bug.mjs` — Declares p (~647 tok)
 - `clean-stubs.mjs` — Declares p (~301 tok)
 - `dedupe-anatomy.mjs` — anatomy.md listed several files twice within the same directory section -- (~575 tok)
 - `fix-bug474.mjs` — Declares p (~588 tok)
@@ -147,7 +149,7 @@
 - `post-read.js` — Declares main (~799 tok)
 - `post-read.ts` — @ts-nocheck (~793 tok)
 - `post-write.js` — @ts-nocheck (~9924 tok)
-- `post-write.ts` — Declares main (~10167 tok)
+- `post-write.ts` — Declares main (~10300 tok)
 - `pre-read.js` — Declares main (~914 tok)
 - `pre-read.ts` — @ts-nocheck (~908 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
@@ -155,9 +157,9 @@
 - `session-start.js` — Declares main (~1006 tok)
 - `session-start.ts` — Declares main (~1309 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~17922 tok)
-- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~24787 tok)
+- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~25068 tok)
 - `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~26726 tok)
-- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~36003 tok)
+- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37148 tok)
 
 ## src/hooks/nudges/
 
@@ -287,5 +289,5 @@
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)
 - `registry.test.js` — Tests for bug-440: malformed registry entries (missing root/name) must not (~1109 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
-- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~14209 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~19724 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)

@@ -286,7 +286,14 @@ async function main() {
                     const qgCfg = getQualityGateConfig();
                     const obligationExts = detectObligationExtensions(qgCfg.buglog_scan_extensions, () => listProjectFiles());
                     const excludeRegexes = qgCfg.buglog_scan_excludes.map(globToRegex);
-                    if (carriesBugfixObligation(absolutePath, { excludeRegexes, extensions: obligationExts })) {
+                    // Both path forms: the Stop hook sees the relative editKey,
+                    // this hook holds the absolute path, and an exclude written
+                    // against either form must suppress both (kimi, review-0077).
+                    if (carriesBugfixObligation(absolutePath, {
+                        excludeRegexes,
+                        extensions: obligationExts,
+                        altPaths: [editKey],
+                    })) {
                         process.stderr.write(`⚠️ OpenWolf: ${baseName} has been edited ${session.edit_counts[editKey]} times this session. If you're fixing a bug, remember to log it to .wolf/buglog.json.\n`);
                     }
                 }

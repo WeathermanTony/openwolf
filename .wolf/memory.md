@@ -802,3 +802,36 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 12:35 | Session end: 4 writes across 2 files (nudge-obligation-scoping.md, stop.ts) | 1 reads | ~38697 tok |
 | 12:35 | Edited src/hooks/stop.ts | modified hole() | ~330 |
 | 12:36 | Session end: 5 writes across 2 files (nudge-obligation-scoping.md, stop.ts) | 1 reads | ~39027 tok |
+| 12:38 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/add-zero-bug.mjs | — | ~647 |
+
+## Session: 2026-07-27 12:40
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 12:41 | Edited src/hooks/stop.ts | added nullish coalescing | ~626 |
+| 12:41 | Edited src/hooks/stop.ts | max() → advanceCoveredTokens() | ~52 |
+| 12:41 | Edited src/hooks/stop.ts | max() → advanceCoveredTokens() | ~26 |
+| 12:42 | Edited src/hooks/stop.ts | 2→2 lines | ~44 |
+| 12:42 | Edited src/hooks/stop.ts | added 3 condition(s) | ~330 |
+| 12:42 | Edited src/hooks/stop.ts | modified if() | ~176 |
+| 12:42 | Edited src/hooks/stop.ts | modified NAME() | ~324 |
+| 12:43 | Edited tests/review-completion.test.js | added nullish coalescing | ~566 |
+| 12:43 | Edited tests/review-completion.test.js | added error handling | ~1269 |
+| 12:43 | Edited tests/review-completion.test.js | inline fix | ~23 |
+| 12:44 | Session end: 10 writes across 2 files (stop.ts, review-completion.test.js) | 3 reads | ~54393 tok |
+| 12:47 | Session end: 10 writes across 2 files (stop.ts, review-completion.test.js) | 3 reads | ~54393 tok |
+| 12:47 | Session end: 10 writes across 2 files (stop.ts, review-completion.test.js) | 3 reads | ~54393 tok |
+| 12:47 | Session end: 10 writes across 2 files (stop.ts, review-completion.test.js) | 3 reads | ~54393 tok |
+| 12:48 | Edited tests/review-completion.test.js | expanded (+36 lines) | ~1017 |
+| 12:48 | Edited tests/review-completion.test.js | inline fix | ~25 |
+| 12:48 | Edited tests/review-completion.test.js | 4→6 lines | ~71 |
+| 12:49 | Session end: 13 writes across 2 files (stop.ts, review-completion.test.js) | 3 reads | ~60479 tok |
+| 12:49 | Edited src/hooks/shared.ts | modified carriesBugfixObligation() | ~335 |
+| 12:49 | Edited src/hooks/post-write.ts | expanded (+7 lines) | ~135 |
+| 12:50 | Edited src/hooks/stop.ts | added nullish coalescing | ~250 |
+| 12:50 | Edited tests/review-completion.test.js | expanded (+32 lines) | ~519 |
+| 12:50 | Session end: 17 writes across 4 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts) | 3 reads | ~61987 tok |
+| 12:51 | Session end: 17 writes across 4 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts) | 3 reads | ~61987 tok |
+| 12:53 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/add-round4-bugs.mjs | — | ~2337 |
+| 12:53 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 17:05 | Round 4 review-0077: chatgpt+kimi independently found scoped attribution was INERT (tokens vs tokens_estimated) — feature never ran in prod; fixed + basis/value atomicity + path-form symmetry | src/hooks/{stop,shared,post-write}.ts, tests/review-completion.test.js | 107/107, verify passes, 9 layer files synced | ~48k |

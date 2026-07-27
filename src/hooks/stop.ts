@@ -1161,6 +1161,45 @@ function maybeNudgeSimplicity(wolfDir, session, sessionEntry, sessionFile) {
 // self-describing. Entries without it predate scoped attribution (bug-498) and
 // hold session-TOTAL tokens, which must not be subtracted from scoped tokens.
 const TOKEN_BASIS_SCOPED = "scoped-writes";
+const TOKEN_BASIS_SESSION = "session-total";
+/**
+ * Advance a pending entry's `covered_tokens` baseline AND its basis marker as
+ * one indivisible operation.
+ *
+ * Two independent statements (`covered_tokens = Math.max(...)` then a separate
+ * `if (attributionComplete) basis = SCOPED`) let the stored value and its label
+ * disagree in BOTH directions, each ending in a silently-dead gate:
+ *
+ *   1. A stored SCOPED marker survives a fallback turn, so a session-TOTAL
+ *      value keeps a scoped label (chatgpt arbitration, review-0077).
+ *   2. `Math.max` retains an older larger session-total value while the current
+ *      scoped turn stamps SCOPED over it.
+ *
+ * Either way a later scoped turn subtracts a session-scale baseline from scoped
+ * tokens, clamps to 0 lines, and suppresses review of real work.
+ *
+ * The marker must therefore describe the value ACTUALLY RETAINED, not the turn
+ * that happened to run last. Comparing across bases is meaningless, so when the
+ * incoming basis differs from the stored one the incoming value wins outright
+ * rather than being max'd against an incommensurable number.
+ */
+function advanceCoveredTokens(entry, cumulativeTokens, attributionComplete) {
+    const incomingBasis = attributionComplete ? TOKEN_BASIS_SCOPED : TOKEN_BASIS_SESSION;
+    const storedBasis = entry.covered_tokens_basis
+        ?? (typeof entry.covered_tokens === "number" ? TOKEN_BASIS_SESSION : null);
+    if (storedBasis === incomingBasis && typeof entry.covered_tokens === "number") {
+        // Same units: Math.max is meaningful, and the marker is already correct.
+        entry.covered_tokens = Math.max(entry.covered_tokens, cumulativeTokens);
+    }
+    else {
+        // Different (or absent) units. Adopt the current turn's value and label
+        // it honestly. Session-total baselines are recorded explicitly instead
+        // of left unmarked so the read-side guard can tell "old scheme" from
+        // "this turn fell back" without guessing.
+        entry.covered_tokens = cumulativeTokens;
+    }
+    entry.covered_tokens_basis = incomingBasis;
+}
 function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const reviewCfg = getReviewHookConfig();
     if (!reviewCfg.enabled)
@@ -1214,14 +1253,25 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     // the producer — but a hand-edited or corrupted `_session.json` would make
     // the sum shrink, and a shrinking sum fails toward 0 lines, i.e. toward a
     // silently-dead gate. One clause buys out the whole failure direction.
-    const hasUsableTokens = (w) => typeof w.tokens === "number"
-        && Number.isFinite(w.tokens)
-        && w.tokens >= 0;
+    //
+    // FIELD NAME (chatgpt arbitration, review-0077): `sessionEntry.writes` is
+    // built by the mapper above as `{file, tokens_estimated, action}` — the
+    // persisted ledger schema. Reading `w.tokens` here matched only hand-built
+    // test fixtures, so on the LIVE path `hasUsableTokens` was false for every
+    // write, `attributionComplete` was ALWAYS false, and scoped attribution
+    // never once ran in production. Read the schema field, and accept `tokens`
+    // as a fallback so a caller passing the raw `files_written` shape still
+    // attributes correctly rather than silently falling back.
+    const writeTokens = (w) => (typeof w.tokens_estimated === "number" ? w.tokens_estimated : w.tokens);
+    const hasUsableTokens = (w) => {
+        const t = writeTokens(w);
+        return typeof t === "number" && Number.isFinite(t) && t >= 0;
+    };
     const scopedWrites = sessionEntry.writes.filter(w => inScope.has(normalizeFilePath(w.file)));
     for (const w of scopedWrites) {
         if (hasUsableTokens(w)) {
             sawTokenField = true;
-            scopedTokens += w.tokens;
+            scopedTokens += writeTokens(w);
         }
     }
     // Require EVERY in-scope write to carry the field before trusting the sum;
@@ -1258,11 +1308,24 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     try {
         const priorLog = readJSON(reviewLogPath, { version: 1, reviews: [] });
         if (Array.isArray(priorLog.reviews)) {
+            // Pick the largest baseline AMONG THOSE IN THIS TURN'S UNITS. Ranking
+            // by raw magnitude across bases lets a session-total entry out-rank a
+            // scoped one purely because its scale is larger, and then donate its
+            // basis — comparing incommensurable numbers, the same flaw the
+            // atomic advanceCoveredTokens() fixes on the write side.
+            const wantBasis = attributionComplete ? TOKEN_BASIS_SCOPED : TOKEN_BASIS_SESSION;
             for (const r of priorLog.reviews) {
-                if (r && r.session_id && r.session_id === session.session_id
-                    && typeof r.covered_tokens === "number" && r.covered_tokens > coveredTokens) {
+                if (!r || !r.session_id || r.session_id !== session.session_id)
+                    continue;
+                if (typeof r.covered_tokens !== "number")
+                    continue;
+                // An absent marker predates the change: session-TOTAL units.
+                const rBasis = r.covered_tokens_basis ?? TOKEN_BASIS_SESSION;
+                if (rBasis !== wantBasis)
+                    continue;
+                if (r.covered_tokens > coveredTokens) {
                     coveredTokens = r.covered_tokens;
-                    coveredTokensBasis = r.covered_tokens_basis ?? null;
+                    coveredTokensBasis = rBasis;
                 }
             }
         }
@@ -1274,11 +1337,14 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     // would permanently disable the size trigger for the rest of that session —
     // a silent gate failure, the direction we refuse.
     //
-    // Entries now record `covered_tokens_basis` so the units are self-describing.
-    // A baseline lacking that marker is from the old scheme: ignore it rather
-    // than mixing scales. Worst case we re-nudge once on work already covered,
-    // which is visible and cheap; the alternative fails closed and silent.
-    if (coveredTokensBasis !== TOKEN_BASIS_SCOPED && attributionComplete) {
+    // Entries now record `covered_tokens_basis` so the units are self-describing,
+    // and the selection loop above only accepts baselines already in this turn's
+    // units. This clause is the belt-and-braces backstop: if anything still
+    // disagrees, drop the baseline instead of subtracting across scales. Worst
+    // case we re-nudge once on work already covered — visible and cheap; the
+    // alternative fails closed and silent.
+    const wantBasisFinal = attributionComplete ? TOKEN_BASIS_SCOPED : TOKEN_BASIS_SESSION;
+    if (coveredTokensBasis !== wantBasisFinal) {
         coveredTokens = 0;
     }
     const effectiveLines = Math.max(0, Math.round((cumulativeTokens - coveredTokens) / 17));
@@ -1309,9 +1375,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             // writing this session's (larger) cumulative would poison the other
             // session's baseline and permanently suppress its size trigger.
             if (pending.session_id && pending.session_id === session.session_id) {
-                pending.covered_tokens = Math.max(pending.covered_tokens ?? 0, cumulativeTokens);
-                if (attributionComplete)
-                    pending.covered_tokens_basis = TOKEN_BASIS_SCOPED;
+                advanceCoveredTokens(pending, cumulativeTokens, attributionComplete);
             }
             pending.files = [...new Set([...(pending.files ?? []), ...writtenFiles])];
             pending.reason = "follow-up edit below review threshold";
@@ -1498,9 +1562,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             // Codex round-final finding #1.
             existingPending.ended = sessionEntry.ended;
             existingPending.approx_lines_changed = Math.max(existingPending.approx_lines_changed, effectiveLines);
-            existingPending.covered_tokens = Math.max(existingPending.covered_tokens ?? 0, cumulativeTokens);
-            if (attributionComplete)
-                existingPending.covered_tokens_basis = TOKEN_BASIS_SCOPED;
+            advanceCoveredTokens(existingPending, cumulativeTokens, attributionComplete);
             existingPending.files = [...new Set([...existingPending.files, ...writtenFiles])];
             existingPending.reason = reason;
             existingPending.trigger = trigger;
@@ -1545,7 +1607,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 files: writtenFiles,
                 approx_lines_changed: effectiveLines,
                 covered_tokens: cumulativeTokens,
-                ...(attributionComplete ? { covered_tokens_basis: TOKEN_BASIS_SCOPED } : {}),
+                covered_tokens_basis: attributionComplete ? TOKEN_BASIS_SCOPED : TOKEN_BASIS_SESSION,
                 reason,
                 status: "pending",
                 trigger,
@@ -1719,14 +1781,20 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     // isCodeFile(): that excludes everything under .wolf/, which would suppress
     // the nudge on Wolfpack's own hooks — files under active development here.
     const obligationExts = detectObligationExtensions(qualityCfg.buglog_scan_extensions, () => listProjectFiles());
+    // `edit_counts` keys are project-RELATIVE for in-project files and absolute
+    // otherwise (post-write.ts editKey). Excludes are ^…$-anchored, so a
+    // relative-only test silently ignores absolute-form excludes such as the
+    // default `/tmp/**` — the same predicate then answered differently in the
+    // two hooks for one file (kimi, review-0077). Supply the absolute form too.
+    const projectRoot = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
     const isExcluded = (file) => !carriesBugfixObligation(file, {
         excludeRegexes: buglogExcludeRegexes,
         extensions: obligationExts,
+        altPaths: [path.isAbsolute(file) ? null : path.resolve(projectRoot, file)],
     });
-    // The full edit_counts keys are absolute paths (post-write.ts records them
-    // that way); multiEditFileKeys keeps the original paths for identity match
-    // against files_written, multiEditDisplay is the basename list for the
-    // user-facing nudge.
+    // multiEditFileKeys keeps the original keys for identity match against
+    // files_written, multiEditDisplay is the basename list for the user-facing
+    // nudge.
     const multiEditEntries = Object.entries(session.edit_counts).filter(([file, count]) => count >= 3 && !isExcluded(file));
     if (multiEditEntries.length === 0)
         return false;

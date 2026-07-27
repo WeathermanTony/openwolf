@@ -1159,7 +1159,20 @@ export function _resetProjectFileCache() {
  */
 export function carriesBugfixObligation(file, opts = {}) {
     const excludeRegexes = opts.excludeRegexes ?? [];
-    if (excludeRegexes.some((re) => re.test(file)))
+    // Excludes are ^…$-anchored globs, so they match one path FORM only. The two
+    // callers naturally hold different forms: post-write has the absolute path,
+    // while the Stop hook iterates `edit_counts` keys, which are project-relative
+    // for in-project files. Testing a single form made the same predicate return
+    // opposite answers for the same file (kimi review, review-0077): a project
+    // checked out under /tmp had every post-write nudge suppressed by the
+    // `/tmp/**` exclude while the Stop hook still fired, and symmetrically a
+    // root-anchored exclude like `src/scratch/**` matched only the relative form.
+    //
+    // Test every supplied form and exclude if ANY matches: an exclude is a
+    // statement that this file is uninteresting, and which spelling the caller
+    // happens to hold should not change that.
+    const forms = [file, ...(opts.altPaths ?? [])].filter((p) => typeof p === "string" && p.length > 0);
+    if (forms.some((p) => excludeRegexes.some((re) => re.test(p))))
         return false;
     const exts = opts.extensions;
     // No set supplied, or an explicitly-empty one: the extension gate is off

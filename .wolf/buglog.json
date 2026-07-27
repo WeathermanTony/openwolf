@@ -4186,6 +4186,350 @@
       "last_seen": "2026-07-27T16:35:47.317Z",
       "commit": null,
       "reduction": null
+    },
+    {
+      "id": "bug-504",
+      "timestamp": "2026-07-27T16:38:04.882Z",
+      "error_message": "Review size trigger silently skipped when every in-scope write was a pure deletion (tokens: 0). Found by minimax companion review of review-0077.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "attributionComplete trusted any sum whose in-scope writes all carried a valid finite token field -- including a sum of ZERO. estimateTokens measures 'content || new_string' with Math.ceil, so any non-empty content yields >=1, BUT an Edit that deletes a block has an empty new_string and records tokens: 0. Verified reachable: Write with empty content -> 0, Edit deleting a block -> 0, normal Edit -> 4. A session whose in-scope writes are all deletions therefore computed attributionComplete=true over a 0-token sum -> effectiveLines 0 -> size trigger never fired. Deleting 500 lines is precisely the change that most needs review.",
+      "fix": "Added a 'scopedTokens > 0' clause to attributionComplete so a zero total falls back to the session total. NOTE the reviewer's suggested fix was wrong and was NOT applied: it proposed rejecting tokens: 0 in the per-write validity predicate, which misclassifies a legitimate measurement as malformed and breaks the mixed case (a deletion alongside a real edit would wrongly fall back to session totals). Guard the SUM, not the individual value. Falsifier: single deletion tokens=0 -> 294 lines, fires (independently matches the value the reviewer predicted in its falsifier); control -- mixed deletion + real edit -> 6 lines, does NOT fall back to the 51000-token session total. Also hardened the validity predicate to reject negatives and extracted it to one hasUsableTokens definition, since two copies of that predicate caused the round-2 population mismatch.",
+      "status": "resolved",
+      "tags": [
+        "nudge",
+        "review",
+        "token-attribution",
+        "silent-false-negative",
+        "deletion",
+        "companion-review"
+      ],
+      "related_bugs": [
+        "bug-498",
+        "bug-501"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:38:04.882Z",
+      "commit": "edc13da",
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-505",
+      "timestamp": "2026-07-27T16:41:48.511Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:41:48.511Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-506",
+      "timestamp": "2026-07-27T16:41:55.594Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 5→3 lines (3 removed) | Also: // Entries now record `covered_tokens_basis` so th; // A baseline lacking that marker is from the old ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-27T16:42:32.860Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-507",
+      "timestamp": "2026-07-27T16:42:20.900Z",
+      "error_message": "Missing guard clause",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "No early return/throw for edge case: !r || !r.session_id || r.session_id !== session.session_id",
+      "fix": "Added guard clause: if (!r || !r.session_id || r.session_id !== )",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:42:20.900Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-508",
+      "timestamp": "2026-07-27T16:42:46.585Z",
+      "error_message": "Type error",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:42:46.585Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-509",
+      "timestamp": "2026-07-27T16:43:16.786Z",
+      "error_message": "Null/undefined access in ",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:43:16.786Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-510",
+      "timestamp": "2026-07-27T16:43:44.670Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:43:44.670Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-511",
+      "timestamp": "2026-07-27T16:43:56.473Z",
+      "error_message": "Wrong reference: REPO_ROOT should be repoRoot",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Used \"REPO_ROOT\" instead of \"repoRoot\"",
+      "fix": "Changed REPO_ROOT → repoRoot",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:43:56.473Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-512",
+      "timestamp": "2026-07-27T16:49:44.764Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Condition was: if (excludeRegexes.some((re)",
+      "fix": "Changed to: if (forms.some((p)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:49:44.764Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-513",
+      "timestamp": "2026-07-27T16:49:50.521Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/hooks/post-write.ts",
+      "root_cause": "Condition was: if (carriesBugfixObligation(absolutePath, { excludeReg)",
+      "fix": "Changed to: if (carriesBugfixObligation(absolutePath, {\n          )",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:49:50.521Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-514",
+      "timestamp": "2026-07-27T16:50:07.780Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:50:07.780Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-515",
+      "timestamp": "2026-07-27T16:50:20.986Z",
+      "error_message": "Missing await",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:50:20.986Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-516",
+      "timestamp": "2026-07-27T16:53:15.740Z",
+      "error_message": "Scoped review attribution (bug-498) never executed in production: attributionComplete was false on 100% of runs. Found independently by chatgpt AND kimi companion review of review-0077.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Field-name mismatch between the sole producer and the consumer. sessionEntry.writes is built at stop.ts:711-714 as {file, tokens_estimated, action} -- the persisted ledger schema -- but maybeNudgeReview's hasUsableTokens tested `typeof w.tokens === 'number'`, which is undefined on every element. So sawTokenField was always false, attributionComplete always false, and cumulativeTokens always took the session-total fallback that INCLUDES scope-excluded writes -- the exact mis-attribution bug-498 existed to remove. bug-501 and bug-504, built on top, were likewise dead. Verified by executing the real producer mapper: writes [{tokens_estimated:0},{tokens_estimated:100}] + excluded 10000 -> attributionComplete false, 594 lines instead of the intended 6.",
+      "fix": "Added writeTokens(w) reading tokens_estimated with a `tokens` fallback (so a caller passing the raw files_written shape still attributes rather than silently falling back), and routed hasUsableTokens and the accumulator through it. Fixing the producer instead was rejected: tokens_estimated is the persisted ledger schema and renaming it would break every historical _session.json.",
+      "status": "resolved",
+      "tags": [
+        "nudge",
+        "review",
+        "token-attribution",
+        "dead-code",
+        "field-mismatch",
+        "companion-review",
+        "convergent-finding"
+      ],
+      "related_bugs": [
+        "bug-498",
+        "bug-501",
+        "bug-504"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:53:15.740Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-517",
+      "timestamp": "2026-07-27T16:53:15.740Z",
+      "error_message": "Unit test suite passed 103/103 against a feature that never ran once in production.",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "The attribution test defined its own decide() helper that REIMPLEMENTED the rule using w.tokens -- mirroring the author's mental model, so it agreed with that model's bug. A test that re-declares the logic it tests can only ever confirm its author; it has no independent access to the truth.",
+      "fix": "Two defenses. (1) decide() now builds writes through the SAME mapper shape the hook uses, so a producer/consumer divergence changes the fixture too. (2) A structural test reads the shipped src/hooks/stop.ts, extracts the producer's emitted field name by regex, and asserts the consumer accessor reads that field. Verified the structural test genuinely FAILS on the defect: reintroducing `const writeTokens = (w) => w.tokens` yields `not ok 8 ... attribution reads a different field than the producer emits (producer: \"tokens_estimated\")`. A test that passes on both broken and fixed code is worse than no test.",
+      "status": "resolved",
+      "tags": [
+        "test-vacuity",
+        "false-green",
+        "nudge",
+        "review",
+        "meta"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:53:15.740Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-518",
+      "timestamp": "2026-07-27T16:53:15.740Z",
+      "error_message": "covered_tokens and covered_tokens_basis could disagree, subtracting baselines across incommensurable token scales and silently killing the review size trigger. Found by chatgpt arbitration (direction 1) and self-check (direction 2).",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Value and marker were written as two independent statements: `covered_tokens = Math.max(stored, cumulative)` unconditionally, then `if (attributionComplete) basis = SCOPED`. Both directions break: (1) a stored SCOPED marker survives a fallback turn, leaving a session-TOTAL value labeled scoped; (2) Math.max retains an older larger session-total value while the current scoped turn stamps SCOPED over it. Either way a later scoped turn subtracts a session-scale baseline from scoped tokens -> clamp to 0 lines -> gate dead on real work. The read side had the same flaw independently: it picked the numerically largest baseline ACROSS bases, so a session-total entry out-ranked a scoped one purely because its scale is larger, then donated its basis.",
+      "fix": "Added advanceCoveredTokens(entry, cumulative, complete): same basis -> Math.max (meaningful); different or absent basis -> adopt the current turn's value outright, because comparing across scales is meaningless. The marker always describes the value ACTUALLY RETAINED. Session-total baselines are now stamped explicitly (TOKEN_BASIS_SESSION) instead of left unmarked, so 'old scheme' and 'this turn fell back' are distinguishable. Read-side selection is now basis-matched first and magnitude second, with the post-hoc zeroing kept as a backstop.",
+      "status": "resolved",
+      "tags": [
+        "nudge",
+        "review",
+        "token-attribution",
+        "unit-safety",
+        "silent-false-negative",
+        "companion-review"
+      ],
+      "related_bugs": [
+        "bug-498",
+        "bug-501",
+        "bug-504"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:53:15.740Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-519",
+      "timestamp": "2026-07-27T16:53:15.740Z",
+      "error_message": "One shared obligation predicate returned OPPOSITE answers in the two hooks for the same file. Found by kimi companion review of review-0077 (rated LOW).",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "carriesBugfixObligation tested a single path form, but its two callers naturally hold different ones: post-write.ts passes the absolute path while stop.ts iterates edit_counts keys, which post-write stores as project-RELATIVE for in-project files. Excludes are ^...$-anchored globs matching one form only, so for a project checked out under /tmp the default `/tmp/**` exclude suppressed the post-write nudge while the Stop hook still fired; symmetrically a root-anchored exclude like `src/scratch/**` matched only the relative key. This broke the 'one predicate, same semantics in both hooks' contract asserted in that code's own comment. A stale comment in stop.ts also claimed edit_counts keys are absolute.",
+      "fix": "carriesBugfixObligation now accepts opts.altPaths and excludes if ANY supplied form matches -- an exclude states the file is uninteresting, and which spelling the caller holds should not change that. post-write passes the relative editKey alongside the absolute path; stop.ts resolves relative keys against CLAUDE_PROJECT_DIR and passes the absolute form. Stale comment corrected. Verified on shipped bytes: project under /tmp, file src/a.sh -> both hooks suppressed, AGREE: yes. Negative control: a file matching neither exclude still nudges in both forms.",
+      "status": "resolved",
+      "tags": [
+        "nudge",
+        "buglog",
+        "path-normalization",
+        "shared-predicate",
+        "companion-review"
+      ],
+      "related_bugs": [
+        "bug-496",
+        "bug-499"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:53:15.740Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-520",
+      "timestamp": "2026-07-27T16:53:15.740Z",
+      "error_message": "Two end-to-end stop-hook tests began failing after the attribution field fix (expected ~59 new lines, got ~118).",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Not a regression -- a dead safety rule waking up. The fixtures wrote an UNMARKED legacy baseline (covered_tokens with no covered_tokens_basis). With attribution finally live, the bug-498 unit-safety rule correctly refuses to subtract a session-total baseline from scoped tokens. That rule had been unreachable the entire time attribution was inert, because both sides were using session totals. Refusing is correct: a legacy covered_tokens sums ALL writes including scope-excluded ones, so session_total >= scoped_sum always; the hook cannot tell a safe legacy entry (no excluded writes, bases coincide) from an unsafe one (a 40000-token excluded scratch write -> clamp to 0 -> gate dead), because legacy entries do not record their basis. Refusing over-nudges visibly; honoring risks silent death.",
+      "fix": "Updated both fixtures to carry covered_tokens_basis: 'scoped-writes' (the shape all new entries have) and to assert the new entry records its own basis. Added a third test pinning the legacy-refusal behavior explicitly (unmarked baseline -> 118 lines, not 59) so it cannot regress unnoticed. The fixture helper takes an optional coveredBasis and omits the field when absent, reproducing a genuine pre-bug-498 entry.",
+      "status": "resolved",
+      "tags": [
+        "nudge",
+        "review",
+        "unit-safety",
+        "legacy-data",
+        "test-fixture"
+      ],
+      "related_bugs": [
+        "bug-498"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:53:15.740Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     }
   ]
 }
