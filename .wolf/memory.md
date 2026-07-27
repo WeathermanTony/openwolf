@@ -707,3 +707,50 @@ makes the consequence recoverable, not the cause).
 | 22:14 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 0 reads | ~749 tok |
 | 22:14 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 0 reads | ~749 tok |
 | 22:14 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 0 reads | ~749 tok |
+| 22:21 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 0 reads | ~749 tok |
+| 10:35 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 0 reads | ~749 tok |
+
+## Session summary — 2026-07-27 (Stop-hook packaging, lifecycle, fleet rollout)
+
+The auto-generated "Session end: 2 writes / 0 reads" lines above undercount this
+session badly; this is the accurate record.
+
+**Shipped (11 commits on `feature/autonomy-continuation`, no upstream set):**
+
+| Commit | What |
+|---|---|
+| `0562cc5` | Corrected an overstated root-cause claim (hooks "crashing" -> *killed*; both lock sites release in `finally`, so ordinary exceptions were ruled out) |
+| `7f72b94` | Stop-hook lifecycle instrumentation (start/exit/signal records; a killed process cannot log its own death, so an *unclosed* record is the evidence) |
+| `63dc916` | Fixed a regression I introduced: bare `process.on("uncaughtException")` SWALLOWS the condition (measured exit 0 vs no-listener baseline exit 1) |
+| `7929d4b` | Clamp lifecycle fields — worst-case record ~666 B vs 4096 B PIPE_BUF |
+| `29c4d62` | Recursive backup/restore in `update.ts` (bug-487: backup skipped `nudges/`, restore threw EISDIR mid-loop leaving hooks/ half rolled back) |
+| `f4747ac` | Serialize the retention trim — unlocked it silently lost records (1/8 surviving -> 8/8) |
+| `f5f06f5` | review-0076 receipt + two stale reduction `target-hash` values |
+| `b2d1a76` | Fleet rollout evidence + 4 cerebrum Do-Not-Repeat entries |
+
+**review-0076: CLEAN**, three rounds, each a different provider — GLM
+(packaging) -> Kimi (found the CRITICAL in my own instrumentation) -> MiniMax
+(arbitration). Root-cause ledger `[rc-swallow] [rc-atomicity] [rc-retention]
+[rc-flat-copy]` all verified complete.
+
+**Fleet:** all 81 registered projects updated. Verified by *loadability, not
+presence* — a real `import()` per project in a child process, 81/81 OK.
+User data intact (cllmgit2 cerebrum.md: 140633 B / sha `46010e2fff620f48`
+identical before and after).
+
+**Mistakes worth carrying forward** (all now in cerebrum Do-Not-Repeat):
+- I ran the fleet update while *intending* a dry run — bare `openwolf update`
+  is fleet-wide and ignores cwd, so it wrote to 81 live projects while leaving
+  my sandbox untouched. Outcome was correct and verified, but less deliberate
+  than intended.
+- Two QA reductions were marked current for bytes that no longer existed;
+  caught only by re-hashing rather than trusting.
+- Diagnosed a bogus `# fail 1` before noticing `node --test tests/` resolves
+  `tests` as a *module* on Node 22. Check the invocation before the code.
+
+**Accepted limitation (not a defect):** `safeCopyDir` is a copy, not a sync —
+rollback restores every backed-up file but does not delete files a failed
+update added. An inert orphan beats the EISDIR abort it replaced; a true sync
+would mean deleting under `.wolf/hooks/`, which also holds session state.
+
+**Open:** branch has no upstream. Push/PR is the user's call — not done.
