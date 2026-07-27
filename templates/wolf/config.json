@@ -110,7 +110,7 @@
         "**/migrations/**"
       ],
       "review_companion": "provider companion",
-      "max_review_rounds": 5,
+      "max_review_rounds": 3,
       "nudge_only": true
     },
     "quality_gate": {
@@ -258,6 +258,19 @@
       "commit_patterns": [
         "\\bgit\\s+commit\\b"
       ]
+    },
+    "nudges": {
+      "enabled": true,
+      "max_per_stop": 1,
+      "max_chars": 600,
+      "max_emissions_per_rule_per_session": 1,
+      "info_cooldown_hours": 24,
+      "max_review_rounds": 3,
+      "lease_seconds": 30,
+      "suppress_unattributed_low_severity": true,
+      "default_nonblocking": true,
+      "show_suppressed_count": false,
+      "diagnostic_log": ".wolf/logs/nudges.jsonl"
     }
   }
 }

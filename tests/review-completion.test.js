@@ -486,6 +486,13 @@ test('stop hook simplicity nudge names the most-edited file when it is notable',
   // Simplicity enabled (default 2500-token threshold), all actionable gates
   // disabled so advisory suppression doesn't apply. files_written sums to
   // 2700 tokens; one file has 6 edits → the lens hint must name it.
+  //
+  // The per-Stop output budget (max_per_stop: 1) now ranks nudges, and the
+  // buglog nudge outranks the advisory simplicity one — hot.py has 6 edits, so
+  // the "edited 3+ times without a buglog entry" rule also qualifies and would
+  // win the single slot. Seed a buglog entry below so simplicity is the only
+  // eligible nudge and this test still measures what it was written to
+  // measure: the most-edited-file lens.
   const base = await mkdtemp(path.join(homedir(), 'ow-simplicity-lens-'));
   try {
     const dir = base;
@@ -513,6 +520,24 @@ test('stop hook simplicity nudge names the most-edited file when it is notable',
       anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
       cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
     }, null, 2));
+    // Satisfy the buglog rule so it does not compete for the single output slot.
+    // The rule suppresses when buglog.json's MTIME is newer than the latest
+    // edit to a multi-edit file; this fixture uses year-2099 edit timestamps,
+    // so the mtime must be pushed past them explicitly (a real-time mtime is
+    // "older" than 2099 and would leave the nudge firing).
+    const buglogFixture = path.join(dir, '.wolf', 'buglog.json');
+    await writeFile(buglogFixture, JSON.stringify({
+      version: 1,
+      bugs: [{
+        id: 'bug-001', timestamp: '2099-06-13T17:00:00.000Z',
+        error_message: 'seeded so the buglog nudge is satisfied',
+        file: hot, root_cause: 'test fixture', fix: 'n/a', status: 'resolved',
+        tags: ['fixture'], related_bugs: [], occurrences: 1,
+        last_seen: '2099-06-13T17:00:00.000Z', commit: null, reduction: null,
+      }],
+    }, null, 2));
+    const past2099 = new Date('2099-06-13T18:00:00.000Z');
+    await utimes(buglogFixture, past2099, past2099);
     const transcript = path.join(dir, 'transcript.jsonl');
     await writeFile(transcript, assistantTranscript('Done.'));
 

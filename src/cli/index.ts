@@ -195,6 +195,61 @@ export function createProgram(): Command {
       reviewComplete(id, opts);
     });
 
+  const nudge = program
+    .command("nudge")
+    .description("Inspect and dispose of Stop-hook nudges");
+
+  nudge
+    .command("list")
+    .description("List recorded nudges and their dispositions")
+    .action(async () => {
+      const { nudgeList } = await import("./nudge-cmd.js");
+      nudgeList();
+    });
+
+  nudge
+    .command("show <id>")
+    .description("Show one nudge's full evidence and history")
+    .action(async (id: string) => {
+      const { nudgeShow } = await import("./nudge-cmd.js");
+      nudgeShow(id);
+    });
+
+  nudge
+    .command("resolve <id>")
+    .description("Mark a nudge resolved (suppresses this exact evidence)")
+    .action(async (id: string) => {
+      const { nudgeResolve } = await import("./nudge-cmd.js");
+      nudgeResolve(id);
+    });
+
+  nudge
+    .command("dismiss <id>")
+    .description("Dismiss a nudge as a false positive")
+    .option("--reason <text>", "Short reason", "")
+    .action(async (id: string, opts: { reason?: string }) => {
+      const { nudgeDismiss } = await import("./nudge-cmd.js");
+      nudgeDismiss(id, opts);
+    });
+
+  nudge
+    .command("snooze <id>")
+    .description("Suppress a nudge temporarily")
+    .option("--hours <n>", "Snooze for N hours")
+    .option("--until <when>", "Use 'session-end' for session-scoped snooze")
+    .action(async (id: string, opts: { hours?: string; until?: string }) => {
+      const { nudgeSnooze } = await import("./nudge-cmd.js");
+      nudgeSnooze(id, opts);
+    });
+
+  nudge
+    .command("stats")
+    .description("Report whether the nudge system is helping")
+    .action(async () => {
+      const { nudgeStats } = await import("./nudge-cmd.js");
+      nudgeStats();
+    });
+
   const qa = program
     .command("qa")
     .description("Quality gate management");

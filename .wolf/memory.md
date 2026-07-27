@@ -487,3 +487,139 @@
 | 15:05 | Wrote QA reduction for bug-440 registry fix (4 assumptions, riskiest = dropping malformed entries loses nothing; falsifier = 62/62 tests + e2e fixture run warning on 2 injected malformed entries) | .wolf/qa/registry-malformed-entry-guard.md | reduction current @94971bb5 | ~2.5k |
 | 15:06 | Updated open bug-440 entry with fix text + reduction link (filtered on status=open to avoid the duplicate resolved bug-440) | .wolf/buglog.json | fix recorded, commit backfill pending | ~300 |
 | 15:08 | Committed bug-440 fix 154ceaa (registry.ts + registry.test.js + buglog + memory + anatomy); backfill commit 3a97002 marks bug-440 resolved — pattern: never amend, backfill in second commit | 5 files + .wolf/buglog.json | bug-440 resolved, 62/62 tests green | ~1k |
+
+## Session: 2026-07-26 18:55
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:55 | Created src/hooks/nudges/state.ts | — | ~4926 |
+| 19:55 | Created src/hooks/nudges/project-scope.ts | — | ~1181 |
+| 19:56 | Created src/hooks/nudges/engine.ts | — | ~3398 |
+| 19:57 | Created src/hooks/nudges/rules/cerebrum.ts | — | ~1262 |
+| 19:57 | Created src/hooks/nudges/rules/conclusion.ts | — | ~1801 |
+| 19:58 | Created src/hooks/nudges/rules/review.ts | — | ~3285 |
+| 19:59 | Created src/cli/nudge-cmd.ts | — | ~2800 |
+| 19:59 | Edited src/cli/index.ts | expanded (+55 lines) | ~507 |
+| 19:59 | Edited src/hooks/session-start.ts | added error handling | ~410 |
+| 20:00 | Edited src/hooks/stop.ts | added 4 import(s) | ~112 |
+| 20:00 | Edited src/hooks/stop.ts | 3→5 lines | ~100 |
+| 20:00 | Edited src/hooks/stop.ts | added error handling | ~949 |
+| 20:00 | Edited src/hooks/stop.ts | maybeNudgeConclusionVerification() → runNudgeEngine() | ~114 |
+| 20:00 | Edited src/hooks/stop.ts | maybeNudgeConclusionVerification() → runNudgeEngine() | ~58 |
+| 20:01 | Session end: 14 writes across 10 files (state.ts, project-scope.ts, engine.ts, cerebrum.ts, conclusion.ts) | 0 reads | ~20903 tok |
+| 20:04 | Created tests/nudge-engine.test.js | — | ~9352 |
+| 20:04 | Edited tests/nudge-engine.test.js | modified spawnConcurrent() | ~333 |
+| 20:04 | Edited tests/nudge-engine.test.js | modified for() | ~520 |
+| 20:05 | Edited tests/nudge-engine.test.js | modified for() | ~505 |
+| 20:05 | Edited src/hooks/nudges/state.ts | modified writeStateOrThrow() | ~388 |
+| 20:05 | Edited tests/nudge-engine.test.js | modified catch() | ~325 |
+| 20:05 | Edited tests/nudge-engine.test.js | apply() → realWrite() | ~129 |
+| 20:05 | Edited tests/nudge-engine.test.js | 2→4 lines | ~69 |
+| 20:05 | Edited tests/nudge-engine.test.js | 3→2 lines | ~26 |
+| 20:06 | Edited tests/nudge-engine.test.js | removed 7 lines | ~3 |
+| 20:08 | Session end: 25 writes across 12 files (state.ts, project-scope.ts, engine.ts, cerebrum.ts, conclusion.ts) | 0 reads | ~34049 tok |
+| 20:08 | Edited src/hooks/stop.ts | added 9 condition(s) | ~831 |
+| 20:09 | Edited src/hooks/stop.ts | added error handling | ~118 |
+| 20:09 | Session end: 27 writes across 12 files (state.ts, project-scope.ts, engine.ts, cerebrum.ts, conclusion.ts) | 0 reads | ~34998 tok |
+| 20:10 | Edited tests/review-completion.test.js | expanded (+7 lines) | ~187 |
+| 20:10 | Edited tests/review-completion.test.js | expanded (+11 lines) | ~268 |
+| 20:11 | Edited tests/review-completion.test.js | 2→7 lines | ~141 |
+| 20:11 | Edited tests/review-completion.test.js | 4→6 lines | ~79 |
+| 00:15 | Built evidence-addressed nudge engine (fingerprints, dispositions, leases, project scope, output budget) | src/hooks/nudges/{state,engine,project-scope}.ts + rules/{cerebrum,conclusion,review}.ts | 6 new modules; 91/91 tests pass | ~18000 |
+| 00:15 | Fixed cross-project cerebrum misattribution (bug-462) and non-convergent dedup (bug-463) | src/hooks/stop.ts, session-start.ts | driving-project fallback removed; counter/text-hash dedup replaced with evidence fingerprints | ~4000 |
+| 00:15 | Added nudge CLI + config defaults across 4 config layers | src/cli/nudge-cmd.ts, index.ts, .wolf+templates config.json | list/show/resolve/dismiss/snooze/stats verified end-to-end | ~3000 |
+| 00:15 | Legacy nudge budget at emit choke point | src/hooks/stop.ts applyLegacyBudget() | measured 1865 → 904 chars on real stop | ~1500 |
+| 00:15 | Regression suite: 29 tests incl. 12 real concurrent processes + fault injection | tests/nudge-engine.test.js | 2 tests initially caught themselves vacuous; fixed with io seam | ~6000 |
+| 20:15 | Session end: 31 writes across 13 files (state.ts, project-scope.ts, engine.ts, cerebrum.ts, conclusion.ts) | 0 reads | ~35673 tok |
+
+## Session: 2026-07-27 20:18
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:19 | Edited .gitignore | 2→6 lines | ~35 |
+| 20:19 | Edited src/templates/.gitignore | 3→5 lines | ~10 |
+| 20:19 | Edited templates/wolf/.gitignore | 3→5 lines | ~10 |
+| 20:19 | Session end: 3 writes across 1 files (.gitignore) | 0 reads | ~60 tok |
+| 20:21 | Edited src/hooks/nudges/state.ts | added 1 condition(s) | ~488 |
+| 20:21 | Edited src/hooks/nudges/state.ts | modified nudgeStatePath() | ~302 |
+| 20:21 | Edited src/hooks/nudges/state.ts | removed 18 lines | ~15 |
+| 20:21 | Edited src/hooks/nudges/state.ts | inline fix | ~42 |
+| 20:21 | Edited src/hooks/nudges/state.ts | added 5 condition(s) | ~473 |
+| 20:21 | Edited src/hooks/nudges/state.ts | 6→7 lines | ~90 |
+| 20:21 | Edited src/hooks/nudges/engine.ts | 5→10 lines | ~139 |
+| 20:22 | Edited src/hooks/nudges/engine.ts | added 1 condition(s) | ~164 |
+| 20:22 | Edited src/hooks/nudges/state.ts | modified computeFingerprint() | ~386 |
+| 20:22 | Edited src/hooks/nudges/state.ts | added 4 condition(s) | ~508 |
+| 20:22 | Edited src/hooks/nudges/rules/cerebrum.ts | 1→4 lines | ~73 |
+| 20:22 | Edited src/hooks/nudges/rules/conclusion.ts | 1→2 lines | ~30 |
+| 20:22 | Edited src/hooks/nudges/engine.ts | 2→7 lines | ~121 |
+| 20:25 | review-0073 round 1: GLM companion review of nudge core (state/engine/project-scope) returned 4 findings; verified all 4 reproduce against current bytes | src/hooks/nudges/*.ts | 2 HIGH + 1 MED + 1 LOW confirmed real | ~9k |
+| 20:32 | Fixed finding 1 (per-rule ceiling not enforced in-lock) + finding 2 (corrupt state destroyed dispositions) | state.ts, engine.ts | negative control: 8 emissions vs 1; quarantine now preserves bytes | ~7k |
+| 20:38 | Fixed findings 3/4 (evidence path canonicalization, hash type tagging); bumped rule SCHEMA_VERSION 2→3 across all 3 layers | state.ts, rules/*.{ts,js} | fingerprints stable; prose unmangled | ~5k |
+| 20:44 | Added regression tests 30-33, each with a negative control; full suite + verify | tests/nudge-engine.test.js | 95/95 pass, verify OK, 3-layer sync confirmed | ~6k |
+| 20:47 | Logged bug-471/bug-472, 5 cerebrum Do-Not-Repeat entries, updated reduction with round-1 findings | .wolf/buglog.json, cerebrum.md, qa/ | memory current | ~4k |
+| 20:30 | Edited src/hooks/nudges/rules/review.ts | added 1 condition(s) | ~256 |
+| 20:30 | Edited src/hooks/nudges/rules/review.ts | 2→7 lines | ~149 |
+| 20:31 | Edited src/hooks/nudges/rules/review.ts | 1→4 lines | ~94 |
+| 20:31 | Edited src/hooks/nudges/rules/review.ts | 3→4 lines | ~46 |
+| 20:33 | Edited src/hooks/nudges/state.ts | added 1 condition(s) | ~277 |
+| 20:33 | Edited src/hooks/nudges/state.ts | modified nudgeStatePath() | ~161 |
+| 20:33 | Edited src/hooks/nudges/state.ts | added 1 condition(s) | ~146 |
+| 20:36 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/add-bug474.mjs | — | ~487 |
+| 20:58 | Round 1b (GPT-5.5, rules): CRITICAL false-silence claim verified as MEDIUM attestation defect via with/without control; fixed symmetric review coverage (bug-473) | rules/review.ts | test 34 + negative control | ~8k |
+| 21:10 | Round 2 (Kimi, fix-verify): RC-1/3/4 COMPLETE, RC-2 INCOMPLETE — failed quarantine still allowed overwrite; added UNSAFE_TO_PERSIST guard (bug-474) | state.ts | test 35, all 6 mutators preserve corrupt bytes | ~9k |
+| 21:18 | Cleaned truncated bug-473 duplicate created by a heredoc quoting failure; buglog IDs 471-474 unique | .wolf/buglog.json | verified counts | ~2k |
+| 21:22 | Refreshed review-0073 twice (cleared 2 stale reviewlog locks, owners confirmed dead); dispatched MiniMax arbitration (3rd provider) | .wolf/reviewlog.json | 97/97 pass, verify OK | ~3k |
+| 20:39 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/fix-bug474.mjs | — | ~588 |
+| 21:30 | Round 3 arbitration (MiniMax-M3, 3rd provider): CLEAN — all 5 root causes COMPLETE, no new findings in the 3 probed areas | src/hooks/nudges/ | convergence reached | ~6k |
+| 21:33 | Completed review-0073 --reviewed-current after clearing a 3rd stale lock; repaired auto-detected "Type error" stub that had squatted bug-474's ID | .wolf/reviewlog.json, buglog.json | 97/97, verify OK, all layers synced | ~4k |
+| 21:35 | SESSION SUMMARY: evidence-addressed nudge engine + 3-round companion review. 6 verified defects fixed (bug-471..474 + 2 fingerprint identity bugs), tests 30-35 each with negative controls, gitignore gap closed across 4 files | (session) | complete, uncommitted for user review | ~2k |
+| 20:40 | Session end: 31 writes across 9 files (.gitignore, state.ts, engine.ts, cerebrum.ts, conclusion.ts) | 5 reads | ~24115 tok |
+| 21:44 | review-0074 opened (8 files); 5 of 8 already attested at identical bytes by review-0073's clean arbitration — scoped companion review to the 3 genuinely-unreviewed gitignore files | .wolf/reviewlog.json | avoided re-spend on attested bytes | ~3k |
+| 21:48 | Verified ignore delta independently: 0 tracked files newly ignored, negations intact, dir-only semantics, templates byte-identical; wrote reduction | .wolf/qa/nudge-log-ignore-policy.md | falsifier empty = PASS | ~4k |
+| 20:42 | Session end: 32 writes across 10 files (.gitignore, state.ts, engine.ts, cerebrum.ts, conclusion.ts) | 5 reads | ~25488 tok |
+| 20:44 | Edited src/utils/size-discipline.ts | added 2 condition(s) | ~358 |
+| 20:44 | Edited src/utils/size-discipline.ts | added error handling | ~195 |
+| 20:48 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/add-bug475.mjs | — | ~551 |
+| 20:49 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/clean-stubs.mjs | — | ~301 |
+| 21:52 | review-0074 CLEAN (GLM verified empirically via git check-ignore in scratch repos, confirmed added lines load-bearing); completed receipt | .wolf/reviewlog.json | 8 files attested | ~4k |
+| 22:05 | Diagnosed the 4x stale-lock failures instead of clearing again: isLockReclaimable gated liveness behind age>staleMs(30s) but acquire times out at 2s (bug-477) | src/utils/size-discipline.ts | 2001ms failure -> 2ms reclaim; live owner still refused | ~9k |
+| 22:12 | Synced fix to all 4 size-discipline copies preserving shapes (.js is compiled output, .wolf carries @ts-nocheck); test 36 + negative control | src/, .wolf/utils/, templates/wolf/utils/ | 98/98 pass, verify OK | ~5k |
+| 22:16 | Removed 2 auto-detected buglog stubs after verifying both false positives (readLockPid already handles malformed pids) | .wolf/buglog.json | 190 -> 188 entries | ~3k |
+| 20:50 | Session end: 37 writes across 14 files (.gitignore, state.ts, engine.ts, cerebrum.ts, conclusion.ts) | 6 reads | ~38267 tok |
+
+## Session: 2026-07-27 20:54
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 01:05 | Verified mutual exclusion directly (8-proc witness `wx` test, zero overlap) | src/utils/size-discipline.ts | no violation; timing-based serialization confirmed by observation not inference | ~3k |
+| 01:07 | Confirmed queued nudge = cerebrum.stale, already dismissed; leases 0 | .wolf/nudge-state.json | no action needed | ~1k |
+| 01:08 | Verified NUDGE_STATE_VERSION(2) vs rule SCHEMA_VERSION(3) distinct; v2 vs v3 digests differ | state.ts, rules/*.{ts,js} | stale v2 dispositions cannot suppress v3 nudges; 8/8 sites synced | ~2k |
+| 01:12 | PID-reuse falsifier: recycled-but-live pid refuses reclaim | src/utils/size-discipline.ts | fails safe; also proves same-process-holder contract | ~2k |
+| 01:20 | GPT-5.5 arbitration on review-0075 | src/utils/size-discipline.ts | VERDICT: CLEAN, SCOPE hash 01656ea32509 matches stored+reduction hashes | ~24k |
+| 01:22 | Completed review-0075 --reviewed-current (9 files verified) | .wolf/reviewlog.json | 0 pending reviews; no locks held; 98/98 tests + npm run verify pass | ~2k |
+| 01:25 | Appended arbitration evidence to reduction; 4 Do-Not-Repeat + 3 Key Learnings | .wolf/qa/dead-lock-owner-reclaim.md, .wolf/cerebrum.md | layer-sync trap, data-vs-report recovery, ESM control trap, reviewer-severity-is-hypothesis recorded | ~4k |
+
+## Session summary: 2026-07-26/27 — nudge convergence review closeout
+
+Executed Wolfpack's Companion-Owned Review Lifecycle for review-0073/0074/0075.
+Eight verified defects found and fixed across the rounds (bug-471 corrupt-state
+data loss, bug-472 per-rule ceiling not enforced in-lock, bug-473 asymmetric
+review coverage, bug-474 incomplete 471 fix, evidence-path canonicalization,
+hash type collapse, bug-477 dead-lock-owner reclaim) plus a packaging gap
+(`.wolf/logs/*.jsonl` untracked but unignored — `*.log` does not match `.jsonl`)
+that every newly-initialized project would have inherited.
+
+All three reviews completed with DISTINCT arbitrating providers per the
+convergence rule (minimax-m3, glm-5.2, chatgpt/gpt-5.5), final arbitration always
+by a different provider than the fix-verification reviewer. 98/98 tests pass,
+`npm run verify` passes, all four size-discipline copies synced, no locks held,
+0 pending reviews.
+
+STILL OPEN (documented, not fixed): why Stop hooks crash while holding the
+reviewlog lock. bug-477 makes the consequence recoverable in 2ms instead of 30s
+but does not address the crash cause. All four occurrences were observed during
+heavy concurrent hook activity. Nothing is committed — working tree is staged
+for the user's review.
+| 21:02 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/dedupe-anatomy.mjs | — | ~575 |
+| 21:03 | Session end: 2 writes across 2 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs) | 0 reads | ~993 tok |

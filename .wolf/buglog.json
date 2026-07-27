@@ -3209,6 +3209,471 @@
       "last_seen": "2026-07-23T18:54:25.433Z",
       "commit": null,
       "reduction": null
+    },
+    {
+      "id": "bug-452",
+      "timestamp": "2026-07-26T23:59:35.578Z",
+      "error_message": "Missing await",
+      "file": "src/cli/index.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-26T23:59:35.578Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-453",
+      "timestamp": "2026-07-26T23:59:57.339Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/hooks/session-start.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-26T23:59:57.339Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-454",
+      "timestamp": "2026-07-27T00:00:03.474Z",
+      "error_message": "Type error",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:00:03.474Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-455",
+      "timestamp": "2026-07-27T00:00:10.154Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 3→5 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:00:10.154Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-456",
+      "timestamp": "2026-07-27T00:00:25.693Z",
+      "error_message": "Missing error handling in runNudgeEngine",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:00:25.693Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-457",
+      "timestamp": "2026-07-27T00:04:35.934Z",
+      "error_message": "Missing await",
+      "file": "tests/nudge-engine.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-07-27T00:05:11.428Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-458",
+      "timestamp": "2026-07-27T00:05:24.177Z",
+      "error_message": "Type error",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:05:24.177Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-459",
+      "timestamp": "2026-07-27T00:08:55.801Z",
+      "error_message": "Missing guard clause",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "No early return/throw for edge case: message",
+      "fix": "Added guard clause: if (message)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:08:55.801Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-460",
+      "timestamp": "2026-07-27T00:09:05.967Z",
+      "error_message": "Missing error handling in exitWithStopHookResult",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:09:05.967Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-461",
+      "timestamp": "2026-07-27T00:11:13.701Z",
+      "error_message": "Missing await",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:11:13.701Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-462",
+      "timestamp": "2026-07-27T00:13:21.515119+00:00",
+      "error_message": "Stop-hook cerebrum nudge reported a 45.8h-stale cerebrum for the DRIVING project while all six session writes belonged to a different project whose cerebrum was freshly updated",
+      "file": "src/hooks/stop.ts (checkCerebrumFreshness) → src/hooks/nudges/rules/cerebrum.ts",
+      "root_cause": "checkCerebrumFreshness stat'd the driving project's .wolf/cerebrum.md unconditionally and gated only on session.files_written.length, never resolving which project OWNED those writes. nearestWolfDirForFile already existed for the quality gate but was not applied here.",
+      "fix": "New project-scoped rule: groupByOwner() attributes each write to its nearest .wolf ancestor, then each owner is evaluated against ITS OWN cerebrum. Unattributable files produce no candidate (no driving-project fallback). Freshness now prefers a session-start content-hash baseline over mtime.",
+      "status": "resolved",
+      "tags": [
+        "stop-hook",
+        "nudge",
+        "project-scope",
+        "cerebrum",
+        "misattribution",
+        "cross-project"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:13:21.515119+00:00",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-engine-convergence.md"
+    },
+    {
+      "id": "bug-463",
+      "timestamp": "2026-07-27T00:13:21.515119+00:00",
+      "error_message": "Conclusion gate re-fired on recaps of already-reduced work; review gate ran 7 rounds against a documented 3-round cap; identical evidence re-nudged on every Stop",
+      "file": "src/hooks/stop.ts → src/hooks/nudges/{engine,state}.ts + rules/{conclusion,review}.ts",
+      "root_cause": "Dedup keyed on session COUNTERS (tryConsumeNudgeSlot) and on a hash of the assistant's rendered TEXT, neither of which is evidence: a counter permits N repeats of identical state, and a text hash re-arms whenever the model rephrases. The review round cap was tracked per content-hash, but every fix mints a new hash, so the counter reset each round and never reached its own limit.",
+      "fix": "NudgeEngine: SHA-256 fingerprints over FULL decision evidence (all files, not the displayed subset); durable dispositions (resolved/dismissed/snoozed/superseded) bound to the fingerprint; leased claims under file lock for cross-process exclusion; conclusion gate requires prose AND a target-hash mismatch; review round cap bound to a lineage id derived from the file set (survives content changes); one-nudge-per-Stop output budget.",
+      "status": "resolved",
+      "tags": [
+        "stop-hook",
+        "nudge",
+        "convergence",
+        "fingerprint",
+        "review-lineage",
+        "concurrency"
+      ],
+      "related_bugs": [
+        "bug-462"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:13:21.515119+00:00",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-engine-convergence.md"
+    },
+    {
+      "id": "bug-464",
+      "timestamp": "2026-07-27T00:21:11.929Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 12→42 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:21:11.929Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-465",
+      "timestamp": "2026-07-27T00:21:28.371Z",
+      "error_message": "Missing error handling in nudgeStatePath",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:21:28.371Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-466",
+      "timestamp": "2026-07-27T00:21:49.318Z",
+      "error_message": "Missing guard clause",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "No early return/throw for edge case: lease && Number.isFinite(Date.parse(lease.expires_at",
+      "fix": "Added guard clause: if (lease && Number.isFinite(Date.parse(leas)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-27T00:22:40.874Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-467",
+      "timestamp": "2026-07-27T00:22:26.520Z",
+      "error_message": "Type error",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:22:26.520Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-468",
+      "timestamp": "2026-07-27T00:22:50.706Z",
+      "error_message": "Type error",
+      "file": "src/hooks/nudges/rules/cerebrum.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:22:50.706Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-469",
+      "timestamp": "2026-07-27T00:22:52.137Z",
+      "error_message": "Type error",
+      "file": "src/hooks/nudges/rules/conclusion.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:22:52.137Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-470",
+      "timestamp": "2026-07-27T00:22:57.719Z",
+      "error_message": "Type error",
+      "file": "src/hooks/nudges/engine.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:22:57.719Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-471",
+      "timestamp": "2026-07-27T00:27:31.960Z",
+      "error_message": "Corrupt .wolf/nudge-state.json silently destroyed every nudge disposition (dismissals, resolutions, snoozes, lineage counts) on the next write, with no diagnostic.",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "readState() caught ENOENT and JSON parse errors in one branch and returned emptyState() for both. A corrupt-but-present file therefore looked identical to a first run, and the next writeStateOrThrow persisted the empty state over real data. The in-code comment claimed corruption was reported via writeStateOrThrow validation, but that function only validates the body it is about to write, never the bytes just read.",
+      "fix": "Split absent from corrupt in readState: read bytes first (ENOENT -> empty state is correct), then parse. On a parse failure quarantine the original bytes to nudge-state.json.corrupt-<ts> and invoke an onCorrupt callback; engine.evaluate logs it as a state_corrupt diagnostic. Regression test 31.",
+      "status": "resolved",
+      "tags": [
+        "nudge-engine",
+        "state-integrity",
+        "data-loss",
+        "corruption",
+        "review-0073"
+      ],
+      "related_bugs": [
+        "bug-463"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:27:31.960Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-engine-convergence.md"
+    },
+    {
+      "id": "bug-472",
+      "timestamp": "2026-07-27T00:27:31.960Z",
+      "error_message": "max_emissions_per_rule_per_session could be breached by concurrent Stop hooks: 8 concurrent processes produced 8 emissions against a ceiling of 1.",
+      "file": "src/hooks/nudges/engine.ts",
+      "root_cause": "The per-rule session ceiling was filtered only on the state snapshot engine.evaluate reads before taking any lock. tryClaim re-read state inside the lock but checked only disposition, same-fingerprint emission, and lease -- never the per-rule count. Concurrent Stops holding DISTINCT fingerprints of the SAME rule each observed count 0, so every one of them claimed and emitted.",
+      "fix": "Re-check the ceiling inside tryClaim against durable state, counting live leases as well as emissions so the window between a competitor claim and its markEmitted is covered; leases now carry rule_id. Engine passes ruleId/maxPerRulePerSession and routes an OVER_BUDGET refusal to queued rather than suppressed. Negative control: disabling the in-lock check yields 8 emissions vs 1. Regression test 30.",
+      "status": "resolved",
+      "tags": [
+        "nudge-engine",
+        "concurrency",
+        "toctou",
+        "lease",
+        "review-0073"
+      ],
+      "related_bugs": [
+        "bug-463"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:27:31.960Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-engine-convergence.md"
+    },
+    {
+      "id": "bug-473",
+      "timestamp": "2026-07-27T00:32:59.348Z",
+      "error_message": "A pending review staged for file set {a} still reported CURRENT after the target set expanded to {a,b}, so the stale entry was never flagged and could later be completed with --reviewed-current as though it covered b.",
+      "file": "src/hooks/nudges/rules/review.ts",
+      "root_cause": "isSnapshotCurrent iterated only Object.keys(pending.content_hashes) and compared those against current bytes. A file present in currentHashes but absent from the recorded snapshot was invisible to the check, so coverage was asymmetric: drift was detected but scope EXPANSION was not.",
+      "fix": "Added the reverse pass — every key in currentHashes must exist in the recorded snapshot, else the snapshot is superseded. Supersede reason now distinguishes drifted (changed) from added (entered scope) files so an empty drift list cannot render as a vague \"target(s) changed\", and evidence carries added_files. Regression test 34 with negative control (fails when the reverse pass is removed).",
+      "status": "resolved",
+      "tags": [
+        "nudge-engine",
+        "review-gate",
+        "attestation",
+        "false-silence",
+        "review-0073"
+      ],
+      "related_bugs": [
+        "bug-463"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:32:59.348Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-engine-convergence.md"
+    },
+    {
+      "id": "bug-474",
+      "timestamp": "2026-07-27T00:33:29.539Z",
+      "error_message": "Incomplete fix for bug-471: when the corruption-quarantine write itself failed, readState still returned a plain empty state, so the next write overwrote the corrupt bytes and permanently destroyed every disposition anyway.",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "The bug-471 fix reported corruption honestly (onCorrupt fired with quarantine:null) but returned an ordinary empty state. Nothing downstream distinguished \"empty because absent\" from \"empty because unrecoverable\", so writeStateOrThrow renamed over the only surviving copy of the data. The path had been probed, but only for whether the failure was REPORTED — not for whether the data SURVIVED.",
+      "fix": "readState marks the fallback with a non-enumerable UNSAFE_TO_PERSIST symbol when quarantine fails; writeStateOrThrow throws on that marker, routing callers through the existing degraded path so tryClaim returns {ok:false, degraded:true} and the corrupt bytes stay intact. Symbol-keyed and non-enumerable so it never reaches JSON.stringify or a fingerprint. Verified all 6 mutators (tryClaim, markEmitted, releaseLease, setDisposition, bumpLineageRound, markLineageEscalated) preserve the corrupt bytes. Regression test 35 with an injected>0 precondition and a negative control.",
+      "status": "resolved",
+      "tags": [
+        "nudge-engine",
+        "state-integrity",
+        "data-loss",
+        "incomplete-fix",
+        "review-0073"
+      ],
+      "related_bugs": [
+        "bug-471"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T00:39:21.731Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-engine-convergence.md"
+    },
+    {
+      "id": "bug-477",
+      "timestamp": "2026-07-27T00:48:44.057Z",
+      "error_message": "OpenWolf review completion failed: could not lock /mnt/j/projectshome/projects/customopenwolf/.wolf/reviewlog.json — hit 4 times in one session, each with a recorded owner pid that was already dead.",
+      "file": "src/utils/size-discipline.ts",
+      "root_cause": "acquireFileLock records the owner pid and isLockReclaimable already knows how to check liveness via isProcessAlive — but that check was gated behind `age > staleMs` (30s). The acquire timeout is only 2s. So when a Stop hook crashed while holding the lock, its lock was \"fresh\" by mtime for 30 seconds and therefore never reclaimable, while every caller inside that window failed hard after burning the full 2s timeout. Freshness by mtime was being treated as evidence the lock is still HELD, which it is not.",
+      "fix": "Check owner liveness BEFORE the mtime gate: inside the `age <= staleMs` branch, if the lock is older than a 250ms grace period and its recorded pid is dead, reclaim immediately. A dead pid is definitive evidence. The grace period avoids racing a lock written microseconds ago. Same-pid locks stay protected because isProcessAlive(process.pid) is true, preserving the existing in-process-holder contract. Measured: dead owner 2001ms hard failure -> 2ms reclaim; live owner still correctly refused (not stolen). Synced to all 4 copies (src .ts/.js, .wolf/utils, templates/wolf/utils). Regression test 36 with negative control.",
+      "status": "resolved",
+      "tags": [
+        "locking",
+        "concurrency",
+        "stale-lock",
+        "review-gate",
+        "liveness"
+      ],
+      "related_bugs": [],
+      "occurrences": 4,
+      "last_seen": "2026-07-27T00:48:44.057Z",
+      "commit": null,
+      "reduction": ".wolf/qa/dead-lock-owner-reclaim.md"
     }
   ]
 }

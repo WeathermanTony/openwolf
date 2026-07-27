@@ -689,8 +689,25 @@ function isLockReclaimable(lockPath, staleMs, absoluteStaleMs) {
     const age = Date.now() - stat.mtimeMs;
     if (age > absoluteStaleMs)
         return true; // Fail-safe.
-    if (age <= staleMs)
-        return false; // Fresh — not stale.
+    if (age <= staleMs) {
+        // Fresh by mtime — but "fresh" is not the same as "held". If the
+        // recorded owner is already DEAD, waiting out staleMs accomplishes
+        // nothing: the lock can never be released, so every caller inside that
+        // window fails hard instead of reclaiming. Observed four times in one
+        // session, each a crashed Stop hook whose 30s-fresh lock made
+        // complete-review.js unusable while acquire timed out after 2s.
+        //
+        // A dead pid is definitive evidence, so reclaim immediately — but only
+        // after a short grace period, because a lock created microseconds ago
+        // may not have been written by a process we can observe yet (pid reuse
+        // and same-tick creation both argue for not trusting a brand-new lock).
+        if (age <= DEAD_OWNER_GRACE_MS)
+            return false;
+        const owner = readLockPid(lockPath);
+        if (owner === null)
+            return false; // Can't tell who owns it — leave it alone.
+        return !isProcessAlive(owner);
+    }
     // mtime-stale but maybe still alive. Check the recorded pid.
     let nonce;
     try {
@@ -717,6 +734,27 @@ function isLockReclaimable(lockPath, staleMs, absoluteStaleMs) {
  * so we don't deadlock on a real crash). Returns true on EPERM (process
  * exists but we lack permission to signal it — that's still alive).
  */
+/**
+ * Grace period before a fresh-by-mtime lock is eligible for dead-owner
+ * reclaim. Guards against reclaiming a lock written microseconds ago whose
+ * owner we might misjudge, while staying far below the 2s acquire timeout so
+ * the fast path is actually reachable.
+ */
+const DEAD_OWNER_GRACE_MS = 250;
+
+/** Owner pid recorded in a lock file, or null if unreadable/malformed. */
+function readLockPid(lockPath) {
+    let nonce;
+    try {
+        nonce = fs.readFileSync(lockPath, "utf-8");
+    }
+    catch {
+        return null;
+    }
+    const pid = Number(String(nonce).split(":")[0]);
+    return Number.isFinite(pid) && pid > 0 ? pid : null;
+}
+
 function isProcessAlive(pid) {
     try {
         process.kill(pid, 0);

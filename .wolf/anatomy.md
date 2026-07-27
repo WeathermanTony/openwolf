@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T18:54:54.316Z
-> Files: 159 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T01:02:39.098Z
+> Files: 186 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/
 
@@ -11,10 +11,18 @@
 
 - `fizzy-doodling-pascal.md` — Context (~2700 tok)
 
+## ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/
+
+- `add-bug474.mjs` — Declares p (~487 tok)
+- `add-bug475.mjs` — Declares p (~551 tok)
+- `clean-stubs.mjs` — Declares p (~301 tok)
+- `dedupe-anatomy.mjs` — anatomy.md listed several files twice within the same directory section -- (~575 tok)
+- `fix-bug474.mjs` — Declares p (~588 tok)
+
 ## ./
 
 - `.editorconfig` — Editor configuration (~51 tok)
-- `.gitignore` — Git ignore rules (~295 tok)
+- `.gitignore` — Git ignore rules (~315 tok)
 - `CLAUDE.md` — Wolfpack (~74 tok)
 - `package-lock.json` — npm lock file (~69275 tok)
 - `package.json` — Node.js package manifest (~577 tok)
@@ -51,8 +59,9 @@
 - `daemon-cmd.ts` — Exports getPm2NameForRoot, hasPm2, Pm2ProcessInfo, listPm2Processes + 13 more (~4280 tok)
 - `dashboard.ts` — Exports isExpectedDashboardHealth, dashboardCommand (~1171 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
-- `index.ts` — Exports createProgram (~2267 tok)
+- `index.ts` — Exports createProgram (~2749 tok)
 - `init.ts` — Exports initCommand (~10515 tok)
+- `nudge-cmd.ts` — Exports nudgeList, nudgeShow, nudgeResolve, nudgeDismiss, nudgeSnooze, nudgeStats (~1500 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~1161 tok)
 - `review-cmd.ts` — Exports reviewList, reviewShow, reviewHash, reviewComplete (~1646 tok)
@@ -141,11 +150,29 @@
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
 - `pre-write.ts` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2245 tok)
 - `session-start.js` — Declares main (~1006 tok)
-- `session-start.ts` — @ts-nocheck (~998 tok)
+- `session-start.ts` — Declares main (~1309 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~17922 tok)
 - `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~18130 tok)
 - `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~26726 tok)
-- `stop.ts` — Atomically claim a per-session nudge slot for the given counter field. (~30336 tok)
+- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~32263 tok)
+
+## src/hooks/nudges/
+
+- `engine.js` — NudgeEngine: suppress → rank → budget → claim → emit; output budget + diagnostics (~1600 tok)
+- `engine.ts` — NudgeEngine — the single place that decides what (if anything) a Stop hook (~3693 tok)
+- `project-scope.js` — resolveOwningProject/groupByOwner: attribute writes to nearest .wolf ancestor (~700 tok)
+- `project-scope.ts` — Project ownership resolution. (~1181 tok)
+- `state.js` — Fingerprints, dispositions, leased claims, lineage rounds, injectable io seam (~2600 tok)
+- `state.ts` — Nudge state: content-addressed fingerprints, lifecycle dispositions, and (~7013 tok)
+
+## src/hooks/nudges/rules/
+
+- `cerebrum.js` — Project-scoped cerebrum freshness (content-hash baseline, mtime fallback) (~700 tok)
+- `cerebrum.ts` — Cerebrum freshness rule — PROJECT-SCOPED. (~1328 tok)
+- `conclusion.js` — Evidence-gated conclusion rule: prose AND target-hash mismatch (~900 tok)
+- `conclusion.ts` — Conclusion / reduction gate — EVIDENCE-GATED. (~1824 tok)
+- `review.js` — Review supersede, lineage round cap, risk-weighted thresholds (~1500 tok)
+- `review.ts` — Review lifecycle rule — IMMUTABLE SNAPSHOTS, AUTOMATIC SUPERSEDE, LINEAGE CAP. (~3575 tok)
 
 ## src/scanner/
 
@@ -155,7 +182,7 @@
 
 ## src/templates/
 
-- `.gitignore` — Git ignore rules (~234 tok)
+- `.gitignore` — Git ignore rules (~238 tok)
 - `anatomy.md` — anatomy.md (~54 tok)
 - `buglog.json` (~10 tok)
 - `cerebrum.md` — Cerebrum (~164 tok)
@@ -199,7 +226,7 @@
 - `port-allocator.js` — Exports deterministicBasePort, isPortFree, allocateProjectPorts (~307 tok)
 - `port-allocator.ts` — @ts-nocheck (~312 tok)
 - `size-discipline.js` — size-discipline.ts (~10030 tok)
-- `size-discipline.ts` — size-discipline.ts (~10022 tok)
+- `size-discipline.ts` — size-discipline.ts (~10492 tok)
 
 ## templates/claude/
 
@@ -211,7 +238,7 @@
 
 ## templates/wolf/
 
-- `.gitignore` — nested .wolf ignore policy: churn ignored, buglog/durable docs trackable (~120 tok)
+- `.gitignore` — Git ignore rules (~238 tok)
 - `anatomy.md` — anatomy.md (~54 tok)
 - `cerebrum.md` — Cerebrum (~164 tok)
 - `config.json` (~1876 tok)
@@ -251,9 +278,10 @@
 ## tests/
 
 - `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
+- `nudge-engine.test.js` — 29 regression tests: ownership, convergence, dispositions, concurrency (real subprocesses), fault injection (~4200 tok)
 - `qa-cmd.test.js` — sha256: fixture (~656 tok)
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)
 - `registry.test.js` — Tests for bug-440: malformed registry entries (missing root/name) must not (~1109 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
-- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~13368 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~13780 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)

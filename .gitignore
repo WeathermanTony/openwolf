@@ -30,6 +30,10 @@ pnpm-debug.log*
 .wolf/**/token-ledger.json
 .wolf/cerebrum-stats.json
 .wolf/**/cerebrum-stats.json
+.wolf/logs/
+.wolf/**/logs/
+.wolf/nudge-state.json
+.wolf/**/nudge-state.json
 .wolf/**/*.lock
 .wolf/**/*.lock.reclaim
 .wolf/suggestions.json

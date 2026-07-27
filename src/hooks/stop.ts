@@ -5,6 +5,10 @@ import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
+import { evaluate as evaluateNudges, getNudgeConfig } from "./nudges/engine.js";
+import * as cerebrumRule from "./nudges/rules/cerebrum.js";
+import * as conclusionRule from "./nudges/rules/conclusion.js";
+import { loadConfig as loadWolfConfig } from "./shared.js";
 // Per-session firing cap shared by the buglog-missing and cerebrum-freshness
 // feedback nudges. They have no per-state hash to dedup against (unlike the
 // review/file gates), so a session-scoped cap is the right shape. Symmetric
@@ -12,8 +16,64 @@ import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFi
 // promote to config if a project needs to tune it.
 const STOP_NUDGE_PER_SESSION_CAP = 3;
 const stopHookMessages: string[] = [];
+/**
+ * Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still
+ * push their own prose here. They pre-date the NudgeEngine and each formats a
+ * full paragraph, so a busy Stop stacked three-to-five independent walls of
+ * text — the exact "three simultaneous instruction walls" the output budget
+ * exists to prevent.
+ *
+ * Rather than rewrite every rule (large diff, high regression risk against
+ * their existing hash/coalesce logic), the budget is enforced at this single
+ * choke point: messages are collected, then `applyLegacyBudget()` ranks and
+ * trims them once, at exit. Engine-routed messages are already budgeted and
+ * are marked so they are never trimmed twice.
+ */
+const ENGINE_PREFIX = "🐺 WolfPack [";
 function emitStopHookFeedback(message: string): void {
     if (message) stopHookMessages.push(message);
+}
+/**
+ * Rank legacy messages so the most actionable survives the budget.
+ *
+ * Ordering rationale: an actionable gate (review / quality) beats an advisory
+ * reminder, matching the pre-existing "advisory yields to actionable" rule that
+ * the simplicity nudge already followed.
+ */
+function legacyPriority(msg) {
+    if (msg.startsWith(ENGINE_PREFIX)) return 0;      // already budgeted
+    if (/^Wolfpack review /.test(msg)) return 1;
+    if (/^Wolfpack quality /.test(msg)) return 2;
+    if (/^⚠️/.test(msg)) return 3;                    // buglog / correctness
+    if (/^🔄/.test(msg)) return 4;                    // review refresh
+    if (/^🐺 Wolfpack git/.test(msg)) return 5;
+    return 6;                                          // simplicity, autonomy, …
+}
+/**
+ * Trim the collected messages to the configured per-Stop budget.
+ *
+ * Engine-routed messages always pass through (the engine already applied
+ * `max_per_stop` and queued the rest). Legacy messages compete for the
+ * remaining slots; the ones that lose are summarized by count rather than
+ * silently dropped, so the user can still discover them.
+ */
+function applyLegacyBudget(messages, nudgeCfg) {
+    if (!nudgeCfg || !nudgeCfg.enabled) return messages;
+    const budget = nudgeCfg.max_per_stop > 0 ? nudgeCfg.max_per_stop : Infinity;
+    const engineMsgs = messages.filter(m => m.startsWith(ENGINE_PREFIX));
+    const legacy = messages.filter(m => !m.startsWith(ENGINE_PREFIX));
+    if (legacy.length === 0) return messages;
+    // If the engine already spent the budget, legacy messages wait for a later
+    // Stop rather than piling on top of it.
+    const remaining = Math.max(0, budget - engineMsgs.length);
+    const sorted = [...legacy].sort((a, b) => legacyPriority(a) - legacyPriority(b));
+    const kept = sorted.slice(0, remaining);
+    const dropped = sorted.length - kept.length;
+    const out = [...engineMsgs, ...kept];
+    if (dropped > 0) {
+        out.push(`🐺 WolfPack: ${dropped} more nudge(s) held for a later stop — wolfpack nudge list\n`);
+    }
+    return out;
 }
 /**
  * Atomically claim a per-session nudge slot for the given counter field.
@@ -217,8 +277,16 @@ function maybeNudgeMidturnInjections(wolfDir, session, transcriptPath) {
 }
 
 function exitWithStopHookResult(block) {
-    if (stopHookMessages.length > 0) {
-        const additionalContext = stopHookMessages.join("").trimEnd();
+    let budgeted = stopHookMessages;
+    try {
+        budgeted = applyLegacyBudget(stopHookMessages, getNudgeConfig(loadWolfConfig()));
+    }
+    catch {
+        // Config unreadable — emit everything rather than swallowing feedback.
+        budgeted = stopHookMessages;
+    }
+    if (budgeted.length > 0) {
+        const additionalContext = budgeted.join("").trimEnd();
         const out = {
             hookSpecificOutput: {
                 hookEventName: "Stop",
@@ -258,6 +326,86 @@ function tryConsumeNudgeSlot(sessionFile, field, capN) {
     finally {
         release();
     }
+}
+/**
+ * Collect candidates from the engine-routed rules, evaluate them under the
+ * output budget, and emit at most `max_per_stop` compact messages.
+ *
+ * Rules here are PURE: they return candidates and never print. The engine owns
+ * suppression, ranking, leasing, and emission. That split is what makes the
+ * "same evidence must not nudge twice" invariant testable — and what stops two
+ * rules from each emitting their own paragraph on the same Stop.
+ *
+ * Returns true iff anything was emitted (so main() can set the Claude Code
+ * decision flag).
+ */
+function runNudgeEngine(wolfDir, session, sessionEntry, transcriptPath) {
+    let cfg;
+    try {
+        cfg = loadWolfConfig();
+    }
+    catch {
+        cfg = {};
+    }
+    const nudgeCfg = getNudgeConfig(cfg);
+    if (!nudgeCfg.enabled)
+        return false;
+    const candidates = [];
+    let unattributed = 0;
+    const writtenFiles = [...new Set((sessionEntry.writes || []).map(w => w.file))];
+    // ── Rule: cerebrum freshness (project-scoped) ───────────────────────────
+    try {
+        const res = cerebrumRule.collect({
+            writes: writtenFiles,
+            baselines: (session && session.cerebrum_baselines) || {},
+        });
+        candidates.push(...res.candidates);
+        unattributed += (res.unattributed || []).length;
+    }
+    catch { }
+    // ── Rule: conclusion / reduction coverage (evidence-gated) ──────────────
+    try {
+        const qgCfg = getQualityGateConfig();
+        const vc = qgCfg && qgCfg.verify_conclusions;
+        if (qgCfg && qgCfg.enabled && vc && vc.enabled && transcriptPath) {
+            const last = readLastAssistantText(transcriptPath);
+            if (last && last.text) {
+                // In-scope code files only — reuse the existing scope predicate
+                // so the conclusion gate and the quality gate agree on what
+                // counts as a reduction obligation.
+                const excludeRegexes = (qgCfg.scope_excludes || []).map(globToRegex);
+                const codeFiles = writtenFiles.filter(f => isCodeFile(f) && !excludeRegexes.some(re => re.test(f)));
+                const res = conclusionRule.collect({
+                    text: last.text,
+                    patterns: vc.patterns || [],
+                    minHits: vc.min_pattern_hits,
+                    minTextChars: vc.min_text_chars,
+                    codeFiles,
+                    minAssumptions: qgCfg.min_assumptions,
+                    // Event sequence: the count of writes this session. A new
+                    // edit advances it, which (together with the changed content
+                    // hash) re-arms the gate. A recap advances nothing.
+                    eventSeq: writtenFiles.length,
+                });
+                candidates.push(...res.candidates);
+                unattributed += (res.unattributed || []).length;
+            }
+        }
+    }
+    catch { }
+    if (candidates.length === 0)
+        return false;
+    const result = evaluateNudges({
+        wolfDir,
+        candidates,
+        nudgeCfg,
+        sessionId: session.session_id || "",
+        unattributedCount: unattributed,
+    });
+    for (const msg of result.messages) {
+        emitStopHookFeedback(msg + "\n");
+    }
+    return result.messages.length > 0;
 }
 async function main() {
     ensureWolfDir();
@@ -380,7 +528,7 @@ async function main() {
             },
         };
         try {
-            const conclusionNudgeFired = maybeNudgeConclusionVerification(wolfDir, session, emptyEntry, hookPayload.transcript_path);
+            const conclusionNudgeFired = runNudgeEngine(wolfDir, session, emptyEntry, hookPayload.transcript_path);
             if (conclusionNudgeFired) {
                 nudgeFired = true;
             }
@@ -410,9 +558,11 @@ async function main() {
     // motivated this design (Codex round-3 finding).
     if (checkForMissingBugLogs(wolfDir, session, sessionFile, hookPayload.transcript_path))
         nudgeFired = true;
-    // Check if cerebrum was updated this session (it should be if there were edits)
-    if (checkCerebrumFreshness(wolfDir, session, sessionFile))
-        nudgeFired = true;
+    // Cerebrum freshness now runs through the NudgeEngine (project-scoped,
+    // content-addressed) instead of the legacy driving-project stat. See
+    // runNudgeEngine() below — collected there so cerebrum and conclusion
+    // candidates compete for the same one-per-Stop output budget rather than
+    // stacking two independent walls of text.
     // Build session entry for ledger
     const reads = Object.entries(session.files_read).map(([file, data]) => ({
         file,
@@ -581,7 +731,7 @@ async function main() {
     // Verify-conclusions sub-gate: scan the assistant's last text for conclusion
     // language. If hit AND no fresh reduction was written this turn, nudge.
     try {
-        const conclusionNudgeFired = maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, hookPayload.transcript_path);
+        const conclusionNudgeFired = runNudgeEngine(wolfDir, session, sessionEntry, hookPayload.transcript_path);
         if (conclusionNudgeFired) {
             nudgeFired = true;
         }

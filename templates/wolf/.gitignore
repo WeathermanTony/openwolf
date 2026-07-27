@@ -6,6 +6,8 @@
 # logs
 *.log
 **/*.log
+logs/
+**/logs/
 
 # daemon / cron / scheduler state
 *-state.json

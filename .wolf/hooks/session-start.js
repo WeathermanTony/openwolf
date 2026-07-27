@@ -22,6 +22,25 @@ async function main() {
     const sessionFile = path.join(hooksDir, "_session.json");
     const now = new Date();
     const sessionId = `session-${now.toISOString().slice(0, 10)}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    // Capture a content-hash baseline for this project's cerebrum.md.
+    //
+    // The Stop-hook freshness rule needs to answer "did cerebrum change during
+    // this session?", and mtime cannot answer it: a checkout, touch, or file
+    // sync moves mtime without an edit, and a hook that nags right after a
+    // `git checkout` trains the user to ignore it. A content hash taken now and
+    // compared at Stop is direct evidence. mtime survives only as a fallback
+    // when no baseline exists (e.g. this hook did not run).
+    //
+    // Keyed by absolute POSIX-normalized path because a session can span
+    // multiple projects and each owner is evaluated against its OWN cerebrum.
+    const cerebrumBaselines = {};
+    try {
+        const cerebrumPath = path.join(wolfDir, "cerebrum.md");
+        const buf = fs.readFileSync(cerebrumPath);
+        const { createHash } = await import("node:crypto");
+        cerebrumBaselines[cerebrumPath.replace(/\\/g, "/")] = createHash("sha256").update(buf).digest("hex");
+    }
+    catch { }
     // Create fresh session state
     writeJSON(sessionFile, {
         session_id: sessionId,
@@ -34,6 +53,7 @@ async function main() {
         repeated_reads_warned: 0,
         cerebrum_warnings: 0,
         stop_count: 0,
+        cerebrum_baselines: cerebrumBaselines,
     });
     // Append session header to memory.md
     const memoryPath = path.join(wolfDir, "memory.md");
@@ -75,4 +95,3 @@ async function main() {
     process.exit(0);
 }
 main().catch(() => process.exit(0));
-//# sourceMappingURL=session-start.js.map
