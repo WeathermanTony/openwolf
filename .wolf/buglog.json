@@ -3879,6 +3879,234 @@
       "last_seen": "2026-07-27T02:05:08.153Z",
       "commit": null,
       "reduction": ".wolf/qa/hook-nudges-packaging.md"
+    },
+    {
+      "id": "bug-488",
+      "timestamp": "2026-07-27T16:11:55.463Z",
+      "error_message": "Missing error handling in detectObligationExtensions",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: /**; * List tracked project files for extension detection.",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-27T16:12:39.244Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-489",
+      "timestamp": "2026-07-27T16:12:10.296Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:12:10.296Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-490",
+      "timestamp": "2026-07-27T16:12:47.139Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 6→8 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:12:47.139Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-491",
+      "timestamp": "2026-07-27T16:16:15.049Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 4→20 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:16:15.049Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-492",
+      "timestamp": "2026-07-27T16:17:15.964Z",
+      "error_message": "Type error",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:17:15.964Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-493",
+      "timestamp": "2026-07-27T16:19:19.932Z",
+      "error_message": "Type error",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:19:19.932Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-494",
+      "timestamp": "2026-07-27T16:19:27.110Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:19:27.110Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-495",
+      "timestamp": "2026-07-27T16:21:50.956Z",
+      "error_message": "Significant refactor of ",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 10→34 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:21:50.956Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-496",
+      "timestamp": "2026-07-27T16:24:46.329Z",
+      "error_message": "Buglog multi-edit nudge fired on prose: editing a .md/.csv/.txt three times triggered 'files edited 3+ times ... log any bugs fixed.' Reported by an external AI review after hitting it three times in one session.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "checkForMissingBugLogs filtered candidates ONLY through buglog_scan_excludes (22 path globs covering scratch/test/.wolf docs) and never checked file type. The multi-edit obligation is a code concept — 'you edited it 3x to get it right, that's probably a bug' — but three edits to a prose document is authoring. Executed against the real globToRegex + config: docs/CHANGE-REQUEST.md, runbook.md, report.csv, notes.txt all COUNTED.",
+      "fix": "Added a project-derived extension gate. detectObligationExtensions() intersects a curated registry of executable-checkable extensions with what the repo actually tracks (git ls-files), so a PowerShell or Terraform project gets the nudge with NO configuration. Deliberately NOT frequency-based: measured on this repo .md ranks 3rd (70 js, 60 ts, 47 md), so 'common = code' would reintroduce the exact bug. Deliberately NOT isCodeFile(): that also excludes everything under .wolf/, which would blind the nudge on Wolfpack's own hooks. Config key buglog_scan_extensions overrides; [] opts out; null/absent = detect.",
+      "tags": [
+        "nudge",
+        "buglog",
+        "false-positive",
+        "extension-gate",
+        "adaptability"
+      ],
+      "status": "resolved",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:24:46.329Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-497",
+      "timestamp": "2026-07-27T16:24:46.329Z",
+      "error_message": "False-positive acknowledgement of the buglog nudge did not persist: the same file and the same non-bug re-nudged on the next edit. Only the per-session cap bounded the loop.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "The ack signature payload was [normalizedPath, count, latestEditMs]. Including the count AND the timestamp meant an ack expired immediately: acking at 3 edits didn't cover 4, and because the timestamp also moved it didn't even cover a 4th evaluation at an UNCHANGED count. Measured: ack@3/t=1000 -> 292aca150216; 4 edits -> MISS; same count later edit -> MISS.",
+      "fix": "Signature is now the normalized FILE SET only. What the user asserts by acking is a claim about the file ('repeatedly editing this isn't a bug fix'); that claim doesn't expire because they edited it again. Scope stays bounded — acks live in _session.json (one session) and a genuinely NEW file in the multi-edit set changes the set and correctly re-nudges. Verified both directions; the pre-existing test that asserted re-fire at 4 edits encoded the defect and was updated with a negative control.",
+      "tags": [
+        "nudge",
+        "buglog",
+        "acknowledgement",
+        "signature",
+        "re-fire"
+      ],
+      "status": "resolved",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:24:46.329Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-498",
+      "timestamp": "2026-07-27T16:24:46.329Z",
+      "error_message": "Review nudge reported '~297 new lines since last review (threshold 40)' for changes nowhere near that size, including on Markdown-only edits.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "effectiveLines = (cumulativeTokens - coveredTokens)/17 where cumulativeTokens was sessionEntry.totals.output_tokens_estimated — the WHOLE session's output, including reasoning, tool results, and writes to files the review scope explicitly excludes. A one-line edit to an in-scope file inherited the entire session's volume. At min_diff_lines 40 (~680 tokens) that fires on essentially any edit late in a working session. NOTE: the external report framed this as 'prose lines counted as code lines'; the actual mechanism is token attribution, not line counting — a materially different bug with a different fix.",
+      "fix": "Attribute tokens to the in-scope writes themselves (sum w.tokens for writes whose normalized path survived scope_excludes), falling back to the session total only when no write carries a tokens field so older _session.json degrades to previous behavior rather than reporting 0 and silently disabling the gate. Measured: a 51000-token session with one 85-token in-scope edit reported 3000 lines before, 5 lines after; a genuinely large 3400-token in-scope change still fires (200 lines). Added covered_tokens_basis so units are self-describing — a pre-change baseline in session-total units would otherwise clamp the delta to 0 and permanently disable the size trigger for that session.",
+      "tags": [
+        "nudge",
+        "review",
+        "token-attribution",
+        "threshold",
+        "unit-safety"
+      ],
+      "status": "resolved",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:24:46.329Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-499",
+      "timestamp": "2026-07-27T16:24:46.329Z",
+      "error_message": "Duplicate 'edited N times this session' nudge in post-write.ts fired on every file type with no excludes and no per-session cap. Not present in the external report — found while verifying it.",
+      "file": "src/hooks/post-write.ts",
+      "root_cause": "post-write.ts:279 emitted the same multi-edit buglog reminder to stderr gated ONLY by isWolfAllowlisted. It had no extension filter, no buglog_scan_excludes, and no firing cap — so it fired on every .md/.csv/.txt edited 3+ times, and would have kept firing even after the Stop-hook site was fixed.",
+      "fix": "Routed through the same carriesBugfixObligation predicate the Stop hook uses, with the same excludes and project-derived extension set. The predicate lives in shared.js precisely so 'does this file carry an obligation' has ONE definition rather than four divergent ones; globToRegex moved to shared.js for the same reason (two glob implementations = two places for the `noauth` substring bug to return).",
+      "tags": [
+        "nudge",
+        "buglog",
+        "post-write",
+        "duplicate-detector",
+        "consolidation"
+      ],
+      "status": "resolved",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T16:24:46.329Z",
+      "commit": null,
+      "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     }
   ]
 }

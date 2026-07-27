@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T02:06:31.283Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T16:21:50.823Z
 > Files: 182 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/
@@ -147,7 +147,7 @@
 - `post-read.js` — Declares main (~799 tok)
 - `post-read.ts` — @ts-nocheck (~793 tok)
 - `post-write.js` — @ts-nocheck (~9924 tok)
-- `post-write.ts` — @ts-nocheck (~9913 tok)
+- `post-write.ts` — Declares main (~10167 tok)
 - `pre-read.js` — Declares main (~914 tok)
 - `pre-read.ts` — @ts-nocheck (~908 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
@@ -155,9 +155,9 @@
 - `session-start.js` — Declares main (~1006 tok)
 - `session-start.ts` — Declares main (~1309 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~17922 tok)
-- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~18130 tok)
+- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~24787 tok)
 - `stop.js` — Atomically claim a per-session nudge slot for the given counter field. (~26726 tok)
-- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~34193 tok)
+- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~35085 tok)
 
 ## src/hooks/nudges/
 
@@ -287,5 +287,5 @@
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)
 - `registry.test.js` — Tests for bug-440: malformed registry entries (missing root/name) must not (~1109 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
-- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~13780 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~14209 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)

@@ -1023,6 +1023,15 @@ test('stop hook suppresses repeated buglog nudges after explicit false-positive 
     const stored = JSON.parse(await readFile(sessionFile, 'utf8'));
     assert.equal(Object.keys(stored.buglog_false_positive_acks).length, 1);
 
+    // bug-497: the ack signature is keyed on the FILE SET, not on the edit
+    // count or timestamp. This assertion previously required the nudge to
+    // RE-FIRE at 4 edits — encoding the defect: an acknowledgement expired on
+    // the next edit, so the same file and the same non-bug minted a fresh
+    // signature every turn and the per-session cap was the only bound.
+    //
+    // What the user asserts by acking is a claim about the file ("repeatedly
+    // editing this isn't a bug fix"). That claim does not expire because they
+    // edited it again.
     stored.files_written.push({ file: target, at: '2099-06-13T17:05:00.000Z' });
     stored.edit_counts[target] = 4;
     await writeFile(sessionFile, JSON.stringify(stored, null, 2));
@@ -1030,10 +1039,110 @@ test('stop hook suppresses repeated buglog nudges after explicit false-positive 
 
     const changed = runStopHook(dir, transcript, 'sess-buglog');
     assert.equal(changed.status, 0, changed.stderr);
-    const changedPayload = JSON.parse(changed.stdout);
-    assert.equal(changedPayload.decision, 'block');
-    assert.match(changedPayload.hookSpecificOutput.additionalContext, /files edited 3\+ times/);
+    assert.doesNotMatch(changed.stdout, /files edited 3\+ times/, 'ack must survive a further edit to the same file');
+
+    // Negative control: the ack is scoped to the acked file set, not a blanket
+    // session mute. A genuinely NEW multi-edit file changes the signature and
+    // must re-nudge — otherwise this fix would trade a false positive for a
+    // silent false negative.
+    const second = path.join(dir, 'other.js');
+    await writeFile(second, 'export const other = true;\n');
+    stored.files_written.push({ file: second, at: '2099-06-13T17:10:00.000Z' });
+    stored.edit_counts[second] = 3;
+    await writeFile(sessionFile, JSON.stringify(stored, null, 2));
+    await writeFile(transcript, assistantTranscript('I changed a different feature.'));
+
+    const widened = runStopHook(dir, transcript, 'sess-buglog');
+    assert.equal(widened.status, 0, widened.stderr);
+    const widenedPayload = JSON.parse(widened.stdout);
+    assert.equal(widenedPayload.decision, 'block');
+    assert.match(widenedPayload.hookSpecificOutput.additionalContext, /files edited 3\+ times/, 'a new file in the multi-edit set must re-nudge');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+// bug-496: the buglog multi-edit nudge filtered only by path globs, never by
+// file type, so editing a prose document three times triggered "log any bugs
+// fixed." The obligation is a code concept: three edits to a .md is authoring,
+// not debugging.
+//
+// The gate is project-derived rather than a fixed language list, so these tests
+// pin BOTH directions — prose suppressed, code still nudged — and the explicit
+// -config path that makes an unforeseen language (PowerShell) work untouched.
+test('buglog nudge suppresses prose files but still fires on code', async () => {
+  await assertStopSourceAndRuntimeContract();
+  const dir = await fixture();
+  try {
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    const transcript = path.join(dir, 'transcript.jsonl');
+    const sessionFile = path.join(dir, '.wolf', 'hooks', '_session.json');
+    const editAt = '2099-06-13T17:00:00.000Z';
+    const prose = path.join(dir, 'CHANGE-REQUEST.md');
+    await writeFile(prose, '# CR\n');
+    await writeFile(path.join(dir, '.wolf', 'config.json'), JSON.stringify({ openwolf: { quality_gate: { buglog_scan_excludes: [] } } }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'buglog.json'), JSON.stringify({ version: 1, bugs: [] }, null, 2));
+    await utimes(path.join(dir, '.wolf', 'buglog.json'), new Date('2099-06-13T16:00:00.000Z'), new Date('2099-06-13T16:00:00.000Z'));
+    const mkSession = (target) => JSON.stringify({
+      session_id: 'sess-ext', started: editAt, files_read: {},
+      files_written: [{ file: target, at: editAt }],
+      edit_counts: { [target]: 3 },
+      anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+      cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+    }, null, 2);
+
+    await writeFile(sessionFile, mkSession(prose));
+    await writeFile(transcript, assistantTranscript('I revised the change request.'));
+    const proseRun = runStopHook(dir, transcript, 'sess-ext');
+    assert.equal(proseRun.status, 0, proseRun.stderr);
+    assert.doesNotMatch(proseRun.stdout, /files edited 3\+ times/, 'editing prose 3x must not create a bug-fix obligation');
+
+    // Negative control: the SAME fixture with a code file must still nudge, or
+    // the fix would be a silent false negative rather than a fix.
+    const code = path.join(dir, 'feature.js');
+    await writeFile(code, 'export const feature = true;\n');
+    await writeFile(sessionFile, mkSession(code));
+    await writeFile(transcript, assistantTranscript('I changed a feature.'));
+    const codeRun = runStopHook(dir, transcript, 'sess-ext');
+    assert.equal(codeRun.status, 0, codeRun.stderr);
+    const payload = JSON.parse(codeRun.stdout);
+    assert.match(payload.hookSpecificOutput.additionalContext, /files edited 3\+ times/, 'code files must still carry the obligation');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('buglog obligation extensions are configurable for unforeseen languages', async () => {
+  const { detectObligationExtensions, carriesBugfixObligation } = await import('../src/hooks/shared.js');
+
+  // Explicit config is honored verbatim and never triggers project detection.
+  let scanned = false;
+  const configured = detectObligationExtensions(['ps1', '.PSM1'], () => { scanned = true; return ['x.ts']; });
+  assert.equal(scanned, false, 'explicit config must not fall back to detection');
+  assert.deepEqual([...configured].sort(), ['.ps1', '.psm1'], 'forms normalize to lowercase dotted');
+
+  // Detection intersects a known registry with what the repo actually contains.
+  // Frequency must NOT decide: .md is 5/6 of this fixture and must still lose.
+  const detected = detectObligationExtensions(null, () => ['a.md', 'b.md', 'c.md', 'd.md', 'e.md', 'one.ps1']);
+  assert.ok(detected.has('.ps1'), 'a PowerShell project gets .ps1 with no config');
+  assert.ok(!detected.has('.md'), 'prose must not become an obligation by being common');
+
+  // Unknown/empty project falls back to the full registry: a false positive is
+  // visible and ackable, a false negative is silent. Fail loud.
+  assert.ok(detectObligationExtensions(null, () => []).size > 40, 'empty project keeps the nudge alive');
+  assert.ok(detectObligationExtensions(null, () => { throw new Error('no git'); }).size > 40, 'git failure keeps the nudge alive');
+
+  // Explicit [] is an opt-out, NOT a request to detect — it must not silently
+  // invert into its opposite.
+  const optOut = detectObligationExtensions([], () => ['x.ts']);
+  assert.equal(optOut.size, 0);
+  assert.equal(carriesBugfixObligation('/p/a.md', { extensions: optOut }), true, '[] disables the type gate, excludes-only');
+
+  // Excludes still win over extension, and .wolf hooks remain in scope (unlike
+  // isCodeFile, whose .wolf exclusion would blind the nudge on Wolfpack itself).
+  const exts = detectObligationExtensions(null, () => ['a.ts', 'b.js']);
+  const excludeRegexes = [/\/tmp\//, /\.test\./];
+  assert.equal(carriesBugfixObligation('/tmp/x.ts', { extensions: exts, excludeRegexes }), false);
+  assert.equal(carriesBugfixObligation('/p/a.test.ts', { extensions: exts, excludeRegexes }), false);
+  assert.equal(carriesBugfixObligation('/p/.wolf/hooks/stop.js', { extensions: exts, excludeRegexes }), true);
 });

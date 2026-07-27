@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, parseAnatomy, serializeAnatomy, extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath, getSizeDisciplineConfig } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, parseAnatomy, serializeAnatomy, extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath, getSizeDisciplineConfig, getQualityGateConfig, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex } from "./shared.js";
 import { rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 async function main() {
     ensureWolfDir();
@@ -276,8 +276,19 @@ async function main() {
                 // Buglog.json is legitimately edited multiple times per session
                 // (each new bug append) — firing "edited 3+ times, log a bug" on
                 // the buglog itself recommends logging a bug about logging bugs.
+                // Same obligation predicate the Stop hook uses (bug-499). This
+                // site previously had NO type filter and NO excludes at all —
+                // only the isWolfAllowlisted guard — so it fired on every .md,
+                // .csv, and .txt edited 3+ times. Fixing only the Stop hook
+                // would have left this one nudging on prose, which is why the
+                // predicate lives in shared.js rather than being inlined twice.
                 if (!isWolfAllowlisted && session.edit_counts[editKey] >= 3) {
-                    process.stderr.write(`⚠️ OpenWolf: ${baseName} has been edited ${session.edit_counts[editKey]} times this session. If you're fixing a bug, remember to log it to .wolf/buglog.json.\n`);
+                    const qgCfg = getQualityGateConfig();
+                    const obligationExts = detectObligationExtensions(qgCfg.buglog_scan_extensions, () => listProjectFiles());
+                    const excludeRegexes = qgCfg.buglog_scan_excludes.map(globToRegex);
+                    if (carriesBugfixObligation(absolutePath, { excludeRegexes, extensions: obligationExts })) {
+                        process.stderr.write(`⚠️ OpenWolf: ${baseName} has been edited ${session.edit_counts[editKey]} times this session. If you're fixing a bug, remember to log it to .wolf/buglog.json.\n`);
+                    }
                 }
             }
             finally {

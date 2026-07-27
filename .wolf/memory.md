@@ -754,3 +754,42 @@ update added. An inert orphan beats the EISDIR abort it replaced; a true sync
 would mean deleting under `.wolf/hooks/`, which also holds session state.
 
 **Open:** branch has no upstream. Push/PR is the user's call — not done.
+| 10:36 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 0 reads | ~749 tok |
+| 11:56 | Session end: 2 writes across 1 files (hook-lifecycle-instrumentation.md) | 1 reads | ~34942 tok |
+| 12:11 | Edited src/hooks/shared.ts | added error handling | ~1170 |
+| 12:12 | Edited src/hooks/shared.ts | 3→7 lines | ~109 |
+| 12:12 | Edited src/hooks/shared.ts | added nullish coalescing | ~150 |
+| 12:12 | Edited src/hooks/shared.ts | inline fix | ~20 |
+| 12:12 | Edited src/hooks/shared.ts | added error handling | ~738 |
+| 12:12 | Edited src/hooks/shared.ts | gate() → decide() | ~123 |
+| 12:13 | Edited src/hooks/shared.ts | getProjectDir() → cwd() | ~57 |
+| 12:13 | Edited src/hooks/shared.ts | added 1 import(s) | ~45 |
+| 12:14 | Edited src/hooks/shared.ts | 7→11 lines | ~164 |
+| 12:16 | Edited src/hooks/stop.ts | modified gate() | ~408 |
+| 12:16 | Edited src/hooks/stop.ts | get() → ONLY() | ~333 |
+| 12:16 | Edited src/hooks/stop.ts | 2→1 lines | ~24 |
+| 12:16 | Edited src/hooks/stop.ts | modified if() | ~46 |
+| 12:16 | Edited src/hooks/stop.ts | inline fix | ~35 |
+| 12:16 | Edited src/hooks/post-write.ts | added 1 condition(s) | ~340 |
+| 12:17 | Edited src/hooks/shared.ts | added 5 condition(s) | ~540 |
+| 12:18 | Session end: 18 writes across 4 files (hook-lifecycle-instrumentation.md, shared.ts, stop.ts, post-write.ts) | 2 reads | ~62611 tok |
+| 12:18 | Edited src/hooks/stop.ts | modified ATTRIBUTION() | ~324 |
+| 12:19 | Edited src/hooks/stop.ts | added 2 condition(s) | ~228 |
+| 12:19 | Edited src/hooks/stop.ts | added 1 condition(s) | ~278 |
+| 12:19 | Edited src/hooks/stop.ts | added nullish coalescing | ~171 |
+| 12:20 | Session end: 22 writes across 4 files (hook-lifecycle-instrumentation.md, shared.ts, stop.ts, post-write.ts) | 2 reads | ~64093 tok |
+| 12:21 | Session end: 22 writes across 4 files (hook-lifecycle-instrumentation.md, shared.ts, stop.ts, post-write.ts) | 2 reads | ~64093 tok |
+| 12:21 | Session end: 22 writes across 4 files (hook-lifecycle-instrumentation.md, shared.ts, stop.ts, post-write.ts) | 2 reads | ~64093 tok |
+| 12:21 | Edited tests/review-completion.test.js | expanded (+24 lines) | ~598 |
+| 12:22 | Session end: 23 writes across 5 files (hook-lifecycle-instrumentation.md, shared.ts, stop.ts, post-write.ts, review-completion.test.js) | 2 reads | ~64691 tok |
+| 12:22 | Session end: 23 writes across 5 files (hook-lifecycle-instrumentation.md, shared.ts, stop.ts, post-write.ts, review-completion.test.js) | 2 reads | ~64691 tok |
+| 12:23 | Session end: 23 writes across 5 files (hook-lifecycle-instrumentation.md, shared.ts, stop.ts, post-write.ts, review-completion.test.js) | 2 reads | ~64691 tok |
+| 12:23 | Session end: 23 writes across 5 files (hook-lifecycle-instrumentation.md, shared.ts, stop.ts, post-write.ts, review-completion.test.js) | 2 reads | ~64691 tok |
+
+## Session: 2026-07-27 12:23
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 12:26 | Session end: 1 writes across 1 files (nudge-obligation-scoping.md) | 0 reads | ~2220 tok |
+| 12:26 | Session end: 1 writes across 1 files (nudge-obligation-scoping.md) | 0 reads | ~2220 tok |
+| 12:27 | Session end: 2 writes across 1 files (nudge-obligation-scoping.md) | 0 reads | ~2244 tok |

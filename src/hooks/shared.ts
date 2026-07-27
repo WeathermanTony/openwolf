@@ -2,6 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
+import { execFileSync } from "node:child_process";
 export function getWolfDir() {
     // Prefer CLAUDE_PROJECT_DIR so hooks work even if CWD changes during a session
     const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -707,6 +708,156 @@ const DEFAULT_GATE_EXCLUDES = [
     ...SCRATCH_PATH_EXCLUDES,
     ...WOLF_DOC_EXCLUDES,
 ];
+
+/**
+ * Extensions whose correctness is *executable-checkable* — the property that
+ * actually creates a bug-fix obligation.
+ *
+ * **Why a registry and not a frequency scan.** The obvious "adapt to the
+ * project" implementation is to look at what extensions the repo contains and
+ * treat the common ones as code. Measured on this repo, that fails outright:
+ *
+ *     70 js   60 ts   47 md   22 json   19 tsx
+ *
+ * `.md` ranks third. Frequency-based detection would classify prose as code and
+ * reintroduce the exact false positive it was meant to remove. Commonness is
+ * not evidence of obligation.
+ *
+ * So the registry is the *candidate* set, and the project decides which
+ * candidates are live (see `detectObligationExtensions`). Adding a language
+ * here does not make it fire on projects that don't use it.
+ *
+ * The bar for membership: a wrong edit to this file type can be caught by
+ * running something. That is deliberately broader than "compiles" — `.sql`,
+ * `.tf`, and `.ps1` all qualify. Prose, data, and lockfiles do not: editing
+ * them three times is authoring, not debugging.
+ */
+const OBLIGATION_EXTENSION_REGISTRY = [
+    // Systems / compiled
+    ".go", ".rs", ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hh",
+    ".zig", ".d", ".nim", ".v", ".odin",
+    // JVM / .NET
+    ".java", ".kt", ".kts", ".scala", ".groovy", ".clj", ".cljs", ".cljc",
+    ".cs", ".fs", ".fsx", ".vb",
+    // Scripting / dynamic
+    ".py", ".rb", ".php", ".pl", ".pm", ".lua", ".tcl", ".r", ".jl",
+    ".ex", ".exs", ".erl", ".hrl", ".hs", ".ml", ".mli", ".cr",
+    // JS/TS family
+    ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts", ".svelte", ".vue",
+    // Mobile / Apple
+    ".swift", ".m", ".mm", ".dart",
+    // Shell / ops — a wrong shell edit breaks a real run
+    ".sh", ".bash", ".zsh", ".fish", ".ps1", ".psm1", ".psd1", ".bat", ".cmd",
+    // Infra-as-code — executable in the sense that matters: it applies
+    ".tf", ".tfvars", ".hcl",
+    // Query / data-transform languages
+    ".sql", ".prisma", ".graphql", ".gql",
+    // Notebooks and templates that execute
+    ".ipynb", ".erb", ".ejs", ".hbs", ".jinja", ".j2",
+    // Solidity / other VM targets
+    ".sol", ".move", ".cairo",
+];
+
+/**
+ * Resolve which extensions carry a bug-fix obligation *for this project*.
+ *
+ * Resolution order, most specific first:
+ *   1. explicit user config  → used verbatim, no inference (escape hatch)
+ *   2. project detection     → registry ∩ what the repo actually contains
+ *   3. registry fallback     → if detection finds nothing, allow all candidates
+ *
+ * Case (3) matters: a brand-new or empty project should not silently lose the
+ * nudge. A false positive on an unusual file type is a visible annoyance the
+ * user can ack or configure; a false negative is invisible and costs a real
+ * missed bug log. When uncertain, stay on.
+ *
+ * @param listFiles injected for testability — no filesystem monkeypatching.
+ *                  Returns repo-relative or absolute paths; only the extension
+ *                  is read, so either works.
+ */
+// Convert a glob like `<doublestar>/auth/<doublestar>` to a RegExp. Supports
+// `**`, `*`, and `?`. `**` matches across path segments (including slashes);
+// `*` matches within a single segment; `?` matches a single non-slash char.
+//
+// CRITICAL: `<doublestar>/` at a segment boundary must match either nothing
+// or "any dirs ending in /" — otherwise `<doublestar>/auth/<doublestar>`
+// collapses to `.*auth/.*` and matches paths like `src/noauth/x` where
+// `auth` is just a substring. We convert `<doublestar>/` to `(?:.*/)?` so
+// it anchors on a path segment boundary. (Doc uses <doublestar> instead of
+// the literal sequence to avoid closing this comment block prematurely.)
+//
+// Lives here rather than in stop.ts because post-write.ts needs the identical
+// semantics to apply the same excludes — two implementations of glob matching
+// would be two places for the `noauth` bug to come back.
+export function globToRegex(glob) {
+    let re = "";
+    let i = 0;
+    while (i < glob.length) {
+        const c = glob[i];
+        if (c === "*" && glob[i + 1] === "*") {
+            i += 2;
+            if (glob[i] === "/") {
+                i++;
+                // "**/" at start or after a separator: match zero or more path segments
+                re += "(?:.*/)?";
+            }
+            else {
+                // Trailing or mid-path "**": match anything (including slashes)
+                re += ".*";
+            }
+        }
+        else if (c === "*") {
+            re += "[^/]*";
+            i++;
+        }
+        else if (c === "?") {
+            re += "[^/]";
+            i++;
+        }
+        else if (/[.+^${}()|[\]\\]/.test(c)) {
+            re += "\\" + c;
+            i++;
+        }
+        else {
+            re += c;
+            i++;
+        }
+    }
+    return new RegExp("^" + re + "$");
+}
+export function detectObligationExtensions(configured, listFiles) {
+    // Any array — including [] — is an explicit user decision and is honored
+    // verbatim. `[]` means "disable the extension gate, excludes only"; it must
+    // NOT fall through to detection, or the opt-out would silently become its
+    // opposite. Only `null`/`undefined` requests detection.
+    if (Array.isArray(configured)) {
+        // Normalize so users can write "ps1", ".ps1", or "PS1".
+        return new Set(configured.map((e) => {
+            const s = String(e).trim().toLowerCase();
+            return s.startsWith(".") ? s : `.${s}`;
+        }));
+    }
+    const registry = new Set(OBLIGATION_EXTENSION_REGISTRY);
+    let present;
+    try {
+        present = listFiles();
+    }
+    catch {
+        present = null;
+    }
+    if (!Array.isArray(present) || present.length === 0)
+        return registry;
+    const detected = new Set();
+    for (const f of present) {
+        const idx = String(f).lastIndexOf(".");
+        if (idx <= 0)
+            continue;
+        const ext = String(f).slice(idx).toLowerCase();
+        if (registry.has(ext))
+            detected.add(ext);
+    }
+    return detected.size > 0 ? detected : registry;
+}
 /**
  * Merge user-supplied scope_excludes with WOLF_DOC_EXCLUDES.
  *
@@ -805,6 +956,10 @@ const QUALITY_GATE_DEFAULTS = {
     scope_paths: [],
     scope_excludes: DEFAULT_GATE_EXCLUDES,
     buglog_scan_excludes: DEFAULT_GATE_EXCLUDES,
+    // null = detect from the project (registry ∩ repo contents). An explicit
+    // array overrides detection entirely. Set [] to disable the extension gate
+    // and fall back to excludes-only behavior (the pre-fix semantics).
+    buglog_scan_extensions: null,
     min_assumptions: 3,
     require_run_output: true,
     nudge_only: true,
@@ -955,6 +1110,73 @@ export function loadConfig() {
         return { version: 1, openwolf: {} };
     }
     return raw;
+}
+/**
+ * List tracked project files for extension detection.
+ *
+ * Uses `git ls-files` rather than a directory walk: it is bounded (no
+ * node_modules descent), respects .gitignore for free, and is a single
+ * subprocess. A non-git project returns null → the caller falls back to the
+ * full registry, which is the safe direction (fires more, never silently less).
+ *
+ * Result is cached per process: a Stop hook may consult the obligation set for
+ * several files in one run, and the answer cannot change mid-hook.
+ */
+let _projectFileCache;
+export function listProjectFiles(cwd) {
+    if (_projectFileCache !== undefined)
+        return _projectFileCache;
+    try {
+        const out = execFileSync("git", ["ls-files"], {
+            // Mirrors getWolfDir's resolution so hooks agree on "the project"
+            // even if CWD moves mid-session.
+            cwd: cwd ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd(),
+            encoding: "utf-8",
+            timeout: 5000,
+            maxBuffer: 8 * 1024 * 1024,
+            stdio: ["ignore", "pipe", "ignore"],
+        });
+        const files = out.split("\n").filter(Boolean);
+        _projectFileCache = files.length > 0 ? files : null;
+    }
+    catch {
+        // Not a git repo, git absent, timeout, or oversized output.
+        _projectFileCache = null;
+    }
+    return _projectFileCache;
+}
+/** Test seam — reset the per-process cache. */
+export function _resetProjectFileCache() {
+    _projectFileCache = undefined;
+}
+/**
+ * The single predicate for "does editing this file carry a bug-fix obligation?"
+ *
+ * Consolidates what were four divergent answers across stop.ts and
+ * post-write.ts. Excludes are checked first (cheaper, and a scratch path is
+ * never an obligation regardless of extension), then the resolved extension
+ * set.
+ *
+ * Deliberately NOT `isCodeFile()`: that helper additionally excludes anything
+ * under `.wolf/`, which is correct for the *quality gate* (reductions describe
+ * code, they aren't code) but wrong here — it would suppress the buglog nudge
+ * on Wolfpack's own hooks, the exact files under active development.
+ */
+export function carriesBugfixObligation(file, opts = {}) {
+    const excludeRegexes = opts.excludeRegexes ?? [];
+    if (excludeRegexes.some((re) => re.test(file)))
+        return false;
+    const exts = opts.extensions;
+    // No set supplied, or an explicitly-empty one: the extension gate is off
+    // and excludes alone decide (the pre-fix semantics). Both cases mean "don't
+    // filter by type" — an empty allowlist that rejected everything would
+    // silently disable the nudge, the failure direction we refuse.
+    if (!exts || exts.size === 0)
+        return true;
+    const idx = file.lastIndexOf(".");
+    if (idx <= 0)
+        return false;
+    return exts.has(file.slice(idx).toLowerCase());
 }
 export function getSizeDisciplineConfig() {
     const root = loadConfig();
@@ -1473,6 +1695,10 @@ export function getQualityGateConfig() {
         scope_paths: cfg.scope_paths ?? QUALITY_GATE_DEFAULTS.scope_paths,
         scope_excludes: mergeWithWolfDocExcludes(cfg.scope_excludes, cfg.allow_wolf_doc_review, QUALITY_GATE_DEFAULTS.scope_excludes),
         buglog_scan_excludes: mergeWithWolfDocExcludes(cfg.buglog_scan_excludes, cfg.allow_wolf_doc_review, QUALITY_GATE_DEFAULTS.buglog_scan_excludes),
+        // Passed through unresolved: resolution needs a file lister, which the
+        // consumer supplies. `undefined` (key absent) means detect; an explicit
+        // array or [] is honored verbatim.
+        buglog_scan_extensions: cfg.buglog_scan_extensions ?? QUALITY_GATE_DEFAULTS.buglog_scan_extensions,
         allow_wolf_doc_review: cfg.allow_wolf_doc_review,
         min_assumptions: cfg.min_assumptions ?? QUALITY_GATE_DEFAULTS.min_assumptions,
         require_run_output: cfg.require_run_output ?? QUALITY_GATE_DEFAULTS.require_run_output,

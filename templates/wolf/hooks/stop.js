@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 import { evaluate as evaluateNudges, getNudgeConfig } from "./nudges/engine.js";
 import * as cerebrumRule from "./nudges/rules/cerebrum.js";
@@ -924,42 +924,6 @@ async function main() {
 // `auth` is just a substring. We convert `<doublestar>/` to `(?:.*/)?` so
 // it anchors on a path segment boundary. (Doc uses <doublestar> instead of
 // the literal sequence to avoid closing this comment block prematurely.)
-function globToRegex(glob) {
-    let re = "";
-    let i = 0;
-    while (i < glob.length) {
-        const c = glob[i];
-        if (c === "*" && glob[i + 1] === "*") {
-            i += 2;
-            if (glob[i] === "/") {
-                i++;
-                // "**/" at start or after a separator: match zero or more path segments
-                re += "(?:.*/)?";
-            }
-            else {
-                // Trailing or mid-path "**": match anything (including slashes)
-                re += ".*";
-            }
-        }
-        else if (c === "*") {
-            re += "[^/]*";
-            i++;
-        }
-        else if (c === "?") {
-            re += "[^/]";
-            i++;
-        }
-        else if (/[.+^${}()|[\]\\]/.test(c)) {
-            re += "\\" + c;
-            i++;
-        }
-        else {
-            re += c;
-            i++;
-        }
-    }
-    return new RegExp("^" + re + "$");
-}
 function relToProject(file) {
     const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
     return path.relative(projectDir, file).replace(/\\/g, "/");
@@ -1215,6 +1179,10 @@ function maybeNudgeSimplicity(wolfDir, session, sessionEntry, sessionFile) {
     emitStopHookFeedback(`🐺 Wolfpack simplicity: ${outputTokens} output tokens this session — check YAGNI, readability, efficiency; simplify if any fall short.${hint}\n`);
     return true;
 }
+// Marker recorded alongside `covered_tokens` so the unit basis is
+// self-describing. Entries without it predate scoped attribution (bug-498) and
+// hold session-TOTAL tokens, which must not be subtracted from scoped tokens.
+const TOKEN_BASIS_SCOPED = "scoped-writes";
 function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const reviewCfg = getReviewHookConfig();
     if (!reviewCfg.enabled)
@@ -1223,7 +1191,20 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
         return false;
     // Approximate lines-changed from output-token estimate: code averages
     // ~3.5 chars/token, ~60 chars/line → ~17 tokens/line.
-    const cumulativeTokens = sessionEntry.totals.output_tokens_estimated;
+    //
+    // ATTRIBUTION (bug-498): this was `sessionEntry.totals.output_tokens_estimated`
+    // — the whole session's output, including reasoning, tool results, and
+    // writes to files the review scope explicitly excludes. A one-line edit to
+    // an in-scope file therefore inherited the entire session's volume, and at
+    // min_diff_lines: 40 (≈680 tokens) that fires on essentially any edit made
+    // late in a working session. The nudge was reporting "~297 new lines" for
+    // changes nowhere near that size.
+    //
+    // Attributing to the in-scope writes themselves makes the number mean what
+    // the message claims it means. Falls back to the session total only when no
+    // write carries a `tokens` field, so an older _session.json (written before
+    // post-write recorded per-write tokens) degrades to the previous behavior
+    // rather than silently reporting zero and disabling the gate.
     const allWrittenFiles = [...new Set(sessionEntry.writes.map(w => w.file))];
     // Filter out scratch/driver/test files: editing a one-off falsifier under
     // /tmp/ or a *.test.ts spec isn't a production-review obligation. Without
@@ -1232,6 +1213,20 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const writtenFiles = allWrittenFiles.filter(f => !excludeRegexes.some(re => re.test(f)));
     if (writtenFiles.length === 0)
         return false;
+    // Sum tokens only for writes to files that survived the scope filter.
+    const inScope = new Set(writtenFiles.map(normalizeFilePath));
+    let scopedTokens = 0;
+    let sawTokenField = false;
+    for (const w of sessionEntry.writes) {
+        if (typeof w.tokens !== "number" || !Number.isFinite(w.tokens))
+            continue;
+        sawTokenField = true;
+        if (inScope.has(normalizeFilePath(w.file)))
+            scopedTokens += w.tokens;
+    }
+    const cumulativeTokens = sawTokenField
+        ? scopedTokens
+        : sessionEntry.totals.output_tokens_estimated;
     const reviewLogPath = path.join(wolfDir, "reviewlog.json");
     // Session-baseline delta (bug-441): approxLines is session-CUMULATIVE, so a
     // 1-line comment edit late in a busy session reported "~76 lines changed"
@@ -1240,6 +1235,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     // covered_tokens = session output already under a review obligation; only
     // output beyond the max covered value counts toward the size trigger.
     let coveredTokens = 0;
+    let coveredTokensBasis = null;
     try {
         const priorLog = readJSON(reviewLogPath, { version: 1, reviews: [] });
         if (Array.isArray(priorLog.reviews)) {
@@ -1247,11 +1243,25 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 if (r && r.session_id && r.session_id === session.session_id
                     && typeof r.covered_tokens === "number" && r.covered_tokens > coveredTokens) {
                     coveredTokens = r.covered_tokens;
+                    coveredTokensBasis = r.covered_tokens_basis ?? null;
                 }
             }
         }
     }
     catch { /* advisory baseline read; 0 keeps legacy cumulative behavior */ }
+    // UNIT SAFETY (bug-498): `covered_tokens` baselines written before the
+    // attribution change are in session-TOTAL units, which are strictly larger
+    // than the new scoped units. Subtracting one from the other clamps to 0 and
+    // would permanently disable the size trigger for the rest of that session —
+    // a silent gate failure, the direction we refuse.
+    //
+    // Entries now record `covered_tokens_basis` so the units are self-describing.
+    // A baseline lacking that marker is from the old scheme: ignore it rather
+    // than mixing scales. Worst case we re-nudge once on work already covered,
+    // which is visible and cheap; the alternative fails closed and silent.
+    if (coveredTokensBasis !== TOKEN_BASIS_SCOPED && sawTokenField) {
+        coveredTokens = 0;
+    }
     const effectiveLines = Math.max(0, Math.round((cumulativeTokens - coveredTokens) / 17));
     const pathRegexes = reviewCfg.always_review_paths.map(globToRegex);
     const matchedPaths = writtenFiles.filter(f => pathRegexes.some(re => re.test(f)));
@@ -1281,6 +1291,8 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             // session's baseline and permanently suppress its size trigger.
             if (pending.session_id && pending.session_id === session.session_id) {
                 pending.covered_tokens = Math.max(pending.covered_tokens ?? 0, cumulativeTokens);
+                if (sawTokenField)
+                    pending.covered_tokens_basis = TOKEN_BASIS_SCOPED;
             }
             pending.files = [...new Set([...(pending.files ?? []), ...writtenFiles])];
             pending.reason = "follow-up edit below review threshold";
@@ -1468,6 +1480,8 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             existingPending.ended = sessionEntry.ended;
             existingPending.approx_lines_changed = Math.max(existingPending.approx_lines_changed, effectiveLines);
             existingPending.covered_tokens = Math.max(existingPending.covered_tokens ?? 0, cumulativeTokens);
+            if (sawTokenField)
+                existingPending.covered_tokens_basis = TOKEN_BASIS_SCOPED;
             existingPending.files = [...new Set([...existingPending.files, ...writtenFiles])];
             existingPending.reason = reason;
             existingPending.trigger = trigger;
@@ -1512,6 +1526,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 files: writtenFiles,
                 approx_lines_changed: effectiveLines,
                 covered_tokens: cumulativeTokens,
+                ...(sawTokenField ? { covered_tokens_basis: TOKEN_BASIS_SCOPED } : {}),
                 reason,
                 status: "pending",
                 trigger,
@@ -1675,7 +1690,20 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     // an excluded file's edit count never contributes to the multi-edit set.
     const qualityCfg = getQualityGateConfig();
     const buglogExcludeRegexes = qualityCfg.buglog_scan_excludes.map(globToRegex);
-    const isExcluded = (file) => buglogExcludeRegexes.some(re => re.test(file));
+    // Extension gate (bug-496): excludes alone never expressed FILE TYPE, so
+    // editing a .md/.csv/.txt three times triggered "log any bugs fixed" — an
+    // obligation that only makes sense for artifacts whose correctness is
+    // executable-checkable. Three edits to prose is authoring, not debugging.
+    //
+    // The set is project-derived (registry ∩ tracked files), so a PowerShell or
+    // Terraform project gets the nudge with no configuration. Explicitly NOT
+    // isCodeFile(): that excludes everything under .wolf/, which would suppress
+    // the nudge on Wolfpack's own hooks — files under active development here.
+    const obligationExts = detectObligationExtensions(qualityCfg.buglog_scan_extensions, () => listProjectFiles());
+    const isExcluded = (file) => !carriesBugfixObligation(file, {
+        excludeRegexes: buglogExcludeRegexes,
+        extensions: obligationExts,
+    });
     // The full edit_counts keys are absolute paths (post-write.ts records them
     // that way); multiEditFileKeys keeps the original paths for identity match
     // against files_written, multiEditDisplay is the basename list for the
@@ -1685,7 +1713,6 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
         return false;
     const multiEditFileKeys = new Set(multiEditEntries.map(([file]) => normalizeFilePath(file)));
     const multiEditDisplay = multiEditEntries.map(([file]) => path.basename(file));
-    const latestByFile = new Map();
     // Change-detection: don't nudge if buglog.json was modified more recently
     // than the most recent edit *to one of the multi-edit files*. Using
     // session-cumulative latestEditMs over ALL files_written (Codex R3-2) would
@@ -1726,7 +1753,6 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
             continue;
         const normalized = normalizeFilePath(w.file);
         if (multiEditFileKeys.has(normalized)) {
-            latestByFile.set(normalized, Math.max(latestByFile.get(normalized) ?? 0, t));
             if (t > latestRelevantEditMs) {
                 latestRelevantEditMs = t;
             }
@@ -1746,10 +1772,26 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     // 3rd-edit on a file does NOT discharge the obligation.
     if (latestBuglogWriteMs > 0 && latestBuglogWriteMs >= latestRelevantEditMs)
         return false;
-    const signaturePayload = multiEditEntries.map(([file, count]) => {
-        const normalized = normalizeFilePath(file);
-        return [normalized, count, latestByFile.get(normalized) ?? 0];
-    }).sort(([a], [b]) => String(a).localeCompare(String(b)));
+    // Ack signature: FILE SET ONLY (bug-497).
+    //
+    // This previously included the edit count and the latest-edit timestamp,
+    // which made an acknowledgement expire on the very next keystroke: acking
+    // at 3 edits didn't cover 4, and — because the timestamp moved too — it
+    // didn't even cover a 4th *unchanged*-count evaluation. Measured, the same
+    // file and the same non-bug minted a fresh signature on every edit, so the
+    // per-session cap was the only thing bounding the loop.
+    //
+    // What the user actually asserted by acking is a claim about the FILE:
+    // "repeatedly editing this isn't a bug fix." That claim doesn't expire
+    // because they edited it again — it's the whole point of saying it. Keying
+    // on the normalized path set makes the ack mean what it says.
+    //
+    // Scope is still bounded: acks live in _session.json, so it lasts one
+    // session, and a genuinely new file in the multi-edit set changes the set
+    // and correctly re-nudges.
+    const signaturePayload = multiEditEntries
+        .map(([file]) => normalizeFilePath(file))
+        .sort((a, b) => String(a).localeCompare(String(b)));
     const signature = crypto.createHash("sha256").update(JSON.stringify(signaturePayload)).digest("hex");
     const sessionState = readJSON(sessionFile, {});
     if (sessionState.buglog_false_positive_acks?.[signature]) {
