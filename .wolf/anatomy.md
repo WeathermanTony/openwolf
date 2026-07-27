@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T01:02:39.098Z
-> Files: 186 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T01:12:00.505Z
+> Files: 180 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/
 
@@ -15,6 +15,7 @@
 
 - `add-bug474.mjs` — Declares p (~487 tok)
 - `add-bug475.mjs` — Declares p (~551 tok)
+- `add-bug478.mjs` — Declares p (~737 tok)
 - `clean-stubs.mjs` — Declares p (~301 tok)
 - `dedupe-anatomy.mjs` — anatomy.md listed several files twice within the same directory section -- (~575 tok)
 - `fix-bug474.mjs` — Declares p (~588 tok)
@@ -60,7 +61,7 @@
 - `dashboard.ts` — Exports isExpectedDashboardHealth, dashboardCommand (~1171 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `index.ts` — Exports createProgram (~2749 tok)
-- `init.ts` — Exports initCommand (~10515 tok)
+- `init.ts` — Exports initCommand (~10661 tok)
 - `nudge-cmd.ts` — Exports nudgeList, nudgeShow, nudgeResolve, nudgeDismiss, nudgeSnooze, nudgeStats (~1500 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~1161 tok)
@@ -68,7 +69,7 @@
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `status.ts` — Exports statusCommand (~1298 tok)
 - `trace-cmd.ts` — Exports traceCommand (~887 tok)
-- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6621 tok)
+- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6772 tok)
 
 ## src/config/
 
@@ -216,7 +217,7 @@
 ## src/utils/
 
 - `fs-safe.js` — Exports readJSON, writeJSON, readText, writeText + 2 more (~790 tok)
-- `fs-safe.ts` — Exports readJSON, tryWriteJSON, writeJSON, readText + 4 more (~836 tok)
+- `fs-safe.ts` — Exports readJSON, tryWriteJSON, writeJSON, readText + 5 more (~1226 tok)
 - `logger.js` — Exports Logger (~1118 tok)
 - `logger.ts` — Exports LogLevel, LoggerRotation, Logger (~1138 tok)
 - `paths.js` — Exports normalizePath, getWolfDir, resolveWolfFile, ensureDir, relativeToCwd (~190 tok)
@@ -278,6 +279,7 @@
 ## tests/
 
 - `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
+- `hook-packaging.test.js` — Hook packaging: every module a hook imports must actually ship. (~1113 tok)
 - `nudge-engine.test.js` — 29 regression tests: ownership, convergence, dispositions, concurrency (real subprocesses), fault injection (~4200 tok)
 - `qa-cmd.test.js` — sha256: fixture (~656 tok)
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)

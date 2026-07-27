@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { getRegisteredProjects, registerProject, type RegisteredProject } from "./registry.js";
 import { applyReviewerProfile, generateTemplate, migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from "./init.js";
 import { cleanupOpenWolfPm2, listPm2Processes } from "./daemon-cmd.js";
-import { readJSON, writeJSON, readText, writeText, safeCopyFile } from "../utils/fs-safe.js";
+import { readJSON, writeJSON, readText, writeText, safeCopyFile, safeCopyDir } from "../utils/fs-safe.js";
 import { ensureDir } from "../utils/paths.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -464,6 +464,16 @@ function copyHookScripts(wolfDir: string): void {
       if (fs.existsSync(src)) {
         safeCopyFile(src, path.join(hooksDir, file));
       }
+    }
+
+    // stop.js imports ./nudges/engine.js and ./nudges/rules/*.js. The flat
+    // hookFiles allowlist cannot express a nested tree, so copy it wholesale.
+    // Without this an updated project gets the importer without its imports
+    // and the Stop hook dies with ERR_MODULE_NOT_FOUND — silently, since the
+    // project hook wrapper swallows import errors.
+    const nudgesSrcDir = path.join(sourceDir, "nudges");
+    if (fs.existsSync(nudgesSrcDir)) {
+      safeCopyDir(nudgesSrcDir, path.join(hooksDir, "nudges"));
     }
 
     // Hooks and helper scripts import compiled utilities via ../utils/*.js.

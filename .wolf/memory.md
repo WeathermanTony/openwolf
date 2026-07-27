@@ -623,3 +623,11 @@ heavy concurrent hook activity. Nothing is committed — working tree is staged
 for the user's review.
 | 21:02 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/dedupe-anatomy.mjs | — | ~575 |
 | 21:03 | Session end: 2 writes across 2 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs) | 0 reads | ~993 tok |
+| 21:08 | Edited src/utils/fs-safe.ts | added 3 condition(s) | ~424 |
+| 21:09 | Edited src/cli/init.ts | added 2 condition(s) | ~230 |
+| 21:09 | Edited src/cli/update.ts | added 1 condition(s) | ~237 |
+| 21:10 | Created tests/hook-packaging.test.js | — | ~1113 |
+| 21:11 | Session end: 6 writes across 6 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~3833 tok |
+| 21:11 | Session end: 6 writes across 6 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~3833 tok |
+| 21:12 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/add-bug478.mjs | — | ~737 |
+| 21:12 | Session end: 8 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6064 tok |

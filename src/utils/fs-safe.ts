@@ -88,3 +88,38 @@ export function safeCopyFile(src: string, dest: string): void {
     fs.chmodSync(dest, fs.statSync(src).mode);
   } catch {}
 }
+
+// Recursively copy a directory tree via safeCopyFile.
+//
+// Deliberately NOT fs.cpSync: that hits the same copy_file_range EPERM on
+// WSL2 9P mounts that safeCopyFile exists to work around.
+//
+// Motivation: hook scripts are copied into `.wolf/hooks/` by an explicit flat
+// allowlist, which silently skipped nested module trees. `stop.js` imports
+// `./nudges/engine.js`, so a project got the importer without the imports and
+// the Stop hook died with ERR_MODULE_NOT_FOUND — invisibly, because the hook
+// wrapper swallows errors. Any nested runtime dependency must be copied as a
+// tree, not enumerated file-by-file.
+//
+// Returns the number of files copied so callers can verify a non-empty result
+// rather than assuming success.
+export function safeCopyDir(
+  srcDir: string,
+  destDir: string,
+  filter: (name: string) => boolean = (name) => name.endsWith(".js"),
+): number {
+  if (!fs.existsSync(srcDir)) return 0;
+  let copied = 0;
+  fs.mkdirSync(destDir, { recursive: true });
+  for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+    const from = path.join(srcDir, entry.name);
+    const to = path.join(destDir, entry.name);
+    if (entry.isDirectory()) {
+      copied += safeCopyDir(from, to, filter);
+    } else if (entry.isFile() && filter(entry.name)) {
+      safeCopyFile(from, to);
+      copied++;
+    }
+  }
+  return copied;
+}

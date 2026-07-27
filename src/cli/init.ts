@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 import { findProjectRoot } from "../scanner/project-root.js";
 import { scanProject } from "../scanner/anatomy-scanner.js";
-import { readJSON, writeJSON, readText, writeText, safeCopyFile } from "../utils/fs-safe.js";
+import { readJSON, writeJSON, readText, writeText, safeCopyFile, safeCopyDir } from "../utils/fs-safe.js";
 import { ensureDir } from "../utils/paths.js";
 import { isWindows } from "../utils/platform.js";
 import { registerProject } from "./registry.js";
@@ -616,6 +616,15 @@ function copyHookScripts(wolfDir: string): void {
         safeCopyFile(src, path.join(hooksDir, file));
         copiedAny = true;
       }
+    }
+    // stop.js imports ./nudges/engine.js and ./nudges/rules/*.js. The flat
+    // hookFiles allowlist above cannot express a nested tree, so copy it
+    // wholesale — otherwise the Stop hook dies with ERR_MODULE_NOT_FOUND,
+    // silently, because the project hook wrapper swallows import errors.
+    const nudgesSrcDir = path.join(sourceDir, "nudges");
+    if (fs.existsSync(nudgesSrcDir)) {
+      const n = safeCopyDir(nudgesSrcDir, path.join(hooksDir, "nudges"));
+      if (n > 0) copiedAny = true;
     }
     // Hooks reference compiled utilities via "../utils/size-discipline.js".
     // Place the utils as a sibling of hooks/ under .wolf/ so the relative

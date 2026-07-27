@@ -3674,6 +3674,53 @@
       "last_seen": "2026-07-27T00:48:44.057Z",
       "commit": null,
       "reduction": ".wolf/qa/dead-lock-owner-reclaim.md"
+    },
+    {
+      "id": "bug-478",
+      "timestamp": "2026-07-27T01:08:54.965Z",
+      "error_message": "Type error",
+      "file": "src/utils/fs-safe.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T01:08:54.965Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-479",
+      "timestamp": "2026-07-27T01:12:04.223Z",
+      "error_message": "ERR_MODULE_NOT_FOUND: Cannot find module '<project>/.wolf/hooks/nudges/engine.js' imported from '<project>/.wolf/hooks/stop.js' — the Stop hook was dead in every initialized/updated project, silently.",
+      "file": "src/cli/init.ts, src/cli/update.ts, src/utils/fs-safe.ts",
+      "root_cause": "Both copyHookScripts implementations (one in init.ts, a separate one in update.ts) copy hooks using an explicit FLAT allowlist of filenames. stop.js imports ./nudges/engine.js and ./nudges/rules/*.js, which is a nested tree that a flat list cannot express and neither function recursed into. Projects received the importer without its imports. The failure was invisible because the project hook wrapper is `node -e \"import(...).catch(()=>{})\"` — the .catch swallowed the resolution error, so the nudge system, review gate, and quality gate were all simply absent with no error surfaced. Found while preparing to run `openwolf update` across 81 registered projects; unfixed, that run would have shipped a dead Stop hook to all of them.",
+      "fix": "Added safeCopyDir() to src/utils/fs-safe.ts — a recursive copy built on safeCopyFile (deliberately NOT fs.cpSync, which hits the same copy_file_range EPERM on WSL2 9P mounts that safeCopyFile exists to work around). Wired it into BOTH copyHookScripts implementations so already-registered projects are repaired by `update`, not only fresh `init`. Verified on throwaway fixtures: init now ships all 6 nudge modules and stop.js reports LOADED OK; update restores the tree from 0 files to 6 with stop.js LOADED OK. Regression test tests/hook-packaging.test.js transitively crawls stop.js's import graph AND performs a real import() from a project-shaped fixture; negative control (hiding dist/src/hooks/nudges) fails both tests 2/2, restored passes 2/2.",
+      "status": "resolved",
+      "tags": [
+        "packaging",
+        "hooks",
+        "esm",
+        "init",
+        "update",
+        "silent-failure",
+        "nudges"
+      ],
+      "related_bugs": [
+        "bug-471",
+        "bug-472",
+        "bug-473",
+        "bug-474",
+        "bug-477"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-27T01:12:04.223Z",
+      "commit": null,
+      "reduction": ".wolf/qa/hook-nudges-packaging.md"
     }
   ]
 }
