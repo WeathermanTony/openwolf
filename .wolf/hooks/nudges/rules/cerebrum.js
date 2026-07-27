@@ -25,8 +25,9 @@ import * as crypto from "node:crypto";
 import { makeCandidate } from "../engine.js";
 import { groupByOwner } from "../project-scope.js";
 export const RULE_ID = "cerebrum.stale";
-// 3: fingerprint payload canonicalizes path-like evidence and type-tags target
-// hashes; the digest changes, so v2 dispositions no longer apply.
+// 3: fingerprint payload now canonicalizes path-like evidence and type-tags
+// target hashes. The digest changes, so v2 dispositions no longer apply — the
+// bump makes that invalidation explicit instead of a silent mass re-arm.
 const SCHEMA_VERSION = 3;
 function hashFile(p) {
     try {
@@ -95,3 +96,4 @@ export function collect({ writes = [], baselines = {}, minWrites = 3, staleHours
     }
     return { candidates, unattributed };
 }
+//# sourceMappingURL=cerebrum.js.map

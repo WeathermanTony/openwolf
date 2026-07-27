@@ -631,3 +631,39 @@ for the user's review.
 | 21:11 | Session end: 6 writes across 6 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~3833 tok |
 | 21:12 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/add-bug478.mjs | — | ~737 |
 | 21:12 | Session end: 8 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6064 tok |
+| 21:13 | Session end: 9 writes across 8 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~6082 tok |
+
+## Session: 2026-07-27 (cont) — commit + fleet update
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 01:35 | Verified both nudge-convergence proposals already implemented + tested | rules/conclusion.ts, tests 4/5/6/7/25 | test 25 asserts >=3 prose patterns match BEFORE asserting 0 candidates — not vacuous | ~4k |
+| 01:40 | Committed nudge convergence work (52 files) | 742d315 | tree clean | ~3k |
+| 01:45 | FOUND: stop.js imports nudges/* but copyHookScripts uses a FLAT allowlist | src/cli/init.ts, src/cli/update.ts | Stop hook DEAD in every project, silently (wrapper .catch swallows it) | ~5k |
+| 01:50 | Added safeCopyDir (recursive, built on safeCopyFile not cpSync/9P EPERM) | src/utils/fs-safe.ts | wired into BOTH init and update copy paths | ~4k |
+| 01:55 | Regression test + negative control | tests/hook-packaging.test.js | hides dist nudges -> fails 2/2; restored -> passes 2/2 | ~4k |
+| 02:00 | Logged bug-479 (478 was stub-squatted), wrote reduction | .wolf/qa/hook-nudges-packaging.md | 100/100 tests pass | ~3k |
+| 02:05 | Committed packaging fix | 78650b8 | tree clean | ~2k |
+| 02:10 | Updated all registered projects | 81 projects | 81/81 complete nudge tree; 81/81 stop.js LOADS AND EXECUTES | ~6k |
+
+### Session summary: fleet-wide Stop hook was dead; now verified live on 81 projects
+
+The nudge convergence work committed as 742d315 would have been inert
+everywhere. `stop.js` imports `./nudges/engine.js` and `./nudges/rules/*.js`,
+but both `copyHookScripts` implementations copy hooks by a flat filename
+allowlist that cannot express a nested tree. Caught while preparing the fleet
+update — running it unfixed would have shipped a dead Stop hook to all 81.
+
+Invisible by construction: the hook wrapper is `node -e "import(...).catch(()=>{})"`,
+so ERR_MODULE_NOT_FOUND was swallowed. No nudges, no review gate, no quality
+gate, no error. Fixed in 78650b8 via `safeCopyDir`.
+
+Verification was load-based, not presence-based (file presence was the weak
+assumption that allowed the bug): every project's stop.js was actually imported
+in a child process. 81/81 load; testmini emitted real nudge JSON. User data
+preserved byte-identical (cerebrum/memory/buglog hashes unchanged across update).
+
+Registry pruned 83 -> 81 (dead fixture entries removed).
+
+STILL OPEN: why Stop hooks crash while holding the reviewlog lock (bug-477
+makes the consequence recoverable, not the cause).

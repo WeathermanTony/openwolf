@@ -2397,3 +2397,4 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
     return true;
 }
 main().catch(() => exitWithStopHookResult(false));
+//# sourceMappingURL=stop.js.map

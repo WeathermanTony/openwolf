@@ -28,8 +28,7 @@ import * as crypto from "node:crypto";
 import { makeCandidate } from "../engine.js";
 import { groupByOwner } from "../project-scope.js";
 export const RULE_ID = "conclusion.unreduced";
-// 3: fingerprint payload canonicalizes path-like evidence and type-tags target
-// hashes; the digest changes, so v2 dispositions no longer apply.
+// 3: see cerebrum.ts — fingerprint payload canonicalization/type-tagging bump.
 const SCHEMA_VERSION = 3;
 /** Read a reduction's frontmatter (capped) and pull every target-hash it declares. */
 export function reductionTargetHashes(qaFile) {
@@ -157,3 +156,4 @@ export function collect({ text = "", patterns = [], minHits = 2, minTextChars = 
     }
     return { candidates, matched, unattributed };
 }
+//# sourceMappingURL=conclusion.js.map
