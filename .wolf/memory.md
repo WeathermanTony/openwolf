@@ -845,3 +845,5 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 14:03 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 14:03 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 17:35 | Reviews 0077/0078/0079 completed (0078+0079 auto-superseded by 0077 coalescing). Fleet update: 82/82 projects now carry the fixed stop/shared/post-write hooks; 328 user-data files byte-identical. | .wolf/reviewlog.json, ~/.openwolf/registry.json | done | ~6k |
+| 14:03 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 17:42 | User: fork is local-only, well diverged — commit locally, never push/PR. Verified: no remotes, default branch is `master` (env banner's "main" is wrong). Recorded in cerebrum User Preferences. | .wolf/cerebrum.md | done | ~1k |

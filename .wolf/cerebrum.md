@@ -9,6 +9,7 @@
 - Do not initialize or use OpenWolf inside AI plugin staging/runtime directories; keep plugin stages minimal and isolated to avoid nested hooks, token waste, daemon confusion, and contaminated model comparisons.
 - User runs `openwolf init` before every session; if that command copies from this local fork, future initialized projects receive the fork's current template/runtime behavior.
 - User wants Wolfpack to improve AI git/version discipline: nudge agents to inspect/report git state, avoid broad staging, distinguish pre-existing changes, and consider version/changelog/document revision impacts.
+- [2026-07-27] **Commit locally only.** This repo is the user's own fork, well diverged from anything upstream — it has NO git remotes and no `main` branch (default is `master`). Do not offer to push, set an upstream, or open a PR, and do not report "push/PR outstanding" as a pending item. Commit to the working branch and stop there. (The Claude Code environment banner says "Main branch: main", which is wrong here — verify with `git branch -a` before any branch operation.)
 
 ## Key Learnings
 
