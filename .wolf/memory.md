@@ -697,3 +697,5 @@ makes the consequence recoverable, not the cause).
 | 22:03 | Edited src/cli/update.ts | 9→10 lines | ~150 |
 | 22:04 | Session end: 22 writes across 11 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~11676 tok |
 | 22:05 | Created ../../../../../tmp/claude-1000/-mnt-j-projectshome-projects-customopenwolf/c4387010-c00b-4112-8227-289ad1848c57/scratchpad/add-bug-restore.mjs | — | ~644 |
+| 22:06 | Edited src/hooks/stop.ts | added 3 condition(s) | ~405 |
+| 22:07 | Session end: 24 writes across 12 files (dead-lock-owner-reclaim.md, dedupe-anatomy.mjs, fs-safe.ts, init.ts, update.ts) | 1 reads | ~12771 tok |

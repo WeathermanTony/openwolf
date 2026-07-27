@@ -347,9 +347,20 @@ function hookLifecycleLog(event, extra = {}) {
 const LIFECYCLE_MAX_BYTES = 2 * 1024 * 1024;
 const LIFECYCLE_KEEP_LINES = 2000;
 function trimHookLifecycleLog(file) {
+    let release = null;
     try {
         if (!fs.existsSync(file)) return;
         if (fs.statSync(file).size <= LIFECYCLE_MAX_BYTES) return;
+        // Read-modify-write MUST be serialized. Measured without a lock: 8
+        // concurrent hooks each read the file before the others appended, and
+        // the last rename clobbered the rest — 7 of 8 `start` records were LOST
+        // (no corruption, but silent data loss). For this log that is the worst
+        // possible failure: a missing `start` means a killed hook leaves no
+        // evidence at all, defeating the instrumentation's whole purpose.
+        release = acquireFileLock(file);
+        if (!release) return; // Another hook is trimming; skipping is correct.
+        // Re-check INSIDE the lock — a racing trim may have already shrunk it.
+        if (!fs.existsSync(file) || fs.statSync(file).size <= LIFECYCLE_MAX_BYTES) return;
         const lines = fs.readFileSync(file, "utf-8").split("\n").filter(Boolean);
         if (lines.length <= LIFECYCLE_KEEP_LINES) return;
         const kept = lines.slice(-LIFECYCLE_KEEP_LINES).join("\n") + "\n";
@@ -358,6 +369,12 @@ function trimHookLifecycleLog(file) {
         fs.renameSync(tmp, file);
     }
     catch { }
+    finally {
+        if (release) {
+            try { release(); }
+            catch { }
+        }
+    }
 }
 function initHookLifecycleLog(wolfDir) {
     try {
