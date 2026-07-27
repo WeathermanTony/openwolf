@@ -4434,7 +4434,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:53:15.740Z",
-      "commit": null,
+      "commit": "7544508",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     },
     {
@@ -4455,7 +4455,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:53:15.740Z",
-      "commit": null,
+      "commit": "7544508",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     },
     {
@@ -4481,7 +4481,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:53:15.740Z",
-      "commit": null,
+      "commit": "7544508",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     },
     {
@@ -4505,7 +4505,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:53:15.740Z",
-      "commit": null,
+      "commit": "7544508",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     },
     {
@@ -4528,7 +4528,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-07-27T16:53:15.740Z",
-      "commit": null,
+      "commit": "7544508",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
     }
   ]
