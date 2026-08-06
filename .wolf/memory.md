@@ -841,3 +841,4 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 17:33 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 17:39 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 18:05 | Final arbitration findings fixed: rollback now restores release-bound metadata, legacy releases are hash-checked/backfilled, and cron percent escaping is tested non-vacuously; final arbitration CLEAN, verifier passed, 131/131 tests pass | src/cli/scientific-skills.ts, src/cli/skillsbench.ts, tests/*skills*.test.js | release ready | ~8k |
+| 18:08 | Committed K-Dense scientific skills release locally as f1b8d49 and backfilled resolving bug evidence | release files | local commit only | ~1k |

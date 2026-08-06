@@ -4718,7 +4718,7 @@
       "file": "src/cli/scientific-skills.ts",
       "root_cause": "A hyphenated metadata property was generated as an invalid bare TypeScript key, and copied fixture paths/expectations still referenced SkillsBench state, pdf, six skills, and the shorter cron argv.",
       "fix": "Replaced the metadata key with scientificSkillsCommit, corrected all scientific fixture paths and IDs, updated the nine-skill count and exact scientific cron argv, then rebuilt and passed all 15 focused manager/deployment tests.",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "scientific-skills",
         "typescript",
@@ -4727,8 +4727,8 @@
       ],
       "related_bugs": [],
       "occurrences": 1,
-      "last_seen": "2026-08-06T21:19:54.775Z",
-      "commit": null,
+      "last_seen": "2026-08-06T21:40:52.066Z",
+      "commit": "f1b8d49",
       "reduction": ".wolf/qa/scientific-skills-manager.md"
     },
     {
@@ -4738,7 +4738,7 @@
       "file": "src/cli/scientific-skills.ts",
       "root_cause": "Release directories had no persisted commit/skill manifest for rollback lock reconstruction, and shell quoting was incorrectly assumed sufficient for crontab's special percent parsing.",
       "fix": "Persisted release.json metadata, restored commit and skill hashes during rollback before doctor verification, escaped percent only when rendering crontab lines, and strengthened both manager tests with post-rollback doctor and percent fixtures.",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "rollback",
         "cron",
@@ -4748,8 +4748,8 @@
       ],
       "related_bugs": [],
       "occurrences": 1,
-      "last_seen": "2026-08-06T21:32:24.502Z",
-      "commit": null,
+      "last_seen": "2026-08-06T21:40:52.067Z",
+      "commit": "f1b8d49",
       "reduction": ".wolf/qa/scientific-skills-manager.md"
     }
   ]
