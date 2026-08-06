@@ -820,3 +820,17 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 14:07 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 14:08 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 14:21 | Refreshed all four release QA reductions to final source hashes, reran falsifiers, and corrected amended bug commit references | .wolf/qa/managed-skill-*.md, .wolf/qa/fresh-init-utils-module.md, .wolf/buglog.json | 4/4 release targets current; focused tests 4/4 and install verifier pass | ~1800 |
+| 15:32 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 15:35 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 16:05 | Implemented task #10 SkillsBench manager with staged releases, CLI, hashes, rollback, marketplace registration, fixture tests, and QA reductions; no real HOME install | src/cli/skillsbench.ts; src/cli/index.ts; tests/skillsbench.test.js; .wolf/qa/skillsbench-*.md | build + 122 tests passed | ~7800 |
+| 15:38 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 15:45 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 15:48 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 15:48 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 16:03 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 16:04 | Installed six SkillsBench standard skills as a user plugin, enabled weekly updates, added compact OpenWolf discovery guidance, and completed full verification | src/cli/skillsbench.ts, OPENWOLF.md copies, tests, user plugin state | plugin healthy; 124/124 tests and install verifier pass; review-0003 CLEAN | ~4200 |
+| 16:10 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 16:14 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 16:22 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 16:26 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 16:15 | Strengthened SkillsBench cron falsifier and required-protocol negative test; build, 10 focused tests, install verify, and 126 full tests pass | src/cli/skillsbench.ts, src/cli/init.ts, tests/skillsbench.test.js, .wolf/qa/skillsbench-*.md | verified; final arbitration pending | ~8k |

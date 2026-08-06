@@ -218,7 +218,7 @@ async function checkCleanProjectTemplates() {
   }
 
   const initSource = await readRequiredText('src/cli/init.ts');
-  for (const marker of ['"cerebrum.md"', '"anatomy.md"']) {
+  for (const marker of ['"cerebrum.md"', '"anatomy.md"', 'file === "OPENWOLF.md"', 'Required OpenWolf protocol template missing']) {
     if (!initSource.includes(marker)) {
       failures.push(`src/cli/init.ts embedded scaffold fallback missing ${marker}`);
     }
@@ -229,7 +229,7 @@ async function checkCleanProjectTemplates() {
 async function checkProtocolUpgradeDocs() {
   for (const file of ['.wolf/OPENWOLF.md', 'src/templates/OPENWOLF.md', 'templates/wolf/OPENWOLF.md']) {
     const content = await readRequiredText(file);
-    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Companion-Owned Review Lifecycle', '## Operational Verification']) {
+    for (const heading of ['## Standard Skills', '## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Companion-Owned Review Lifecycle', '## Operational Verification']) {
       if (!content.includes(heading)) {
         failures.push(`${file} missing protocol section ${heading}`);
       }
@@ -299,6 +299,7 @@ async function checkFreshInitScaffoldOutput() {
     const gateLog = JSON.parse(await readFile(path.join(dir, '.wolf', 'qa', '_gate-log.json'), 'utf8'));
     const config = JSON.parse(await readFile(path.join(dir, '.wolf', 'config.json'), 'utf8'));
     const protocolUpgrade = await readFile(path.join(dir, '.wolf', 'PROTOCOL-UPGRADE-2026-06.md'), 'utf8');
+    const openwolfProtocol = await readFile(path.join(dir, '.wolf', 'OPENWOLF.md'), 'utf8');
     const managedSkill = await readFile(path.join(dir, '.claude', 'skills', 'quality-reduction', 'SKILL.md'), 'utf8');
     const sourceSkill = await readFile(rel('src/templates/claude/skills/quality-reduction/SKILL.md'), 'utf8');
     const utilsPackage = JSON.parse(await readFile(path.join(dir, '.wolf', 'utils', 'package.json'), 'utf8'));
@@ -318,6 +319,9 @@ async function checkFreshInitScaffoldOutput() {
       if (!protocolUpgrade.includes(heading)) {
         failures.push(`fresh init .wolf/PROTOCOL-UPGRADE-2026-06.md missing ${heading}`);
       }
+    }
+    if (!openwolfProtocol.includes('## Standard Skills') || !openwolfProtocol.includes('Skill instructions load on demand.')) {
+      failures.push('fresh init .wolf/OPENWOLF.md missing compact standard-skills discovery guidance');
     }
     if (!cerebrum.includes('- **Project:** fresh-verify-app')) {
       failures.push('fresh init .wolf/cerebrum.md did not seed the fresh project name');

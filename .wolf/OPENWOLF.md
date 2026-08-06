@@ -14,6 +14,10 @@ You are working in a Wolfpack-managed project. Wolfpack is the customized workfl
 2. Check the `## Do-Not-Repeat` section — these are past mistakes that must not recur.
 3. Follow all conventions in `## Key Learnings` and `## User Preferences`.
 
+## Standard Skills
+
+Before recreating common workflows, check available standard skills and invoke the exact listed skill name when applicable. Skill instructions load on demand.
+
 ## Recall Before Acting
 
 Before starting non-trivial work, use Wolfpack's local memory in this order:

@@ -114,6 +114,66 @@ export function createProgram(): Command {
       cronRetry(id);
     });
 
+  const skills = program
+    .command("skills")
+    .description("Manage user-scope SkillsBench standard skills");
+
+  skills
+    .command("init")
+    .description("Fetch and activate the configured SkillsBench skills")
+    .option("--dry-run", "Show the planned operation without writing state")
+    .option("--quiet", "Suppress normal output")
+    .action(async (opts: { dryRun?: boolean; quiet?: boolean }) => {
+      const { skillsInit } = await import("./skillsbench.js");
+      await skillsInit(opts);
+    });
+
+  skills
+    .command("status")
+    .description("Show SkillsBench release and prerequisite status")
+    .action(async () => {
+      const { skillsStatus } = await import("./skillsbench.js");
+      skillsStatus();
+    });
+
+  skills
+    .command("update")
+    .description("Fetch, validate, and atomically activate an updated release")
+    .option("--dry-run", "Show the planned operation without writing state")
+    .option("--quiet", "Suppress normal output and preserve active release on failure")
+    .action(async (opts: { dryRun?: boolean; quiet?: boolean }) => {
+      const { skillsUpdate } = await import("./skillsbench.js");
+      await skillsUpdate(opts);
+    });
+
+  skills
+    .command("doctor")
+    .description("Verify active SkillsBench release integrity")
+    .action(async () => {
+      const { skillsDoctor } = await import("./skillsbench.js");
+      skillsDoctor();
+    });
+
+  skills
+    .command("rollback [revision]")
+    .description("Reactivate the previous or named SkillsBench release")
+    .action(async (revision?: string) => {
+      const { skillsRollback } = await import("./skillsbench.js");
+      skillsRollback(revision);
+    });
+
+  const skillsSchedule = skills
+    .command("schedule")
+    .description("Manage the manager-owned weekly update schedule");
+
+  skillsSchedule
+    .command("remove")
+    .description("Remove only the manager-owned weekly update crontab entry")
+    .action(async () => {
+      const { skillsRemoveSchedule } = await import("./skillsbench.js");
+      skillsRemoveSchedule();
+    });
+
   // --- Update command ---
   program
     .command("update")

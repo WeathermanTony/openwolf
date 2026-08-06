@@ -70,6 +70,7 @@
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `index.ts` — Exports createProgram (~2749 tok)
 - `init.ts` — Exports initCommand; installs managed Claude skills and fresh hook/runtime payloads (~10700 tok)
+- `skillsbench.ts` — User-scope SkillsBench release manager: staged Git sync, plugin marketplace, hashes, rollback, and weekly schedule (~4300 tok)
 - `managed-skills.ts` — Explicit ownership manifest plus install/backup/restore helpers for Wolfpack-managed Claude skill files (~450 tok)
 - `.wolf/qa/managed-skill-update.md` — Current-byte falsification evidence for scoped update, atomic backups, review-history preservation, and restore symmetry (~500 tok)
 - `.wolf/qa/managed-skill-package-verifier.md` — Current-byte package/fresh-init verifier evidence for managed skill distribution and receipt hygiene (~450 tok)
@@ -291,6 +292,11 @@
 - `port-allocator.js` — Exports deterministicBasePort, isPortFree, allocateProjectPorts (~307 tok)
 - `size-discipline.js` — size-discipline.ts (~10030 tok)
 
+## .wolf/qa/
+
+- `skillsbench-manager.md` — Current-byte adversarial release transaction evidence for the user-scope SkillsBench manager (~550 tok)
+- `skillsbench-cli.md` — Current-byte built CLI discovery evidence for the SkillsBench command group (~350 tok)
+
 ## tests/
 
 - `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
@@ -303,4 +309,5 @@
 - `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~19724 tok)
 - `skill-deployment.test.js` — Disposable-project tests for managed skill init/update/dry-run/restore and utility ESM scope (~1700 tok)
 - `skill-receipt.test.js` — Contract tests for canonical manifests, receipt validation, stale detection, and review compatibility (~1800 tok)
+- `skillsbench.test.js` — Temporary-HOME/local-Git fixture tests for SkillsBench release, plugin isolation, rollback, and path rejection (~1300 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)
