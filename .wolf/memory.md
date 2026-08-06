@@ -834,3 +834,4 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 16:22 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 16:26 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 16:15 | Strengthened SkillsBench cron falsifier and required-protocol negative test; build, 10 focused tests, install verify, and 126 full tests pass | src/cli/skillsbench.ts, src/cli/init.ts, tests/skillsbench.test.js, .wolf/qa/skillsbench-*.md | verified; final arbitration pending | ~8k |
+| 16:20 | Final different-provider arbitration returned CLEAN; committed SkillsBench manager and compact protocol guidance locally as 1f5e55d | release files | 126/126 tests and install verifier passed | ~2k |

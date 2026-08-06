@@ -4697,7 +4697,7 @@
       "file": "tests/skillsbench.test.js",
       "root_cause": "The initial test used shell syntax validation, then execution with only apostrophes; those inputs did not distinguish canonical single-quote escaping from double quoting that permits shell expansion.",
       "fix": "Changed the test to execute the generated command with apostrophes, $HOME, $USER, and $(id -u) in paths and assert exact literal argv captured in the redirected log.",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "skillsbench",
         "cron",
@@ -4707,8 +4707,8 @@
       ],
       "related_bugs": [],
       "occurrences": 1,
-      "last_seen": "2026-08-06T20:26:59.270Z",
-      "commit": null,
+      "last_seen": "2026-08-06T20:28:26.964Z",
+      "commit": "1f5e55d",
       "reduction": ".wolf/qa/skillsbench-manager.md"
     }
   ]
