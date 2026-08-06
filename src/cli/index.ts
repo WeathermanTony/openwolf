@@ -174,6 +174,66 @@ export function createProgram(): Command {
       skillsRemoveSchedule();
     });
 
+  const scientificSkills = skills
+    .command("scientific")
+    .description("Manage user-scope K-Dense scientific skills");
+
+  scientificSkills
+    .command("init")
+    .description("Fetch and activate the configured K-Dense scientific skills")
+    .option("--dry-run", "Show the planned operation without writing state")
+    .option("--quiet", "Suppress normal output")
+    .action(async (opts: { dryRun?: boolean; quiet?: boolean }) => {
+      const { scientificSkillsInit } = await import("./scientific-skills.js");
+      await scientificSkillsInit(opts);
+    });
+
+  scientificSkills
+    .command("status")
+    .description("Show scientific skill release and prerequisite status")
+    .action(async () => {
+      const { scientificSkillsStatus } = await import("./scientific-skills.js");
+      scientificSkillsStatus();
+    });
+
+  scientificSkills
+    .command("update")
+    .description("Fetch, validate, and atomically activate scientific skills")
+    .option("--dry-run", "Show the planned operation without writing state")
+    .option("--quiet", "Suppress normal output and preserve active release on failure")
+    .action(async (opts: { dryRun?: boolean; quiet?: boolean }) => {
+      const { scientificSkillsUpdate } = await import("./scientific-skills.js");
+      await scientificSkillsUpdate(opts);
+    });
+
+  scientificSkills
+    .command("doctor")
+    .description("Verify active K-Dense scientific skill release integrity")
+    .action(async () => {
+      const { scientificSkillsDoctor } = await import("./scientific-skills.js");
+      scientificSkillsDoctor();
+    });
+
+  scientificSkills
+    .command("rollback [revision]")
+    .description("Reactivate the previous or named scientific skill release")
+    .action(async (revision?: string) => {
+      const { scientificSkillsRollback } = await import("./scientific-skills.js");
+      scientificSkillsRollback(revision);
+    });
+
+  const scientificSchedule = scientificSkills
+    .command("schedule")
+    .description("Manage the scientific manager-owned weekly update schedule");
+
+  scientificSchedule
+    .command("remove")
+    .description("Remove only the scientific weekly update crontab entry")
+    .action(async () => {
+      const { scientificSkillsRemoveSchedule } = await import("./scientific-skills.js");
+      scientificSkillsRemoveSchedule();
+    });
+
   // --- Update command ---
   program
     .command("update")

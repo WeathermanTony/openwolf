@@ -71,6 +71,7 @@
 - `index.ts` — Exports createProgram (~2749 tok)
 - `init.ts` — Exports initCommand; installs managed Claude skills and fresh hook/runtime payloads (~10700 tok)
 - `skillsbench.ts` — User-scope SkillsBench release manager: staged Git sync, plugin marketplace, hashes, rollback, and weekly schedule (~4300 tok)
+- `scientific-skills.ts` — Independent user-scope K-Dense scientific skills manager with staged releases, hashes, rollback, doctor checks, and weekly schedule (~4300 tok)
 - `managed-skills.ts` — Explicit ownership manifest plus install/backup/restore helpers for Wolfpack-managed Claude skill files (~450 tok)
 - `.wolf/qa/managed-skill-update.md` — Current-byte falsification evidence for scoped update, atomic backups, review-history preservation, and restore symmetry (~500 tok)
 - `.wolf/qa/managed-skill-package-verifier.md` — Current-byte package/fresh-init verifier evidence for managed skill distribution and receipt hygiene (~450 tok)
@@ -310,4 +311,5 @@
 - `skill-deployment.test.js` — Disposable-project tests for managed skill init/update/dry-run/restore and utility ESM scope (~1700 tok)
 - `skill-receipt.test.js` — Contract tests for canonical manifests, receipt validation, stale detection, and review compatibility (~1800 tok)
 - `skillsbench.test.js` — Temporary-HOME/local-Git fixture tests for SkillsBench release, plugin isolation, rollback, and path rejection (~1300 tok)
+- `scientific-skills.test.js` — Temporary-HOME/local-Git fixture tests for the K-Dense scientific plugin, validation, rollback, and shell quoting (~1400 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)

@@ -5,51 +5,54 @@ import * as path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { readJSON, tryWriteJSON, safeCopyDir } from "../utils/fs-safe.js";
 
-export interface SkillsBenchConfig {
+export interface ScientificSkillsConfig {
   sourceUrl: string;
   sourceRef: string;
   cadence: "weekly";
   skills: Array<{ id: string; path: string }>;
 }
 
-interface SkillLock {
+interface ScientificSkillLock {
   id: string;
   path: string;
   hash: string;
 }
 
-interface SkillsBenchLock {
+interface ScientificSkillsLock {
   version: 1;
   commit: string;
   activeRelease: string;
   releaseKey: string;
   previousRelease?: string;
-  skills: SkillLock[];
+  skills: ScientificSkillLock[];
   updatedAt: string;
   lastResult: "ok" | "failed";
 }
 
-export const DEFAULT_SKILLSBENCH_CONFIG: SkillsBenchConfig = {
-  sourceUrl: "https://github.com/benchflow-ai/skillsbench.git",
+export const DEFAULT_SCIENTIFIC_SKILLS_CONFIG: ScientificSkillsConfig = {
+  sourceUrl: "https://github.com/K-Dense-AI/scientific-agent-skills.git",
   sourceRef: "HEAD",
   cadence: "weekly",
   skills: [
-    { id: "pdf", path: "tasks/pdf-excel-diff/environment/skills/pdf" },
-    { id: "xlsx", path: "tasks/pdf-excel-diff/environment/skills/xlsx" },
-    { id: "docx", path: "tasks/offer-letter-generator/environment/skills/docx" },
-    { id: "pptx", path: "tasks/pptx-reference-formatting/environment/skills/pptx" },
-    { id: "image-ocr", path: "tasks/jpg-ocr-stat/environment/skills/image-ocr" },
-    { id: "video-frame-extraction", path: "tasks/jpg-ocr-stat/environment/skills/video-frame-extraction" },
+    { id: "statistical-analysis", path: "skills/statistical-analysis" },
+    { id: "networkx", path: "skills/networkx" },
+    { id: "aeon", path: "skills/aeon" },
+    { id: "hypothesis-generation", path: "skills/hypothesis-generation" },
+    { id: "scientific-brainstorming", path: "skills/scientific-brainstorming" },
+    { id: "scientific-critical-thinking", path: "skills/scientific-critical-thinking" },
+    { id: "scientific-writing", path: "skills/scientific-writing" },
+    { id: "citation-management", path: "skills/citation-management" },
+    { id: "scientific-visualization", path: "skills/scientific-visualization" },
   ],
 };
 
-const MARKETPLACE_NAME = "skillsbench-standard";
-const PLUGIN_NAME = "standard-skills";
-const SCHEDULE_MARKER = "# openwolf-skillsbench-managed";
+const MARKETPLACE_NAME = "kdense-scientific";
+const PLUGIN_NAME = "scientific-skills";
+const SCHEDULE_MARKER = "# openwolf-kdense-scientific-managed";
 
 function homeDir(): string { return process.env.HOME || os.homedir(); }
-function stateDir(): string { return path.join(homeDir(), ".openwolf", "skillsbench"); }
-function checkoutDir(): string { return path.join(homeDir(), "projects", "skillsbench", "upstream"); }
+function stateDir(): string { return path.join(homeDir(), ".openwolf", "kdense-scientific"); }
+function checkoutDir(): string { return path.join(homeDir(), "projects", "kdense-scientific", "upstream"); }
 function configPath(): string { return path.join(stateDir(), "config.json"); }
 function lockPath(): string { return path.join(stateDir(), "lock.json"); }
 function releasesDir(): string { return path.join(stateDir(), "releases"); }
@@ -84,35 +87,35 @@ export function hashDirectory(root: string): string {
   return sha256(entries.join("\n"));
 }
 
-function validateConfig(value: unknown): SkillsBenchConfig {
-  const config = value as Partial<SkillsBenchConfig>;
+function validateConfig(value: unknown): ScientificSkillsConfig {
+  const config = value as Partial<ScientificSkillsConfig>;
   if (!config || typeof config.sourceUrl !== "string" || !config.sourceUrl || typeof config.sourceRef !== "string" || !Array.isArray(config.skills) || config.skills.length === 0) {
-    throw new Error("SkillsBench config is malformed.");
+    throw new Error("Scientific skills config is malformed.");
   }
   const seen = new Set<string>();
   for (const skill of config.skills) {
     if (!skill || typeof skill.id !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(skill.id) || typeof skill.path !== "string" || !skill.path || path.isAbsolute(skill.path) || skill.path.split(/[\\/]+/).includes("..") || seen.has(skill.id)) {
-      throw new Error("SkillsBench config has an invalid, duplicate, or escaping skill entry.");
+      throw new Error("Scientific skills config has an invalid, duplicate, or escaping skill entry.");
     }
     seen.add(skill.id);
   }
   return { sourceUrl: config.sourceUrl, sourceRef: config.sourceRef, cadence: "weekly", skills: config.skills.map(skill => ({ id: skill.id, path: skill.path })) };
 }
 
-function loadConfig(create: boolean): SkillsBenchConfig {
+function loadConfig(create: boolean): ScientificSkillsConfig {
   if (!fs.existsSync(configPath())) {
-    if (!create) return clone(DEFAULT_SKILLSBENCH_CONFIG);
+    if (!create) return clone(DEFAULT_SCIENTIFIC_SKILLS_CONFIG);
     fs.mkdirSync(stateDir(), { recursive: true });
-    if (!tryWriteJSON(configPath(), DEFAULT_SKILLSBENCH_CONFIG)) throw new Error("Could not write SkillsBench configuration.");
+    if (!tryWriteJSON(configPath(), DEFAULT_SCIENTIFIC_SKILLS_CONFIG)) throw new Error("Could not write Scientific skills configuration.");
   }
-  return validateConfig(readJSON<unknown>(configPath(), DEFAULT_SKILLSBENCH_CONFIG));
+  return validateConfig(readJSON<unknown>(configPath(), DEFAULT_SCIENTIFIC_SKILLS_CONFIG));
 }
 
 function git(args: string[], cwd?: string): string {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 }
 
-function ensureCheckout(config: SkillsBenchConfig): string {
+function ensureCheckout(config: ScientificSkillsConfig): string {
   const checkout = checkoutDir();
   if (!fs.existsSync(checkout)) {
     fs.mkdirSync(path.dirname(checkout), { recursive: true });
@@ -120,7 +123,7 @@ function ensureCheckout(config: SkillsBenchConfig): string {
     // always resolved below, including when it is a tag or a commit SHA.
     git(["clone", "--no-checkout", config.sourceUrl, checkout]);
   } else if (!fs.existsSync(path.join(checkout, ".git"))) {
-    throw new Error(`SkillsBench checkout path is not a Git checkout: ${checkout}`);
+    throw new Error(`Scientific skills checkout path is not a Git checkout: ${checkout}`);
   }
   git(["fetch", "--depth", "1", "origin", config.sourceRef], checkout);
   const revision = git(["rev-parse", "FETCH_HEAD^{commit}"], checkout);
@@ -128,7 +131,7 @@ function ensureCheckout(config: SkillsBenchConfig): string {
   return revision;
 }
 
-function validateSkill(checkout: string, skill: { id: string; path: string }): SkillLock {
+function validateSkill(checkout: string, skill: { id: string; path: string }): ScientificSkillLock {
   const source = path.resolve(checkout, skill.path);
   if (!isInside(checkout, source) || !fs.statSync(source).isDirectory()) throw new Error(`Skill ${skill.id} path is missing or escapes the checkout.`);
   const skillMd = path.join(source, "SKILL.md");
@@ -169,12 +172,12 @@ function replaceSymlink(target: string, destination: string): SymlinkReplacement
   };
 }
 
-function releaseKey(commit: string, skills: SkillLock[]): string {
+function releaseKey(commit: string, skills: ScientificSkillLock[]): string {
   const manifest = skills.map(skill => [skill.id, skill.path, skill.hash]).sort((a, b) => a[0].localeCompare(b[0]));
   return `${commit}-${sha256(JSON.stringify(manifest)).slice(0, 16)}`;
 }
 
-function buildRelease(checkout: string, commit: string, skills: SkillLock[]): { path: string; key: string } {
+function buildRelease(checkout: string, commit: string, skills: ScientificSkillLock[]): { path: string; key: string } {
   const key = releaseKey(commit, skills);
   const release = path.join(releasesDir(), key);
   const staging = `${release}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.staging`;
@@ -184,9 +187,9 @@ function buildRelease(checkout: string, commit: string, skills: SkillLock[]): { 
     for (const skill of skills) safeCopyDir(path.join(checkout, skill.path), path.join(pluginRoot, "skills", skill.id), () => true);
     fs.mkdirSync(path.join(pluginRoot, ".claude-plugin"), { recursive: true });
     const pluginVersion = `0.1.0+${commit.slice(0, 12)}`;
-    fs.writeFileSync(path.join(pluginRoot, ".claude-plugin", "plugin.json"), JSON.stringify({ name: PLUGIN_NAME, version: pluginVersion, description: "Selected SkillsBench standard skills", metadata: { skillsbenchCommit: commit } }, null, 2) + "\n");
+    fs.writeFileSync(path.join(pluginRoot, ".claude-plugin", "plugin.json"), JSON.stringify({ name: PLUGIN_NAME, version: pluginVersion, description: "Selected K-Dense scientific skills", metadata: { scientificSkillsCommit: commit } }, null, 2) + "\n");
     fs.mkdirSync(path.join(staging, "marketplace", ".claude-plugin"), { recursive: true });
-    fs.writeFileSync(path.join(staging, "marketplace", ".claude-plugin", "marketplace.json"), JSON.stringify({ name: MARKETPLACE_NAME, owner: { name: "OpenWolf" }, metadata: { description: "Locally generated SkillsBench standard skills", skillsbenchCommit: commit }, plugins: [{ name: PLUGIN_NAME, source: `./plugins/${PLUGIN_NAME}`, version: pluginVersion }] }, null, 2) + "\n");
+    fs.writeFileSync(path.join(staging, "marketplace", ".claude-plugin", "marketplace.json"), JSON.stringify({ name: MARKETPLACE_NAME, owner: { name: "OpenWolf" }, metadata: { description: "Locally generated K-Dense scientific skills", scientificSkillsCommit: commit }, plugins: [{ name: PLUGIN_NAME, source: `./plugins/${PLUGIN_NAME}`, version: pluginVersion }] }, null, 2) + "\n");
     fs.writeFileSync(path.join(staging, "release.json"), JSON.stringify({ commit, skills }, null, 2) + "\n");
     for (const skill of skills) {
       const copied = path.join(pluginRoot, "skills", skill.id);
@@ -238,7 +241,7 @@ function ensurePluginRegistration(): void {
   if (!listed.includes(id)) {
     const added = run(["plugin", "marketplace", "add", marketplaceLink()], true);
     if (!added.includes(MARKETPLACE_NAME) && !added.toLowerCase().includes("already")) {
-      throw new Error(`Could not register SkillsBench marketplace: ${added.trim()}`);
+      throw new Error(`Could not register Scientific skills marketplace: ${added.trim()}`);
     }
     run(["plugin", "install", id, "--scope", "user"]);
   } else {
@@ -249,12 +252,12 @@ function ensurePluginRegistration(): void {
 function shellQuote(value: string): string { return `'${value.replace(/'/g, `'"'"'`)}'`; }
 
 export function buildScheduledCommand(executable: string, entrypoint: string, logPath: string): string {
-  return `${shellQuote(executable)} ${shellQuote(entrypoint)} skills update --quiet >> ${shellQuote(logPath)} 2>&1`;
+  return `${shellQuote(executable)} ${shellQuote(entrypoint)} skills scientific update --quiet >> ${shellQuote(logPath)} 2>&1`;
 }
 
 export function managedCron(crontab: string, command: string, present: boolean): string {
   const lines = crontab.split("\n").filter(line => !line.includes(SCHEDULE_MARKER));
-  if (present) lines.push(`17 4 * * 1 ${command.replace(/%/g, "\\%")} ${SCHEDULE_MARKER}`);
+  if (present) lines.push(`23 4 * * 1 ${command.replace(/%/g, "\\%")} ${SCHEDULE_MARKER}`);
   return `${lines.filter(Boolean).join("\n")}\n`;
 }
 
@@ -267,7 +270,7 @@ function installSchedule(present: boolean): string {
   const command = buildScheduledCommand(process.execPath, path.resolve(process.argv[1] || "openwolf"), path.join(logDir, "weekly.log"));
   const next = managedCron(existing.status === 0 ? existing.stdout : "", command, present);
   const applied = spawnSync("crontab", ["-"], { input: next, encoding: "utf8" });
-  if (applied.status !== 0) throw new Error(`Could not update SkillsBench crontab entry: ${applied.stderr.trim()}`);
+  if (applied.status !== 0) throw new Error(`Could not update Scientific skills crontab entry: ${applied.stderr.trim()}`);
   return present ? "weekly crontab installed" : "weekly crontab removed";
 }
 
@@ -276,11 +279,11 @@ function prerequisiteStatus(): Record<string, boolean> {
   return { git: available("git"), python: available("python3"), tesseract: available("tesseract"), ffmpeg: available("ffmpeg", "-version") };
 }
 
-export async function skillsUpdate(options: { dryRun?: boolean; quiet?: boolean; schedule?: boolean } = {}): Promise<void> {
+export async function scientificSkillsUpdate(options: { dryRun?: boolean; quiet?: boolean; schedule?: boolean } = {}): Promise<void> {
   const dryRun = options.dryRun === true;
   const config = loadConfig(!dryRun);
   if (dryRun) {
-    console.log(`Would fetch ${config.sourceUrl} and validate ${config.skills.length} configured SkillsBench skills.`);
+    console.log(`Would fetch ${config.sourceUrl} and validate ${config.skills.length} configured Scientific skills skills.`);
     return;
   }
   const transactionLock = path.join(stateDir(), ".update.lock");
@@ -290,12 +293,12 @@ export async function skillsUpdate(options: { dryRun?: boolean; quiet?: boolean;
     lockHandle = fs.openSync(transactionLock, "wx");
     fs.writeFileSync(lockHandle, `${process.pid}\n`);
   } catch {
-    throw new Error("Another SkillsBench update is already running.");
+    throw new Error("Another Scientific skills update is already running.");
   }
   try {
     const commit = ensureCheckout(config);
     const skills = config.skills.map(skill => validateSkill(checkoutDir(), skill));
-    const prior = readJSON<SkillsBenchLock | null>(lockPath(), null);
+    const prior = readJSON<ScientificSkillsLock | null>(lockPath(), null);
     const release = buildRelease(checkoutDir(), commit, skills);
     const activation = activateRelease(release.path);
     try {
@@ -305,12 +308,12 @@ export async function skillsUpdate(options: { dryRun?: boolean; quiet?: boolean;
       throw error;
     }
     activation.commit();
-    const lock: SkillsBenchLock = { version: 1, commit, activeRelease: release.key, releaseKey: release.key, previousRelease: prior?.activeRelease, skills, updatedAt: new Date().toISOString(), lastResult: "ok" };
-    if (!tryWriteJSON(lockPath(), lock)) throw new Error("Could not write SkillsBench lock.");
+    const lock: ScientificSkillsLock = { version: 1, commit, activeRelease: release.key, releaseKey: release.key, previousRelease: prior?.activeRelease, skills, updatedAt: new Date().toISOString(), lastResult: "ok" };
+    if (!tryWriteJSON(lockPath(), lock)) throw new Error("Could not write Scientific skills lock.");
     if (options.schedule) installSchedule(true);
-    if (!options.quiet) console.log(`Activated SkillsBench release ${commit.slice(0, 12)} with ${skills.length} skills.`);
+    if (!options.quiet) console.log(`Activated Scientific skills release ${commit.slice(0, 12)} with ${skills.length} skills.`);
   } catch (error) {
-    const prior = readJSON<SkillsBenchLock | null>(lockPath(), null);
+    const prior = readJSON<ScientificSkillsLock | null>(lockPath(), null);
     if (prior) tryWriteJSON(lockPath(), { ...prior, lastResult: "failed", updatedAt: new Date().toISOString() });
     if (options.quiet) process.exitCode = 1;
     else throw error;
@@ -320,14 +323,14 @@ export async function skillsUpdate(options: { dryRun?: boolean; quiet?: boolean;
   }
 }
 
-export async function skillsInit(options: { dryRun?: boolean; quiet?: boolean } = {}): Promise<void> {
-  await skillsUpdate({ ...options, schedule: !options.dryRun });
+export async function scientificSkillsInit(options: { dryRun?: boolean; quiet?: boolean } = {}): Promise<void> {
+  await scientificSkillsUpdate({ ...options, schedule: !options.dryRun });
 }
 
-export function skillsStatus(): void {
+export function scientificSkillsStatus(): void {
   const config = loadConfig(false);
-  const lock = readJSON<SkillsBenchLock | null>(lockPath(), null);
-  console.log(`SkillsBench source: ${config.sourceUrl}`);
+  const lock = readJSON<ScientificSkillsLock | null>(lockPath(), null);
+  console.log(`Scientific skills source: ${config.sourceUrl}`);
   console.log(`Selected skills: ${config.skills.map(skill => skill.id).join(", ")}`);
   console.log(`Active release: ${lock?.activeRelease || "none"}`);
   console.log(`Previous release: ${lock?.previousRelease || "none"}`);
@@ -335,34 +338,34 @@ export function skillsStatus(): void {
   console.log(`Prerequisites: ${Object.entries(prerequisiteStatus()).map(([name, available]) => `${name}=${available ? "available" : "missing"}`).join(", ")}`);
 }
 
-export function skillsDoctor(): void {
-  const lock = readJSON<SkillsBenchLock | null>(lockPath(), null);
-  if (!lock) throw new Error("No active SkillsBench release. Run 'openwolf skills init'.");
+export function scientificSkillsDoctor(): void {
+  const lock = readJSON<ScientificSkillsLock | null>(lockPath(), null);
+  if (!lock) throw new Error("No active Scientific skills release. Run 'openwolf skills scientific init'.");
   const release = path.join(releasesDir(), lock.activeRelease);
-  if (!fs.existsSync(release) || !fs.existsSync(path.join(release, "marketplace", ".claude-plugin", "marketplace.json"))) throw new Error("Active SkillsBench release is incomplete.");
+  if (!fs.existsSync(release) || !fs.existsSync(path.join(release, "marketplace", ".claude-plugin", "marketplace.json"))) throw new Error("Active Scientific skills release is incomplete.");
   for (const skill of lock.skills) {
     const installed = path.join(release, "marketplace", "plugins", PLUGIN_NAME, "skills", skill.id);
     if (!fs.existsSync(installed) || hashDirectory(installed) !== skill.hash) throw new Error(`Installed skill hash mismatch: ${skill.id}`);
   }
-  if (!fs.existsSync(marketplaceLink()) || !fs.lstatSync(marketplaceLink()).isSymbolicLink()) throw new Error("Generated SkillsBench marketplace is not active.");
+  if (!fs.existsSync(marketplaceLink()) || !fs.lstatSync(marketplaceLink()).isSymbolicLink()) throw new Error("Generated Scientific skills marketplace is not active.");
   if (process.env.OPENWOLF_SKILLSBENCH_SKIP_PLUGIN_CLI !== "1") {
     const installed = spawnSync(process.env.OPENWOLF_CLAUDE_BIN || "claude", ["plugin", "list"], { encoding: "utf8" });
     if (installed.error || installed.status !== 0 || !installed.stdout.includes(`${PLUGIN_NAME}@${MARKETPLACE_NAME}`)) {
-      throw new Error("SkillsBench plugin is not registered with Claude Code.");
+      throw new Error("Scientific skills plugin is not registered with Claude Code.");
     }
   }
-  console.log(`SkillsBench doctor: healthy (${lock.skills.length} skills; ${lock.commit.slice(0, 12)}).`);
+  console.log(`Scientific skills doctor: healthy (${lock.skills.length} skills; ${lock.commit.slice(0, 12)}).`);
 }
 
-export function skillsRollback(revision?: string): void {
-  const lock = readJSON<SkillsBenchLock | null>(lockPath(), null);
-  if (!lock) throw new Error("No SkillsBench release to roll back.");
+export function scientificSkillsRollback(revision?: string): void {
+  const lock = readJSON<ScientificSkillsLock | null>(lockPath(), null);
+  if (!lock) throw new Error("No Scientific skills release to roll back.");
   const target = revision || lock.previousRelease;
-  if (!target || !/^[0-9a-f]{7,64}(?:-[0-9a-f]{16})?$/i.test(target)) throw new Error("No valid previous SkillsBench release is available.");
+  if (!target || !/^[0-9a-f]{7,64}(?:-[0-9a-f]{16})?$/i.test(target)) throw new Error("No valid previous Scientific skills release is available.");
   const release = path.join(releasesDir(), target);
-  if (!fs.existsSync(release)) throw new Error(`SkillsBench release not found: ${target}`);
-  const releaseMetadata = readJSON<{ commit: string; skills: SkillLock[] } | null>(path.join(release, "release.json"), null);
-  if (!releaseMetadata) throw new Error(`SkillsBench release metadata missing: ${target}`);
+  if (!fs.existsSync(release)) throw new Error(`Scientific skills release not found: ${target}`);
+  const releaseMetadata = readJSON<{ commit: string; skills: ScientificSkillLock[] } | null>(path.join(release, "release.json"), null);
+  if (!releaseMetadata) throw new Error(`Scientific skills release metadata missing: ${target}`);
   const activation = activateRelease(release);
   try {
     ensurePluginRegistration();
@@ -371,8 +374,8 @@ export function skillsRollback(revision?: string): void {
     throw error;
   }
   activation.commit();
-  if (!tryWriteJSON(lockPath(), { ...lock, commit: releaseMetadata.commit, skills: releaseMetadata.skills, activeRelease: target, releaseKey: target, previousRelease: lock.activeRelease, updatedAt: new Date().toISOString(), lastResult: "ok" })) throw new Error("Could not update SkillsBench lock after rollback.");
-  console.log(`Rolled back SkillsBench to ${target.slice(0, 12)}.`);
+  if (!tryWriteJSON(lockPath(), { ...lock, commit: releaseMetadata.commit, skills: releaseMetadata.skills, activeRelease: target, releaseKey: target, previousRelease: lock.activeRelease, updatedAt: new Date().toISOString(), lastResult: "ok" })) throw new Error("Could not update Scientific skills lock after rollback.");
+  console.log(`Rolled back Scientific skills to ${target.slice(0, 12)}.`);
 }
 
-export function skillsRemoveSchedule(): void { console.log(installSchedule(false)); }
+export function scientificSkillsRemoveSchedule(): void { console.log(installSchedule(false)); }

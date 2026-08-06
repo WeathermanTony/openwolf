@@ -56,7 +56,12 @@ test('fresh init installs the managed quality-reduction skill and ESM utility sc
 
     const installed = path.join(project, '.claude', 'skills', 'quality-reduction', 'SKILL.md');
     assert.equal(await readFile(installed, 'utf8'), await readFile(template, 'utf8'));
-    for (const external of ['pdf', 'xlsx', 'docx', 'pptx', 'image-ocr', 'video-frame-extraction']) {
+    for (const external of [
+      'pdf', 'xlsx', 'docx', 'pptx', 'image-ocr', 'video-frame-extraction',
+      'statistical-analysis', 'networkx', 'aeon', 'hypothesis-generation',
+      'scientific-brainstorming', 'scientific-critical-thinking',
+      'scientific-writing', 'citation-management', 'scientific-visualization'
+    ]) {
       assert.equal(existsSync(path.join(project, '.claude', 'skills', external)), false, `${external} must remain user-scope, not project-managed`);
     }
     assert.deepEqual(JSON.parse(await readFile(path.join(project, '.wolf', 'utils', 'package.json'), 'utf8')), { type: 'module' });

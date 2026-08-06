@@ -9,14 +9,14 @@ import { execFileSync, spawnSync } from 'node:child_process';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const cli = path.join(root, 'dist', 'bin', 'openwolf.js');
-const ids = ['pdf', 'xlsx', 'docx', 'pptx', 'image-ocr', 'video-frame-extraction'];
+const ids = ['statistical-analysis', 'networkx', 'aeon', 'hypothesis-generation', 'scientific-brainstorming', 'scientific-critical-thinking', 'scientific-writing', 'citation-management', 'scientific-visualization'];
 
 function git(args, cwd) {
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 }
 
 function run(args, home, ok = true) {
-  const result = spawnSync(process.execPath, [cli, 'skills', ...args], {
+  const result = spawnSync(process.execPath, [cli, 'skills', 'scientific', ...args], {
     cwd: tmpdir(),
     env: { ...process.env, HOME: home, OPENWOLF_SKILLSBENCH_DISABLE_SCHEDULE: '1', OPENWOLF_SKILLSBENCH_SKIP_PLUGIN_CLI: '1' },
     encoding: 'utf8',
@@ -35,7 +35,7 @@ async function addSkill(repo, id, body = 'body') {
 }
 
 async function sourceRepository() {
-  const repo = await fixture('skillsbench-source-');
+  const repo = await fixture('scientific-skills-source-');
   git(['init'], repo);
   git(['config', 'user.email', 'fixture@example.test'], repo);
   git(['config', 'user.name', 'Fixture'], repo);
@@ -46,14 +46,14 @@ async function sourceRepository() {
 }
 
 async function configure(home, source) {
-  const dir = path.join(home, '.openwolf', 'skillsbench');
+  const dir = path.join(home, '.openwolf', 'kdense-scientific');
   await mkdir(dir, { recursive: true });
   const skills = ids.map(id => ({ id, path: `tasks/fixtures/environment/skills/${id}` }));
   await writeFile(path.join(dir, 'config.json'), JSON.stringify({ sourceUrl: source, sourceRef: 'HEAD', cadence: 'weekly', skills }, null, 2));
 }
 
-test('SkillsBench manager creates an atomic plugin release without touching unrelated marketplace state', async () => {
-  const home = await fixture('skillsbench-home-');
+test('Scientific skills manager creates an atomic plugin release without touching unrelated marketplace state', async () => {
+  const home = await fixture('scientific-skills-home-');
   const source = await sourceRepository();
   try {
     await configure(home, source);
@@ -62,25 +62,25 @@ test('SkillsBench manager creates an atomic plugin release without touching unre
     await writeFile(unrelated, 'unchanged');
 
     run(['update', '--dry-run'], home);
-    assert.equal(existsSync(path.join(home, 'projects', 'skillsbench', 'upstream')), false, 'dry-run must not clone or write state');
+    assert.equal(existsSync(path.join(home, 'projects', 'kdense-scientific', 'upstream')), false, 'dry-run must not clone or write state');
 
     run(['init'], home);
-    const lockPath = path.join(home, '.openwolf', 'skillsbench', 'lock.json');
+    const lockPath = path.join(home, '.openwolf', 'kdense-scientific', 'lock.json');
     const lock = JSON.parse(await readFile(lockPath, 'utf8'));
-    assert.equal(lock.skills.length, 6);
+    assert.equal(lock.skills.length, 9);
     assert.match(lock.commit, /^[0-9a-f]{40}$/);
-    const manifest = JSON.parse(await readFile(path.join(home, '.openwolf', 'skillsbench', 'releases', lock.activeRelease, 'marketplace', 'plugins', 'standard-skills', '.claude-plugin', 'plugin.json'), 'utf8'));
+    const manifest = JSON.parse(await readFile(path.join(home, '.openwolf', 'kdense-scientific', 'releases', lock.activeRelease, 'marketplace', 'plugins', 'scientific-skills', '.claude-plugin', 'plugin.json'), 'utf8'));
     assert.match(manifest.version, /^0\.1\.0\+[0-9a-f]{12}$/);
-    assert.equal(manifest.metadata.skillsbenchCommit, lock.commit);
-    const marketplace = path.join(home, '.claude', 'plugins', 'marketplaces', 'skillsbench-standard');
+    assert.equal(manifest.metadata.scientificSkillsCommit, lock.commit);
+    const marketplace = path.join(home, '.claude', 'plugins', 'marketplaces', 'kdense-scientific');
     assert.equal(lstatSync(marketplace).isSymbolicLink(), true);
     assert.equal(await readFile(unrelated, 'utf8'), 'unchanged');
-    for (const id of ids) assert.equal(existsSync(path.join(home, '.openwolf', 'skillsbench', 'releases', lock.activeRelease, 'marketplace', 'plugins', 'standard-skills', 'skills', id, 'SKILL.md')), true);
+    for (const id of ids) assert.equal(existsSync(path.join(home, '.openwolf', 'kdense-scientific', 'releases', lock.activeRelease, 'marketplace', 'plugins', 'scientific-skills', 'skills', id, 'SKILL.md')), true);
     run(['doctor'], home);
-    const active = path.join(home, '.openwolf', 'skillsbench', 'active');
+    const active = path.join(home, '.openwolf', 'kdense-scientific', 'active');
     assert.equal(lstatSync(active).isSymbolicLink(), true);
 
-    const configPath = path.join(home, '.openwolf', 'skillsbench', 'config.json');
+    const configPath = path.join(home, '.openwolf', 'kdense-scientific', 'config.json');
     const config = JSON.parse(await readFile(configPath, 'utf8'));
     config.skills = config.skills.slice(0, 5);
     await writeFile(configPath, JSON.stringify(config));
@@ -93,7 +93,7 @@ test('SkillsBench manager creates an atomic plugin release without touching unre
     config.skills = ids.map(id => ({ id, path: `tasks/fixtures/environment/skills/${id}` }));
     await writeFile(configPath, JSON.stringify(config));
 
-    await writeFile(path.join(source, 'tasks', 'fixtures', 'environment', 'skills', 'pdf', 'SKILL.md'), '---\nname: pdf\ndescription: changed\n---\nupdated\n');
+    await writeFile(path.join(source, 'tasks', 'fixtures', 'environment', 'skills', 'statistical-analysis', 'SKILL.md'), '---\nname: statistical-analysis\ndescription: changed\n---\nupdated\n');
     git(['add', '.'], source);
     git(['commit', '-m', 'second'], source);
     run(['update'], home);
@@ -112,12 +112,12 @@ test('SkillsBench manager creates an atomic plugin release without touching unre
   }
 });
 
-test('SkillsBench rejects symlinks in selected skill trees before release activation', async () => {
-  const home = await fixture('skillsbench-symlink-home-');
+test('Scientific skills rejects symlinks in selected skill trees before release activation', async () => {
+  const home = await fixture('scientific-skills-symlink-home-');
   const source = await sourceRepository();
   try {
     await configure(home, source);
-    const skillDir = path.join(source, 'tasks', 'fixtures', 'environment', 'skills', 'pdf');
+    const skillDir = path.join(source, 'tasks', 'fixtures', 'environment', 'skills', 'statistical-analysis');
     await writeFile(path.join(source, 'outside.txt'), 'not a skill file');
     await new Promise((resolve, reject) => {
       import('node:fs').then(({ symlink }) => symlink('../outside.txt', path.join(skillDir, 'escape-link'), error => error ? reject(error) : resolve()));
@@ -126,34 +126,34 @@ test('SkillsBench rejects symlinks in selected skill trees before release activa
     git(['commit', '-m', 'symlink fixture'], source);
     const result = run(['update'], home, false);
     assert.notEqual(result.status, 0);
-    assert.equal(existsSync(path.join(home, '.openwolf', 'skillsbench', 'lock.json')), false);
+    assert.equal(existsSync(path.join(home, '.openwolf', 'kdense-scientific', 'lock.json')), false);
   } finally {
     await rm(home, { recursive: true, force: true });
     await rm(source, { recursive: true, force: true });
   }
 });
 
-test('SkillsBench rejects a mismatched frontmatter name and preserves no release', async () => {
-  const home = await fixture('skillsbench-name-home-');
+test('Scientific skills rejects a mismatched frontmatter name and preserves no release', async () => {
+  const home = await fixture('scientific-skills-name-home-');
   const source = await sourceRepository();
   try {
     await configure(home, source);
-    await writeFile(path.join(source, 'tasks', 'fixtures', 'environment', 'skills', 'pdf', 'SKILL.md'), '---\nname: wrong-name\n---\n');
+    await writeFile(path.join(source, 'tasks', 'fixtures', 'environment', 'skills', 'statistical-analysis', 'SKILL.md'), '---\nname: wrong-name\n---\n');
     git(['add', '.'], source);
     git(['commit', '-m', 'mismatched name'], source);
     const result = run(['update'], home, false);
     assert.notEqual(result.status, 0);
-    assert.equal(existsSync(path.join(home, '.openwolf', 'skillsbench', 'lock.json')), false);
+    assert.equal(existsSync(path.join(home, '.openwolf', 'kdense-scientific', 'lock.json')), false);
   } finally {
     await rm(home, { recursive: true, force: true });
     await rm(source, { recursive: true, force: true });
   }
 });
 
-test('SkillsBench cron quoting executes with apostrophes in executable and HOME paths', async () => {
-  const fixtureRoot = await fixture("skillsbench-o'brien-$HOME-%cron-");
+test('Scientific skills cron quoting executes with apostrophes in executable and HOME paths', async () => {
+  const fixtureRoot = await fixture("scientific-skills-o'brien-$HOME-%cron-");
   try {
-    const module = await import('../dist/src/cli/skillsbench.js');
+    const module = await import('../dist/src/cli/scientific-skills.js');
     const executable = path.join(fixtureRoot, "n'ode-$USER");
     const entrypoint = path.join(fixtureRoot, "open'wolf-$(id -u).js");
     const logPath = path.join(fixtureRoot, "week'ly-$HOME.log");
@@ -163,40 +163,24 @@ test('SkillsBench cron quoting executes with apostrophes in executable and HOME 
     assert.match(module.managedCron('', command, true), /\\%cron/);
     const executed = spawnSync('/bin/sh', ['-c', command], { encoding: 'utf8' });
     assert.equal(executed.status, 0, executed.stderr);
-    assert.equal(await readFile(logPath, 'utf8'), `${entrypoint}\nskills\nupdate\n--quiet\n`);
+    assert.equal(await readFile(logPath, 'utf8'), `${entrypoint}\nskills\nscientific\nupdate\n--quiet\n`);
   } finally {
     await rm(fixtureRoot, { recursive: true, force: true });
   }
 });
 
-test('OpenWolf init refuses to synthesize a missing required protocol template', async () => {
-  const templates = await fixture('openwolf-missing-templates-');
-  const wolf = await fixture('openwolf-missing-protocol-');
-  try {
-    const module = await import('../dist/src/cli/init.js');
-    assert.throws(
-      () => module.writeTemplateFile(templates, wolf, 'OPENWOLF.md'),
-      /Required OpenWolf protocol template missing/
-    );
-    assert.equal(existsSync(path.join(wolf, 'OPENWOLF.md')), false);
-  } finally {
-    await rm(templates, { recursive: true, force: true });
-    await rm(wolf, { recursive: true, force: true });
-  }
-});
-
-test('SkillsBench rejects path-escaping configuration and preserves no release', async () => {
-  const home = await fixture('skillsbench-invalid-home-');
+test('Scientific skills rejects path-escaping configuration and preserves no release', async () => {
+  const home = await fixture('scientific-skills-invalid-home-');
   const source = await sourceRepository();
   try {
     await configure(home, source);
-    const configPath = path.join(home, '.openwolf', 'skillsbench', 'config.json');
+    const configPath = path.join(home, '.openwolf', 'kdense-scientific', 'config.json');
     const config = JSON.parse(await readFile(configPath, 'utf8'));
     config.skills[0].path = '../escape';
     await writeFile(configPath, JSON.stringify(config));
     const result = run(['update'], home, false);
     assert.notEqual(result.status, 0);
-    assert.equal(existsSync(path.join(home, '.openwolf', 'skillsbench', 'lock.json')), false);
+    assert.equal(existsSync(path.join(home, '.openwolf', 'kdense-scientific', 'lock.json')), false);
   } finally {
     await rm(home, { recursive: true, force: true });
     await rm(source, { recursive: true, force: true });
