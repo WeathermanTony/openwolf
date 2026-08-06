@@ -819,3 +819,4 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 14:06 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 14:07 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 14:08 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 14:21 | Refreshed all four release QA reductions to final source hashes, reran falsifiers, and corrected amended bug commit references | .wolf/qa/managed-skill-*.md, .wolf/qa/fresh-init-utils-module.md, .wolf/buglog.json | 4/4 release targets current; focused tests 4/4 and install verifier pass | ~1800 |

@@ -71,6 +71,8 @@
 - `index.ts` — Exports createProgram (~2749 tok)
 - `init.ts` — Exports initCommand; installs managed Claude skills and fresh hook/runtime payloads (~10700 tok)
 - `managed-skills.ts` — Explicit ownership manifest plus install/backup/restore helpers for Wolfpack-managed Claude skill files (~450 tok)
+- `.wolf/qa/managed-skill-update.md` — Current-byte falsification evidence for scoped update, atomic backups, review-history preservation, and restore symmetry (~500 tok)
+- `.wolf/qa/managed-skill-package-verifier.md` — Current-byte package/fresh-init verifier evidence for managed skill distribution and receipt hygiene (~450 tok)
 - `nudge-cmd.ts` — Exports nudgeList, nudgeShow, nudgeResolve, nudgeDismiss, nudgeSnooze, nudgeStats (~1500 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~1161 tok)
