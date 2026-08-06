@@ -4751,6 +4751,46 @@
       "last_seen": "2026-08-06T21:40:52.067Z",
       "commit": "f1b8d49",
       "reduction": ".wolf/qa/scientific-skills-manager.md"
+    },
+    {
+      "id": "bug-532",
+      "timestamp": "2026-08-06T21:46:00.000Z",
+      "error_message": "Canary verification failed with ENOENT because it assumed deployed projects contain .wolf/VERSION.",
+      "file": ".wolf/VERSION",
+      "root_cause": "OpenWolf records rollout versions in its registry/update summary; the project payload does not include a .wolf/VERSION file.",
+      "fix": "Verified the canary through the successful update summary, compact Standard Skills guidance, and absence of all 15 external skill IDs under project .claude/skills instead of reading a nonexistent file.",
+      "status": "resolved",
+      "tags": [
+        "deployment",
+        "canary",
+        "verification",
+        "missing-file"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T21:46:00.000Z",
+      "commit": null,
+      "reduction": "node dist/bin/openwolf.js update --project testmini; bounded Node check of testmini/.wolf/OPENWOLF.md and testmini/.claude/skills"
+    },
+    {
+      "id": "bug-533",
+      "timestamp": "2026-08-06T21:46:00.000Z",
+      "error_message": "Fleet update rewrote customopenwolf/.wolf/hooks/shared.js from generated TypeScript output, leaving formatting-only working-tree drift.",
+      "file": ".wolf/hooks/shared.js",
+      "root_cause": "The registered fleet includes the source repository itself, so deployment refreshes its installed runtime hook even when the tracked source copy differs only in generated formatting.",
+      "fix": "Compared the diff, confirmed it was formatting/source-map-only generated drift, and restored the tracked file to its committed bytes after fleet deployment.",
+      "status": "resolved",
+      "tags": [
+        "deployment",
+        "fleet",
+        "generated-hook",
+        "working-tree"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T21:46:00.000Z",
+      "commit": null,
+      "reduction": "git diff -- .wolf/hooks/shared.js followed by git show HEAD:.wolf/hooks/shared.js restoration and clean-status check"
     }
   ]
 }
