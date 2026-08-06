@@ -4530,6 +4530,165 @@
       "last_seen": "2026-07-27T16:53:15.740Z",
       "commit": "7544508",
       "reduction": ".wolf/qa/nudge-obligation-scoping.md"
+    },
+    {
+      "id": "bug-521",
+      "timestamp": "2026-08-06T15:36:28Z",
+      "error_message": "npm run build was invoked from the driving skillsbench directory and failed with ENOENT because that directory has no package.json.",
+      "file": "package.json",
+      "root_cause": "The Bash tool retains the session working directory; the first build command omitted --prefix or an explicit customopenwolf working directory.",
+      "fix": "Re-ran the build with npm --prefix /mnt/j/projectshome/projects/customopenwolf run build, then used explicit absolute paths or cd for all remaining verification commands.",
+      "status": "resolved",
+      "tags": [
+        "verification",
+        "npm",
+        "working-directory",
+        "enoent"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T15:36:28Z",
+      "commit": null,
+      "reduction": ".wolf/qa/skill-receipt-contract.md"
+    },
+    {
+      "id": "bug-522",
+      "timestamp": "2026-08-06T16:05:00Z",
+      "error_message": "Skill receipts over absent tombstone inputs or empty manifests could validate and verify CURRENT with strong attestation.",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Strong attestation validation treated stable absence as valid byte identity and did not require any input artifacts.",
+      "fix": "Require at least one input for non-snapshot receipts, reject tombstone/unreadable inputs for manifest-bound or externally-verifiable attestations, and return MALFORMED for non-snapshot tombstone verification.",
+      "status": "resolved",
+      "tags": [
+        "skill-receipt",
+        "attestation",
+        "validation",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T16:05:00Z",
+      "commit": null,
+      "reduction": ".wolf/qa/skill-receipt-contract.md"
+    },
+    {
+      "id": "bug-523",
+      "timestamp": "2026-08-06T16:05:00Z",
+      "error_message": "makeArtifactManifest silently dropped declared files that lacked hash entries, allowing invisible receipt scope shrinkage.",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "The shared makeHashManifest compatibility helper filters files without hashes; the new generic builder inherited that permissive behavior.",
+      "fix": "Make the generic builder fail closed when any normalized declared artifact lacks a hash while preserving review helper compatibility.",
+      "status": "resolved",
+      "tags": [
+        "skill-receipt",
+        "attestation",
+        "validation",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T16:05:00Z",
+      "commit": null,
+      "reduction": ".wolf/qa/skill-receipt-contract.md"
+    },
+    {
+      "id": "bug-524",
+      "timestamp": "2026-08-06T16:05:00Z",
+      "error_message": "Skill receipt validation accepted malformed evidence entries and invalid or inverted timestamps.",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "The v1 validator checked only evidence array-ness and timestamp string types, not element shape, parseability, or ordering.",
+      "fix": "Validate non-empty evidence kind/value strings, require parseable receipt/invocation timestamps, and reject finished_at earlier than started_at.",
+      "status": "resolved",
+      "tags": [
+        "skill-receipt",
+        "attestation",
+        "validation",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T16:05:00Z",
+      "commit": null,
+      "reduction": ".wolf/qa/skill-receipt-contract.md"
+    },
+    {
+      "id": "bug-525",
+      "timestamp": "2026-08-06T17:36:09.887Z",
+      "error_message": "Fresh openwolf init copied ESM utility JavaScript into .wolf/utils without a local package.json declaring type=module.",
+      "file": "src/cli/init.ts",
+      "root_cause": "The init hook installer wrote .wolf/hooks/package.json but omitted the matching module boundary for sibling .wolf/utils; update.ts already had the required manifest and existing tests masked the fresh-init difference.",
+      "fix": "Write .wolf/utils/package.json with type=module during fresh init and exercise an actual fresh hook import in tests/skill-deployment.test.js.",
+      "status": "resolved",
+      "tags": [
+        "init",
+        "esm",
+        "utils",
+        "packaging"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T17:50:56.400Z",
+      "commit": "44ca69b",
+      "reduction": ".wolf/qa/managed-skill-deployment.md"
+    },
+    {
+      "id": "bug-526",
+      "timestamp": "2026-08-06T17:39:14.661Z",
+      "error_message": "wolfpack qa status --check exited 1 with 71 stale, 4 orphaned, and 12 broken historical reductions.",
+      "file": ".wolf/qa/",
+      "root_cause": "The repository contains long-standing historical QA reductions whose target bytes or required frontmatter no longer match; the release-specific reductions are current but --check reports aggregate repository state.",
+      "fix": "Verified the release-specific managed-skill, fresh-init-utils, and skill-receipt reductions separately as CURRENT; retained historical drift for a dedicated cleanup rather than rewriting unrelated evidence during this release.",
+      "status": "resolved",
+      "tags": [
+        "qa",
+        "historical-drift",
+        "release-validation"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T17:39:14.662Z",
+      "commit": null,
+      "reduction": ".wolf/qa/managed-skill-deployment.md"
+    },
+    {
+      "id": "bug-527",
+      "timestamp": "2026-08-06T17:44:27.999Z",
+      "error_message": "External review found same-minute backup directory collisions and reviewlog.json omission from update backups.",
+      "file": "src/cli/update.ts",
+      "root_cause": "Backup names used minute-granular timestamps without collision handling, and USER_DATA_FILES omitted reviewlog.json despite init treating it as durable user data.",
+      "fix": "Added collision-safe numeric suffixes, included reviewlog.json in backups, and added a two-update regression test that verifies distinct backups and preserved review history.",
+      "status": "resolved",
+      "tags": [
+        "backup",
+        "update",
+        "reviewlog",
+        "review-finding"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T17:50:56.401Z",
+      "commit": "44ca69b",
+      "reduction": ".wolf/qa/managed-skill-deployment.md"
+    },
+    {
+      "id": "bug-528",
+      "timestamp": "2026-08-06T17:44:27.999Z",
+      "error_message": "External review found restore could delete user edits to a managed skill when that file was absent at backup time.",
+      "file": "src/cli/managed-skills.ts",
+      "root_cause": "The absence marker was interpreted as authority to unlink the current managed path even though bytes created or edited after update were not present in the backup.",
+      "fix": "Restore now reinstates backed-up prior bytes; when the path was previously absent, it removes the current file only if those bytes still exactly match the trusted packaged template, preserving divergent post-update user edits. Regression coverage verifies unchanged introduced managed bytes are removed.",
+      "status": "resolved",
+      "tags": [
+        "restore",
+        "data-loss",
+        "managed-skills",
+        "review-finding"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-06T17:50:56.401Z",
+      "commit": "44ca69b",
+      "reduction": ".wolf/qa/managed-skill-deployment.md"
     }
   ]
 }

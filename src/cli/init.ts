@@ -10,6 +10,7 @@ import { isWindows } from "../utils/platform.js";
 import { registerProject } from "./registry.js";
 import { allocateProjectPorts, isPortFree } from "../utils/port-allocator.js";
 import { cleanupOpenWolfPm2, ensurePm2Daemon, hasOpenWolfPm2Daemon } from "./daemon-cmd.js";
+import { installManagedClaudeSkills } from "./managed-skills.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -190,6 +191,9 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
     writeJSON(settingsPath, HOOK_SETTINGS);
   }
 
+  // --- Managed Claude skills: always update exact Wolfpack-owned files ---
+  installManagedClaudeSkills(actualTemplatesDir, projectRoot);
+
   // --- Claude rules: always update ---
   const rulesDir = path.join(claudeDir, "rules");
   ensureDir(rulesDir);
@@ -305,17 +309,23 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
 
 // ─── Helpers ─────────────────────────────────────────────────
 
-function findTemplatesDir(): string {
-  const candidates = [
-    path.resolve(__dirname, "..", "..", "..", "src", "templates"),
-    path.resolve(__dirname, "..", "..", "src", "templates"),
-    path.resolve(__dirname, "..", "templates"),
-    path.resolve(__dirname, "templates"),
-  ];
-  for (const dir of candidates) {
-    if (fs.existsSync(dir)) return dir;
+export function findTemplatesDir(): string {
+  let current = __dirname;
+  while (true) {
+    const packagePath = path.join(current, "package.json");
+    if (fs.existsSync(packagePath)) {
+      const pkg = readJSON<{ name?: string }>(packagePath, {});
+      if (pkg.name === ["custom", "openwolf"].join("")) {
+        const templatesDir = path.join(current, "src", "templates");
+        if (fs.existsSync(templatesDir)) return templatesDir;
+        throw new Error(`OpenWolf templates missing from package root: ${templatesDir}`);
+      }
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
   }
-  return candidates[0]; // fallback — generateTemplate will handle missing files
+  throw new Error(`Could not resolve the Wolfpack package root from ${__dirname}`);
 }
 
 function writeTemplateFile(templatesDir: string, wolfDir: string, file: string): void {
@@ -533,7 +543,7 @@ export function generateTemplate(destPath: string, file: string): void {
     // src/templates/.gitignore. Without this, an upgrade on a packaging layout
     // missing the template would overwrite an existing .wolf/.gitignore with
     // zero bytes (companion review 2026-07-21, MEDIUM).
-    ".gitignore": `# Wolfpack-managed ignore policy for .wolf/ runtime state.\n# Durable knowledge stays trackable: OPENWOLF.md, cerebrum.md, memory.md,\n# anatomy.md, identity.md, config.json, buglog.json, qa/_README.md,\n# qa/_template.md. Everything below is churn/state — safe to ignore.\n\n*.log\n**/*.log\n*-state.json\n**/*-state.json\ncron-state.json\ncron-manifest.json\ntoken-ledger.json\ncerebrum-stats.json\nsuggestions.json\nreviewlog.json\ndesignqc-report.json\ndesignqc-captures/\n*.lock\n*.lock.reclaim\n**/*.lock\n**/*.lock.reclaim\nhooks/_session.json\nqa/_gate-log.json\nqa/*.md\n!qa/_README.md\n!qa/_template.md\nbackups/\nqueue-drops.json\nqueue-injections.json\narchive/\n`,
+    ".gitignore": `# Wolfpack-managed ignore policy for .wolf/ runtime state.\n# Durable knowledge stays trackable: OPENWOLF.md, cerebrum.md, memory.md,\n# anatomy.md, identity.md, config.json, buglog.json, qa/_README.md,\n# qa/_template.md. Everything below is churn/state — safe to ignore.\n\n*.log\n**/*.log\n*-state.json\n**/*-state.json\ncron-state.json\ncron-manifest.json\ntoken-ledger.json\ncerebrum-stats.json\nsuggestions.json\nreviewlog.json\nskill-receipts/\ndesignqc-report.json\ndesignqc-captures/\n*.lock\n*.lock.reclaim\n**/*.lock\n**/*.lock.reclaim\nhooks/_session.json\nqa/_gate-log.json\nqa/*.md\n!qa/_README.md\n!qa/_template.md\nbackups/\nqueue-drops.json\nqueue-injections.json\narchive/\n`,
   };
 
   const content = templates[file] ?? "";
@@ -638,6 +648,7 @@ function copyHookScripts(wolfDir: string): void {
           safeCopyFile(path.join(utilsSrcDir, entry), path.join(utilsDestDir, entry));
         }
       }
+      fs.writeFileSync(path.join(utilsDestDir, "package.json"), JSON.stringify({ type: "module" }, null, 2) + "\n", "utf-8");
     }
   } else if (fs.existsSync(srcHooksDir)) {
     // Dev mode: compile TS hooks inline using a simple copy with note.

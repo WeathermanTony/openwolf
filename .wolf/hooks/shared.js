@@ -708,6 +708,7 @@ const DEFAULT_GATE_EXCLUDES = [
     ...SCRATCH_PATH_EXCLUDES,
     ...WOLF_DOC_EXCLUDES,
 ];
+
 /**
  * Extensions whose correctness is *executable-checkable* — the property that
  * actually creates a bug-fix obligation.
@@ -756,6 +757,7 @@ const OBLIGATION_EXTENSION_REGISTRY = [
     // Solidity / other VM targets
     ".sol", ".move", ".cairo",
 ];
+
 /**
  * Resolve which extensions carry a bug-fix obligation *for this project*.
  *
@@ -964,6 +966,8 @@ const QUALITY_GATE_DEFAULTS = {
     retention_days: 30,
     verify_conclusions: VERIFY_CONCLUSIONS_DEFAULTS,
 };
+
+
 const HOOK_MESSAGE_DEFAULTS = {
     verbosity: "compact",
     reviewer_profile: "us-only",
@@ -971,6 +975,7 @@ const HOOK_MESSAGE_DEFAULTS = {
     include_provider_examples: false,
     include_docs_hint: true,
 };
+
 const AUTONOMY_CONTINUATION_DEFAULTS = {
     enabled: true,
     nudge_only: true,
@@ -1171,7 +1176,8 @@ export function carriesBugfixObligation(file, opts = {}) {
     // Test every supplied form and exclude if ANY matches: an exclude is a
     // statement that this file is uninteresting, and which spelling the caller
     // happens to hold should not change that.
-    const forms = [file, ...(opts.altPaths ?? [])].filter((p) => typeof p === "string" && p.length > 0);
+    const forms = [file, ...(opts.altPaths ?? [])].filter(
+        (p) => typeof p === "string" && p.length > 0);
     if (forms.some((p) => excludeRegexes.some((re) => re.test(p))))
         return false;
     const exts = opts.extensions;
@@ -1308,6 +1314,7 @@ export function readLastAssistantText(transcriptPath, maxBytes = 256 * 1024) {
         return null;
     }
 }
+
 const QUEUE_DROP_WATCH_DEFAULTS = {
     enabled: true,
     injection_reminder: true,
@@ -1495,6 +1502,7 @@ export function detectDroppedQueueMessages(transcriptPath, tailBytes = QUEUE_DRO
         return [];
     }
 }
+
 /**
  * Detect user messages the client INJECTED mid-turn (bug-434 revised: the
  * client does not discard queued messages — it delivers them as
@@ -1570,6 +1578,7 @@ export function detectMidturnInjections(transcriptPath, tailBytes = QUEUE_DROP_W
         return [];
     }
 }
+
 export function getHookMessageConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.hook_messages : undefined) ?? {};
@@ -1583,6 +1592,7 @@ export function getHookMessageConfig() {
         include_docs_hint: cfg.include_docs_hint ?? HOOK_MESSAGE_DEFAULTS.include_docs_hint,
     };
 }
+
 export function getReviewHookConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.review_hook : undefined) ?? {};
@@ -1685,6 +1695,7 @@ export function getClaimCalibrationConfig() {
 export function getScientificModeConfig() {
     return getClaimCalibrationConfig();
 }
+
 export function getQualityGateConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.quality_gate : undefined) ?? {};
@@ -1762,6 +1773,7 @@ export function hashFilesAtRest(files) {
     }
     return out;
 }
+
 export function makeHashManifest(files, hashes) {
     const normalizedFiles = [...new Set(files.map(normalizeFilePath))];
     return normalizedFiles
@@ -1773,6 +1785,183 @@ export function hashReviewManifest(files, hashes) {
     const manifest = makeHashManifest(files, hashes);
     return crypto.createHash("sha256").update(JSON.stringify(manifest)).digest("hex");
 }
+
+const SKILL_RECEIPT_STATUSES = new Set(["planned", "running", "succeeded", "failed", "cancelled"]);
+const SKILL_RECEIPT_OUTCOMES = new Set(["clean", "findings", "partial", "error", "unknown"]);
+const SKILL_RECEIPT_ATTESTATIONS = new Set(["snapshot", "self-asserted", "manifest-bound", "externally-verifiable"]);
+const HASH_VALUE_RE = /^[a-f0-9]{64}$/;
+
+export function makeArtifactManifest(files, hashes) {
+    const normalizedFiles = [...new Set(files.map(normalizeFilePath))];
+    const missing = normalizedFiles.filter((file) => !Object.prototype.hasOwnProperty.call(hashes, file));
+    if (missing.length)
+        throw new Error(`Missing hashes for declared artifacts: ${missing.join(", ")}`);
+    const entries = makeHashManifest(normalizedFiles, hashes);
+    const normalizedHashes = {};
+    for (const [file, hash] of entries)
+        normalizedHashes[file] = hash;
+    return {
+        version: 1,
+        hash_algorithm: "sha256",
+        manifest_algorithm: "sha256-json-v1",
+        manifest_hash: crypto.createHash("sha256").update(JSON.stringify(entries)).digest("hex"),
+        files: entries.map(([file]) => file),
+        hashes: normalizedHashes,
+    };
+}
+
+export function validateArtifactManifest(manifest) {
+    const problems = [];
+    if (!manifest || typeof manifest !== "object" || Array.isArray(manifest))
+        return { valid: false, problems: ["manifest must be an object"] };
+    if (manifest.version !== 1)
+        problems.push("manifest version must be 1");
+    if (manifest.hash_algorithm !== "sha256")
+        problems.push("hash_algorithm must be sha256");
+    if (manifest.manifest_algorithm !== "sha256-json-v1")
+        problems.push("manifest_algorithm must be sha256-json-v1");
+    if (!Array.isArray(manifest.files) || manifest.files.some((file) => typeof file !== "string"))
+        problems.push("files must be an array of paths");
+    if (!manifest.hashes || typeof manifest.hashes !== "object" || Array.isArray(manifest.hashes))
+        problems.push("hashes must be an object");
+    if (problems.length)
+        return { valid: false, problems };
+    let expected;
+    try {
+        expected = makeArtifactManifest(manifest.files, manifest.hashes);
+    }
+    catch (error) {
+        problems.push(error instanceof Error ? error.message : "manifest construction failed");
+        return { valid: false, problems };
+    }
+    if (new Set(manifest.files).size !== manifest.files.length)
+        problems.push("files must not contain duplicates");
+    if (JSON.stringify(manifest.files) !== JSON.stringify(expected.files))
+        problems.push("files must be normalized and sorted");
+    if (Object.keys(manifest.hashes).length !== expected.files.length)
+        problems.push("hashes must contain exactly one entry per file");
+    for (const file of expected.files) {
+        const hash = manifest.hashes[file];
+        if (!(HASH_VALUE_RE.test(hash) || hash === HASH_SENTINEL_TOMBSTONE || hash === HASH_SENTINEL_UNREADABLE))
+            problems.push(`invalid hash for ${file}`);
+    }
+    if (manifest.manifest_hash !== expected.manifest_hash)
+        problems.push("manifest_hash does not match canonical contents");
+    return { valid: problems.length === 0, problems };
+}
+
+export function makeSkillReceipt(options, existing) {
+    const now = options.now ?? new Date().toISOString();
+    const status = options.status ?? "succeeded";
+    return {
+        version: 1,
+        kind: "skill-receipt",
+        created_at: existing?.created_at ?? now,
+        updated_at: now,
+        skill: {
+            id: options.skill_id,
+            version: options.skill_version ?? null,
+            provider: options.provider ?? null,
+        },
+        invocation: {
+            id: options.invocation_id,
+            started_at: options.started_at ?? existing?.invocation?.started_at ?? now,
+            finished_at: options.finished_at ?? (["succeeded", "failed", "cancelled"].includes(status) ? now : null),
+            command: options.command ?? null,
+        },
+        status,
+        inputs: options.inputs,
+        outputs: options.outputs ?? null,
+        result: {
+            outcome: options.outcome ?? "unknown",
+            summary: options.summary ?? null,
+            evidence: Array.isArray(options.evidence) ? options.evidence : [],
+        },
+        limits: Array.isArray(options.limits) ? options.limits : [],
+        provenance: {
+            attestation_level: options.attestation_level ?? "self-asserted",
+            input_manifest_hash: options.inputs?.manifest_hash ?? null,
+            source: options.source ?? null,
+        },
+    };
+}
+
+export function validateSkillReceipt(receipt) {
+    const problems = [];
+    if (!receipt || typeof receipt !== "object" || Array.isArray(receipt))
+        return { valid: false, problems: ["receipt must be an object"] };
+    if (receipt.version !== 1)
+        problems.push("receipt version must be 1");
+    if (receipt.kind !== "skill-receipt")
+        problems.push("kind must be skill-receipt");
+    if (!SKILL_RECEIPT_STATUSES.has(receipt.status))
+        problems.push("invalid receipt status");
+    if (!receipt.skill || typeof receipt.skill.id !== "string" || !receipt.skill.id.trim())
+        problems.push("skill.id is required");
+    if (!receipt.invocation || typeof receipt.invocation.id !== "string" || !receipt.invocation.id.trim())
+        problems.push("invocation.id is required");
+    if (!receipt.invocation || typeof receipt.invocation.started_at !== "string")
+        problems.push("invocation.started_at is required");
+    if (typeof receipt.created_at !== "string" || !Number.isFinite(Date.parse(receipt.created_at)))
+        problems.push("created_at must be an ISO-8601 timestamp");
+    if (typeof receipt.updated_at !== "string" || !Number.isFinite(Date.parse(receipt.updated_at)))
+        problems.push("updated_at must be an ISO-8601 timestamp");
+    if (typeof receipt.invocation?.started_at === "string" && !Number.isFinite(Date.parse(receipt.invocation.started_at)))
+        problems.push("invocation.started_at must be an ISO-8601 timestamp");
+    if (["succeeded", "failed", "cancelled"].includes(receipt.status) && typeof receipt.invocation?.finished_at !== "string")
+        problems.push("terminal receipts require invocation.finished_at");
+    if (typeof receipt.invocation?.finished_at === "string") {
+        if (!Number.isFinite(Date.parse(receipt.invocation.finished_at)))
+            problems.push("invocation.finished_at must be an ISO-8601 timestamp");
+        else if (Number.isFinite(Date.parse(receipt.invocation.started_at)) && Date.parse(receipt.invocation.finished_at) < Date.parse(receipt.invocation.started_at))
+            problems.push("invocation.finished_at must not precede invocation.started_at");
+    }
+    const inputCheck = validateArtifactManifest(receipt.inputs);
+    problems.push(...inputCheck.problems.map((problem) => `inputs: ${problem}`));
+    if (receipt.outputs !== null && receipt.outputs !== undefined) {
+        const outputCheck = validateArtifactManifest(receipt.outputs);
+        problems.push(...outputCheck.problems.map((problem) => `outputs: ${problem}`));
+    }
+    if (!receipt.result || !SKILL_RECEIPT_OUTCOMES.has(receipt.result.outcome))
+        problems.push("invalid result.outcome");
+    if (!Array.isArray(receipt.result?.evidence))
+        problems.push("result.evidence must be an array");
+    else {
+        for (const evidence of receipt.result.evidence) {
+            if (!evidence || typeof evidence !== "object" || Array.isArray(evidence) || typeof evidence.kind !== "string" || !evidence.kind.trim() || typeof evidence.value !== "string" || !evidence.value.trim())
+                problems.push("each evidence entry requires non-empty kind and value strings");
+        }
+    }
+    if (!receipt.provenance || !SKILL_RECEIPT_ATTESTATIONS.has(receipt.provenance.attestation_level))
+        problems.push("invalid provenance.attestation_level");
+    if (receipt.provenance?.input_manifest_hash !== receipt.inputs?.manifest_hash)
+        problems.push("provenance input_manifest_hash does not match inputs");
+    if (receipt.provenance?.attestation_level !== "snapshot" && receipt.inputs?.files?.length === 0)
+        problems.push("non-snapshot receipts require at least one input artifact");
+    if (["manifest-bound", "externally-verifiable"].includes(receipt.provenance?.attestation_level) && Object.values(receipt.inputs?.hashes ?? {}).some((hash) => hash === HASH_SENTINEL_TOMBSTONE || hash === HASH_SENTINEL_UNREADABLE))
+        problems.push("strong attestations require readable, existing input artifacts");
+    if (!Array.isArray(receipt.limits))
+        problems.push("limits must be an array");
+    return { valid: problems.length === 0, problems };
+}
+
+export function verifySkillReceiptInputs(receipt) {
+    const check = validateSkillReceipt(receipt);
+    if (!check.valid)
+        return { status: "MALFORMED", problems: check.problems };
+    if (Object.values(receipt.inputs.hashes).includes(HASH_SENTINEL_UNREADABLE))
+        return { status: "UNREADABLE", problems: ["input manifest contains unreadable artifacts"] };
+    if (receipt.provenance.attestation_level !== "snapshot" && Object.values(receipt.inputs.hashes).includes(HASH_SENTINEL_TOMBSTONE))
+        return { status: "MALFORMED", problems: ["non-snapshot receipts cannot attest tombstone inputs"] };
+    const currentHashes = hashFilesAtRest(receipt.inputs.files);
+    const current = makeArtifactManifest(receipt.inputs.files, currentHashes);
+    if (current.manifest_hash !== receipt.inputs.manifest_hash)
+        return { status: "STALE", problems: ["current input bytes do not match the receipt manifest"], current };
+    if (Object.values(current.hashes).includes(HASH_SENTINEL_UNREADABLE))
+        return { status: "UNREADABLE", problems: ["one or more current inputs are unreadable"], current };
+    return { status: "CURRENT", problems: [], current };
+}
+
 export function makeCurrentByteReceipt(files, hashes, existing) {
     const now = new Date().toISOString();
     return {
@@ -1854,4 +2043,3 @@ export function getReviewHashes(review) {
     }
     return review?.content_hashes;
 }
-//# sourceMappingURL=shared.js.map

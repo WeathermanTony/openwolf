@@ -11,10 +11,11 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getRegisteredProjects, registerProject, type RegisteredProject } from "./registry.js";
-import { applyReviewerProfile, generateTemplate, migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from "./init.js";
+import { applyReviewerProfile, findTemplatesDir, generateTemplate, migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from "./init.js";
 import { cleanupOpenWolfPm2, listPm2Processes } from "./daemon-cmd.js";
 import { readJSON, writeJSON, readText, writeText, safeCopyFile, safeCopyDir } from "../utils/fs-safe.js";
 import { ensureDir } from "../utils/paths.js";
+import { backupManagedClaudeSkills, installManagedClaudeSkills, restoreManagedClaudeSkills } from "./managed-skills.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,7 +37,7 @@ const CREATE_IF_MISSING = ["config.json"];
 // Files that contain user data — NEVER overwrite, only create if missing
 const USER_DATA_FILES = [
   "identity.md", "cerebrum.md", "memory.md", "anatomy.md",
-  "token-ledger.json", "buglog.json", "cron-manifest.json", "cron-state.json",
+  "token-ledger.json", "buglog.json", "reviewlog.json", "cron-manifest.json", "cron-state.json",
   "suggestions.json", "designqc-report.json",
 ];
 
@@ -203,7 +204,7 @@ async function updateProject(
 
   if (dryRun) {
     const profileText = profile ? ` and set reviewer profile to ${normalizeReviewerProfile(profile)}` : "";
-    console.log(`    [dry run] Would backup, update hooks, templates, rules${profileText}`);
+    console.log(`    [dry run] Would backup, update hooks, templates, managed skills, rules${profileText}`);
     return { project, status: "updated", message: `would update to v${version}${profileText}` };
   }
 
@@ -261,6 +262,9 @@ async function updateProject(
     }
     console.log(`    ✓ Claude settings updated`);
 
+    installManagedClaudeSkills(templatesDir, root);
+    console.log(`    ✓ Managed Claude skills updated`);
+
     // 5. Update .claude/rules/openwolf.md
     const rulesDir = path.join(claudeDir, "rules");
     ensureDir(rulesDir);
@@ -311,9 +315,22 @@ async function updateProject(
  */
 function createBackup(wolfDir: string): string {
   const now = new Date();
-  const stamp = now.toISOString().replace(/[:.]/g, "").slice(0, 15); // 20260315T013000
-  const backupDir = path.join(wolfDir, "backups", stamp);
-  ensureDir(backupDir);
+  const baseStamp = now.toISOString().replace(/[:.]/g, "").slice(0, 15); // 20260315T0130
+  const backupsDir = path.join(wolfDir, "backups");
+  ensureDir(backupsDir);
+  let stamp = baseStamp;
+  let suffix = 1;
+  let backupDir = path.join(backupsDir, stamp);
+  while (true) {
+    try {
+      fs.mkdirSync(backupDir);
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      stamp = `${baseStamp}-${suffix++}`;
+      backupDir = path.join(backupsDir, stamp);
+    }
+  }
 
   // Backup all relevant files
   for (const file of BACKUP_FILES) {
@@ -349,6 +366,8 @@ function createBackup(wolfDir: string): string {
     ensureDir(claudeBackup);
     safeCopyFile(claudeSettings, path.join(claudeBackup, "settings.json"));
   }
+  backupManagedClaudeSkills(projectRoot, backupDir);
+
   const claudeRules = path.join(projectRoot, ".claude", "rules", "openwolf.md");
   if (fs.existsSync(claudeRules)) {
     const rulesBackup = path.join(backupDir, ".claude", "rules");
@@ -360,19 +379,6 @@ function createBackup(wolfDir: string): string {
 }
 
 // ─── Shared helpers (extracted from init.ts patterns) ─────────────
-
-function findTemplatesDir(): string {
-  const candidates = [
-    path.resolve(__dirname, "..", "..", "..", "src", "templates"),
-    path.resolve(__dirname, "..", "..", "src", "templates"),
-    path.resolve(__dirname, "..", "templates"),
-    path.resolve(__dirname, "templates"),
-  ];
-  for (const dir of candidates) {
-    if (fs.existsSync(dir)) return dir;
-  }
-  return candidates[0];
-}
 
 function mergeMissingDefaults(existing: unknown, defaults: unknown): unknown {
   if (!defaults || typeof defaults !== "object" || Array.isArray(defaults)) {
@@ -615,6 +621,8 @@ export function restoreCommand(backupName?: string): void {
       ensureDir(path.dirname(dest));
       safeCopyFile(settingsBackup, dest);
     }
+    restoreManagedClaudeSkills(projectRoot, backupDir, findTemplatesDir());
+
     const rulesBackup = path.join(claudeBackup, "rules", "openwolf.md");
     if (fs.existsSync(rulesBackup)) {
       const dest = path.join(projectRoot, ".claude", "rules", "openwolf.md");

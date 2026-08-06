@@ -18,8 +18,9 @@ token-ledger.json
 cerebrum-stats.json
 suggestions.json
 
-# review lifecycle state (receipts live in companion output; log is churn)
+# review and skill lifecycle state (compact receipts are runtime churn)
 reviewlog.json
+skill-receipts/
 
 # design QC captures and reports
 designqc-report.json

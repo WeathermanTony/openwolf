@@ -43,6 +43,10 @@
 
 - `openwolf.md` (~371 tok)
 
+## .claude/skills/quality-reduction/
+
+- `SKILL.md` — Project-local workflow for falsifiable QA reductions and manifest-bound skill receipts (~1150 tok)
+
 ## bin/
 
 - `openwolf.ts` — Declares major (~97 tok)
@@ -65,7 +69,8 @@
 - `dashboard.ts` — Exports isExpectedDashboardHealth, dashboardCommand (~1171 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `index.ts` — Exports createProgram (~2749 tok)
-- `init.ts` — Exports initCommand (~10661 tok)
+- `init.ts` — Exports initCommand; installs managed Claude skills and fresh hook/runtime payloads (~10700 tok)
+- `managed-skills.ts` — Explicit ownership manifest plus install/backup/restore helpers for Wolfpack-managed Claude skill files (~450 tok)
 - `nudge-cmd.ts` — Exports nudgeList, nudgeShow, nudgeResolve, nudgeDismiss, nudgeSnooze, nudgeStats (~1500 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~1161 tok)
@@ -206,6 +211,10 @@
 - `suggestions.json` (~14 tok)
 - `token-ledger.json` (~121 tok)
 
+## src/templates/claude/skills/quality-reduction/
+
+- `SKILL.md` — Managed template for falsifiable QA reductions and manifest-bound skill receipts (~1150 tok)
+
 ## src/templates/qa/
 
 - `_gate-log.json` (~11 tok)
@@ -290,4 +299,6 @@
 - `registry.test.js` — Tests for bug-440: malformed registry entries (missing root/name) must not (~1109 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
 - `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~19724 tok)
+- `skill-deployment.test.js` — Disposable-project tests for managed skill init/update/dry-run/restore and utility ESM scope (~1700 tok)
+- `skill-receipt.test.js` — Contract tests for canonical manifests, receipt validation, stale detection, and review compatibility (~1800 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)

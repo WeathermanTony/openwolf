@@ -3,51 +3,6 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
-## Session: 2026-06-28 03:00
-> Consolidated session (0 actions)
-
-## Session: 2026-06-29 04:00
-> Consolidated session (0 actions)
-
-## Session: 2026-06-30 21:28
-> Consolidated session (0 actions)
-
-## Session: 2026-06-30 21:29
-> Consolidated session (0 actions)
-
-## Session: 2026-06-30 22:19
-> Consolidated session (0 actions)
-
-## Session: 2026-06-30 22:21
-> Consolidated session (0 actions)
-
-## Session: 2026-06-30 22:31
-> Consolidated session (0 actions)
-
-## Session: 2026-07-01 17:28
-> Consolidated session (0 actions)
-
-## Session: 2026-07-01 19:57
-> Consolidated session (0 actions)
-
-## Session: 2026-07-03 13:13
-> Consolidated session (0 actions)
-
-## Session: 2026-07-05 03:00
-> Consolidated session (0 actions)
-
-## Session: 2026-07-05 11:19
-> Consolidated session (0 actions)
-
-## Session: 2026-07-06 04:00
-> Consolidated session (0 actions)
-
-## Session: 2026-07-06 19:11
-> Consolidated session (0 actions)
-
-## Session: 2026-07-06 19:38
-> Consolidated session (0 actions)
-
 ## Session: 2026-07-12 03:00
 
 | Time | Action | File(s) | Outcome | ~Tokens |
@@ -847,3 +802,20 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 17:35 | Reviews 0077/0078/0079 completed (0078+0079 auto-superseded by 0077 coalescing). Fleet update: 82/82 projects now carry the fixed stop/shared/post-write hooks; 328 user-data files byte-identical. | .wolf/reviewlog.json, ~/.openwolf/registry.json | done | ~6k |
 | 14:03 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
 | 17:42 | User: fork is local-only, well diverged — commit locally, never push/PR. Verified: no remotes, default branch is `master` (env banner's "main" is wrong). Recorded in cerebrum User Preferences. | .wolf/cerebrum.md | done | ~1k |
+| 16:35 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 11:37 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 11:36 | Added common skill-receipt v1 contract and validation | `src/hooks/shared.*`, runtime/template copies | Canonical manifests, explicit current/stale/malformed/unreadable verification, review compatibility preserved | ~4k |
+| 11:41 | Added project-local quality-reduction skill prototype | `.claude/skills/quality-reduction/SKILL.md`, `.wolf/.gitignore` templates | Skill emits compact manifest-bound evidence receipts without self-certifying | ~2k |
+| 11:48 | Verified receipt contract and Wolfpack integration | `tests/skill-receipt.test.js`, `.wolf/qa/skill-receipt-contract.md` | 113 tests passed; build and install verification passed; smoke test returned CURRENT then STALE | ~4k |
+| 11:47 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 12:05 | Adversarial review found and fixed vacuous attestation, silent scope shrinkage, and metadata validation defects | `src/hooks/shared.*`, `tests/skill-receipt.test.js`, skill docs | Expanded to 116 passing tests; different-provider current-byte arbitration returned CLEAN; review-0001 completed | ~8k |
+| 13:37 | Packaged managed quality-reduction skill with narrow install/backup/restore ownership and fresh-init utility ESM scope | src/cli/managed-skills.ts; src/cli/init.ts; src/cli/update.ts; src/templates/claude/skills/quality-reduction/SKILL.md | focused deployment tests and verify passed | ~2500 |
+| 13:37 | Added deployment QA reductions, verifier coverage, and bumped release to 1.2.0-custom.15 | tests/skill-deployment.test.js; scripts/verify-install.js; package.json; VERSION | release validation pending full suite/review | ~1200 |
+| 13:38 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 13:46 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 13:50 | Completed external review convergence: fixed backup collision/reviewlog/restore findings; final Claude arbitration CLEAN | src/cli/update.ts; src/cli/managed-skills.ts; tests/skill-deployment.test.js | build + 120 tests + verify passed | ~1800 |
+| 13:55 | Deployed 1.2.0-custom.15 canary then fleet-wide managed quality-reduction skill and receipt runtime | 89 registered projects | 89 updated; 89/89 artifact verification; 0 errors/mismatches | ~900 |
+| 14:01 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 14:06 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 14:07 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |
+| 14:08 | Session end: 20 writes across 6 files (stop.ts, review-completion.test.js, shared.ts, post-write.ts, nudge-obligation-scoping.md) | 3 reads | ~66615 tok |

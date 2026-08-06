@@ -16,9 +16,12 @@
 - **Project:** customopenwolf.
 - `/home/tony/projects/customopenwolf` and `/mnt/j/projectshome/projects/customopenwolf` are the same physical J: drvfs repo; treat them as one git history.
 - The fork has a source/runtime/template split: `src/` and source templates drive durable changes, `.wolf/` is the installed runtime payload, and scaffold templates must remain generic.
+- Skill integration boundary (2026-08-06): Wolfpack owns obligation detection, state, current-byte verification, and closure; explicit skills perform bounded work and emit compact receipts. A skill receipt never self-certifies. Canonical input identity remains SHA-256 over sorted normalized `[path, hash]` tuples, while provider-specific evidence hashes stay opaque and separate.
 - Scientific Mode became default-enabled Claim Calibration: a compact Stop-hook reasoning gate using observation/inference/limit/falsifier framing, with legacy `openwolf.scientific_mode` compatibility during migration.
 - Runtime/template changes usually need three-layer sync: source, installed `.wolf/`, and templates/update payloads. Hook behavior often spans `src/hooks/*`, `.wolf/hooks/*`, `templates/wolf/hooks/*`, shared utilities, and config copies.
 - Existing-project `openwolf update` must copy helper scripts and sibling `.wolf/utils/*.js` dependencies, not only hook entrypoints.
+- Wolfpack-managed Claude skills use an explicit file manifest and overlay only exact owned paths; init/update/backup/restore must never recursively replace `.claude/skills`, because unrelated skills and adjacent files are user-owned.
+- Fresh init and update must both write `.wolf/utils/package.json` with `type: module`; hook package scope alone does not control sibling utility JavaScript in receiving projects without a root ESM declaration.
 - Review gate lifecycle: pending review entries must be completed with `complete-review.js` or `wolfpack review complete`, never by manual JSON edits, so content hashes and reviewer provenance are verified.
 - Reviewer recommendations are profile-driven and project-local: `gov/us-only` suppresses non-US/open-profile models; `open` can advertise broader plugins; `budget` should prefer plentiful-token GLM/Kimi/MiMo/MiniMax before escalating.
 - Wolfpack review prompts select policy and explicit current files; standardized provider companions own `review --file` staging, subprocesses, redaction, hashing, cleanup, and transport. Companion receipt hashes are not Wolfpack manifest hashes, so stale reviews require refresh, actual current-byte re-review, then `--reviewed-current`.
@@ -46,6 +49,7 @@
 
 ## Do-Not-Repeat
 
+- [2026-08-06] When verifying another project from a driving session, use `npm --prefix <project> ...` or an explicit `cd`; Bash starts in the driving project and a bare `npm run ...` can fail against the wrong directory. (bug-521)
 - [2026-06-13] Do not instruct assistants to manually mark reviewlog entries completed; use `node .wolf/hooks/complete-review.js review-NNNN --reviewer <name> --summary "<outcome>"` so hashes are refreshed and review nudges coalesce.
 - [2026-06-13] Never use synchronous busy-wait loops in OpenWolf hooks/runtime code. Daemon start/init paths must be idempotent against PM2 state, and port allocation must test the same wildcard bind mode the daemon uses.
 - [2026-06-16] After editing TypeScript hook sources, verify and synchronize compiled/runtime JS copies before claiming hook behavior changed.

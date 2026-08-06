@@ -32,15 +32,18 @@ const requiredFiles = [
   'CLAUDE.md',
   '.claude/settings.json',
   '.claude/rules/openwolf.md',
+  '.claude/skills/quality-reduction/SKILL.md',
   '.wolf/OPENWOLF.md',
   '.wolf/PROTOCOL-UPGRADE-2026-06.md',
   '.wolf/config.json',
   '.wolf/anatomy.md',
   '.wolf/memory.md',
   '.wolf/hooks/package.json',
+  '.wolf/utils/package.json',
   '.wolf/qa/_README.md',
   '.wolf/qa/_template.md',
   'src/config/default-config.json',
+  'src/templates/claude/skills/quality-reduction/SKILL.md',
   'templates/claude/settings.json',
   'templates/claude/rules/openwolf.md',
   'templates/wolf/OPENWOLF.md',
@@ -64,6 +67,7 @@ const jsonFiles = [
   '.claude/settings.json',
   '.wolf/config.json',
   '.wolf/hooks/package.json',
+  '.wolf/utils/package.json',
   'src/config/default-config.json',
   'templates/claude/settings.json',
   'templates/wolf/config.json',
@@ -295,6 +299,9 @@ async function checkFreshInitScaffoldOutput() {
     const gateLog = JSON.parse(await readFile(path.join(dir, '.wolf', 'qa', '_gate-log.json'), 'utf8'));
     const config = JSON.parse(await readFile(path.join(dir, '.wolf', 'config.json'), 'utf8'));
     const protocolUpgrade = await readFile(path.join(dir, '.wolf', 'PROTOCOL-UPGRADE-2026-06.md'), 'utf8');
+    const managedSkill = await readFile(path.join(dir, '.claude', 'skills', 'quality-reduction', 'SKILL.md'), 'utf8');
+    const sourceSkill = await readFile(rel('src/templates/claude/skills/quality-reduction/SKILL.md'), 'utf8');
+    const utilsPackage = JSON.parse(await readFile(path.join(dir, '.wolf', 'utils', 'package.json'), 'utf8'));
     checkNoScaffoldLeakMarkers('fresh init .wolf/cerebrum.md', cerebrum);
     checkNoScaffoldLeakMarkers('fresh init .wolf/anatomy.md', anatomy);
     checkNoScaffoldLeakMarkers('fresh init .wolf/qa/_gate-log.json', JSON.stringify(gateLog));
@@ -317,6 +324,12 @@ async function checkFreshInitScaffoldOutput() {
     }
     if (!cerebrum.includes('- **Description:** Fresh verify scaffold')) {
       failures.push('fresh init .wolf/cerebrum.md did not seed the fresh project description');
+    }
+    if (managedSkill !== sourceSkill || !managedSkill.includes('name: quality-reduction') || !managedSkill.includes('makeSkillReceipt')) {
+      failures.push('fresh init must install the current managed quality-reduction skill template');
+    }
+    if (utilsPackage.type !== 'module') {
+      failures.push('fresh init .wolf/utils/package.json must set type=module');
     }
   } catch (error) {
     failures.push(`fresh init scaffold check could not inspect generated output: ${error.message}`);
@@ -384,6 +397,7 @@ function checkGitIgnored() {
     '.wolf/nested/token-ledger.json',
     '.wolf/nested/suggestions.json',
     '.wolf/nested/reviewlog.json',
+    '.wolf/skill-receipts/example.json',
     '.wolf/nested/cron-manifest.json',
     '.wolf/nested/designqc-report.json',
     '.wolf/nested/runtime.log',
@@ -409,6 +423,7 @@ function checkGitIgnored() {
     'CLAUDE.md',
     '.claude/settings.json',
     '.claude/rules/openwolf.md',
+    '.claude/skills/quality-reduction/SKILL.md',
     '.wolf/OPENWOLF.md',
     '.wolf/PROTOCOL-UPGRADE-2026-06.md',
     '.wolf/config.json',
@@ -420,6 +435,7 @@ function checkGitIgnored() {
     '.wolf/qa/_template.md',
     'src/config/default-config.json',
     'src/templates/.gitignore',
+    'src/templates/claude/skills/quality-reduction/SKILL.md',
     'templates/claude/settings.json',
     'templates/claude/rules/openwolf.md',
     'templates/wolf/.gitignore',
