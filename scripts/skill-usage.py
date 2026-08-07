@@ -13,8 +13,18 @@ Usage:
 No runtime cost — reads data Claude Code already writes. Nothing is installed
 or hooked; this is a read-only query.
 """
-import json, os, glob, argparse, time
+import json, os, glob, argparse, time, datetime
 from collections import Counter, defaultdict
+
+
+def event_epoch(ts):
+    """Parse an ISO-8601 transcript timestamp to epoch seconds, or None if unparseable."""
+    if not ts:
+        return None
+    try:
+        return datetime.datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+    except (ValueError, TypeError):
+        return None
 
 def project_name(transcript_path, raw_dir):
     # /home/tony/.claude/projects/-mnt-j-projectshome-projects-<name>/...
@@ -38,6 +48,8 @@ def main():
     files = glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), recursive=True)
     for f in files:
         try:
+            # Cheap pre-filter: skip files not touched within the window. A file last
+            # modified before the cutoff cannot contain newer events, so this is safe.
             if os.path.getmtime(f) < cutoff:
                 continue
         except OSError:
@@ -54,13 +66,18 @@ def main():
                     continue
                 if d.get("type") != "assistant":
                     continue
+                ts = d.get("timestamp", "")
+                # Authoritative window filter on the EVENT timestamp, not the file's mtime:
+                # a recently-touched transcript can still hold old multi-week-session events.
+                ev = event_epoch(ts)
+                if ev is None or ev < cutoff:
+                    continue
                 for p in (d.get("message", {}).get("content") or []):
                     if not (isinstance(p, dict) and p.get("type") == "tool_use" and p.get("name") == "Skill"):
                         continue
                     s = p.get("input", {}).get("skill", "?")
                     if skill_filter and skill_filter not in s.lower():
                         continue
-                    ts = d.get("timestamp", "")
                     by_skill[s] += 1
                     by_project_for_skill[s][proj] += 1
                     if s not in last_used or ts > last_used[s][0]:
