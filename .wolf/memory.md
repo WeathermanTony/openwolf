@@ -850,3 +850,6 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 11:18 | Edited src/templates/OPENWOLF.md | inline fix | ~104 |
+| 11:19 | Session end: 1 writes across 1 files (OPENWOLF.md) | 0 reads | ~111 tok |
+| 11:20 | Session end: 1 writes across 1 files (OPENWOLF.md) | 0 reads | ~111 tok |

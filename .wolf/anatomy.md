@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-27T16:53:11.511Z
-> Files: 184 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-07T15:18:21.089Z
+> Files: 197 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/
 
@@ -47,6 +47,11 @@
 
 - `SKILL.md` — Project-local workflow for falsifiable QA reductions and manifest-bound skill receipts (~1150 tok)
 
+## .wolf/qa/
+
+- `skillsbench-cli.md` — Current-byte built CLI discovery evidence for the SkillsBench command group (~350 tok)
+- `skillsbench-manager.md` — Current-byte adversarial release transaction evidence for the user-scope SkillsBench manager (~550 tok)
+
 ## bin/
 
 - `openwolf.ts` — Declares major (~97 tok)
@@ -62,6 +67,8 @@
 
 ## src/cli/
 
+- `.wolf/qa/managed-skill-package-verifier.md` — Current-byte package/fresh-init verifier evidence for managed skill distribution and receipt hygiene (~450 tok)
+- `.wolf/qa/managed-skill-update.md` — Current-byte falsification evidence for scoped update, atomic backups, review-history preservation, and restore symmetry (~500 tok)
 - `bug-cmd.ts` — Exports bugSearch (~310 tok)
 - `cerebrum-cmd.ts` — Exports lintCerebrum, cerebrumLint (~723 tok)
 - `cron-cmd.ts` — Exports cronList, cronRun, cronRetry (~1448 tok)
@@ -70,16 +77,14 @@
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `index.ts` — Exports createProgram (~2749 tok)
 - `init.ts` — Exports initCommand; installs managed Claude skills and fresh hook/runtime payloads (~10700 tok)
-- `skillsbench.ts` — User-scope SkillsBench release manager: staged Git sync, plugin marketplace, hashes, rollback, and weekly schedule (~4300 tok)
-- `scientific-skills.ts` — Independent user-scope K-Dense scientific skills manager with staged releases, hashes, rollback, doctor checks, and weekly schedule (~4300 tok)
 - `managed-skills.ts` — Explicit ownership manifest plus install/backup/restore helpers for Wolfpack-managed Claude skill files (~450 tok)
-- `.wolf/qa/managed-skill-update.md` — Current-byte falsification evidence for scoped update, atomic backups, review-history preservation, and restore symmetry (~500 tok)
-- `.wolf/qa/managed-skill-package-verifier.md` — Current-byte package/fresh-init verifier evidence for managed skill distribution and receipt hygiene (~450 tok)
 - `nudge-cmd.ts` — Exports nudgeList, nudgeShow, nudgeResolve, nudgeDismiss, nudgeSnooze, nudgeStats (~1500 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~1161 tok)
 - `review-cmd.ts` — Exports reviewList, reviewShow, reviewHash, reviewComplete (~1646 tok)
 - `scan.ts` — Exports scanCommand (~441 tok)
+- `scientific-skills.ts` — Independent user-scope K-Dense scientific skills manager with staged releases, hashes, rollback, doctor checks, and weekly schedule (~4300 tok)
+- `skillsbench.ts` — User-scope SkillsBench release manager: staged Git sync, plugin marketplace, hashes, rollback, and weekly schedule (~4300 tok)
 - `status.ts` — Exports statusCommand (~1298 tok)
 - `trace-cmd.ts` — Exports traceCommand (~887 tok)
 - `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6936 tok)
@@ -208,7 +213,7 @@
 - `designqc-report.json` (~26 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~4871 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~4973 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 - `reviewlog.json` (~11 tok)
@@ -293,11 +298,6 @@
 - `port-allocator.js` — Exports deterministicBasePort, isPortFree, allocateProjectPorts (~307 tok)
 - `size-discipline.js` — size-discipline.ts (~10030 tok)
 
-## .wolf/qa/
-
-- `skillsbench-manager.md` — Current-byte adversarial release transaction evidence for the user-scope SkillsBench manager (~550 tok)
-- `skillsbench-cli.md` — Current-byte built CLI discovery evidence for the SkillsBench command group (~350 tok)
-
 ## tests/
 
 - `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
@@ -308,8 +308,8 @@
 - `registry.test.js` — Tests for bug-440: malformed registry entries (missing root/name) must not (~1109 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
 - `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~19724 tok)
+- `scientific-skills.test.js` — Temporary-HOME/local-Git fixture tests for the K-Dense scientific plugin, validation, rollback, and shell quoting (~1400 tok)
 - `skill-deployment.test.js` — Disposable-project tests for managed skill init/update/dry-run/restore and utility ESM scope (~1700 tok)
 - `skill-receipt.test.js` — Contract tests for canonical manifests, receipt validation, stale detection, and review compatibility (~1800 tok)
 - `skillsbench.test.js` — Temporary-HOME/local-Git fixture tests for SkillsBench release, plugin isolation, rollback, and path rejection (~1300 tok)
-- `scientific-skills.test.js` — Temporary-HOME/local-Git fixture tests for the K-Dense scientific plugin, validation, rollback, and shell quoting (~1400 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)
