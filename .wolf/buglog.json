@@ -4791,6 +4791,27 @@
       "last_seen": "2026-08-06T21:46:00.000Z",
       "commit": null,
       "reduction": "git diff -- .wolf/hooks/shared.js followed by git show HEAD:.wolf/hooks/shared.js restoration and clean-status check"
+    },
+    {
+      "id": "bug-534",
+      "timestamp": "2026-08-07T15:50:00.000Z",
+      "error_message": "Self-review falsifier found skill-usage.py over-counted invocations: a 7-day file-mtime window reported 74 events while an event-timestamp calculation reported 66.",
+      "file": "scripts/skill-usage.py",
+      "root_cause": "The time window filtered whole transcript files by os.path.getmtime and then counted every event inside any file that passed. A transcript touched today (inside the window) but holding a resumed multi-week session had its old events counted as recent — file mtime is not a valid proxy for event recency.",
+      "fix": "Added event_epoch() to parse each record's ISO-8601 timestamp and filter authoritatively on the event timestamp; retained file mtime only as a cheap pre-filter (a file not touched within the window cannot contain newer events). Post-fix script 7-day total (66) matches the independent event-timestamp count exactly.",
+      "status": "resolved",
+      "tags": [
+        "skill-usage",
+        "time-window",
+        "over-counting",
+        "self-review",
+        "falsifier"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-07T15:50:00.000Z",
+      "commit": "c4ee257",
+      "reduction": ".wolf/qa/skill-usage-window.md"
     }
   ]
 }
