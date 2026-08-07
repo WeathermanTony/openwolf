@@ -858,3 +858,14 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 11:42 | Session end: 2 writes across 2 files (OPENWOLF.md, skill-usage.py) | 0 reads | ~1246 tok |
 | 11:43 | Edited scripts/skill-usage.py | modified event_epoch() | ~112 |
 | 11:43 | Edited scripts/skill-usage.py | modified lower() | ~530 |
+| 11:46 | Session end: 5 writes across 3 files (OPENWOLF.md, skill-usage.py, skill-usage-window.md) | 1 reads | ~3789 tok |
+| 11:47 | Edited scripts/skill-usage.py | added error handling | ~260 |
+| 11:48 | Edited scripts/skill-usage.py | modified except() | ~400 |
+
+## Session: 2026-08-07 11:52
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:42 | Refreshed review-0080 to current bytes (manifest 93feed87) | .wolf/reviewlog.json | refreshed | ~800 |
+| 15:50 | Completed review-0080 via complete-review.js | .wolf/reviewlog.json | status=completed, hashes verified (434d876d == qa target-hash) | ~600 |
+| 15:51 | Verified working tree + review-0080 completion | git, reviewlog | clean except memory/anatomy bookkeeping | ~400 |
