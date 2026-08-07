@@ -52,3 +52,4 @@ is safe and bounds I/O).
 
 - [x] Assumption 1 falsified by the 74-vs-66 discrepancy; fix applied in c4ee257.
 - [x] Post-fix script total matches the independent event-timestamp count exactly (66 == 66).
+- [x] Second finding (bug-535, GLM review): UnicodeDecodeError crash from lazy text-mode decode fixed by byte iteration + per-line errors=replace; verified with the review falsifier.
