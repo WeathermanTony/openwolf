@@ -59,29 +59,38 @@ def main():
         if args.project and args.project.lower() not in proj.lower():
             continue
         try:
-            for line in open(f, encoding="utf-8"):
-                try:
-                    d = json.loads(line)
-                except (json.JSONDecodeError, UnicodeDecodeError):
-                    continue
-                if d.get("type") != "assistant":
-                    continue
-                ts = d.get("timestamp", "")
-                # Authoritative window filter on the EVENT timestamp, not the file's mtime:
-                # a recently-touched transcript can still hold old multi-week-session events.
-                ev = event_epoch(ts)
-                if ev is None or ev < cutoff:
-                    continue
-                for p in (d.get("message", {}).get("content") or []):
-                    if not (isinstance(p, dict) and p.get("type") == "tool_use" and p.get("name") == "Skill"):
+            # Iterate raw BYTES and decode each line inside the inner try. A text-mode
+            # open() decodes lazily during iteration, so a non-UTF-8 byte raises
+            # UnicodeDecodeError from the `for` statement — OUTSIDE the inner handler,
+            # and it is a ValueError (not OSError), so the outer handler would not catch
+            # it either. One bad byte would abort the whole scan. Decoding per line with
+            # errors="replace" yields a string json.loads safely rejects, so the bad line
+            # is skipped instead of crashing the run.
+            with open(f, "rb") as bf:
+                for raw_line in bf:
+                    line = raw_line.decode("utf-8", errors="replace")
+                    try:
+                        d = json.loads(line)
+                    except (json.JSONDecodeError, UnicodeDecodeError):
                         continue
-                    s = p.get("input", {}).get("skill", "?")
-                    if skill_filter and skill_filter not in s.lower():
+                    if d.get("type") != "assistant":
                         continue
-                    by_skill[s] += 1
-                    by_project_for_skill[s][proj] += 1
-                    if s not in last_used or ts > last_used[s][0]:
-                        last_used[s] = (ts, proj)
+                    ts = d.get("timestamp", "")
+                    # Authoritative window filter on the EVENT timestamp, not the file's mtime:
+                    # a recently-touched transcript can still hold old multi-week-session events.
+                    ev = event_epoch(ts)
+                    if ev is None or ev < cutoff:
+                        continue
+                    for p in (d.get("message", {}).get("content") or []):
+                        if not (isinstance(p, dict) and p.get("type") == "tool_use" and p.get("name") == "Skill"):
+                            continue
+                        s = p.get("input", {}).get("skill", "?")
+                        if skill_filter and skill_filter not in s.lower():
+                            continue
+                        by_skill[s] += 1
+                        by_project_for_skill[s][proj] += 1
+                        if s not in last_used or ts > last_used[s][0]:
+                            last_used[s] = (ts, proj)
         except OSError:
             continue
 

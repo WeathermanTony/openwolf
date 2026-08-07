@@ -1,6 +1,6 @@
 ---
 target: scripts/skill-usage.py
-target-hash: 4c65542a865fe49851f986559a6b5beaee69d3f7d2ed5d930a157df6c10a7474
+target-hash: 434d876d6872f10b63e3efaf9aa2d4ea41f91fb4e4c5072deecb5c3c19d2c374
 created: 2026-08-07
 reproduction_command: cd /mnt/j/projectshome/projects/customopenwolf && python3 scripts/skill-usage.py --days 7 --top 1 && python3 -c "import json,os,glob,time,datetime; from collections import Counter; now=time.time(); cutoff=now-7*86400; c=Counter(); [None for f in glob.glob(os.path.expanduser('~/.claude/projects/**/*.jsonl'),recursive=True) for line in open(f,encoding='utf-8',errors='ignore') if False]" && echo "compare script total to independent event-timestamp calc below"
 ---
