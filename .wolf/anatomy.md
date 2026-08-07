@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-07T15:18:21.089Z
-> Files: 197 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-07T15:40:30.091Z
+> Files: 198 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/
 
@@ -58,6 +58,7 @@
 
 ## scripts/
 
+- `skill-usage.py` — /*.jsonl for `Skill` tool_use records and prints (~1135 tok)
 - `verify-install.js` — root: rel, fileExists, parseJson + 10 more (~5051 tok)
 
 ## src/buglog/

@@ -853,3 +853,5 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 11:18 | Edited src/templates/OPENWOLF.md | inline fix | ~104 |
 | 11:19 | Session end: 1 writes across 1 files (OPENWOLF.md) | 0 reads | ~111 tok |
 | 11:20 | Session end: 1 writes across 1 files (OPENWOLF.md) | 0 reads | ~111 tok |
+| 11:21 | Session end: 1 writes across 1 files (OPENWOLF.md) | 0 reads | ~111 tok |
+| 11:40 | Created scripts/skill-usage.py | — | ~1135 |
