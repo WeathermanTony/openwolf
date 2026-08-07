@@ -16,7 +16,7 @@ You are working in a Wolfpack-managed project. Wolfpack is the customized workfl
 
 ## Standard Skills
 
-Before recreating common workflows, check available standard skills and invoke the exact listed skill name when applicable. Skill instructions load on demand.
+Before recreating common workflows, check available standard skills and invoke the exact listed skill name when applicable. Skill instructions load on demand. Plugin skills are auto-discovered from their `SKILL.md` descriptions; to list the Wolfpack-managed standard skills, run `openwolf skills status` (office/document skills) or `openwolf skills scientific status` (scientific skills).
 
 ## Recall Before Acting
 
