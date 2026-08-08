@@ -4980,7 +4980,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5001,7 +5001,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5110,7 +5110,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5129,7 +5129,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5237,7 +5237,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5255,7 +5255,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5273,7 +5273,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5291,7 +5291,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5309,7 +5309,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5327,7 +5327,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5345,7 +5345,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:29:54.255Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": ".wolf/qa/explicit-learning-capture.md"
     },
     {
@@ -5363,7 +5363,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T05:37:54.069Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": "Successful append command transcript in session"
     },
     {
@@ -5383,7 +5383,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-08T06:00:00.000Z",
-      "commit": null,
+      "commit": "152b3fb",
       "reduction": "Semantic ID-set comparison against git show HEAD:.wolf/buglog.json"
     }
   ]

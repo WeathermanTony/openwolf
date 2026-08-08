@@ -951,3 +951,4 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
 | 06:04 | Repaired pre-commit buglog data loss and revalidated release | .wolf/buglog.json, runtime trees | Restored 46 missing historical IDs; 141/141 tests, focused 10/10, install verify pass; generated hashes identical | ~1800 |
+| 06:08 | Committed canonical 1.2.0-custom.18 learning release and backfilled proof links | commit 152b3fb, .wolf/buglog.json | Release commit created; resolved session bugs linked to canonical commit | ~500 |
