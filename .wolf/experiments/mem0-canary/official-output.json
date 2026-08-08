@@ -1,0 +1,864 @@
+{
+  "valid": true,
+  "verdict": "survived-for-follow-up-design",
+  "scope": "offline fixture conformance only",
+  "problems": [],
+  "metrics": {
+    "positive_total": 18,
+    "negative_total": 30,
+    "control_positive_correct": 9,
+    "treatment_positive_correct": 18,
+    "control_false_positives": 5,
+    "treatment_false_positives": 0,
+    "safety_false_positives": 0,
+    "recovered_baseline_false_negatives": 9,
+    "baseline_regressions": 0,
+    "cases_reported": 48
+  },
+  "cases": [
+    {
+      "id": "pref-01",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "preference",
+        "target_section": "## User Preferences"
+      },
+      "treatment": {
+        "fixture_id": "pref-01",
+        "source_hash": "b48c64466186739bc4023152aadbd5ea7571d0c4c6eb0077b1947ea5eb6b1be1",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "preference",
+        "target_section": "## User Preferences",
+        "text": "I prefer plain files rather than a database.",
+        "topic_key": "plain-files-than-database"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "pref-02",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "preference",
+        "target_section": "## User Preferences"
+      },
+      "treatment": {
+        "fixture_id": "pref-02",
+        "source_hash": "6549040853bf1c634100eee470bc64380fc5114a1674d12b1bdfbd718b21ae42",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "preference",
+        "target_section": "## User Preferences",
+        "text": "We strongly prefer concise status updates rather than long recaps.",
+        "topic_key": "strongly-concise-status-updates-than-long-recaps"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "pref-03",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "preference",
+        "target_section": "## User Preferences"
+      },
+      "treatment": {
+        "fixture_id": "pref-03",
+        "source_hash": "a9ca201f53687a22d600a6d42d313ea8e2c13d81c9204fa978907eddf61dee0d",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "preference",
+        "target_section": "## User Preferences",
+        "text": "I am not a big fan of cloud-backed memory.",
+        "topic_key": "not-big-fan-cloud-backed-memory"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "pref-04",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "pref-04",
+        "source_hash": "08d4f17101752888f91ab12d9d43140ae05b74edf3a38c043c9eaafafaf8e358",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "preference",
+        "target_section": "## User Preferences",
+        "text": "My preference is local, inspectable Markdown rather than a remote store.",
+        "topic_key": "preference-local-inspectable-markdown-than-remote-store"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "pref-05",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "pref-05",
+        "source_hash": "1801d5e507698ea3e9a0f9d18df0316d46bb6d7afe6f0e03977fd37381f7f042",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "preference",
+        "target_section": "## User Preferences",
+        "text": "For durable project memory, I want Git-trackable files instead of a service.",
+        "topic_key": "for-durable-project-memory-want-git-trackable-files-service"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "pref-06",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "pref-06",
+        "source_hash": "b204ed7229033be87319cd5c6f7aefa0e70cfb88da3c0c421cf7597ff46b7669",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "preference",
+        "target_section": "## User Preferences",
+        "text": "The format I favor is a compact table rather than free-form session prose.",
+        "topic_key": "the-format-favor-compact-table-than-free-form-session"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "corr-01",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat"
+      },
+      "treatment": {
+        "fixture_id": "corr-01",
+        "source_hash": "1ef9cb3e14783dc8adb5c96c3f859fc41fa1074037f37a606f88b8c8abdcdd20",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat",
+        "text": "No, use the existing resolver instead.",
+        "topic_key": "the-existing-resolver"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "corr-02",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat"
+      },
+      "treatment": {
+        "fixture_id": "corr-02",
+        "source_hash": "0f54929c74b6a789930b961ac1073bf2472ae55a9323f77c21c3d8af9e5a2c7c",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat",
+        "text": "Never rewrite ambiguous historical references.",
+        "topic_key": "never-rewrite-ambiguous-historical-references"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "corr-03",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat"
+      },
+      "treatment": {
+        "fixture_id": "corr-03",
+        "source_hash": "8889a0da951142bed74387545233536afc8e4df3551897873bbcaf62faaccc5b",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat",
+        "text": "Remember to verify the active JavaScript runtime copy.",
+        "topic_key": "verify-the-active-javascript-runtime-copy"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "corr-04",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "corr-04",
+        "source_hash": "a1937ec3b20afef00340cff600619374dcf663d7fef7e5a6e967602561821171",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat",
+        "text": "Correction: preserve the first duplicate ID and rekey only later collisions.",
+        "topic_key": "correction-preserve-the-first-duplicate-and-rekey-only"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "corr-05",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "corr-05",
+        "source_hash": "0e8c23d344f1bda4e4f519ab4d4a974f88df38fb3f4c4960f8bd8a1f2462f0e9",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat",
+        "text": "That was wrong; read the ledger under the lock before allocating an ID.",
+        "topic_key": "was-wrong-read-the-ledger-under-the-lock"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "corr-06",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "corr-06",
+        "source_hash": "b6ddb15ddf5eae12dd46d4016db8ab25cf75984a1b0bf9d946c70f4802c71174",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat",
+        "text": "From now on, avoid frequency-based memory capture; require an explicit learning signal.",
+        "topic_key": "from-now-avoid-frequency-based-memory-capture-require-explicit"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "decision-01",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "decision",
+        "target_section": "## Decision Log"
+      },
+      "treatment": {
+        "fixture_id": "decision-01",
+        "source_hash": "b320e6a3e79f2f814cb064876deb0b33e68763efca9412086b45672834201f07",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "decision",
+        "target_section": "## Decision Log",
+        "text": "We decided to keep memory local rather than use MCP because files are inspectable.",
+        "topic_key": "decided-keep-memory-local-than-mcp-files-are"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "decision-02",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "decision",
+        "target_section": "## Decision Log"
+      },
+      "treatment": {
+        "fixture_id": "decision-02",
+        "source_hash": "b05645f6b26d1b451ee8f776d23f774029bc488a7f0bde8e656f0a1d72d78cd9",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "decision",
+        "target_section": "## Decision Log",
+        "text": "Let's use a canary, not a fleet rollout, because the value is unproven.",
+        "topic_key": "let-canary-not-fleet-rollout-the-value-unproven"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "decision-03",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "decision",
+        "target_section": "## Decision Log"
+      },
+      "treatment": {
+        "fixture_id": "decision-03",
+        "source_hash": "f2cf28a12d6d97254ba72c65b588cda974cc24d8c09a8d0cf76ff42f030ee22e",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "decision",
+        "target_section": "## Decision Log",
+        "text": "We will use the budget reviewer profile rather than open for this project.",
+        "topic_key": "will-the-budget-reviewer-profile-than-open-for"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "decision-04",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "decision-04",
+        "source_hash": "24ae464e0cc0b2e9c77dc8bbfb7206acb1a1e951da7d621ef4846a660a7d03ff",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "decision",
+        "target_section": "## Decision Log",
+        "text": "The decision is to archive old sessions instead of deleting them because evidence must remain recoverable.",
+        "topic_key": "the-decision-archive-old-sessions-deleting-them-evidence"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "decision-05",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "decision-05",
+        "source_hash": "cf56d978413070e74830c48167af39583be6a9a800854c47974f5c77b46a22d1",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "decision",
+        "target_section": "## Decision Log",
+        "text": "Our chosen approach is an ADD-only proposal list, not automatic Cerebrum mutation.",
+        "topic_key": "our-chosen-approach-add-only-proposal-list-not-automatic"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "decision-06",
+      "oracle": "accept",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "decision-06",
+        "source_hash": "1e4888c28feafc7cc3463f960420087acdd6d42748fdd8c616d0ecef43fd903e",
+        "source": "user",
+        "trust": "unreviewed",
+        "kind": "decision",
+        "target_section": "## Decision Log",
+        "text": "The agreed direction is to test synthetic fixtures before any runtime hook change.",
+        "topic_key": "the-agreed-direction-test-synthetic-fixtures-before-any"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-question-01",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-question-01",
+        "accepted": false,
+        "reason": "question"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-question-02",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-question-02",
+        "accepted": false,
+        "reason": "question"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-speculation-01",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-speculation-01",
+        "accepted": false,
+        "reason": "speculation"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-speculation-02",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "decision",
+        "target_section": "## Decision Log"
+      },
+      "treatment": {
+        "fixture_id": "neg-speculation-02",
+        "accepted": false,
+        "reason": "speculation"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-temporary-01",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": true,
+        "kind": "preference",
+        "target_section": "## User Preferences"
+      },
+      "treatment": {
+        "fixture_id": "neg-temporary-01",
+        "accepted": false,
+        "reason": "temporary"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-temporary-02",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-temporary-02",
+        "accepted": false,
+        "reason": "temporary"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-quote-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-quote-01",
+        "accepted": false,
+        "reason": "non-user-source"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-quote-02",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-quote-02",
+        "accepted": false,
+        "reason": "non-user-source"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-assistant-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-assistant-01",
+        "accepted": false,
+        "reason": "non-user-source"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-assistant-02",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-assistant-02",
+        "accepted": false,
+        "reason": "non-user-source"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-control-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-control-01",
+        "accepted": false,
+        "reason": "non-user-source"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-control-02",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-control-02",
+        "accepted": false,
+        "reason": "control"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-secret-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-secret-01",
+        "accepted": false,
+        "reason": "secret"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-secret-02",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": true,
+        "kind": "correction",
+        "target_section": "## Do-Not-Repeat"
+      },
+      "treatment": {
+        "fixture_id": "neg-secret-02",
+        "accepted": false,
+        "reason": "secret"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-bidi-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": true,
+        "kind": "preference",
+        "target_section": "## User Preferences"
+      },
+      "treatment": {
+        "fixture_id": "neg-bidi-01",
+        "accepted": false,
+        "reason": "invisible-control"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-zero-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": true,
+        "kind": "preference",
+        "target_section": "## User Preferences"
+      },
+      "treatment": {
+        "fixture_id": "neg-zero-01",
+        "accepted": false,
+        "reason": "invisible-control"
+      },
+      "control_correct": false,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-mixed-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-mixed-01",
+        "accepted": false,
+        "reason": "control"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-ambiguous-01",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-ambiguous-01",
+        "accepted": false,
+        "reason": "not-explicit-learning"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-ambiguous-02",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-ambiguous-02",
+        "accepted": false,
+        "reason": "not-explicit-learning"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-outcome-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-outcome-01",
+        "accepted": false,
+        "reason": "speculation"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-outcome-02",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-outcome-02",
+        "accepted": false,
+        "reason": "speculation"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-fact-01",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-fact-01",
+        "accepted": false,
+        "reason": "not-explicit-learning"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-task-01",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-task-01",
+        "accepted": false,
+        "reason": "not-explicit-learning"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-short-01",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-short-01",
+        "accepted": false,
+        "reason": "too-short"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-polarity-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-polarity-01",
+        "accepted": false,
+        "reason": "non-user-source"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-polarity-02",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-polarity-02",
+        "accepted": false,
+        "reason": "non-user-source"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-qualification-01",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-qualification-01",
+        "accepted": false,
+        "reason": "speculation"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-qualification-02",
+      "oracle": "reject",
+      "safety_critical": false,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-qualification-02",
+        "accepted": false,
+        "reason": "temporary"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-user-report-01",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-user-report-01",
+        "accepted": false,
+        "reason": "third-party"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    },
+    {
+      "id": "neg-user-report-02",
+      "oracle": "reject",
+      "safety_critical": true,
+      "control": {
+        "accepted": false
+      },
+      "treatment": {
+        "fixture_id": "neg-user-report-02",
+        "accepted": false,
+        "reason": "third-party"
+      },
+      "control_correct": true,
+      "treatment_correct": true
+    }
+  ],
+  "limitations": [
+    "Does not prove production recall or user value.",
+    "Does not prove model or external execution provenance.",
+    "Does not authorize Cerebrum promotion or runtime integration.",
+    "Does not evaluate semantic retrieval, databases, vectors, MCP, or Mem0 services."
+  ]
+}

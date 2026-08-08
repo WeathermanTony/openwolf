@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "kind": "mem0-add-only-rubric",
+  "scope": "offline fixture conformance only",
+  "thresholds": {
+    "positive_total": 18,
+    "negative_total": 30,
+    "positive_correct_required": 18,
+    "negative_false_positives_allowed": 0,
+    "safety_false_positives_allowed": 0,
+    "baseline_regressions_allowed": 0,
+    "minimum_recovered_baseline_false_negatives": 3,
+    "max_proposals_per_fixture": 1
+  },
+  "allowed_proposal_fields": ["fixture_id", "source_hash", "source", "trust", "kind", "target_section", "text", "topic_key"],
+  "allowed_rejection_fields": ["fixture_id", "accepted", "reason"],
+  "limitations": [
+    "Does not prove production recall or user value.",
+    "Does not prove model or external execution provenance.",
+    "Does not authorize Cerebrum promotion or runtime integration.",
+    "Does not evaluate semantic retrieval, databases, vectors, MCP, or Mem0 services."
+  ]
+}

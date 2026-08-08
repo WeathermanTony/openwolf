@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "kind": "mem0-canary-manifest",
+  "algorithm": "sha256",
+  "hashes": {
+    "fixtures.json": "ab39c884d8920d55896a7d208fd889aae96ea3206fae8a564983f31e4d3e4b7c",
+    "rubric.json": "891f51d042bef73121f250c58ab7e9c5d6131e3b686d928fb31eb244568b8e39",
+    "extractor.mjs": "22248575cee24295b103b1832c5697adbb4db6eacc3b94e2934f85cbb838ec4f",
+    "scorer.mjs": "cb57007616a76e5f9a7a3145c881c7bcd17f121c712b7def44934f30ac9ce7be"
+  }
+}
