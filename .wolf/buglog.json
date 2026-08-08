@@ -6935,6 +6935,27 @@
       "commit": null,
       "reduction": ".wolf/qa/review-provenance-cli.md",
       "status": "resolved"
+    },
+    {
+      "id": "bug-667",
+      "timestamp": "2026-08-08T22:00:00.000Z",
+      "error_message": "Bare-array ledger primary IDs were counted as external references during normalization",
+      "file": "src/ledger/ledger-integrity.ts",
+      "root_cause": "structuredReferenceCounts excluded object-root bugs[i].id/reviews[i].id paths but not bare-array [i].id paths, so legacy array normalization receipts recorded the ledger records own IDs as phantom external references.",
+      "fix": "Recognize both object-root and array-root direct record ID paths as primary IDs, while continuing to inventory nested and root-metadata id references; added a bare-array negative-control regression test.",
+      "status": "resolved",
+      "tags": [
+        "ledger",
+        "normalization",
+        "reference-inventory",
+        "bare-array",
+        "review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T22:00:00.000Z",
+      "commit": "6ddd3b5",
+      "reduction": ".wolf/qa/ledger-normalization-recovery.md"
     }
   ]
 }
