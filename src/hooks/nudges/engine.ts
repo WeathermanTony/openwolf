@@ -52,7 +52,8 @@ export function getNudgeConfig(cfg) {
             const n = Number(user[key]);
             // Reject non-finite / negative overrides rather than letting a typo
             // disable the budget entirely.
-            if (Number.isFinite(n) && n >= 0) out[key] = n;
+            const zeroAllowed = key === "max_per_stop";
+            if (Number.isFinite(n) && (n > 0 || (zeroAllowed && n === 0))) out[key] = n;
         } else if (typeof def === "boolean") {
             if (typeof user[key] === "boolean") out[key] = user[key];
         } else if (typeof def === "string") {
@@ -210,7 +211,7 @@ export function evaluate({
             continue;
         }
 
-        const disp = dispositionSuppression(state, c.fingerprint, { clock });
+        const disp = dispositionSuppression(state, c.fingerprint, { clock, sessionId });
         if (disp) {
             result.suppressed.push({ candidate: c, reason: disp });
             diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: disp });
@@ -219,7 +220,7 @@ export function evaluate({
 
         // Already emitted for this exact evidence in this session.
         const emission = state.emissions ? state.emissions[c.fingerprint] : null;
-        if (emission && (!sessionId || emission.session_id === sessionId)) {
+        if (emission) {
             result.suppressed.push({ candidate: c, reason: SUPPRESS_REASONS.ALREADY_EMITTED });
             diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: SUPPRESS_REASONS.ALREADY_EMITTED });
             continue;
@@ -244,7 +245,7 @@ export function evaluate({
     }
 
     const ranked = rankCandidates(eligible);
-    const budget = cfg.max_per_stop > 0 ? cfg.max_per_stop : ranked.length;
+    const budget = Math.max(0, cfg.max_per_stop);
 
     for (const c of ranked) {
         if (result.emitted.length >= budget) {
@@ -295,6 +296,7 @@ export function evaluate({
             sessionId,
             ruleId: c.rule_id,
             ownerRoot: c.owner_root,
+            detail: c.detail,
             clock,
         });
         if (!marked.ok && marked.degraded && !result.degraded) {

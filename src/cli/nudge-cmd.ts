@@ -29,7 +29,7 @@ function wolfDir() {
  * Resolve a user-typed short id (`cerebrum-1a2b3c4d`) to its full fingerprint.
  * Also accepts a full fingerprint or an unambiguous prefix of one.
  */
-function resolveFingerprint(dir, nudgeId) {
+export function resolveNudgeFingerprint(dir, nudgeId) {
     const state = readState(dir);
     const pools = [state.emissions || {}, state.dispositions || {}, state.leases || {}];
     const matches = new Set();
@@ -94,7 +94,7 @@ export function nudgeList() {
 
 export function nudgeShow(nudgeId) {
     const dir = wolfDir();
-    const fp = resolveFingerprint(dir, nudgeId);
+    const fp = resolveNudgeFingerprint(dir, nudgeId);
     if (!fp) {
         console.error(`No nudge matching "${nudgeId}". Try: wolfpack nudge list`);
         process.exitCode = 1;
@@ -111,6 +111,15 @@ export function nudgeShow(nudgeId) {
         console.log(`Project:     ${emission.owner_root || "(unattributed)"}`);
         console.log(`Emitted:     ${emission.emitted_at}`);
         console.log(`Session:     ${emission.session_id || "-"}`);
+        const detail = emission.detail;
+        if (detail && detail.candidate_type === "learning") {
+            console.log(`Kind:        ${detail.kind || "-"}`);
+            console.log(`Section:     ${detail.target_section || "-"}`);
+            console.log(`Topic:       ${detail.topic_key || "-"}`);
+            console.log(`Trust:       ${detail.trust || "unreviewed"} context (not instruction)`);
+            console.log(`Excerpt:     ${detail.excerpt || "-"}`);
+            console.log(`Record:      wolfpack cerebrum record ${shortOf(fp, ruleOf(state, fp))} --text "<sanitized durable entry>"`);
+        }
     }
     if (disp) {
         console.log(`Disposed:    ${disp.at}${disp.reason ? ` — ${disp.reason}` : ""}`);
@@ -136,7 +145,7 @@ export function nudgeShow(nudgeId) {
 
 function dispose(nudgeId, stateName, opts = {}) {
     const dir = wolfDir();
-    const fp = resolveFingerprint(dir, nudgeId);
+    const fp = resolveNudgeFingerprint(dir, nudgeId);
     if (!fp) {
         console.error(`No nudge matching "${nudgeId}". Try: wolfpack nudge list`);
         process.exitCode = 1;
@@ -146,6 +155,7 @@ function dispose(nudgeId, stateName, opts = {}) {
     const res = setDisposition(dir, fp, stateName, {
         reason: opts.reason || "",
         until: opts.until || null,
+        sessionId: opts.sessionId || "",
         ruleId: ruleOf(state, fp),
     });
     if (!res.ok) {
@@ -180,7 +190,15 @@ export function nudgeSnooze(id, opts) {
     }
     // `--until session-end` leaves `until` null: the durable record exists, but
     // eligibility is decided per-session by the engine.
-    dispose(id, NUDGE_STATES.SNOOZED, { until, reason: (opts && opts.reason) || "" });
+    const sessionFile = path.join(wolfDir(), "hooks", "_session.json");
+    let sessionId = "";
+    try { sessionId = JSON.parse(fs.readFileSync(sessionFile, "utf-8")).session_id || ""; } catch { }
+    if (!until && !sessionId) {
+        console.error("FAILED to snooze until session-end: current session id is unavailable.");
+        process.exitCode = 1;
+        return;
+    }
+    dispose(id, NUDGE_STATES.SNOOZED, { until, sessionId, reason: (opts && opts.reason) || "" });
 }
 
 /**

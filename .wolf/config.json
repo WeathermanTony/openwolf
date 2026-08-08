@@ -259,6 +259,13 @@
         "\\bgit\\s+commit\\b"
       ]
     },
+    "learning_capture": {
+      "enabled": true,
+      "tail_bytes": 524288,
+      "max_messages": 12,
+      "max_message_chars": 2000,
+      "max_excerpt_chars": 240
+    },
     "nudges": {
       "enabled": true,
       "max_per_stop": 1,

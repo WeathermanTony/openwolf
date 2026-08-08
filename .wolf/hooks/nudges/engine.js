@@ -39,7 +39,8 @@ export function getNudgeConfig(cfg) {
             const n = Number(user[key]);
             // Reject non-finite / negative overrides rather than letting a typo
             // disable the budget entirely.
-            if (Number.isFinite(n) && n >= 0)
+            const zeroAllowed = key === "max_per_stop";
+            if (Number.isFinite(n) && (n > 0 || (zeroAllowed && n === 0)))
                 out[key] = n;
         }
         else if (typeof def === "boolean") {
@@ -174,7 +175,7 @@ export function evaluate({ wolfDir, candidates, nudgeCfg, sessionId = "", sessio
             diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: SUPPRESS_REASONS.UNKNOWN_OWNER });
             continue;
         }
-        const disp = dispositionSuppression(state, c.fingerprint, { clock });
+        const disp = dispositionSuppression(state, c.fingerprint, { clock, sessionId });
         if (disp) {
             result.suppressed.push({ candidate: c, reason: disp });
             diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: disp });
@@ -182,7 +183,7 @@ export function evaluate({ wolfDir, candidates, nudgeCfg, sessionId = "", sessio
         }
         // Already emitted for this exact evidence in this session.
         const emission = state.emissions ? state.emissions[c.fingerprint] : null;
-        if (emission && (!sessionId || emission.session_id === sessionId)) {
+        if (emission) {
             result.suppressed.push({ candidate: c, reason: SUPPRESS_REASONS.ALREADY_EMITTED });
             diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: SUPPRESS_REASONS.ALREADY_EMITTED });
             continue;
@@ -202,7 +203,7 @@ export function evaluate({ wolfDir, candidates, nudgeCfg, sessionId = "", sessio
         eligible.push(c);
     }
     const ranked = rankCandidates(eligible);
-    const budget = cfg.max_per_stop > 0 ? cfg.max_per_stop : ranked.length;
+    const budget = Math.max(0, cfg.max_per_stop);
     for (const c of ranked) {
         if (result.emitted.length >= budget) {
             result.queued.push({ candidate: c, reason: SUPPRESS_REASONS.OVER_BUDGET });
@@ -250,6 +251,7 @@ export function evaluate({ wolfDir, candidates, nudgeCfg, sessionId = "", sessio
             sessionId,
             ruleId: c.rule_id,
             ownerRoot: c.owner_root,
+            detail: c.detail,
             clock,
         });
         if (!marked.ok && marked.degraded && !result.degraded) {

@@ -1229,6 +1229,62 @@ export function getSizeDisciplineConfig() {
  * Reads up to `maxBytes` from the END of the file to avoid loading multi-MB
  * transcripts into memory.
  */
+export function readRecentUserTurns(transcriptPath, { maxBytes = 512 * 1024, maxMessages = 12, maxChars = 2000 } = {}) {
+    try {
+        if (!transcriptPath || !fs.existsSync(transcriptPath)) return [];
+        const stat = fs.statSync(transcriptPath);
+        if (stat.size === 0) return [];
+        const byteLimit = Number.isFinite(Number(maxBytes)) ? Number(maxBytes) : 512 * 1024;
+        const messageLimit = Number.isFinite(Number(maxMessages)) ? Number(maxMessages) : 12;
+        const charLimit = Number.isFinite(Number(maxChars)) ? Number(maxChars) : 2000;
+        const readSize = Math.min(stat.size, Math.max(64 * 1024, byteLimit));
+        const startOffset = Math.max(0, stat.size - readSize);
+        const fd = fs.openSync(transcriptPath, "r");
+        const buf = Buffer.alloc(readSize);
+        try { fs.readSync(fd, buf, 0, readSize, startOffset); }
+        finally { fs.closeSync(fd); }
+        let tail = buf.toString("utf-8");
+        if (startOffset > 0) {
+            const firstNewline = tail.indexOf("\n");
+            if (firstNewline >= 0) tail = tail.slice(firstNewline + 1);
+        }
+        const turns = [];
+        const controlPrefix = /^\s*<(?:system-reminder|task-notification|hookSpecificOutput|cross-session-message)\b/i;
+        const add = (text, entry, lineIndex, source = "user") => {
+            const normalized = String(text || "").replace(/\s+/g, " ").trim();
+            if (!normalized || normalized === "[Request interrupted by user]" || controlPrefix.test(normalized)) return;
+            const bounded = normalized.slice(0, Math.max(200, charLimit));
+            turns.push({
+                text: bounded,
+                timestamp: typeof entry.timestamp === "string" ? entry.timestamp : "",
+                hash: crypto.createHash("sha256").update(normalized).digest("hex"),
+                line_index: lineIndex,
+                source,
+                truncated: bounded.length < normalized.length,
+            });
+        };
+        const lines = tail.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            let entry;
+            try { entry = JSON.parse(line); } catch { continue; }
+            if (entry.type === "user") {
+                const c = entry.message?.content;
+                const text = typeof c === "string" ? c
+                    : Array.isArray(c) ? c.map(b => typeof b === "string" ? b : (b?.type === "text" ? b.text : "")).join("\n")
+                        : "";
+                add(text, entry, i, "user");
+            } else if (entry.type === "attachment" && entry.attachment?.type === "queued_command") {
+                add(entry.attachment.prompt, entry, i, "queued_command");
+            }
+        }
+        return turns.slice(-Math.max(1, messageLimit));
+    } catch {
+        return [];
+    }
+}
+
 export function readLastAssistantText(transcriptPath, maxBytes = 256 * 1024) {
     try {
         if (!transcriptPath || !fs.existsSync(transcriptPath))

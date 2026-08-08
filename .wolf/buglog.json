@@ -4836,6 +4836,555 @@
       "last_seen": "2026-08-07T15:58:00.000Z",
       "commit": "b10ad01",
       "reduction": ".wolf/qa/skill-usage-window.md"
+    },
+    {
+      "id": "bug-536",
+      "timestamp": "2026-08-08T05:07:03.632Z",
+      "error_message": "Missing error handling in readRecentUserTurns",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:07:03.632Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-537",
+      "timestamp": "2026-08-08T05:07:55.553Z",
+      "error_message": "Wrong reference: clock should be detail",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "Used \"clock\" instead of \"detail\"",
+      "fix": "Changed clock \u2192 detail",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:07:55.553Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-538",
+      "timestamp": "2026-08-08T05:08:10.377Z",
+      "error_message": "Missing guard clause",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "No early return/throw for edge case: !detail || typeof detail !== \"object\" || Array.isArray(detai",
+      "fix": "Added guard clause: if (!detail || typeof detail !== \"object\" ||)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:08:10.377Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-539",
+      "timestamp": "2026-08-08T05:08:50.459Z",
+      "error_message": "Type error",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:08:50.459Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-540",
+      "timestamp": "2026-08-08T05:08:58.111Z",
+      "error_message": "Wrong reference: maxChars should be charLimit",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Used \"maxChars\" instead of \"charLimit\"",
+      "fix": "Changed maxChars \u2192 charLimit",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-08-08T05:09:03.165Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-541",
+      "timestamp": "2026-08-08T05:10:08.010Z",
+      "error_message": "Wrong reference: resolveFingerprint should be resolveNudgeFingerprint",
+      "file": "src/cli/nudge-cmd.ts",
+      "root_cause": "Used \"resolveFingerprint\" instead of \"resolveNudgeFingerprint\"",
+      "fix": "Changed resolveFingerprint \u2192 resolveNudgeFingerprint",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:10:08.010Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-542",
+      "timestamp": "2026-08-08T05:11:02.140Z",
+      "error_message": "Missing await",
+      "file": "src/cli/index.ts",
+      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:11:02.140Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-543",
+      "timestamp": "2026-08-08T05:12:38.490Z",
+      "error_message": "Learning capture false-positive: quoted text containing \u201cI prefer\u201d was classified as a user preference.",
+      "file": "src/hooks/nudges/rules/learning.ts",
+      "root_cause": "The initial preference regex matched first-person language anywhere in the message and did not exclude explicit quotation/example framing.",
+      "fix": "Reject messages introduced as quoted text, examples, or file/message content before applying explicit-learning classifiers.",
+      "status": "resolved",
+      "tags": [
+        "learning-capture",
+        "false-positive",
+        "transcript",
+        "classification"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-544",
+      "timestamp": "2026-08-08T05:14:33.449Z",
+      "error_message": "cp: cannot stat 'src/hooks/nudges/rules/learning.js': No such file or directory",
+      "file": "src/hooks/nudges/rules/learning.js",
+      "root_cause": "TypeScript build emits compiled JavaScript under dist/src; the new source-adjacent .js file did not exist yet, so copying from src failed.",
+      "fix": "Copy compiled hook outputs from dist/src into all source-adjacent, installed, and template runtime layers.",
+      "status": "resolved",
+      "tags": [
+        "build",
+        "runtime-sync",
+        "generated-js"
+      ],
+      "related_bugs": [
+        "bug-479"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-545",
+      "timestamp": "2026-08-08T05:18:26.151Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/hooks/nudges/engine.ts",
+      "root_cause": "Condition was: if (emission && (!sessionId || emission.session_id ===)",
+      "fix": "Changed to: if (emission)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:18:26.151Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-546",
+      "timestamp": "2026-08-08T05:18:34.967Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "Condition was: if (emission && (!sessionId || emission.session_id ===)",
+      "fix": "Changed to: if (emission)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:18:34.967Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-547",
+      "timestamp": "2026-08-08T05:18:50.379Z",
+      "error_message": "Wrong return value",
+      "file": "src/hooks/nudges/state.ts",
+      "root_cause": "Was returning: SUPPRESS_REASONS.SNOOZED;",
+      "fix": "Now returns: d.session_id && sessionId && d.session_id === sess",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:18:50.379Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-548",
+      "timestamp": "2026-08-08T05:19:12.567Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/cli/nudge-cmd.ts",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:19:12.567Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-549",
+      "timestamp": "2026-08-08T05:19:27.964Z",
+      "error_message": "Wrong reference: dirForCurrentProject should be wolfDir",
+      "file": "src/cli/nudge-cmd.ts",
+      "root_cause": "Used \"dirForCurrentProject\" instead of \"wolfDir\"",
+      "fix": "Changed dirForCurrentProject \u2192 wolfDir",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:19:27.964Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-550",
+      "timestamp": "2026-08-08T05:19:53.780Z",
+      "error_message": "Unchanged evidence re-emitted in later sessions despite the evidence-addressed convergence invariant.",
+      "file": "src/hooks/nudges/engine.ts; src/hooks/nudges/state.ts",
+      "root_cause": "Emission suppression was conditioned on matching session_id, so the durable emission record only deduplicated within one session.",
+      "fix": "Treat any persisted emission for the exact fingerprint as already emitted across sessions; changed evidence still mints a new fingerprint.",
+      "status": "resolved",
+      "tags": [
+        "nudge",
+        "convergence",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-551",
+      "timestamp": "2026-08-08T05:19:53.780Z",
+      "error_message": "wolfpack nudge snooze --until session-end persisted indefinitely across later sessions.",
+      "file": "src/cli/nudge-cmd.ts; src/hooks/nudges/state.ts",
+      "root_cause": "Null-until snoozes were stored without session_id and dispositionSuppression treated null as unconditional suppression.",
+      "fix": "Persist the current session id for session-end snoozes and suppress only when the evaluating session matches.",
+      "status": "resolved",
+      "tags": [
+        "nudge",
+        "convergence",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-552",
+      "timestamp": "2026-08-08T05:26:21.749Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/cli/cerebrum-record.ts",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 7\u219211 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:26:21.750Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-553",
+      "timestamp": "2026-08-08T05:26:30.470Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/nudges/rules/learning.ts",
+      "root_cause": "Had \"always\"",
+      "fix": "Changed to \"because\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:26:30.470Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-554",
+      "timestamp": "2026-08-08T05:26:43.814Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/cli/cerebrum-record.ts",
+      "root_cause": "Had `${line}\\n`",
+      "fix": "Changed to \");\n            const separator = prefix.endsWith(",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:26:43.814Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-555",
+      "timestamp": "2026-08-08T05:26:50.792Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/cli/cerebrum-record.ts",
+      "root_cause": "Condition was: if (!verified.includes(line)",
+      "fix": "Changed to: if (!verifiedBounds || !verified.slice(verifiedBounds.)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:26:50.792Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-556",
+      "timestamp": "2026-08-08T05:27:08.893Z",
+      "error_message": "Wrong operator: >= should be ===",
+      "file": "src/hooks/nudges/engine.ts",
+      "root_cause": "Used \">=\" instead of \"===\"",
+      "fix": "Changed operator >= \u2192 ===",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:27:08.893Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-557",
+      "timestamp": "2026-08-08T05:27:58.224Z",
+      "error_message": "Unanchored Cerebrum heading search could file a durable entry under the wrong section.",
+      "file": "src/cli/cerebrum-record.ts",
+      "root_cause": "sectionBounds used substring indexOf rather than an anchored Markdown heading match.",
+      "fix": "Anchor section discovery to exact line headings and verify the new line inside the target section.",
+      "status": "resolved",
+      "tags": [
+        "learning-capture",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-558",
+      "timestamp": "2026-08-08T05:27:58.224Z",
+      "error_message": "Topic dedupe collapsed opposite Always/Never directives and resolved the correction as already-covered.",
+      "file": "src/hooks/nudges/rules/learning.ts; src/cli/cerebrum-record.ts",
+      "root_cause": "topicKey removed polarity words always and never.",
+      "fix": "Preserve polarity words in topic keys and add an opposite-directive negative control.",
+      "status": "resolved",
+      "tags": [
+        "learning-capture",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-559",
+      "timestamp": "2026-08-08T05:27:58.224Z",
+      "error_message": "A dismissed learning candidate could later be recorded and its dismissal overwritten.",
+      "file": "src/cli/cerebrum-record.ts",
+      "root_cause": "The record path did not check an existing disposition before writing and resolving.",
+      "fix": "Reject disposed candidates except an explicitly snoozed candidate and preserve the prior disposition.",
+      "status": "resolved",
+      "tags": [
+        "learning-capture",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-560",
+      "timestamp": "2026-08-08T05:27:58.224Z",
+      "error_message": "max_per_stop: 0 emitted every candidate and lease_seconds: 0 disabled lease protection.",
+      "file": "src/hooks/nudges/engine.ts",
+      "root_cause": "Zero was accepted for every numeric config while consumers interpreted it inconsistently as unlimited or immediately expired.",
+      "fix": "Treat max_per_stop zero as a real zero budget and reject zero for positive safety/ceiling values.",
+      "status": "resolved",
+      "tags": [
+        "learning-capture",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-561",
+      "timestamp": "2026-08-08T05:27:58.224Z",
+      "error_message": "Session-end snooze reported success when session state was missing, but suppressed nothing.",
+      "file": "src/cli/nudge-cmd.ts",
+      "root_cause": "Missing _session.json silently produced an empty session_id disposition that could never match.",
+      "fix": "Fail the command when a session-scoped snooze cannot bind to a current session id.",
+      "status": "resolved",
+      "tags": [
+        "learning-capture",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-562",
+      "timestamp": "2026-08-08T05:27:58.224Z",
+      "error_message": "Cerebrum record verification used whole-file includes and could pass after a misrouted write.",
+      "file": "src/cli/cerebrum-record.ts",
+      "root_cause": "Verification asserted only global string presence, not target-section placement.",
+      "fix": "Re-parse the verified file and require the exact line within the intended section bounds.",
+      "status": "resolved",
+      "tags": [
+        "learning-capture",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-563",
+      "timestamp": "2026-08-08T05:27:58.224Z",
+      "error_message": "Cerebrum recording removed blank-line separation before the next heading.",
+      "file": "src/cli/cerebrum-record.ts",
+      "root_cause": "Insertion stripped all trailing whitespace at the section boundary.",
+      "fix": "Preserve canonical blank-line separation when splicing the new list entry.",
+      "status": "resolved",
+      "tags": [
+        "learning-capture",
+        "external-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:29:54.255Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-learning-capture.md"
+    },
+    {
+      "id": "bug-564",
+      "timestamp": "2026-08-08T05:37:54.069Z",
+      "error_message": "Shell command substitution broke the memory.md append command and passed undefined to appendFileSync.",
+      "file": ".wolf/memory.md",
+      "root_cause": "A JavaScript template literal containing Markdown pipes/backticks was embedded inside a double-quoted shell command, so Bash interpreted it as command substitution.",
+      "fix": "Use a single-quoted node -e program and ordinary string concatenation so the shell cannot expand the Markdown row.",
+      "status": "resolved",
+      "tags": [
+        "shell-quoting",
+        "memory-log"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T05:37:54.069Z",
+      "commit": null,
+      "reduction": "Successful append command transcript in session"
+    },
+    {
+      "id": "bug-565",
+      "timestamp": "2026-08-08T06:00:00.000Z",
+      "error_message": "Pre-commit semantic inspection found 46 historical bug records missing from .wolf/buglog.json while 29 newer records remained.",
+      "file": ".wolf/buglog.json",
+      "root_cause": "Concurrent or stale whole-file read/modify/write operations replaced the bug array from an older snapshot, reproducing the known buglog write-race data-loss pattern.",
+      "fix": "Reconstructed the file from the exact HEAD bytes and appended only the 29 genuinely new records plus this incident, preserving all 227 historical records and their original formatting.",
+      "status": "resolved",
+      "tags": [
+        "buglog",
+        "data-loss",
+        "write-race",
+        "pre-commit"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T06:00:00.000Z",
+      "commit": null,
+      "reduction": "Semantic ID-set comparison against git show HEAD:.wolf/buglog.json"
     }
   ]
 }

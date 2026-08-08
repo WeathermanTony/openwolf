@@ -32,9 +32,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { acquireFileLock } from "../../utils/size-discipline.js";
-
-export const NUDGE_STATE_VERSION = 2;
-
+export const NUDGE_STATE_VERSION = 3;
 /** Lifecycle states a candidate can occupy. */
 export const NUDGE_STATES = Object.freeze({
     NEW: "new",
@@ -45,7 +43,6 @@ export const NUDGE_STATES = Object.freeze({
     SNOOZED: "snoozed",
     SUPERSEDED: "superseded",
 });
-
 /** Machine-readable suppression reasons (for diagnostics). */
 export const SUPPRESS_REASONS = Object.freeze({
     ALREADY_EMITTED: "same_fingerprint_already_emitted",
@@ -59,7 +56,6 @@ export const SUPPRESS_REASONS = Object.freeze({
     ROUND_CAP: "round_cap_reached",
     LEASE_HELD: "lease_held_by_other_process",
 });
-
 /**
  * Canonicalize a filesystem path for fingerprinting.
  *
@@ -73,16 +69,17 @@ export const SUPPRESS_REASONS = Object.freeze({
  * one computed on POSIX for the same logical file.
  */
 export function canonicalPath(p) {
-    if (!p) return "";
+    if (!p)
+        return "";
     let out;
     try {
         out = fs.realpathSync(path.resolve(p));
-    } catch {
+    }
+    catch {
         out = path.resolve(p);
     }
     return out.replace(/\\/g, "/");
 }
-
 /**
  * Does this string denote a filesystem path we should canonicalize?
  *
@@ -92,11 +89,8 @@ export function canonicalPath(p) {
  * the hook happened to be invoked from — the opposite of stable identity.
  */
 function looksLikePath(s) {
-    return typeof s === "string" && s.length > 1 && (
-        s.startsWith("/") || /^[A-Za-z]:[\\/]/.test(s) || s.startsWith("\\\\")
-    );
+    return typeof s === "string" && s.length > 1 && (s.startsWith("/") || /^[A-Za-z]:[\\/]/.test(s) || s.startsWith("\\\\"));
 }
-
 /**
  * Recursively canonicalize path-like strings inside an evidence payload.
  *
@@ -106,17 +100,20 @@ function looksLikePath(s) {
  * one spelling silently fails to suppress the other.
  */
 export function canonicalizeEvidence(value, depth = 0) {
-    if (depth > 12) return value; // guard against cyclic/pathological evidence
-    if (typeof value === "string") return looksLikePath(value) ? canonicalPath(value) : value;
-    if (Array.isArray(value)) return value.map(v => canonicalizeEvidence(v, depth + 1));
+    if (depth > 12)
+        return value; // guard against cyclic/pathological evidence
+    if (typeof value === "string")
+        return looksLikePath(value) ? canonicalPath(value) : value;
+    if (Array.isArray(value))
+        return value.map(v => canonicalizeEvidence(v, depth + 1));
     if (value && typeof value === "object") {
         const out = {};
-        for (const k of Object.keys(value)) out[k] = canonicalizeEvidence(value[k], depth + 1);
+        for (const k of Object.keys(value))
+            out[k] = canonicalizeEvidence(value[k], depth + 1);
         return out;
     }
     return value;
 }
-
 /**
  * Stable JSON serialization: object keys sorted recursively so that key
  * insertion order — which varies with how evidence was gathered — cannot
@@ -124,12 +121,13 @@ export function canonicalizeEvidence(value, depth = 0) {
  * e.g. an event sequence); callers sort path lists before passing them.
  */
 export function stableStringify(value) {
-    if (value === null || typeof value !== "object") return JSON.stringify(value);
-    if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
+    if (value === null || typeof value !== "object")
+        return JSON.stringify(value);
+    if (Array.isArray(value))
+        return "[" + value.map(stableStringify).join(",") + "]";
     const keys = Object.keys(value).sort();
     return "{" + keys.map(k => JSON.stringify(k) + ":" + stableStringify(value[k])).join(",") + "}";
 }
-
 /**
  * Compute a candidate's fingerprint from its FULL decision evidence.
  *
@@ -142,14 +140,7 @@ export function stableStringify(value) {
  * `rule_schema_version` participates so that changing what a rule MEANS by its
  * evidence invalidates old dispositions instead of silently inheriting them.
  */
-export function computeFingerprint({
-    ruleId,
-    ownerRoot,
-    targetHashes = {},
-    eventSequence = null,
-    evidence = {},
-    schemaVersion = 1,
-}) {
+export function computeFingerprint({ ruleId, ownerRoot, targetHashes = {}, eventSequence = null, evidence = {}, schemaVersion = 1, }) {
     // Canonicalize + sort target hashes into pairs so path spelling and key
     // order cannot perturb the digest. The value carries a type tag: without
     // one, String(h) collapses 12345678 and "12345678" to the same digest, so a
@@ -173,13 +164,11 @@ export function computeFingerprint({
     };
     return crypto.createHash("sha256").update(stableStringify(payload)).digest("hex");
 }
-
 /** Short, human-quotable id derived from rule + fingerprint. */
 export function shortNudgeId(ruleId, fingerprint) {
     const slug = String(ruleId).split(".")[0].replace(/[^a-z0-9]/gi, "").slice(0, 10) || "nudge";
     return `${slug}-${fingerprint.slice(0, 8)}`;
 }
-
 function emptyState() {
     return {
         version: NUDGE_STATE_VERSION,
@@ -189,14 +178,14 @@ function emptyState() {
         lineages: {},
     };
 }
-
 /**
  * Migrate older state shapes forward. Unknown/older versions are normalized
  * rather than discarded so a version bump never silently drops a user's
  * dismissals.
  */
 export function migrateState(raw) {
-    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return emptyState();
+    if (!raw || typeof raw !== "object" || Array.isArray(raw))
+        return emptyState();
     const out = emptyState();
     if (raw.dispositions && typeof raw.dispositions === "object" && !Array.isArray(raw.dispositions)) {
         out.dispositions = raw.dispositions;
@@ -212,11 +201,9 @@ export function migrateState(raw) {
     }
     return out;
 }
-
 export function nudgeStatePath(wolfDir) {
     return path.join(wolfDir, "nudge-state.json");
 }
-
 /**
  * Non-enumerable marker set on a state object that must NOT be written back.
  *
@@ -226,7 +213,6 @@ export function nudgeStatePath(wolfDir) {
  * and non-enumerable so it never reaches JSON.stringify or a fingerprint.
  */
 export const UNSAFE_TO_PERSIST = Symbol("unsafeToPersist");
-
 /**
  * Injectable filesystem seam.
  *
@@ -247,7 +233,6 @@ export const io = {
     unlinkSync: (p) => fs.unlinkSync(p),
     mkdirSync: (p, o) => fs.mkdirSync(p, o),
 };
-
 /**
  * Read state, distinguishing "absent" from "corrupt".
  *
@@ -268,24 +253,28 @@ export function readState(wolfDir, { onCorrupt } = {}) {
     let raw;
     try {
         raw = fs.readFileSync(file, "utf-8");
-    } catch {
+    }
+    catch {
         return emptyState(); // absent — normal first run
     }
     try {
         return migrateState(JSON.parse(raw));
-    } catch (err) {
+    }
+    catch (err) {
         // Present but unparseable: preserve the bytes before we move on.
         let quarantine = null;
         try {
             quarantine = `${file}.corrupt-${new Date().toISOString().replace(/[:.]/g, "-")}`;
             io.writeFileSync(quarantine, raw, "utf-8");
-        } catch {
+        }
+        catch {
             quarantine = null;
         }
         if (typeof onCorrupt === "function") {
             try {
                 onCorrupt({ file, quarantine, bytes: raw.length, error: String((err && err.message) || err) });
-            } catch { }
+            }
+            catch { }
         }
         const fallback = emptyState();
         if (!quarantine) {
@@ -303,7 +292,6 @@ export function readState(wolfDir, { onCorrupt } = {}) {
         return fallback;
     }
 }
-
 /**
  * Atomic state write that THROWS on failure.
  *
@@ -332,38 +320,45 @@ export function writeStateOrThrow(wolfDir, state) {
     try {
         io.writeFileSync(tmp, body, "utf-8");
         io.renameSync(tmp, file);
-    } catch (err) {
-        try { io.unlinkSync(tmp); } catch { }
+    }
+    catch (err) {
+        try {
+            io.unlinkSync(tmp);
+        }
+        catch { }
         throw err;
     }
 }
-
 function nowMs(clock) {
     return clock && typeof clock.now === "function" ? clock.now() : Date.now();
 }
-
 /**
  * Is this fingerprint currently suppressed by a durable disposition?
  * Returns a machine-readable reason string, or null when eligible.
  */
-export function dispositionSuppression(state, fingerprint, { clock } = {}) {
+export function dispositionSuppression(state, fingerprint, { clock, sessionId = "" } = {}) {
     const d = state.dispositions ? state.dispositions[fingerprint] : null;
-    if (!d) return null;
-    if (d.state === NUDGE_STATES.RESOLVED) return SUPPRESS_REASONS.RESOLVED;
-    if (d.state === NUDGE_STATES.DISMISSED) return SUPPRESS_REASONS.DISMISSED;
-    if (d.state === NUDGE_STATES.SUPERSEDED) return SUPPRESS_REASONS.STALE_REVIEW;
+    if (!d)
+        return null;
+    if (d.state === NUDGE_STATES.RESOLVED)
+        return SUPPRESS_REASONS.RESOLVED;
+    if (d.state === NUDGE_STATES.DISMISSED)
+        return SUPPRESS_REASONS.DISMISSED;
+    if (d.state === NUDGE_STATES.SUPERSEDED)
+        return SUPPRESS_REASONS.STALE_REVIEW;
     if (d.state === NUDGE_STATES.SNOOZED) {
         // `until: null` means session-scoped: the durable record exists but the
         // session that owns it is gone, so treat expiry as "still snoozed only
         // within that session" — session_id is checked by the caller.
-        if (!d.until) return SUPPRESS_REASONS.SNOOZED;
+        if (!d.until)
+            return d.session_id && sessionId && d.session_id === sessionId ? SUPPRESS_REASONS.SNOOZED : null;
         const until = Date.parse(d.until);
-        if (Number.isFinite(until) && nowMs(clock) < until) return SUPPRESS_REASONS.SNOOZED;
+        if (Number.isFinite(until) && nowMs(clock) < until)
+            return SUPPRESS_REASONS.SNOOZED;
         return null; // snooze expired → eligible again
     }
     return null;
 }
-
 /**
  * Attempt a LEASED CLAIM on a fingerprint.
  *
@@ -387,27 +382,26 @@ export function tryClaim(wolfDir, fingerprint, { leaseSeconds = 30, sessionId = 
     const file = nudgeStatePath(wolfDir);
     try {
         fs.mkdirSync(path.dirname(file), { recursive: true });
-    } catch { }
+    }
+    catch { }
     const release = acquireFileLock(file);
     if (!release) {
         return { ok: false, reason: SUPPRESS_REASONS.LEASE_HELD, degraded: true };
     }
     try {
         const state = readState(wolfDir);
-        const disp = dispositionSuppression(state, fingerprint, { clock });
-        if (disp) return { ok: false, reason: disp };
-
+        const disp = dispositionSuppression(state, fingerprint, { clock, sessionId });
+        if (disp)
+            return { ok: false, reason: disp };
         const emission = state.emissions ? state.emissions[fingerprint] : null;
-        if (emission && (!sessionId || emission.session_id === sessionId)) {
+        if (emission) {
             return { ok: false, reason: SUPPRESS_REASONS.ALREADY_EMITTED };
         }
-
         const t = nowMs(clock);
         const lease = state.leases ? state.leases[fingerprint] : null;
         if (lease && Number.isFinite(Date.parse(lease.expires_at)) && Date.parse(lease.expires_at) > t) {
             return { ok: false, reason: SUPPRESS_REASONS.LEASE_HELD };
         }
-
         // Per-rule session ceiling, re-checked HERE against durable state.
         // The engine also filters on its pre-lock snapshot, but that snapshot is
         // taken outside the lock and never refreshed: two concurrent Stop hooks
@@ -418,18 +412,20 @@ export function tryClaim(wolfDir, fingerprint, { leaseSeconds = 30, sessionId = 
         if (maxPerRulePerSession > 0 && sessionId && ruleId) {
             const counted = new Set();
             for (const [fp, e] of Object.entries(state.emissions || {})) {
-                if (e && e.rule_id === ruleId && e.session_id === sessionId) counted.add(fp);
+                if (e && e.rule_id === ruleId && e.session_id === sessionId)
+                    counted.add(fp);
             }
             for (const [fp, l] of Object.entries(state.leases || {})) {
-                if (!l || l.rule_id !== ruleId || l.session_id !== sessionId) continue;
-                if (Number.isFinite(Date.parse(l.expires_at)) && Date.parse(l.expires_at) > t) counted.add(fp);
+                if (!l || l.rule_id !== ruleId || l.session_id !== sessionId)
+                    continue;
+                if (Number.isFinite(Date.parse(l.expires_at)) && Date.parse(l.expires_at) > t)
+                    counted.add(fp);
             }
             counted.delete(fingerprint); // our own prior lease must not count against us
             if (counted.size >= maxPerRulePerSession) {
                 return { ok: false, reason: SUPPRESS_REASONS.OVER_BUDGET };
             }
         }
-
         const token = owner || `${process.pid}:${crypto.randomBytes(8).toString("hex")}`;
         state.leases[fingerprint] = {
             owner: token,
@@ -440,22 +436,37 @@ export function tryClaim(wolfDir, fingerprint, { leaseSeconds = 30, sessionId = 
         };
         writeStateOrThrow(wolfDir, state);
         return { ok: true, token };
-    } catch (err) {
+    }
+    catch (err) {
         // Persistence failed. Do NOT claim — claiming without a durable record
         // means every concurrent process also claims, and the user sees N
         // duplicates. Surface it as degraded so the caller can emit one concise
         // diagnostic instead of silently looping.
         return { ok: false, reason: "state_error", degraded: true, error: String(err && err.message || err) };
-    } finally {
+    }
+    finally {
         release();
     }
 }
-
+function sanitizeCandidateDetail(detail) {
+    if (!detail || typeof detail !== "object" || Array.isArray(detail))
+        return null;
+    const allowed = ["candidate_type", "trust", "kind", "target_section", "topic_key", "excerpt", "source_hash", "source_timestamp", "cerebrum_hash"];
+    const out = {};
+    for (const key of allowed) {
+        if (typeof detail[key] !== "string")
+            continue;
+        const max = key === "excerpt" ? 500 : 160;
+        out[key] = detail[key].replace(/[ -]/g, " ").slice(0, max);
+    }
+    return out.candidate_type === "learning" ? out : null;
+}
 /** Convert a held lease into a durable emission record. */
-export function markEmitted(wolfDir, fingerprint, { token, sessionId = "", ruleId = "", ownerRoot = null, clock } = {}) {
+export function markEmitted(wolfDir, fingerprint, { token, sessionId = "", ruleId = "", ownerRoot = null, detail = null, clock } = {}) {
     const file = nudgeStatePath(wolfDir);
     const release = acquireFileLock(file);
-    if (!release) return { ok: false, degraded: true, reason: SUPPRESS_REASONS.LEASE_HELD };
+    if (!release)
+        return { ok: false, degraded: true, reason: SUPPRESS_REASONS.LEASE_HELD };
     try {
         const state = readState(wolfDir);
         const lease = state.leases ? state.leases[fingerprint] : null;
@@ -471,36 +482,43 @@ export function markEmitted(wolfDir, fingerprint, { token, sessionId = "", ruleI
             session_id: sessionId,
             emitted_at: new Date(nowMs(clock)).toISOString(),
             state: NUDGE_STATES.EMITTED,
+            detail: sanitizeCandidateDetail(detail),
         };
-        if (state.leases) delete state.leases[fingerprint];
+        if (state.leases)
+            delete state.leases[fingerprint];
         writeStateOrThrow(wolfDir, state);
         return { ok: true };
-    } catch (err) {
+    }
+    catch (err) {
         return { ok: false, degraded: true, error: String(err && err.message || err) };
-    } finally {
+    }
+    finally {
         release();
     }
 }
-
 /** Release a lease without emitting (caller decided not to emit after all). */
 export function releaseLease(wolfDir, fingerprint, token) {
     const release = acquireFileLock(nudgeStatePath(wolfDir));
-    if (!release) return false;
+    if (!release)
+        return false;
     try {
         const state = readState(wolfDir);
         const lease = state.leases ? state.leases[fingerprint] : null;
-        if (!lease) return true;
-        if (token && lease.owner !== token) return false;
+        if (!lease)
+            return true;
+        if (token && lease.owner !== token)
+            return false;
         delete state.leases[fingerprint];
         writeStateOrThrow(wolfDir, state);
         return true;
-    } catch {
+    }
+    catch {
         return false;
-    } finally {
+    }
+    finally {
         release();
     }
 }
-
 /**
  * Record a durable disposition against an exact fingerprint.
  *
@@ -511,7 +529,8 @@ export function releaseLease(wolfDir, fingerprint, token) {
  */
 export function setDisposition(wolfDir, fingerprint, dispositionState, { reason = "", until = null, sessionId = "", ruleId = "", clock } = {}) {
     const release = acquireFileLock(nudgeStatePath(wolfDir));
-    if (!release) return { ok: false, degraded: true };
+    if (!release)
+        return { ok: false, degraded: true };
     try {
         const state = readState(wolfDir);
         state.dispositions[fingerprint] = {
@@ -524,13 +543,14 @@ export function setDisposition(wolfDir, fingerprint, dispositionState, { reason 
         };
         writeStateOrThrow(wolfDir, state);
         return { ok: true };
-    } catch (err) {
+    }
+    catch (err) {
         return { ok: false, degraded: true, error: String(err && err.message || err) };
-    } finally {
+    }
+    finally {
         release();
     }
 }
-
 /**
  * Review lineage bookkeeping. The round cap must apply to the LINEAGE (one
  * logical fix-and-review conversation), not to each content hash — otherwise
@@ -539,7 +559,8 @@ export function setDisposition(wolfDir, fingerprint, dispositionState, { reason 
  */
 export function bumpLineageRound(wolfDir, lineageId, { clock } = {}) {
     const release = acquireFileLock(nudgeStatePath(wolfDir));
-    if (!release) return { ok: false, round: null, degraded: true };
+    if (!release)
+        return { ok: false, round: null, degraded: true };
     try {
         const state = readState(wolfDir);
         const prior = state.lineages[lineageId] || { rounds: 0, escalated: false };
@@ -548,21 +569,22 @@ export function bumpLineageRound(wolfDir, lineageId, { clock } = {}) {
         state.lineages[lineageId] = prior;
         writeStateOrThrow(wolfDir, state);
         return { ok: true, round: prior.rounds, escalated: prior.escalated === true };
-    } catch (err) {
+    }
+    catch (err) {
         return { ok: false, round: null, degraded: true, error: String(err && err.message || err) };
-    } finally {
+    }
+    finally {
         release();
     }
 }
-
 export function getLineage(wolfDir, lineageId) {
     const state = readState(wolfDir);
     return state.lineages[lineageId] || { rounds: 0, escalated: false };
 }
-
 export function markLineageEscalated(wolfDir, lineageId, { clock } = {}) {
     const release = acquireFileLock(nudgeStatePath(wolfDir));
-    if (!release) return false;
+    if (!release)
+        return false;
     try {
         const state = readState(wolfDir);
         const prior = state.lineages[lineageId] || { rounds: 0 };
@@ -571,9 +593,12 @@ export function markLineageEscalated(wolfDir, lineageId, { clock } = {}) {
         state.lineages[lineageId] = prior;
         writeStateOrThrow(wolfDir, state);
         return true;
-    } catch {
+    }
+    catch {
         return false;
-    } finally {
+    }
+    finally {
         release();
     }
 }
+//# sourceMappingURL=state.js.map

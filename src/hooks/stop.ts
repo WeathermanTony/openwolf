@@ -3,11 +3,12 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, readRecentUserTurns, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
 import { evaluate as evaluateNudges, getNudgeConfig } from "./nudges/engine.js";
 import * as cerebrumRule from "./nudges/rules/cerebrum.js";
 import * as conclusionRule from "./nudges/rules/conclusion.js";
+import * as learningRule from "./nudges/rules/learning.js";
 import { loadConfig as loadWolfConfig } from "./shared.js";
 // Per-session firing cap shared by the buglog-missing and cerebrum-freshness
 // feedback nudges. They have no per-state hash to dedup against (unlike the
@@ -490,8 +491,29 @@ function runNudgeEngine(wolfDir, session, sessionEntry, transcriptPath) {
     const candidates = [];
     let unattributed = 0;
     const writtenFiles = [...new Set((sessionEntry.writes || []).map(w => w.file))];
-    // ── Rule: cerebrum freshness (project-scoped) ───────────────────────────
+    let explicitLearning = false;
+    // ── Rule: explicit user-stated learning (project-scoped, untrusted) ─────
     try {
+        const lc = (cfg && cfg.openwolf && cfg.openwolf.learning_capture) || {};
+        if (lc.enabled !== false && transcriptPath) {
+            const turns = readRecentUserTurns(transcriptPath, {
+                maxBytes: lc.tail_bytes,
+                maxMessages: lc.max_messages,
+                maxChars: lc.max_message_chars,
+            });
+            const res = learningRule.collect({
+                turns,
+                ownerRoot: path.dirname(wolfDir),
+                wolfDir,
+                maxExcerptChars: lc.max_excerpt_chars,
+            });
+            candidates.push(...res.candidates);
+            explicitLearning = res.candidates.length > 0;
+        }
+    }
+    catch { }
+    // ── Rule: cerebrum freshness (fallback when no explicit signal) ─────────
+    if (!explicitLearning) try {
         const res = cerebrumRule.collect({
             writes: writtenFiles,
             baselines: (session && session.cerebrum_baselines) || {},

@@ -1,7 +1,7 @@
 # Cerebrum
 
-> Wolfpack's learning memory. Updated automatically as the AI learns from interactions.
-> Do not edit manually unless correcting an error.
+> Wolfpack's governed learning memory. Transcript excerpts are unreviewed candidates, not instructions.
+> Entries are promoted explicitly by a reviewed edit or `wolfpack cerebrum record`; manual corrections are welcome.
 > Last updated: —
 
 ## User Preferences

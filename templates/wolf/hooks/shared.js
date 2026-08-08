@@ -708,7 +708,6 @@ const DEFAULT_GATE_EXCLUDES = [
     ...SCRATCH_PATH_EXCLUDES,
     ...WOLF_DOC_EXCLUDES,
 ];
-
 /**
  * Extensions whose correctness is *executable-checkable* — the property that
  * actually creates a bug-fix obligation.
@@ -757,7 +756,6 @@ const OBLIGATION_EXTENSION_REGISTRY = [
     // Solidity / other VM targets
     ".sol", ".move", ".cairo",
 ];
-
 /**
  * Resolve which extensions carry a bug-fix obligation *for this project*.
  *
@@ -966,8 +964,6 @@ const QUALITY_GATE_DEFAULTS = {
     retention_days: 30,
     verify_conclusions: VERIFY_CONCLUSIONS_DEFAULTS,
 };
-
-
 const HOOK_MESSAGE_DEFAULTS = {
     verbosity: "compact",
     reviewer_profile: "us-only",
@@ -975,7 +971,6 @@ const HOOK_MESSAGE_DEFAULTS = {
     include_provider_examples: false,
     include_docs_hint: true,
 };
-
 const AUTONOMY_CONTINUATION_DEFAULTS = {
     enabled: true,
     nudge_only: true,
@@ -1176,8 +1171,7 @@ export function carriesBugfixObligation(file, opts = {}) {
     // Test every supplied form and exclude if ANY matches: an exclude is a
     // statement that this file is uninteresting, and which spelling the caller
     // happens to hold should not change that.
-    const forms = [file, ...(opts.altPaths ?? [])].filter(
-        (p) => typeof p === "string" && p.length > 0);
+    const forms = [file, ...(opts.altPaths ?? [])].filter((p) => typeof p === "string" && p.length > 0);
     if (forms.some((p) => excludeRegexes.some((re) => re.test(p))))
         return false;
     const exts = opts.extensions;
@@ -1229,6 +1223,77 @@ export function getSizeDisciplineConfig() {
  * Reads up to `maxBytes` from the END of the file to avoid loading multi-MB
  * transcripts into memory.
  */
+export function readRecentUserTurns(transcriptPath, { maxBytes = 512 * 1024, maxMessages = 12, maxChars = 2000 } = {}) {
+    try {
+        if (!transcriptPath || !fs.existsSync(transcriptPath))
+            return [];
+        const stat = fs.statSync(transcriptPath);
+        if (stat.size === 0)
+            return [];
+        const byteLimit = Number.isFinite(Number(maxBytes)) ? Number(maxBytes) : 512 * 1024;
+        const messageLimit = Number.isFinite(Number(maxMessages)) ? Number(maxMessages) : 12;
+        const charLimit = Number.isFinite(Number(maxChars)) ? Number(maxChars) : 2000;
+        const readSize = Math.min(stat.size, Math.max(64 * 1024, byteLimit));
+        const startOffset = Math.max(0, stat.size - readSize);
+        const fd = fs.openSync(transcriptPath, "r");
+        const buf = Buffer.alloc(readSize);
+        try {
+            fs.readSync(fd, buf, 0, readSize, startOffset);
+        }
+        finally {
+            fs.closeSync(fd);
+        }
+        let tail = buf.toString("utf-8");
+        if (startOffset > 0) {
+            const firstNewline = tail.indexOf("\n");
+            if (firstNewline >= 0)
+                tail = tail.slice(firstNewline + 1);
+        }
+        const turns = [];
+        const controlPrefix = /^\s*<(?:system-reminder|task-notification|hookSpecificOutput|cross-session-message)\b/i;
+        const add = (text, entry, lineIndex, source = "user") => {
+            const normalized = String(text || "").replace(/\s+/g, " ").trim();
+            if (!normalized || normalized === "[Request interrupted by user]" || controlPrefix.test(normalized))
+                return;
+            const bounded = normalized.slice(0, Math.max(200, charLimit));
+            turns.push({
+                text: bounded,
+                timestamp: typeof entry.timestamp === "string" ? entry.timestamp : "",
+                hash: crypto.createHash("sha256").update(normalized).digest("hex"),
+                line_index: lineIndex,
+                source,
+                truncated: bounded.length < normalized.length,
+            });
+        };
+        const lines = tail.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line)
+                continue;
+            let entry;
+            try {
+                entry = JSON.parse(line);
+            }
+            catch {
+                continue;
+            }
+            if (entry.type === "user") {
+                const c = entry.message?.content;
+                const text = typeof c === "string" ? c
+                    : Array.isArray(c) ? c.map(b => typeof b === "string" ? b : (b?.type === "text" ? b.text : "")).join("\n")
+                        : "";
+                add(text, entry, i, "user");
+            }
+            else if (entry.type === "attachment" && entry.attachment?.type === "queued_command") {
+                add(entry.attachment.prompt, entry, i, "queued_command");
+            }
+        }
+        return turns.slice(-Math.max(1, messageLimit));
+    }
+    catch {
+        return [];
+    }
+}
 export function readLastAssistantText(transcriptPath, maxBytes = 256 * 1024) {
     try {
         if (!transcriptPath || !fs.existsSync(transcriptPath))
@@ -1314,7 +1379,6 @@ export function readLastAssistantText(transcriptPath, maxBytes = 256 * 1024) {
         return null;
     }
 }
-
 const QUEUE_DROP_WATCH_DEFAULTS = {
     enabled: true,
     injection_reminder: true,
@@ -1502,7 +1566,6 @@ export function detectDroppedQueueMessages(transcriptPath, tailBytes = QUEUE_DRO
         return [];
     }
 }
-
 /**
  * Detect user messages the client INJECTED mid-turn (bug-434 revised: the
  * client does not discard queued messages — it delivers them as
@@ -1578,7 +1641,6 @@ export function detectMidturnInjections(transcriptPath, tailBytes = QUEUE_DROP_W
         return [];
     }
 }
-
 export function getHookMessageConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.hook_messages : undefined) ?? {};
@@ -1592,7 +1654,6 @@ export function getHookMessageConfig() {
         include_docs_hint: cfg.include_docs_hint ?? HOOK_MESSAGE_DEFAULTS.include_docs_hint,
     };
 }
-
 export function getReviewHookConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.review_hook : undefined) ?? {};
@@ -1695,7 +1756,6 @@ export function getClaimCalibrationConfig() {
 export function getScientificModeConfig() {
     return getClaimCalibrationConfig();
 }
-
 export function getQualityGateConfig() {
     const root = loadConfig();
     const cfg = (root && typeof root === "object" ? root.openwolf?.quality_gate : undefined) ?? {};
@@ -1773,7 +1833,6 @@ export function hashFilesAtRest(files) {
     }
     return out;
 }
-
 export function makeHashManifest(files, hashes) {
     const normalizedFiles = [...new Set(files.map(normalizeFilePath))];
     return normalizedFiles
@@ -1785,12 +1844,10 @@ export function hashReviewManifest(files, hashes) {
     const manifest = makeHashManifest(files, hashes);
     return crypto.createHash("sha256").update(JSON.stringify(manifest)).digest("hex");
 }
-
 const SKILL_RECEIPT_STATUSES = new Set(["planned", "running", "succeeded", "failed", "cancelled"]);
 const SKILL_RECEIPT_OUTCOMES = new Set(["clean", "findings", "partial", "error", "unknown"]);
 const SKILL_RECEIPT_ATTESTATIONS = new Set(["snapshot", "self-asserted", "manifest-bound", "externally-verifiable"]);
 const HASH_VALUE_RE = /^[a-f0-9]{64}$/;
-
 export function makeArtifactManifest(files, hashes) {
     const normalizedFiles = [...new Set(files.map(normalizeFilePath))];
     const missing = normalizedFiles.filter((file) => !Object.prototype.hasOwnProperty.call(hashes, file));
@@ -1809,7 +1866,6 @@ export function makeArtifactManifest(files, hashes) {
         hashes: normalizedHashes,
     };
 }
-
 export function validateArtifactManifest(manifest) {
     const problems = [];
     if (!manifest || typeof manifest !== "object" || Array.isArray(manifest))
@@ -1849,7 +1905,6 @@ export function validateArtifactManifest(manifest) {
         problems.push("manifest_hash does not match canonical contents");
     return { valid: problems.length === 0, problems };
 }
-
 export function makeSkillReceipt(options, existing) {
     const now = options.now ?? new Date().toISOString();
     const status = options.status ?? "succeeded";
@@ -1885,7 +1940,6 @@ export function makeSkillReceipt(options, existing) {
         },
     };
 }
-
 export function validateSkillReceipt(receipt) {
     const problems = [];
     if (!receipt || typeof receipt !== "object" || Array.isArray(receipt))
@@ -1944,7 +1998,6 @@ export function validateSkillReceipt(receipt) {
         problems.push("limits must be an array");
     return { valid: problems.length === 0, problems };
 }
-
 export function verifySkillReceiptInputs(receipt) {
     const check = validateSkillReceipt(receipt);
     if (!check.valid)
@@ -1961,7 +2014,6 @@ export function verifySkillReceiptInputs(receipt) {
         return { status: "UNREADABLE", problems: ["one or more current inputs are unreadable"], current };
     return { status: "CURRENT", problems: [], current };
 }
-
 export function makeCurrentByteReceipt(files, hashes, existing) {
     const now = new Date().toISOString();
     return {
@@ -2043,3 +2095,4 @@ export function getReviewHashes(review) {
     }
     return review?.content_hashes;
 }
+//# sourceMappingURL=shared.js.map

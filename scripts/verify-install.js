@@ -58,6 +58,9 @@ const requiredFiles = [
   'templates/wolf/qa/_README.md',
   'templates/wolf/qa/_template.md',
   'templates/wolf/qa/_gate-log.json',
+  'src/hooks/nudges/rules/learning.js',
+  '.wolf/hooks/nudges/rules/learning.js',
+  'templates/wolf/hooks/nudges/rules/learning.js',
   ...hookNames.flatMap((name) => [`.wolf/hooks/${name}`, `src/hooks/${name}`, `templates/wolf/hooks/${name}`]),
   ...utilNames.flatMap((name) => [`.wolf/utils/${name}`, `src/utils/${name}`, `templates/wolf/utils/${name}`]),
 ];

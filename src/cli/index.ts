@@ -398,6 +398,15 @@ export function createProgram(): Command {
     .description("Cerebrum memory management");
 
   cerebrum
+    .command("record <id>")
+    .description("Record an explicit learning candidate into governed Cerebrum")
+    .requiredOption("--text <entry>", "Sanitized durable entry to record")
+    .action(async (id: string, opts: { text: string }) => {
+      const { cerebrumRecord } = await import("./cerebrum-record.js");
+      cerebrumRecord(id, opts);
+    });
+
+  cerebrum
     .command("lint")
     .description("Validate .wolf/cerebrum.md structure")
     .option("--check", "Exit nonzero on structural errors")

@@ -869,3 +869,85 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 15:42 | Refreshed review-0080 to current bytes (manifest 93feed87) | .wolf/reviewlog.json | refreshed | ~800 |
 | 15:50 | Completed review-0080 via complete-review.js | .wolf/reviewlog.json | status=completed, hashes verified (434d876d == qa target-hash) | ~600 |
 | 15:51 | Verified working tree + review-0080 completion | git, reviewlog | clean except memory/anatomy bookkeeping | ~400 |
+
+## Session: 2026-08-08 00:22
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 00:25 | Evaluated TencentDB Agent Memory against Wolfpack architecture and recorded adoption decision | .wolf/cerebrum.md | Recommend selective mechanism adoption, not full-stack integration | ~9000 |
+| 00:33 | Refined TencentDB decision from selective pilot to no integration; prioritize native Cerebrum capture reliability | .wolf/cerebrum.md | User preference recorded; simpler Wolfpack-first direction | ~400 |
+
+## Session: 2026-08-08 00:40
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 00:42 | Evaluated Engram, Compozy, MemPalace, Memori, and Ruflo memory designs | .wolf/cerebrum.md | Ranked transferable plain-file capture, provenance, lifecycle, and recall mechanisms; rejected DB/MCP/cloud/vector bloat | ~8500 |
+| 01:03 | Evaluated ECC memory and continuous-learning designs | .wolf/cerebrum.md | Added unreviewed-context trust boundary and explicit governed promotion to recommended Wolfpack model | ~3200 |
+
+## Session: 2026-08-08 00:53
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 00:58 | Created ../../../../../home/tony/.claude/plans/jaunty-splashing-globe.md | — | ~2995 |
+| 01:07 | Edited src/hooks/shared.ts | added error handling | ~767 |
+| 01:07 | Created src/hooks/nudges/rules/learning.ts | — | ~1188 |
+| 01:07 | Edited src/hooks/nudges/engine.ts | 3→4 lines | ~28 |
+| 01:07 | Edited src/hooks/nudges/state.ts | 2 → 3 | ~11 |
+| 01:07 | Edited src/hooks/nudges/state.ts | inline fix | ~39 |
+| 01:08 | Edited src/hooks/nudges/state.ts | 3→4 lines | ~48 |
+| 01:08 | Edited src/hooks/nudges/state.ts | added 2 condition(s) | ~190 |
+| 01:08 | Edited src/hooks/stop.ts | inline fix | ~173 |
+| 01:08 | Edited src/hooks/stop.ts | added 1 import(s) | ~36 |
+| 01:08 | Edited src/hooks/stop.ts | added 2 condition(s) | ~388 |
+| 01:08 | Edited src/hooks/shared.ts | modified Number() | ~101 |
+| 01:08 | Edited src/hooks/shared.ts | inline fix | ~22 |
+| 01:09 | Edited src/hooks/shared.ts | inline fix | ~16 |
+| 01:09 | Edited src/config/default-config.json | expanded (+7 lines) | ~61 |
+| 01:09 | Edited templates/wolf/config.json | expanded (+7 lines) | ~61 |
+| 01:09 | Edited src/templates/config.json | expanded (+7 lines) | ~61 |
+| 01:10 | Edited src/cli/nudge-cmd.ts | inline fix | ~16 |
+| 01:10 | Edited src/cli/nudge-cmd.ts | inline fix | ~8 |
+| 01:10 | Edited src/cli/nudge-cmd.ts | added 1 condition(s) | ~197 |
+| 01:10 | Created src/cli/cerebrum-record.ts | — | ~1393 |
+| 01:11 | Edited src/cli/index.ts | expanded (+9 lines) | ~114 |
+| 01:12 | Created tests/learning-capture.test.js | — | ~1402 |
+| 01:12 | Edited src/hooks/nudges/rules/learning.ts | added 1 condition(s) | ~76 |
+| 01:13 | Edited src/templates/cerebrum.md | 2→2 lines | ~59 |
+| 01:13 | Edited templates/wolf/cerebrum.md | 2→2 lines | ~59 |
+| 01:14 | Edited scripts/verify-install.js | 2→5 lines | ~56 |
+| 01:14 | Edited package.json | inline fix | ~5 |
+| 01:14 | Edited package-lock.json | inline fix | ~5 |
+| 01:14 | Edited VERSION | inline fix | ~4 |
+| 01:15 | Session end: 30 writes across 17 files (jaunty-splashing-globe.md, shared.ts, learning.ts, engine.ts, state.ts) | 21 reads | ~183861 tok |
+| 01:18 | Edited src/hooks/nudges/engine.ts | inline fix | ~7 |
+| 01:18 | Edited src/hooks/nudges/state.ts | inline fix | ~7 |
+| 01:18 | Edited src/hooks/nudges/state.ts | inline fix | ~27 |
+| 01:18 | Edited src/hooks/nudges/state.ts | inline fix | ~34 |
+| 01:18 | Edited src/hooks/nudges/engine.ts | inline fix | ~19 |
+| 01:19 | Edited src/hooks/nudges/state.ts | inline fix | ~19 |
+| 01:19 | Edited src/cli/nudge-cmd.ts | added error handling | ~88 |
+| 01:19 | Edited src/cli/nudge-cmd.ts | 2→3 lines | ~32 |
+| 01:19 | Edited src/cli/nudge-cmd.ts | inline fix | ~21 |
+| 01:19 | Edited tests/learning-capture.test.js | expanded (+14 lines) | ~298 |
+| 01:26 | Edited src/cli/cerebrum-record.ts | modified sectionBounds() | ~143 |
+| 01:26 | Edited src/hooks/nudges/rules/learning.ts | inline fix | ~48 |
+| 01:26 | Edited src/cli/cerebrum-record.ts | added 1 condition(s) | ~98 |
+| 01:26 | Edited src/cli/cerebrum-record.ts | 2→3 lines | ~84 |
+| 01:26 | Edited src/cli/cerebrum-record.ts | 2→5 lines | ~112 |
+| 01:27 | Edited src/cli/nudge-cmd.ts | added 1 condition(s) | ~109 |
+| 01:27 | Edited src/hooks/nudges/engine.ts | 1→2 lines | ~42 |
+| 01:27 | Edited src/hooks/nudges/engine.ts | inline fix | ~14 |
+| 01:27 | Edited tests/learning-capture.test.js | expanded (+38 lines) | ~806 |
+| 01:28 | Session end: 50 writes across 18 files (jaunty-splashing-globe.md, shared.ts, learning.ts, engine.ts, state.ts) | 21 reads | ~186714 tok |
+| 01:37 | Implemented evidence-bound explicit learning capture and governed Cerebrum promotion | src/hooks/nudges/rules/learning.ts, src/cli/cerebrum-record.ts, tests/learning-capture.test.js | 10 focused + 141 full tests pass; verify pass; final GLM arbitration clean | ~18000 |
+| 01:38 | Session end: 53 writes across 18 files (jaunty-splashing-globe.md, shared.ts, learning.ts, engine.ts, state.ts) | 21 reads | ~186752 tok |
+| 01:40 | Session end: 61 writes across 26 files (jaunty-splashing-globe.md, shared.ts, learning.ts, engine.ts, state.ts) | 21 reads | ~189313 tok |
+| 01:40 | Audited learning implementation for simplicity after Stop nudge | src/hooks/nudges/state.ts, src/hooks/nudges/rules/learning.ts, src/cli/cerebrum-record.ts | State change is 25 added/10 removed lines; new modules total 185 lines with separate detection/promotion responsibilities; no YAGNI subsystem found | ~700 |
+| 01:40 | Session end: 61 writes across 26 files (jaunty-splashing-globe.md, shared.ts, learning.ts, engine.ts, state.ts) | 21 reads | ~189313 tok |
+| 01:46 | Session end: 61 writes across 26 files (jaunty-splashing-globe.md, shared.ts, learning.ts, engine.ts, state.ts) | 22 reads | ~196357 tok |
+
+## Session: 2026-08-08 03:04
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 06:04 | Repaired pre-commit buglog data loss and revalidated release | .wolf/buglog.json, runtime trees | Restored 46 missing historical IDs; 141/141 tests, focused 10/10, install verify pass; generated hashes identical | ~1800 |

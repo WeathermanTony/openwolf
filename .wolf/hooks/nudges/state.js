@@ -32,7 +32,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { acquireFileLock } from "../../utils/size-discipline.js";
-export const NUDGE_STATE_VERSION = 2;
+export const NUDGE_STATE_VERSION = 3;
 /** Lifecycle states a candidate can occupy. */
 export const NUDGE_STATES = Object.freeze({
     NEW: "new",
@@ -336,7 +336,7 @@ function nowMs(clock) {
  * Is this fingerprint currently suppressed by a durable disposition?
  * Returns a machine-readable reason string, or null when eligible.
  */
-export function dispositionSuppression(state, fingerprint, { clock } = {}) {
+export function dispositionSuppression(state, fingerprint, { clock, sessionId = "" } = {}) {
     const d = state.dispositions ? state.dispositions[fingerprint] : null;
     if (!d)
         return null;
@@ -351,7 +351,7 @@ export function dispositionSuppression(state, fingerprint, { clock } = {}) {
         // session that owns it is gone, so treat expiry as "still snoozed only
         // within that session" — session_id is checked by the caller.
         if (!d.until)
-            return SUPPRESS_REASONS.SNOOZED;
+            return d.session_id && sessionId && d.session_id === sessionId ? SUPPRESS_REASONS.SNOOZED : null;
         const until = Date.parse(d.until);
         if (Number.isFinite(until) && nowMs(clock) < until)
             return SUPPRESS_REASONS.SNOOZED;
@@ -390,11 +390,11 @@ export function tryClaim(wolfDir, fingerprint, { leaseSeconds = 30, sessionId = 
     }
     try {
         const state = readState(wolfDir);
-        const disp = dispositionSuppression(state, fingerprint, { clock });
+        const disp = dispositionSuppression(state, fingerprint, { clock, sessionId });
         if (disp)
             return { ok: false, reason: disp };
         const emission = state.emissions ? state.emissions[fingerprint] : null;
-        if (emission && (!sessionId || emission.session_id === sessionId)) {
+        if (emission) {
             return { ok: false, reason: SUPPRESS_REASONS.ALREADY_EMITTED };
         }
         const t = nowMs(clock);
@@ -448,8 +448,21 @@ export function tryClaim(wolfDir, fingerprint, { leaseSeconds = 30, sessionId = 
         release();
     }
 }
+function sanitizeCandidateDetail(detail) {
+    if (!detail || typeof detail !== "object" || Array.isArray(detail))
+        return null;
+    const allowed = ["candidate_type", "trust", "kind", "target_section", "topic_key", "excerpt", "source_hash", "source_timestamp", "cerebrum_hash"];
+    const out = {};
+    for (const key of allowed) {
+        if (typeof detail[key] !== "string")
+            continue;
+        const max = key === "excerpt" ? 500 : 160;
+        out[key] = detail[key].replace(/[ -]/g, " ").slice(0, max);
+    }
+    return out.candidate_type === "learning" ? out : null;
+}
 /** Convert a held lease into a durable emission record. */
-export function markEmitted(wolfDir, fingerprint, { token, sessionId = "", ruleId = "", ownerRoot = null, clock } = {}) {
+export function markEmitted(wolfDir, fingerprint, { token, sessionId = "", ruleId = "", ownerRoot = null, detail = null, clock } = {}) {
     const file = nudgeStatePath(wolfDir);
     const release = acquireFileLock(file);
     if (!release)
@@ -469,6 +482,7 @@ export function markEmitted(wolfDir, fingerprint, { token, sessionId = "", ruleI
             session_id: sessionId,
             emitted_at: new Date(nowMs(clock)).toISOString(),
             state: NUDGE_STATES.EMITTED,
+            detail: sanitizeCandidateDetail(detail),
         };
         if (state.leases)
             delete state.leases[fingerprint];
