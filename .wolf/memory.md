@@ -3,6 +3,14 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
+## Session: 2026-08-08
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:08 | Added protected Superpowers canary fixtures, rubric, treatments, manifest, deterministic scorer, focused tests, and QA evidence | .wolf/experiments/superpowers-canary/, tests/superpowers-canary.test.js, .wolf/qa/superpowers-canary-scorer.md, .wolf/anatomy.md | Focused scorer suite passed 5/5; no Experiment Mode source changes | ~9000 |
+| 17:16 | Hardened canary evaluation against promotion-invalidating self-report and matrix drift | .wolf/experiments/superpowers-canary/, tests/superpowers-canary.test.js, .wolf/qa/superpowers-canary-scorer.md, .wolf/anatomy.md | Exact replicated matrix, fixture oracles, hash-bound artifacts, candidate treatment hashes, integral costs, and zero-baseline guard tested 4/4 | ~7000 |
+| 17:21 | Replaced self-attested reports with runner-generated checker receipts from raw worker/tool artifacts; fixed cohort control matching and authoritative-byte binding | .wolf/experiments/superpowers-canary/{checker,runner,scorer,fixtures,manifest}.mjs/json, tests/superpowers-canary.test.js | Fabricated receipts, tampered fixture oracle, reordered cohort regression, redispatches, and omitted links cannot produce survival; focused suite passed 3/3 | ~9000 |
+
 ## Session: 2026-07-12 03:00
 
 | Time | Action | File(s) | Outcome | ~Tokens |
@@ -953,3 +961,278 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 06:04 | Repaired pre-commit buglog data loss and revalidated release | .wolf/buglog.json, runtime trees | Restored 46 missing historical IDs; 141/141 tests, focused 10/10, install verify pass; generated hashes identical | ~1800 |
 | 06:08 | Committed canonical 1.2.0-custom.18 learning release and backfilled proof links | commit 152b3fb, .wolf/buglog.json | Release commit created; resolved session bugs linked to canonical commit | ~500 |
 | 07:15 | Deployed 1.2.0-custom.18 to registered fleet and audited downstream Git safety | 90 project .wolf trees | 90/90 learning runtimes hash-match and config enabled; 46 targets non-Git, 41 Git repos have no remotes, cllmgit2 points to upstream karpathy, openphone remote is invalid; no downstream commits/pushes made and unrelated work untouched | ~2200 |
+| 07:32 | Evaluated RUC-NLPIR Arbor for transferable Wolfpack mechanisms | .wolf/cerebrum.md | Banked evidence-linked hypothesis lifecycle, protected evaluator manifests, and strategy-exhaustion records; rejected Arbor runtime/MCP/dashboard/provider duplication | ~6200 |
+| 04:09 | Created ../../../../../home/tony/.claude/plans/jaunty-splashing-globe.md | — | ~3175 |
+
+## Session: 2026-08-08 10:27
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 10:27 | Edited src/utils/size-discipline.ts | added 1 condition(s) | ~265 |
+| 10:29 | Created src/cli/experiment-cmd.ts | — | ~4929 |
+| 10:30 | Edited src/hooks/shared.ts | modified makeArtifactManifest() | ~95 |
+| 10:30 | Edited src/hooks/shared.ts | 4→7 lines | ~92 |
+| 10:30 | Edited src/hooks/shared.ts | modified makeArtifactManifest() | ~64 |
+| 10:31 | Edited src/hooks/shared.ts | modified validateArtifactManifest() | ~26 |
+| 10:31 | Edited src/hooks/shared.ts | inline fix | ~24 |
+| 10:31 | Edited src/cli/experiment-cmd.ts | inline fix | ~18 |
+| 10:31 | Edited src/cli/experiment-cmd.ts | inline fix | ~21 |
+| 10:31 | Edited src/cli/index.ts | expanded (+62 lines) | ~959 |
+| 10:31 | Edited src/cli/trace-cmd.ts | added error handling | ~147 |
+| 10:31 | Edited src/cli/trace-cmd.ts | 2→3 lines | ~105 |
+| 10:32 | Edited src/cli/trace-cmd.ts | added nullish coalescing | ~72 |
+| 10:33 | Created tests/experiment-cmd.test.js | — | ~1723 |
+| 10:35 | Edited src/hooks/complete-review.ts | added 2 import(s) | ~50 |
+| 10:35 | Edited src/hooks/complete-review.ts | added 1 condition(s) | ~197 |
+| 10:35 | Edited src/hooks/complete-review.ts | modified if() | ~110 |
+| 10:36 | Edited src/hooks/nudges/engine.ts | 2→3 lines | ~19 |
+| 10:36 | Edited src/hooks/nudges/engine.ts | added 2 condition(s) | ~187 |
+| 10:36 | Edited src/hooks/shared.ts | 5 → 3 | ~8 |
+| 10:36 | Edited src/cli/init.ts | 5 → 3 | ~9 |
+| 10:37 | Edited src/templates/.gitignore | 3→8 lines | ~63 |
+| 10:38 | Edited templates/wolf/.gitignore | 3→8 lines | ~63 |
+| 10:38 | Edited src/templates/OPENWOLF.md | 1→5 lines | ~170 |
+| 10:38 | Edited src/templates/qa/_template.md | 2→3 lines | ~53 |
+| 14:39 | Implemented opt-in Experiment Mode core and truthful review lineage advancement | src/cli/experiment-cmd.ts, complete-review.ts, nudge engine, configs/templates | focused experiment 4/4 and review regressions 73/73 passed | ~12k |
+| 10:39 | Session end: 25 writes across 12 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~112091 tok |
+| 10:42 | Edited src/cli/experiment-cmd.ts | added 1 condition(s) | ~76 |
+| 10:42 | Edited tests/experiment-cmd.test.js | 2→6 lines | ~103 |
+| 10:47 | Edited src/hooks/complete-review.ts | 3→4 lines | ~38 |
+| 10:49 | Edited src/hooks/complete-review.ts | 2→3 lines | ~33 |
+| 14:50 | Fixed review --check lock leak found in arbitration; bumped 1.2.0-custom.19 | complete-review.ts, runtime copies, VERSION | review 37/37 and install verification passed | ~4k |
+| 10:51 | Session end: 34 writes across 14 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~113367 tok |
+| 10:51 | Session end: 34 writes across 14 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~113367 tok |
+| 14:53 | Added current quality-gate reductions for all remaining Experiment Mode source edits | .wolf/qa/*.md | 6 reductions linked to 77-test and 145-test evidence | ~3k |
+| 10:53 | Session end: 40 writes across 20 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~115396 tok |
+| 14:54 | Logged Experiment Mode trust-boundary, review-lineage, and check-lock fixes | .wolf/buglog.json | bug-573 through bug-575 appended under lock with reductions | ~1k |
+| 10:54 | Session end: 40 writes across 20 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~115396 tok |
+| 11:15 | Session end: 40 writes across 20 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~115396 tok |
+| 11:17 | Session end: 40 writes across 20 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~115396 tok |
+| 11:18 | Session end: 40 writes across 20 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~115396 tok |
+| 11:19 | Session end: 40 writes across 20 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~115396 tok |
+| 15:26 | Deployed 1.2.0-custom.19 to canary then all 90 projects; audited fleet health | fleet + .wolf/qa/fleet-health-audit-2026-08-08.md | profiles preserved; 0 malformed JSON; oversized corpus and duplicate IDs identified | ~8k |
+| 11:27 | Session end: 41 writes across 21 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~116051 tok |
+| 11:27 | Session end: 41 writes across 21 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~116051 tok |
+| 11:30 | Session end: 41 writes across 21 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~116051 tok |
+| 11:33 | Session end: 41 writes across 21 files (size-discipline.ts, experiment-cmd.ts, shared.ts, index.ts, trace-cmd.ts) | 13 reads | ~116051 tok |
+
+## Session: 2026-08-08 11:42
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 11:43 | Created ../../../../../home/tony/.claude/plans/jaunty-splashing-globe.md | — | ~2135 |
+| 11:48 | Edited src/buglog/bug-tracker.ts | added 1 import(s) | ~37 |
+| 11:48 | Edited src/buglog/bug-tracker.ts | modified logBug() | ~631 |
+| 11:49 | Edited src/buglog/bug-tracker.ts | modified findSimilarBugsInLog() | ~38 |
+| 11:49 | Edited src/buglog/bug-tracker.ts | modified findSimilarBugs() | ~71 |
+| 11:49 | Edited src/cli/review-cmd.ts | added 1 condition(s) | ~124 |
+| 11:49 | Edited src/cli/review-cmd.ts | added 1 condition(s) | ~41 |
+| 11:49 | Edited src/hooks/complete-review.ts | find() → filter() | ~120 |
+| 11:49 | Edited src/cli/trace-cmd.ts | expanded (+6 lines) | ~220 |
+| 11:49 | Edited src/cli/trace-cmd.ts | added 1 condition(s) | ~74 |
+| 11:49 | Created src/ledger/ledger-integrity.ts | — | ~3428 |
+| 11:50 | Created src/cli/ledger-cmd.ts | — | ~1024 |
+| 11:50 | Edited src/cli/index.ts | expanded (+27 lines) | ~332 |
+| 11:50 | Created tests/ledger-integrity.test.js | — | ~1450 |
+| 11:51 | Created tests/ledger-writer-safety.test.js | — | ~649 |
+| 11:51 | Session end: 14 writes across 9 files (bug-tracker.ts, review-cmd.ts, complete-review.ts, trace-cmd.ts, ledger-integrity.ts) | 7 reads | ~22312 tok |
+| 11:52 | Edited src/ledger/ledger-integrity.ts | added nullish coalescing | ~413 |
+| 11:55 | Added ledger integrity core, bounded CLI, focused tests, and QA reductions | src/ledger/ledger-integrity.ts, src/cli/ledger-cmd.ts, src/cli/index.ts, tests/ledger-integrity.test.js | Build and 4 focused tests passed; audit reported 16 pre-existing bug-ID collision groups without mutation | ~6400 |
+| 11:53 | Edited tests/review-completion.test.js | expanded (+18 lines) | ~258 |
+| 11:55 | Edited src/hooks/complete-review.js | find() → filter() | ~120 |
+| 11:55 | Edited templates/wolf/hooks/complete-review.js | find() → filter() | ~120 |
+
+## Session: 2026-08-08 11:56
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 11:57 | Edited src/hooks/post-write.ts | inline fix | ~28 |
+| 11:57 | Edited src/hooks/post-write.js | inline fix | ~28 |
+| 11:57 | Edited templates/wolf/hooks/post-write.js | inline fix | ~28 |
+| 11:57 | Edited src/hooks/stop.ts | inline fix | ~41 |
+| 11:57 | Edited src/hooks/stop.js | inline fix | ~41 |
+| 11:57 | Edited templates/wolf/hooks/stop.js | inline fix | ~41 |
+| 11:58 | Edited src/hooks/post-write.ts | writeJSON() → atomicWriteJson() | ~28 |
+| 11:58 | Edited src/hooks/post-write.ts | added optional chaining | ~86 |
+| 11:58 | Edited src/hooks/post-write.ts | writeJSON() → atomicWriteJson() | ~26 |
+| 11:58 | Edited src/hooks/post-write.js | writeJSON() → atomicWriteJson() | ~28 |
+| 11:58 | Edited src/hooks/post-write.js | added optional chaining | ~86 |
+| 11:58 | Edited src/hooks/post-write.js | writeJSON() → atomicWriteJson() | ~26 |
+| 11:58 | Edited templates/wolf/hooks/post-write.js | writeJSON() → atomicWriteJson() | ~28 |
+| 11:58 | Edited templates/wolf/hooks/post-write.js | added optional chaining | ~86 |
+| 11:58 | Edited src/ledger/ledger-integrity.ts | added nullish coalescing | ~649 |
+| 11:58 | Edited templates/wolf/hooks/post-write.js | writeJSON() → atomicWriteJson() | ~26 |
+| 11:58 | Edited src/ledger/ledger-integrity.ts | added 1 condition(s) | ~63 |
+| 11:58 | Edited src/hooks/stop.ts | writeJSON() → atomicWriteJson() | ~34 |
+| 11:58 | Edited src/hooks/stop.ts | added optional chaining | ~98 |
+| 11:58 | Edited src/hooks/stop.ts | writeJSON() → atomicWriteJson() | ~38 |
+| 11:58 | Edited src/hooks/stop.js | writeJSON() → atomicWriteJson() | ~34 |
+| 11:58 | Edited src/ledger/ledger-integrity.ts | modified if() | ~84 |
+| 11:58 | Edited src/hooks/stop.js | added optional chaining | ~98 |
+| 11:58 | Edited src/hooks/stop.js | writeJSON() → atomicWriteJson() | ~38 |
+| 11:58 | Edited src/templates/OPENWOLF.md | 1→5 lines | ~111 |
+| 11:58 | Edited templates/wolf/OPENWOLF.md | 1→5 lines | ~111 |
+| 11:58 | Edited src/ledger/ledger-integrity.ts | 2→3 lines | ~32 |
+| 11:59 | Edited src/ledger/ledger-integrity.ts | inline fix | ~19 |
+| 11:59 | Edited src/ledger/ledger-integrity.ts | 3→3 lines | ~160 |
+| 11:59 | Edited templates/wolf/hooks/stop.js | writeJSON() → atomicWriteJson() | ~34 |
+| 11:59 | Edited src/ledger/ledger-integrity.ts | inline fix | ~23 |
+| 11:59 | Edited templates/wolf/hooks/stop.js | added optional chaining | ~98 |
+| 11:59 | Edited templates/wolf/hooks/stop.js | writeJSON() → atomicWriteJson() | ~38 |
+| 11:59 | Edited src/ledger/ledger-integrity.ts | inline fix | ~110 |
+| 11:59 | Edited src/cli/ledger-cmd.ts | modified if() | ~146 |
+| 11:59 | Edited tests/ledger-integrity.test.js | 2→4 lines | ~94 |
+| 11:59 | Edited tests/ledger-integrity.test.js | 3→7 lines | ~161 |
+| 12:00 | Edited tests/review-completion.test.js | 2→4 lines | ~77 |
+| 12:00 | Edited tests/review-completion.test.js | modified runStopHook() | ~165 |
+| 12:00 | Edited tests/review-completion.test.js | added error handling | ~503 |
+| 12:00 | Edited src/cli/ledger-cmd.ts | inline fix | ~80 |
+| 12:00 | Edited tests/review-completion.test.js | expanded (+23 lines) | ~344 |
+| 12:00 | Edited src/ledger/ledger-integrity.ts | inline fix | ~26 |
+| 12:01 | Edited tests/ledger-integrity.test.js | inline fix | ~31 |
+| 12:01 | Edited src/utils/size-discipline.js | inline fix | ~14 |
+| 12:01 | Edited src/utils/size-discipline.js | inline fix | ~15 |
+| 12:01 | Edited templates/wolf/utils/size-discipline.js | added 1 condition(s) | ~289 |
+| 12:01 | Session end: 50 writes across 13 files (post-write.ts, post-write.js, stop.ts, stop.js, ledger-bug-writer-safety.md) | 10 reads | ~116807 tok |
+| 12:01 | Edited tests/ledger-integrity.test.js | 5→5 lines | ~118 |
+| 12:02 | Session end: 53 writes across 15 files (post-write.ts, post-write.js, stop.ts, stop.js, ledger-bug-writer-safety.md) | 12 reads | ~119163 tok |
+| 12:03 | Hardened post-write and Stop ledger allocations/persistence; ran real hook-runtime regression suite | src/hooks/post-write.*, src/hooks/stop.*, runtime/template mirrors, tests/review-completion.test.js, .wolf/qa/hook-ledger-recurrence.md | 40 focused tests passed | ~12000 tok |
+| 12:04 | Created ../../../../../tmp/add-hook-ledger-bug.mjs | — | ~509 |
+
+## Session: 2026-08-08 12:15
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 12:19 | Closed canary-first fleet ledger repair: 28 fleet repairs plus canary, 319 IDs rekeyed, 4,673 records preserved, 29/29 receipts verified; 15 malformed ledgers left untouched; 154-test/build/install verification passed | .wolf/qa/fleet-ledger-repair-2026-08-08.md, src/ledger/, src/hooks/ | verified | ~900 |
+| 12:20 | Session end: 1 writes across 1 files (fleet-ledger-repair-2026-08-08.md) | 0 reads | ~1651 tok |
+| 12:20 | Session end: 1 writes across 1 files (fleet-ledger-repair-2026-08-08.md) | 0 reads | ~1651 tok |
+| 12:32 | Session end: 1 writes across 1 files (fleet-ledger-repair-2026-08-08.md) | 0 reads | ~1651 tok |
+| 12:33 | Session end: 1 writes across 1 files (fleet-ledger-repair-2026-08-08.md) | 0 reads | ~1651 tok |
+| 12:36 | Session end: 1 writes across 1 files (fleet-ledger-repair-2026-08-08.md) | 2 reads | ~1651 tok |
+| 12:36 | Session end: 1 writes across 1 files (fleet-ledger-repair-2026-08-08.md) | 2 reads | ~1651 tok |
+| 12:53 | Created ../../../../../home/tony/.claude/plans/jaunty-splashing-globe.md | — | ~2445 |
+
+## Session: 2026-08-08 13:01
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-08-08 13:02
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:06 | Created tests/superpowers-canary.test.js | — | ~1593 |
+| 13:07 | Edited tests/superpowers-canary.test.js | added 1 import(s) | ~29 |
+| 13:07 | Edited tests/superpowers-canary.test.js | "node:crypto" → "sha256" | ~33 |
+| 13:07 | Edited tests/superpowers-canary.test.js | inline fix | ~40 |
+| 13:08 | Edited tests/superpowers-canary.test.js | inline fix | ~49 |
+| 13:08 | Edited tests/superpowers-canary.test.js | inline fix | ~39 |
+| 13:15 | Created tests/superpowers-canary.test.js | — | ~1592 |
+
+## Session: 2026-08-08 13:17
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:21 | Created tests/superpowers-canary.test.js | — | ~1096 |
+| 13:21 | Edited tests/superpowers-canary.test.js | 2→3 lines | ~203 |
+| 13:23 | Session end: 4 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 7 reads | ~4183 tok |
+| 13:23 | Session end: 4 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 7 reads | ~4183 tok |
+| 13:25 | Created tests/superpowers-canary.test.js | — | ~1042 |
+| 13:25 | Edited tests/superpowers-canary.test.js | inline fix | ~24 |
+| 13:26 | Session end: 6 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 7 reads | ~5088 tok |
+| 13:27 | Edited tests/superpowers-canary.test.js | inline fix | ~27 |
+| 13:27 | Edited tests/superpowers-canary.test.js | modified raw() | ~409 |
+| 13:28 | Edited tests/superpowers-canary.test.js | inline fix | ~74 |
+| 13:28 | Edited tests/superpowers-canary.test.js | inline fix | ~162 |
+| 13:29 | Session end: 11 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 7 reads | ~5798 tok |
+| 13:29 | Session end: 11 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 7 reads | ~5798 tok |
+| 13:30 | Edited tests/superpowers-canary.test.js | inline fix | ~32 |
+| 13:30 | Created tests/superpowers-canary.test.js | — | ~1242 |
+| 13:32 | Session end: 13 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 7 reads | ~7254 tok |
+| 13:34 | Session end: 13 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 7 reads | ~7254 tok |
+| 13:34 | Session end: 13 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 7 reads | ~7254 tok |
+
+## Session: 2026-08-08 13:36
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:38 | Created tests/superpowers-canary.test.js | — | ~576 |
+| 13:39 | Session end: 2 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 1 reads | ~2574 tok |
+| 13:39 | Session end: 2 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 1 reads | ~2574 tok |
+| 13:42 | Session end: 2 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 1 reads | ~2574 tok |
+| 13:43 | Session end: 2 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 1 reads | ~2574 tok |
+| 13:47 | Session end: 2 writes across 2 files (superpowers-canary.test.js, superpowers-canary-scorer.md) | 1 reads | ~2574 tok |
+
+## Session: 2026-08-08 13:54
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:56 | Evaluated Headroom source and cache-aware compression economics; retained one future canary methodology and added no runtime behavior | .wolf/qa/headroom-evaluation-2026-08-08.md, .wolf/cerebrum.md | no integration justified | ~7k |
+| 13:56 | Session end: 1 writes across 1 files (headroom-evaluation-2026-08-08.md) | 0 reads | ~1498 tok |
+| 13:57 | Session end: 1 writes across 1 files (headroom-evaluation-2026-08-08.md) | 0 reads | ~1498 tok |
+| 14:01 | Evaluated OpenSpec source; rejected parallel spec framework and banked only requirement-scenario-task traceability for a future canary | .wolf/qa/openspec-evaluation-2026-08-08.md, .wolf/cerebrum.md | no integration justified | ~6k |
+| 14:01 | Session end: 2 writes across 2 files (headroom-evaluation-2026-08-08.md, openspec-evaluation-2026-08-08.md) | 0 reads | ~3017 tok |
+| 14:01 | Session end: 2 writes across 2 files (headroom-evaluation-2026-08-08.md, openspec-evaluation-2026-08-08.md) | 0 reads | ~3017 tok |
+| 14:07 | Evaluated claude-code-best-practice catalog; confirmed existing Wolfpack direction and added no new runtime/configuration | .wolf/qa/claude-code-best-practice-evaluation-2026-08-08.md, .wolf/cerebrum.md | reference-only | ~5k |
+| 14:07 | Session end: 3 writes across 3 files (headroom-evaluation-2026-08-08.md, openspec-evaluation-2026-08-08.md, claude-code-best-practice-evaluation-2026-08-08.md) | 0 reads | ~4572 tok |
+
+## Session: 2026-08-08 14:12
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 14:14 | Evaluated Hermes Agent source mechanisms; rejected runtime/database/autonomous curator adoption and retained only bounded safety principles | .wolf/qa/hermes-agent-evaluation-2026-08-08.md, .wolf/cerebrum.md | no runtime changes | ~2600 |
+| 14:14 | Session end: 1 writes across 1 files (hermes-agent-evaluation-2026-08-08.md) | 0 reads | ~2254 tok |
+| 14:15 | Session end: 1 writes across 1 files (hermes-agent-evaluation-2026-08-08.md) | 0 reads | ~2254 tok |
+| 14:18 | Evaluated Mem0 source mechanisms; rejected memory platform and retained one bounded ADD-only candidate-extraction/hygiene canary | .wolf/qa/mem0-evaluation-2026-08-08.md, .wolf/cerebrum.md, .wolf/anatomy.md | no runtime changes | ~3000 |
+| 14:18 | Session end: 2 writes across 2 files (hermes-agent-evaluation-2026-08-08.md, mem0-evaluation-2026-08-08.md) | 0 reads | ~4554 tok |
+| 14:19 | Session end: 2 writes across 2 files (hermes-agent-evaluation-2026-08-08.md, mem0-evaluation-2026-08-08.md) | 0 reads | ~4554 tok |
+| 14:58 | Created ../../../../../home/tony/.claude/plans/jaunty-splashing-globe.md | — | ~2465 |
+| 15:05 | Created tests/mem0-canary.test.js | — | ~1864 |
+
+## Session: 2026-08-08 15:08
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:09 | Edited tests/mem0-canary.test.js | added 1 condition(s) | ~254 |
+| 15:10 | Session end: 1 writes across 1 files (mem0-canary.test.js) | 0 reads | ~254 tok |
+| 19:11 | Started protected Mem0 ADD-only fixture-conformance experiment | .wolf/experiments/mem0-add-only-fixture-conformance--20260808t191109z.json | evaluator bytes protected | ~300 |
+| 19:20 | Fixed canary secret-prefix bypass and corrected negative-control test isolation | .wolf/experiments/mem0-canary/extractor.mjs, tests/mem0-canary.test.js, .wolf/buglog.json | focused 11/11 green; deliberate weakened treatment falsified | ~1200 |
+| 19:24 | Verified Mem0 canary and recorded evidence-bound disposition | .wolf/qa/mem0-canary-2026-08-08.md, .wolf/cerebrum.md, .wolf/anatomy.md | 18/18 positives, 0/30 negatives, 9 recovered misses; 168/168 full tests; verify passed; follow-up design only | ~1800 |
+| 15:14 | Session end: 2 writes across 2 files (mem0-canary.test.js, mem0-canary-2026-08-08.md) | 0 reads | ~1954 tok |
+| 19:28 | Dismissed learning-65a5ef7f as harness-generated continuation-summary evidence, not a user-authored preference | .wolf/nudge-state.json | false learning nudge resolved | ~100 |
+| 15:14 | Session end: 2 writes across 2 files (mem0-canary.test.js, mem0-canary-2026-08-08.md) | 0 reads | ~1954 tok |
+| 15:16 | Session end: 2 writes across 2 files (mem0-canary.test.js, mem0-canary-2026-08-08.md) | 0 reads | ~1954 tok |
+| 15:24 | Session end: 2 writes across 2 files (mem0-canary.test.js, mem0-canary-2026-08-08.md) | 6 reads | ~3363 tok |
+| 15:28 | Created ../../../../../home/tony/.claude/plans/jaunty-splashing-globe.md | — | ~2656 |
+| 15:30 | Edited src/cli/experiment-cmd.ts | modified root() | ~83 |
+| 15:30 | Edited src/cli/experiment-cmd.ts | added error handling | ~415 |
+| 15:30 | Edited src/cli/experiment-cmd.ts | added 1 condition(s) | ~164 |
+| 15:30 | Edited src/cli/experiment-cmd.ts | modified startExperiment() | ~90 |
+| 15:30 | Edited src/cli/experiment-cmd.ts | added 1 condition(s) | ~76 |
+| 15:30 | Edited src/cli/experiment-cmd.ts | inline fix | ~29 |
+| 15:30 | Edited src/cli/experiment-cmd.ts | modified addExperimentEvidence() | ~57 |
+| 15:31 | Edited src/cli/experiment-cmd.ts | added 1 condition(s) | ~92 |
+| 15:31 | Edited src/cli/experiment-cmd.ts | inline fix | ~34 |
+| 15:31 | Edited src/cli/experiment-cmd.ts | added 1 import(s) | ~52 |
+| 15:31 | Edited tests/experiment-cmd.test.js | 2→3 lines | ~104 |
+| 15:31 | Edited tests/experiment-cmd.test.js | expanded (+58 lines) | ~893 |
+| 15:32 | Edited src/cli/update.ts | added error handling | ~169 |
+| 15:32 | Edited src/cli/update.ts | 4→4 lines | ~58 |
+| 15:32 | Created tests/update-source-exclusion.test.js | — | ~227 |
+| 15:32 | Edited src/cli/experiment-cmd.ts | inline fix | ~16 |
+| 15:33 | Edited src/cli/experiment-cmd.ts | inline fix | ~10 |
+| 15:33 | Edited tests/experiment-cmd.test.js | inline fix | ~7 |
+| 15:33 | Edited tests/experiment-cmd.test.js | inline fix | ~8 |
+| 15:33 | Edited tests/experiment-cmd.test.js | inline fix | ~8 |
+| 15:34 | Edited tests/experiment-cmd.test.js | inline fix | ~72 |
+| 15:34 | Edited tests/experiment-cmd.test.js | inline fix | ~36 |
+| 15:35 | Edited src/templates/OPENWOLF.md | inline fix | ~90 |
+| 15:35 | Edited templates/wolf/OPENWOLF.md | inline fix | ~90 |
+
+## Session: 2026-08-08 15:39
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:41 | Edited src/cli/experiment-cmd.ts | added 1 condition(s) | ~204 |
+| 15:41 | Edited tests/experiment-cmd.test.js | expanded (+10 lines) | ~228 |
+| 15:43 | Session end: 2 writes across 2 files (experiment-cmd.ts, experiment-cmd.test.js) | 2 reads | ~13666 tok |

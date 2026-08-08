@@ -27,6 +27,14 @@ Before starting non-trivial work, use Wolfpack's local memory in this order:
 3. Check `.wolf/buglog.json` before fixing errors or repeating a pattern that may already have a known fix.
 4. Prefer applying an existing proven fix over rediscovering one. If the existing memory is stale or wrong, correct it as part of the work.
 
+## Optional Experiment Mode
+
+Use `wolfpack experiment` only for measurable alternatives or competing strategies. Enable it explicitly with `openwolf.experiments.enabled: true`; mutating commands fail closed while disabled, and configured attempt/evidence/output/protected-file ceilings are enforced. Explicit `experiment start` is the per-experiment opt-in boundary: capture protected evaluator files before testing, record actual commands/output without executing them, preserve falsified and inconclusive attempts, and stop or re-scope after the bounded strategy cap. Protected hashes identify evaluator bytes but do not certify that an evaluator was run or correct. Link conclusions to QA/review/bug evidence where applicable, and promote any durable lesson to Cerebrum only through an explicit governed action.
+
+## Ledger Integrity
+
+Use `wolfpack ledger audit` before repairing duplicate durable IDs. `wolfpack ledger repair` is a dry-run unless `--apply` is explicit. Repairs preserve every record, keep the first occurrence's ID, deterministically rekey later collisions, retain exact-byte backups and verified receipts, and report ambiguous historical references without rewriting or guessing them.
+
 ## Link Fixes to Proof
 
 Every buglog entry should connect the reported problem to the evidence that the fix was real:

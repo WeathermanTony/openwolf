@@ -916,7 +916,7 @@ const REVIEW_HOOK_DEFAULTS = {
     always_review_paths: ["**/auth/**", "**/payment/**", "**/migrations/**"],
     scope_excludes: DEFAULT_GATE_EXCLUDES,
     review_companion: "provider companion",
-    max_review_rounds: 5,
+    max_review_rounds: 3,
     nudge_only: true,
 };
 const VERIFY_CONCLUSIONS_DEFAULTS = {
@@ -1848,12 +1848,18 @@ const SKILL_RECEIPT_STATUSES = new Set(["planned", "running", "succeeded", "fail
 const SKILL_RECEIPT_OUTCOMES = new Set(["clean", "findings", "partial", "error", "unknown"]);
 const SKILL_RECEIPT_ATTESTATIONS = new Set(["snapshot", "self-asserted", "manifest-bound", "externally-verifiable"]);
 const HASH_VALUE_RE = /^[a-f0-9]{64}$/;
-export function makeArtifactManifest(files, hashes) {
-    const normalizedFiles = [...new Set(files.map(normalizeFilePath))];
+export function makeArtifactManifest(files, hashes, options = {}) {
+    const normalizeArtifactPath = options.portable
+        ? (file) => String(file).replace(/\\/g, "/").replace(/^\.\//, "")
+        : normalizeFilePath;
+    const normalizedFiles = [...new Set(files.map(normalizeArtifactPath))];
     const missing = normalizedFiles.filter((file) => !Object.prototype.hasOwnProperty.call(hashes, file));
     if (missing.length)
         throw new Error(`Missing hashes for declared artifacts: ${missing.join(", ")}`);
-    const entries = makeHashManifest(normalizedFiles, hashes);
+    const entries = normalizedFiles
+        .filter((file) => Object.prototype.hasOwnProperty.call(hashes, file))
+        .map((file) => [file, hashes[file]])
+        .sort((a, b) => a[0].localeCompare(b[0]));
     const normalizedHashes = {};
     for (const [file, hash] of entries)
         normalizedHashes[file] = hash;
@@ -1866,7 +1872,7 @@ export function makeArtifactManifest(files, hashes) {
         hashes: normalizedHashes,
     };
 }
-export function validateArtifactManifest(manifest) {
+export function validateArtifactManifest(manifest, options = {}) {
     const problems = [];
     if (!manifest || typeof manifest !== "object" || Array.isArray(manifest))
         return { valid: false, problems: ["manifest must be an object"] };
@@ -1884,7 +1890,7 @@ export function validateArtifactManifest(manifest) {
         return { valid: false, problems };
     let expected;
     try {
-        expected = makeArtifactManifest(manifest.files, manifest.hashes);
+        expected = makeArtifactManifest(manifest.files, manifest.hashes, options);
     }
     catch (error) {
         problems.push(error instanceof Error ? error.message : "manifest construction failed");

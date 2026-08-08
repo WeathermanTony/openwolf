@@ -1,7 +1,15 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-08T05:37:29.725Z
-> Files: 193 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-08T19:41:56.292Z
+> Files: 214 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../../home/tony/.claude/plans/
+
+- `jaunty-splashing-globe.md` — Context (~2490 tok)
+
+## ../../../../../tmp/
+
+- `add-hook-ledger-bug.mjs` — Declares file (~509 tok)
 
 ## ./
 
@@ -26,6 +34,25 @@
 
 - `SKILL.md` — Quality Reduction (~1149 tok)
 
+## .wolf/experiments/mem0-canary/
+
+- `extractor.mjs` — Pure deterministic ADD-only unreviewed candidate extractor (~900 tok)
+- `fixtures.json` — 48 protected synthetic explicit-learning and adversarial cases (~1500 tok)
+- `manifest.json` — SHA-256 identities for protected evaluator inputs (~150 tok)
+- `official-output.json` — Complete per-case official scorer evidence and metrics (~6000 tok)
+- `rubric.json` — Offline conformance thresholds, allowed fields, and limitations (~250 tok)
+- `scorer.mjs` — Manifest/schema validation, control/treatment scoring, and fail-closed verdicts (~1500 tok)
+
+## .wolf/experiments/superpowers-canary/
+
+
+## .wolf/qa/
+
+- `hermes-agent-evaluation-2026-08-08.md` — Source-level Hermes Agent mechanism evaluation and no-integration disposition (~1260 tok)
+- `hook-ledger-recurrence.md` — Real hook-runtime safe-suffix and atomic-persistence reduction (~430 tok)
+- `mem0-canary-2026-08-08.md` — Protected offline fixture-conformance evidence, initial secret-filter falsification, fix, and survivor-for-design disposition (~1700 tok)
+- `mem0-evaluation-2026-08-08.md` — Source-level Mem0 evaluation and bounded ADD-only candidate-extraction canary recommendation (~1400 tok)
+
 ## bin/
 
 - `openwolf.ts` — Declares major (~97 tok)
@@ -38,7 +65,7 @@
 ## src/buglog/
 
 - `bug-matcher.ts` — Re-export from bug-tracker for convenience (~32 tok)
-- `bug-tracker.ts` — Exports getBugLogPath, readBugLog, logBug, findSimilarBugs, searchBugs (~1265 tok)
+- `bug-tracker.ts` — Exports getBugLogPath, readBugLog, logBug, findSimilarBugs, searchBugs (~1463 tok)
 
 ## src/cli/
 
@@ -49,19 +76,21 @@
 - `daemon-cmd.ts` — Exports getPm2NameForRoot, hasPm2, Pm2ProcessInfo, listPm2Processes + 13 more (~4280 tok)
 - `dashboard.ts` — Exports isExpectedDashboardHealth, dashboardCommand (~1171 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
-- `index.ts` — Exports createProgram (~4110 tok)
+- `experiment-cmd.ts` — Exports validateExperiment, verifyExperimentRecord, startExperiment (~5690 tok)
+- `index.ts` — Exports createProgram (~5364 tok)
 - `init.ts` — Exports initCommand (~10936 tok)
+- `ledger-cmd.ts` — Exports LedgerCommandOptions, ledgerAudit, ledgerRepair (~1041 tok)
 - `managed-skills.ts` — Exports MANAGED_CLAUDE_SKILL_FILES, installManagedClaudeSkills, backupManagedClaudeSkills, restoreManagedClaudeSkills (~727 tok)
 - `nudge-cmd.ts` — `wolfpack nudge …` — explicit disposition commands. (~3106 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
 - `registry.ts` — Central registry of all OpenWolf-managed projects. (~1161 tok)
-- `review-cmd.ts` — Exports reviewList, reviewShow, reviewHash, reviewComplete (~1646 tok)
+- `review-cmd.ts` — Exports reviewList, reviewShow, reviewHash, reviewComplete (~1730 tok)
 - `scan.ts` — Exports scanCommand (~441 tok)
 - `scientific-skills.ts` — Exports ScientificSkillsConfig, DEFAULT_SCIENTIFIC_SKILLS_CONFIG, hashDirectory (~5805 tok)
 - `skillsbench.ts` — Exports SkillsBenchConfig, DEFAULT_SKILLSBENCH_CONFIG, hashDirectory (~5653 tok)
 - `status.ts` — Exports statusCommand (~1298 tok)
-- `trace-cmd.ts` — Exports traceCommand (~887 tok)
-- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~7044 tok)
+- `trace-cmd.ts` — Exports traceCommand (~1271 tok)
+- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~7186 tok)
 
 ## src/config/
 
@@ -132,12 +161,12 @@
 
 ## src/hooks/
 
-- `complete-review.js` — @ts-nocheck (~3797 tok)
-- `complete-review.ts` — @ts-nocheck (~3753 tok)
+- `complete-review.js` — usage: parseArgs, fail, classifyDrift, formatReviewStaleMessage, markSupersededPendingReviews (~3866 tok)
+- `complete-review.ts` — usage: parseArgs, fail, classifyDrift, formatReviewStaleMessage, markSupersededPendingReviews (~3982 tok)
 - `post-read.js` — Declares main (~799 tok)
 - `post-read.ts` — @ts-nocheck (~793 tok)
-- `post-write.js` — @ts-nocheck (~10310 tok)
-- `post-write.ts` — @ts-nocheck (~10300 tok)
+- `post-write.js` — Declares main (~10337 tok)
+- `post-write.ts` — Declares main (~10326 tok)
 - `pre-read.js` — Declares main (~914 tok)
 - `pre-read.ts` — @ts-nocheck (~908 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
@@ -145,14 +174,14 @@
 - `session-start.js` — @ts-nocheck (~1309 tok)
 - `session-start.ts` — @ts-nocheck (~1309 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~28790 tok)
-- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~28733 tok)
-- `stop.js` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37491 tok)
-- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37414 tok)
+- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~28830 tok)
+- `stop.js` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37529 tok)
+- `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37451 tok)
 
 ## src/hooks/nudges/
 
 - `engine.js` — NudgeEngine — the single place that decides what (if anything) a Stop hook (~3709 tok)
-- `engine.ts` — NudgeEngine — the single place that decides what (if anything) a Stop hook (~3706 tok)
+- `engine.ts` — NudgeEngine — the single place that decides what (if anything) a Stop hook (~3793 tok)
 - `project-scope.js` — Project ownership resolution. (~1181 tok)
 - `project-scope.ts` — Project ownership resolution. (~1181 tok)
 - `state.js` — Nudge state: content-addressed fingerprints, lifecycle dispositions, and (~7315 tok)
@@ -169,6 +198,10 @@
 - `review.js` — Review lifecycle rule — IMMUTABLE SNAPSHOTS, AUTOMATIC SUPERSEDE, LINEAGE CAP. (~3597 tok)
 - `review.ts` — Review lifecycle rule — IMMUTABLE SNAPSHOTS, AUTOMATIC SUPERSEDE, LINEAGE CAP. (~3575 tok)
 
+## src/ledger/
+
+- `ledger-integrity.ts` — Exports LedgerKind, LedgerClassification, LedgerRecord, LedgerAudit + 7 more (~4096 tok)
+
 ## src/scanner/
 
 - `anatomy-scanner.ts` — Scan the project and return the anatomy content and file count WITHOUT writing to disk. (~2598 tok)
@@ -177,7 +210,7 @@
 
 ## src/templates/
 
-- `.gitignore` — Git ignore rules (~242 tok)
+- `.gitignore` — Git ignore rules (~278 tok)
 - `anatomy.md` — anatomy.md (~54 tok)
 - `buglog.json` (~10 tok)
 - `cerebrum.md` — Cerebrum (~184 tok)
@@ -189,7 +222,7 @@
 - `designqc-report.json` (~26 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~4973 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~5275 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 - `reviewlog.json` (~11 tok)
@@ -204,7 +237,7 @@
 
 - `_gate-log.json` (~11 tok)
 - `_README.md` — Quality Gate — Adversarial Reductions (~613 tok)
-- `_template.md` — <short title> (~538 tok)
+- `_template.md` — <short title> (~552 tok)
 
 ## src/tracker/
 
@@ -224,8 +257,8 @@
 - `platform.ts` — Exports isWindows, isMac, isLinux, whichCommand (~99 tok)
 - `port-allocator.js` — Exports deterministicBasePort, isPortFree, allocateProjectPorts (~307 tok)
 - `port-allocator.ts` — @ts-nocheck (~312 tok)
-- `size-discipline.js` — size-discipline.ts (~10500 tok)
-- `size-discipline.ts` — size-discipline.ts (~10492 tok)
+- `size-discipline.js` — size-discipline.ts (~10504 tok)
+- `size-discipline.ts` — size-discipline.ts (~10542 tok)
 
 ## templates/claude/
 
@@ -237,27 +270,27 @@
 
 ## templates/wolf/
 
-- `.gitignore` — Git ignore rules (~242 tok)
+- `.gitignore` — Git ignore rules (~278 tok)
 - `anatomy.md` — anatomy.md (~54 tok)
 - `cerebrum.md` — Cerebrum (~184 tok)
 - `config.json` (~2041 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~4916 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~5275 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 
 ## templates/wolf/hooks/
 
-- `complete-review.js` — @ts-nocheck (~3797 tok)
+- `complete-review.js` — usage: parseArgs, fail, classifyDrift, formatReviewStaleMessage, markSupersededPendingReviews (~4034 tok)
 - `package.json` — Node.js package manifest (~7 tok)
 - `post-read.js` — Declares main (~799 tok)
-- `post-write.js` — @ts-nocheck (~10310 tok)
+- `post-write.js` — Declares main (~10337 tok)
 - `pre-read.js` — Declares main (~914 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
 - `session-start.js` — @ts-nocheck (~1309 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~28790 tok)
-- `stop.js` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37491 tok)
+- `stop.js` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37529 tok)
 
 ## templates/wolf/hooks/nudges/
 
@@ -285,21 +318,27 @@
 - `paths.js` — Exports normalizePath, getWolfDir, resolveWolfFile, ensureDir, relativeToCwd (~190 tok)
 - `platform.js` — Exports isWindows, isMac, isLinux, whichCommand (~101 tok)
 - `port-allocator.js` — Exports deterministicBasePort, isPortFree, allocateProjectPorts (~307 tok)
-- `size-discipline.js` — size-discipline.ts (~10500 tok)
+- `size-discipline.js` — size-discipline.ts (~10574 tok)
 
 ## tests/
 
 - `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
+- `experiment-cmd.test.js` — project: inProject (~2898 tok)
 - `hook-packaging.test.js` — Hook packaging: every module a hook imports must actually ship. (~1113 tok)
 - `learning-capture.test.js` — root: fixture, transcript (~2450 tok)
+- `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~1616 tok)
+- `ledger-writer-safety.test.js` — fixture: entry (~649 tok)
+- `mem0-canary.test.js` — root: score, clone (~1914 tok)
 - `nudge-engine.test.js` — Regression suite for the evidence-addressed nudge engine. (~13866 tok)
 - `qa-cmd.test.js` — sha256: fixture (~656 tok)
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)
 - `registry.test.js` — Tests for bug-440: malformed registry entries (missing root/name) must not (~1109 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
-- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 7 more (~19724 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 8 more (~20888 tok)
 - `scientific-skills.test.js` — root: git, run, fixture + 3 more (~2783 tok)
 - `skill-deployment.test.js` — root: fixture, runCli, seedProject, seedRegistry (~2396 tok)
 - `skill-receipt.test.js` — sha256: fixture (~2614 tok)
 - `skillsbench.test.js` — root: git, run, fixture + 3 more (~2861 tok)
+- `superpowers-canary.test.js` — Declares root (~576 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)
+- `update-source-exclusion.test.js` — Declares root (~227 tok)

@@ -19,6 +19,16 @@ import { backupManagedClaudeSkills, installManagedClaudeSkills, restoreManagedCl
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const SOURCE_ROOT = path.resolve(__dirname, "../../..");
+
+function normalizedRealPath(value: string): string {
+  const resolved = path.resolve(value);
+  try { return fs.realpathSync.native(resolved); } catch { return resolved; }
+}
+
+export function isSourceProject(project: Pick<RegisteredProject, "root" | "name">, sourceRoot = SOURCE_ROOT): boolean {
+  return project.name === "openwolf" || normalizedRealPath(project.root) === normalizedRealPath(sourceRoot);
+}
 
 function getVersion(): string {
   try {
@@ -190,8 +200,8 @@ async function updateProject(
     return { project, status: "skipped", message: ".wolf/ directory not found" };
   }
 
-  // Never update the openwolf source repo itself
-  if (name === "openwolf") {
+  // Never update the source checkout itself, regardless of its registry name.
+  if (isSourceProject(project)) {
     return { project, status: "skipped", message: "openwolf source repo — skipped" };
   }
 

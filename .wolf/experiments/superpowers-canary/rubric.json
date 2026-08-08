@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "report_schema_version": 1,
+  "required_report_fields": [
+    "comparison_id",
+    "candidate",
+    "fixture_id",
+    "arm",
+    "run_index",
+    "order",
+    "cohort",
+    "model",
+    "effort",
+    "fixture_version",
+    "rubric_version",
+    "treatment_sha256",
+    "response_artifact",
+    "evidence_artifact"
+  ],
+  "artifacts": "Each artifact is {content, sha256}, where sha256 is SHA-256 over canonical JSON content. The scorer derives all outcome and cost metrics from these artifacts; report.metrics is ignored.",
+  "replication_required": true,
+  "candidate_a": {
+    "outcome": "mean(adherence, task_success)",
+    "adherence_components": ["obligations_completed", "runnable_evidence", "discipline"],
+    "thresholds": {
+      "outcome_improvement_points": 15,
+      "success_override_points": 25,
+      "max_overhead_ratio": 0.1,
+      "required_replication": true
+    }
+  },
+  "candidate_b": {
+    "outcome": "mean(phase_correct, next_action_correct)",
+    "thresholds": {
+      "minimum_treatment_correct": 9,
+      "minimum_improvement_points": 20,
+      "minimum_read_or_token_reduction_ratio": 0.15,
+      "max_startup_messages": 1
+    }
+  }
+}

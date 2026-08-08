@@ -1,0 +1,342 @@
+{
+  "version": 2,
+  "kind": "superpowers-canary-evaluator",
+  "fixture_version": 3,
+  "rubric_version": 1,
+  "scorer_version": 3,
+  "protected_files": {
+    "fixtures.json": "38cc0ad4d9cdc731900412cdb0082768e5836e67c682e80e8d31760fa578d11c",
+    "rubric.json": "dbdb00a8854dab42554ed3fb23db729e28a05c3ff48055ebbe9f5ce62893193f",
+    "checker.mjs": "4c218f4fcb8301bc3bdad017ca4330d53cf326cbfdcdf20a897aa35471b6a22a",
+    "runner.mjs": "3d8880faae3f00e90697bc8171ce8239da43cdabccbf88aad3730d33a300fbaf",
+    "scorer.mjs": "b7bef4aa2aed29eb11545f378f58b61891fc551c2c1c80ea4981f73f3be6c683",
+    "treatment-a.txt": "192540fe6e72ee41aabdc433a77563cc7b470917065b3253fc713d53851a86e2",
+    "treatment-b.json": "6df4c10eba1fac35e39e35ea7a9757a57992f1bdf12ff0690df4da1e830349e0"
+  },
+  "treatment_hashes": {
+    "A": "192540fe6e72ee41aabdc433a77563cc7b470917065b3253fc713d53851a86e2",
+    "B": "6df4c10eba1fac35e39e35ea7a9757a57992f1bdf12ff0690df4da1e830349e0"
+  },
+  "run_matrix": [
+    {
+      "candidate": "A",
+      "fixture_id": "a-ordinary-completion",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-ordinary-completion",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-pressure-stop",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-pressure-stop",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-conflicting-low-priority",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-conflicting-low-priority",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-failed-command-recovery",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-failed-command-recovery",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-context-continuation",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-context-continuation",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-current-phase",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-current-phase",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-proof-links",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-proof-links",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-changed-plan-hash",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-changed-plan-hash",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-uncheckpointed-source-edit",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-uncheckpointed-source-edit",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-closed-state",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-closed-state",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "primary"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-ordinary-completion",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-ordinary-completion",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-pressure-stop",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-pressure-stop",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-conflicting-low-priority",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-conflicting-low-priority",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-failed-command-recovery",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-failed-command-recovery",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-context-continuation",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "A",
+      "fixture_id": "a-context-continuation",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-current-phase",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-current-phase",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-proof-links",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-proof-links",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-changed-plan-hash",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-changed-plan-hash",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-uncheckpointed-source-edit",
+      "arm": "control",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-uncheckpointed-source-edit",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-closed-state",
+      "arm": "treatment",
+      "run_index": 1,
+      "order": 1,
+      "cohort": "replication"
+    },
+    {
+      "candidate": "B",
+      "fixture_id": "b-closed-state",
+      "arm": "control",
+      "run_index": 1,
+      "order": 2,
+      "cohort": "replication"
+    }
+  ]
+}

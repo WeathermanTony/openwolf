@@ -1,5 +1,6 @@
 import * as path from "node:path";
-import { readJSON, writeJSON } from "../utils/fs-safe.js";
+import { readJSON } from "../utils/fs-safe.js";
+import { acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 
 interface BugEntry {
   id: string;
@@ -48,47 +49,58 @@ export function logBug(
     reduction?: string | null;
   }
 ): void {
-  const bugLog = readBugLog(wolfDir);
-  const now = new Date().toISOString();
-  for (const entry of bugLog.bugs) {
-    if (!Object.prototype.hasOwnProperty.call(entry, "commit")) entry.commit = null;
-    if (!Object.prototype.hasOwnProperty.call(entry, "reduction")) entry.reduction = null;
-  }
+  const bugLogPath = getBugLogPath(wolfDir);
+  const release = acquireFileLock(bugLogPath);
+  if (!release) throw new Error(`could not lock ${bugLogPath}`);
 
-  // Check for near-duplicate (score > 0.8)
-  const similar = findSimilarBugs(wolfDir, bug.error_message);
-  if (similar.length > 0 && similar[0].score > 0.8) {
-    const existing = bugLog.bugs.find((b) => b.id === similar[0].bug.id);
-    if (existing) {
+  try {
+    // Reread after lock acquisition so similarity, allocation, and persistence
+    // all operate on one current snapshot.
+    const bugLog = readBugLog(wolfDir);
+    const now = new Date().toISOString();
+    for (const entry of bugLog.bugs) {
+      if (!Object.prototype.hasOwnProperty.call(entry, "commit")) entry.commit = null;
+      if (!Object.prototype.hasOwnProperty.call(entry, "reduction")) entry.reduction = null;
+    }
+
+    const similar = findSimilarBugsInLog(bugLog, bug.error_message);
+    if (similar.length > 0 && similar[0].score > 0.8) {
+      // ScoredBug carries the exact array object, avoiding ambiguous ID lookup
+      // in historical logs where one ID may occur more than once.
+      const existing = similar[0].bug;
       existing.occurrences++;
       existing.last_seen = now;
-      if (!Object.prototype.hasOwnProperty.call(existing, "commit")) existing.commit = null;
-      if (!Object.prototype.hasOwnProperty.call(existing, "reduction")) existing.reduction = null;
       if (bug.commit) existing.commit = bug.commit;
       if (bug.reduction) existing.reduction = bug.reduction;
-      writeJSON(getBugLogPath(wolfDir), bugLog);
+      if (!atomicWriteJson(bugLogPath, bugLog)) throw new Error(`could not atomically write ${bugLogPath}`);
       return;
     }
+
+    const maxId = bugLog.bugs.reduce((max, entry) => {
+      const match = /^bug-(\d+)$/.exec(entry.id);
+      return match ? Math.max(max, Number(match[1])) : max;
+    }, 0);
+    const id = `bug-${String(maxId + 1).padStart(3, "0")}`;
+    bugLog.bugs.push({
+      id,
+      timestamp: now,
+      error_message: bug.error_message,
+      file: bug.file,
+      line: bug.line,
+      root_cause: bug.root_cause,
+      fix: bug.fix,
+      tags: bug.tags,
+      related_bugs: [],
+      occurrences: 1,
+      last_seen: now,
+      commit: bug.commit ?? null,
+      reduction: bug.reduction ?? null,
+    });
+
+    if (!atomicWriteJson(bugLogPath, bugLog)) throw new Error(`could not atomically write ${bugLogPath}`);
+  } finally {
+    release();
   }
-
-  const id = `bug-${String(bugLog.bugs.length + 1).padStart(3, "0")}`;
-  bugLog.bugs.push({
-    id,
-    timestamp: now,
-    error_message: bug.error_message,
-    file: bug.file,
-    line: bug.line,
-    root_cause: bug.root_cause,
-    fix: bug.fix,
-    tags: bug.tags,
-    related_bugs: [],
-    occurrences: 1,
-    last_seen: now,
-    commit: bug.commit ?? null,
-    reduction: bug.reduction ?? null,
-  });
-
-  writeJSON(getBugLogPath(wolfDir), bugLog);
 }
 
 function normalize(text: string): string {
@@ -110,8 +122,7 @@ interface ScoredBug {
   score: number;
 }
 
-export function findSimilarBugs(wolfDir: string, errorMessage: string): ScoredBug[] {
-  const bugLog = readBugLog(wolfDir);
+function findSimilarBugsInLog(bugLog: BugLog, errorMessage: string): ScoredBug[] {
   const normalizedInput = normalize(errorMessage);
   const inputTokens = tokenize(errorMessage);
   const results: ScoredBug[] = [];
@@ -138,6 +149,10 @@ export function findSimilarBugs(wolfDir: string, errorMessage: string): ScoredBu
 
   results.sort((a, b) => b.score - a.score);
   return results;
+}
+
+export function findSimilarBugs(wolfDir: string, errorMessage: string): ScoredBug[] {
+  return findSimilarBugsInLog(readBugLog(wolfDir), errorMessage);
 }
 
 export function searchBugs(wolfDir: string, term: string): BugEntry[] {

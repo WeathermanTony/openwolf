@@ -40,7 +40,13 @@ function readReviewLog(): ReviewLog {
 
 function findReview(id: string): ReviewEntry | undefined {
   const log = readReviewLog();
-  return Array.isArray(log.reviews) ? log.reviews.find((r) => r?.id === id) : undefined;
+  const matches = Array.isArray(log.reviews) ? log.reviews.filter((r) => r?.id === id) : [];
+  if (matches.length > 1) {
+    console.error(`Ambiguous review id: ${id} matches ${matches.length} records. Run wolfpack ledger audit, then wolfpack ledger repair --apply.`);
+    process.exitCode = 6;
+    return undefined;
+  }
+  return matches[0];
 }
 
 function compactFiles(files: string[] = [], max = 3): string {
@@ -82,8 +88,10 @@ export function reviewList(): void {
 export function reviewShow(id: string): void {
   const review = findReview(id);
   if (!review) {
-    console.log(`Review not found: ${id}`);
-    process.exitCode = 1;
+    if (!process.exitCode) {
+      console.log(`Review not found: ${id}`);
+      process.exitCode = 1;
+    }
     return;
   }
   const files = Array.isArray(review.files) ? review.files : [];

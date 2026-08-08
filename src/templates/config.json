@@ -278,6 +278,13 @@
       "default_nonblocking": true,
       "show_suppressed_count": false,
       "diagnostic_log": ".wolf/logs/nudges.jsonl"
+    },
+    "experiments": {
+      "enabled": false,
+      "max_attempts_per_strategy": 3,
+      "max_evidence_entries": 50,
+      "max_output_chars": 16384,
+      "max_protected_file_bytes": 8388608
     }
   }
 }

@@ -4,7 +4,7 @@ import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, readRecentUserTurns, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex } from "./shared.js";
-import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
+import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 import { evaluate as evaluateNudges, getNudgeConfig } from "./nudges/engine.js";
 import * as cerebrumRule from "./nudges/rules/cerebrum.js";
 import * as conclusionRule from "./nudges/rules/conclusion.js";
@@ -1439,7 +1439,8 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 pending.refresh_history[refreshSig] = 1;
                 refreshNudge = true;
             }
-            writeJSON(reviewLogPath, reviewLog);
+            if (!atomicWriteJson(reviewLogPath, reviewLog))
+                return false;
             if (refreshNudge)
                 emitStopHookFeedback(`🔄 Wolfpack review refresh [${pending.id}]: refreshed pending review hashes for ${Object.keys(currentHashes).length} file(s). Review log: .wolf/reviewlog.json\n`);
         }
@@ -1637,12 +1638,12 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             // appended before us.
             let maxN = 0;
             for (const r of reviewLog.reviews) {
-                const m = r.id.match(/^review-(\d+)$/);
-                if (m) {
-                    const n = parseInt(m[1], 10);
-                    if (n > maxN)
-                        maxN = n;
-                }
+                const m = /^review-(\d+)$/.exec(r?.id ?? "");
+                if (!m)
+                    continue;
+                const n = Number(m[1]);
+                if (Number.isSafeInteger(n) && n >= 0 && n > maxN)
+                    maxN = n;
             }
             nextId = `review-${String(maxN + 1).padStart(4, "0")}`;
             const pendingReview = {
@@ -1705,7 +1706,8 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 }
             }
         }
-        writeJSON(reviewLogPath, reviewLog);
+        if (!atomicWriteJson(reviewLogPath, reviewLog))
+            return false;
     }
     finally {
         releaseReviewLock();

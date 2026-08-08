@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "plan_hash": "fixture-plan-sha256",
+  "lifecycle": "running",
+  "current_phase": "verify",
+  "next_action": "run the named focused falsifier",
+  "blockers": [],
+  "links": {
+    "qa": ".wolf/qa/example.md",
+    "review": "review-example",
+    "experiment": "example--20260808t000000z",
+    "bug": null
+  }
+}

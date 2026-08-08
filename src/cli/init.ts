@@ -506,7 +506,7 @@ export function generateTemplate(destPath: string, file: string): void {
           min_diff_lines: 40,
           always_review_paths: ["**/auth/**", "**/payment/**", "**/migrations/**"],
           review_companion: "provider companion",
-          max_review_rounds: 5,
+          max_review_rounds: 3,
           nudge_only: true,
         },
         quality_gate: {

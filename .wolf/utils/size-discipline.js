@@ -371,29 +371,38 @@ function ensureDir(dir) {
  * archive then trim live) MUST check the return value before mutating
  * the second file.
  */
-function atomicWriteJson(filePath, data) {
+export function atomicWriteJson(filePath, data) {
+    return atomicWriteText(filePath, JSON.stringify(data, null, 2) + "\n");
+}
+export function atomicWriteText(filePath, content) {
     const tmp = filePath + "." + crypto.randomBytes(4).toString("hex") + ".tmp";
+    let fd = null;
     try {
-        fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf-8");
+        fd = fs.openSync(tmp, "wx", 0o600);
+        fs.writeFileSync(fd, content, "utf-8");
+        fs.fsyncSync(fd);
+        fs.closeSync(fd);
+        fd = null;
         fs.renameSync(tmp, filePath);
-        return true;
-    }
-    catch {
         try {
-            fs.unlinkSync(tmp);
+            const dirFd = fs.openSync(path.dirname(filePath), "r");
+            try {
+                fs.fsyncSync(dirFd);
+            }
+            finally {
+                fs.closeSync(dirFd);
+            }
         }
         catch { }
-        return false;
-    }
-}
-function atomicWriteText(filePath, content) {
-    const tmp = filePath + "." + crypto.randomBytes(4).toString("hex") + ".tmp";
-    try {
-        fs.writeFileSync(tmp, content, "utf-8");
-        fs.renameSync(tmp, filePath);
         return true;
     }
     catch {
+        if (fd !== null) {
+            try {
+                fs.closeSync(fd);
+            }
+            catch { }
+        }
         try {
             fs.unlinkSync(tmp);
         }

@@ -11,6 +11,8 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const helper = path.join(repoRoot, 'src/hooks/complete-review.js');
 const stopHook = path.join(repoRoot, 'src/hooks/stop.js');
 const stopHookSource = path.join(repoRoot, 'src/hooks/stop.ts');
+const postWriteHook = path.join(repoRoot, 'src/hooks/post-write.js');
+const postWriteHookSource = path.join(repoRoot, 'src/hooks/post-write.ts');
 
 async function fixture() {
   const dir = await mkdtemp(path.join(tmpdir(), 'ow-review-complete-'));
@@ -50,6 +52,15 @@ function runStopHook(dir, transcriptPath, sessionId = 'sess-test') {
     cwd: dir,
     env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
     input: JSON.stringify({ session_id: sessionId, transcript_path: transcriptPath }),
+    encoding: 'utf8',
+  });
+}
+
+function runPostWriteHook(dir, toolInput) {
+  return spawnSync(process.execPath, [postWriteHook], {
+    cwd: dir,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+    input: JSON.stringify({ tool_name: 'Edit', tool_input: toolInput }),
     encoding: 'utf8',
   });
 }
@@ -336,6 +347,24 @@ test('complete-review refresh records deleted files as tombstones', async () => 
   }
 });
 
+test('complete-review refuses ambiguous duplicate review ids', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'bytes\n');
+    const entry = { id: 'review-0008', status: 'pending', files: [file], content_hashes: { [file]: sha256('bytes\n') } };
+    await writeReviewLog(dir, [entry, { ...entry }]);
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+
+    const result = runHelper(dir, 'review-0008', ['--reviewed-current']);
+    assert.equal(result.status, 6);
+    assert.match(result.stderr, /matches 2 records; refusing ambiguous mutation/);
+    assert.equal(await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8'), before);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('complete-review refuses to create missing review entries', async () => {
   const dir = await fixture();
   try {
@@ -448,6 +477,36 @@ test('stop hook nudges autonomy continuation on obvious next-step language', asy
     const second = runStopHook(dir, transcript, 'sess-autonomy');
     assert.equal(second.status, 0, second.stderr);
     assert.doesNotMatch(second.stdout, /Wolfpack autonomy:/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('post-write hook ignores unsafe bug suffixes when allocating an auto-detected entry', async () => {
+  const dir = await fixture();
+  try {
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    const target = path.join(dir, 'src', 'feature.js');
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, 'export const value = guarded();\n');
+    await writeFile(path.join(dir, '.wolf', 'buglog.json'), JSON.stringify({ version: 1, bugs: [
+      { id: 'bug-0002', file: 'a.js', tags: [], last_seen: '2026-01-01T00:00:00.000Z', fix: '', occurrences: 1 },
+      { id: 'bug-0010', file: 'b.js', tags: [], last_seen: '2026-01-01T00:00:00.000Z', fix: '', occurrences: 1 },
+      { id: 'bug-invalid', file: 'c.js', tags: [], last_seen: '2026-01-01T00:00:00.000Z', fix: '', occurrences: 1 },
+      { id: 'bug-9007199254740992', file: 'd.js', tags: [], last_seen: '2026-01-01T00:00:00.000Z', fix: '', occurrences: 1 },
+    ] }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+      files_written: [], edit_counts: {}, stop_count: 0,
+    }, null, 2));
+
+    const result = runPostWriteHook(dir, {
+      file_path: target,
+      old_string: 'export const value = guarded();\n',
+      new_string: 'export const value = guarded();\ntry { guarded(); } catch (error) { recover(error); }\n',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const log = JSON.parse(await readFile(path.join(dir, '.wolf', 'buglog.json'), 'utf8'));
+    assert.equal(log.bugs.at(-1).id, 'bug-011', 'unsafe suffixes must not affect max-suffix allocation');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -691,6 +750,29 @@ test('stop hook refuses an unmarked legacy baseline rather than mixing token sca
     assert.ok(pending, 'a new pending review should exist');
     assert.equal(pending.covered_tokens_basis, 'scoped-writes',
       'the new entry records its own basis so the next session need not guess');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('stop hook ignores unsafe review suffixes when allocating a pending review', async () => {
+  const { dir, transcript } = await reviewBaselineFixture({ sessionTokens: 2000, coveredTokens: 1000, coveredBasis: 'scoped-writes' });
+  try {
+    const reviewLogPath = path.join(dir, '.wolf', 'reviewlog.json');
+    const seeded = await readReviewLog(dir);
+    seeded.reviews.push(
+      { id: 'review-0002', status: 'completed', files: [] },
+      { id: 'review-0010', status: 'completed', files: [] },
+      { id: 'review-invalid', status: 'completed', files: [] },
+      { id: 'review-9007199254740992', status: 'completed', files: [] },
+    );
+    await writeFile(reviewLogPath, JSON.stringify(seeded, null, 2));
+
+    const result = runStopHook(dir, transcript, 'sess-baseline');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Wolfpack review/);
+    const log = await readReviewLog(dir);
+    assert.equal(log.reviews.at(-1).id, 'review-0011', 'unsafe suffixes must not affect max-suffix allocation');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

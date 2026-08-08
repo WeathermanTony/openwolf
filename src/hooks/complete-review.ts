@@ -3,6 +3,8 @@
 import * as path from "node:path";
 import { getWolfDir, readJSON, writeJSON, hashFilesAtRest, HASH_SENTINEL_TOMBSTONE, HASH_SENTINEL_UNREADABLE, normalizeFilePath, getReviewHashes, setReviewCurrentByteReceipt, hashReviewManifest, setReviewReviewedByteReceipt } from "./shared.js";
 import { acquireFileLock } from "../utils/size-discipline.js";
+import { bumpLineageRound } from "./nudges/state.js";
+import { lineageIdFor } from "./nudges/rules/review.js";
 
 function usage() {
     console.error('Usage: node .wolf/hooks/complete-review.js review-NNNN [--reviewer <name>] [--summary <text>]');
@@ -171,7 +173,11 @@ try {
     if (!Array.isArray(reviewLog.reviews)) {
         fail("reviewlog.json has no reviews array", EXIT_REVIEW_STATE);
     }
-    const review = reviewLog.reviews.find((r) => r?.id === id);
+    const matches = reviewLog.reviews.filter((r) => r?.id === id);
+    if (matches.length > 1) {
+        fail(`${id} matches ${matches.length} records; refusing ambiguous mutation. Run wolfpack ledger audit, then wolfpack ledger repair --apply`, EXIT_REVIEW_STATE);
+    }
+    const review = matches[0];
     if (!review) {
         fail(`${id} does not exist; refusing to create review entries`, EXIT_REVIEW_STATE);
     }
@@ -207,6 +213,8 @@ try {
         console.log(`OpenWolf ${id}: ${stale ? "STALE — current bytes differ from stored hashes; refresh + re-review before completing" : "CURRENT — stored hashes match current bytes"}.`);
         for (const row of rows)
             console.log(row);
+        releaseReviewLock();
+        releaseReviewLock = null;
         process.exit(stale ? EXIT_HASH_DRIFT : 0);
     }
     if (refresh) {
@@ -257,8 +265,15 @@ try {
     }
     const superseded = markSupersededPendingReviews(reviewLog, review);
 
+    const lineageId = review.lineage_id || lineageIdFor(path.dirname(wolfDir), review.files);
+    const lineage = bumpLineageRound(wolfDir, lineageId);
+    if (!lineage.ok) {
+        fail(`${id} could not persist its review lineage round`, EXIT_REVIEW_STATE);
+    }
+    review.lineage_id = lineageId;
+    review.lineage_round = lineage.round;
     writeJSON(reviewLogPath, reviewLog);
-    console.log(`OpenWolf completed ${id} and verified content_hashes for ${Object.keys(contentHashes).length} file(s).${superseded > 0 ? ` Superseded ${superseded} covered pending review(s).` : ""}`);
+    console.log(`OpenWolf completed ${id} and verified content_hashes for ${Object.keys(contentHashes).length} file(s); lineage ${lineageId} round ${lineage.round}.${superseded > 0 ? ` Superseded ${superseded} covered pending review(s).` : ""}`);
     }
 }
 finally {

@@ -162,7 +162,11 @@ try {
     if (!Array.isArray(reviewLog.reviews)) {
         fail("reviewlog.json has no reviews array", EXIT_REVIEW_STATE);
     }
-    const review = reviewLog.reviews.find((r) => r?.id === id);
+    const matches = reviewLog.reviews.filter((r) => r?.id === id);
+    if (matches.length > 1) {
+        fail(`${id} matches ${matches.length} records; refusing ambiguous mutation. Run wolfpack ledger audit, then wolfpack ledger repair --apply`, EXIT_REVIEW_STATE);
+    }
+    const review = matches[0];
     if (!review) {
         fail(`${id} does not exist; refusing to create review entries`, EXIT_REVIEW_STATE);
     }

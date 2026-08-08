@@ -370,6 +370,33 @@ export function createProgram(): Command {
       nudgeStats();
     });
 
+  const ledger = program
+    .command("ledger")
+    .description("Audit and conservatively repair durable ledgers");
+
+  ledger
+    .command("audit")
+    .description("Audit bug and review ledger integrity")
+    .option("--project <path>", "Audit one project root")
+    .option("--fleet", "Audit every registered project")
+    .option("--json", "Output JSON")
+    .action(async (opts: { project?: string; fleet?: boolean; json?: boolean }) => {
+      const { ledgerAudit } = await import("./ledger-cmd.js");
+      ledgerAudit(opts);
+    });
+
+  ledger
+    .command("repair")
+    .description("Plan or explicitly apply ledger collision repairs")
+    .option("--project <path>", "Repair one project root")
+    .option("--fleet", "Repair every registered project")
+    .option("--apply", "Apply the deterministic repair (default is dry-run)")
+    .option("--json", "Output JSON")
+    .action(async (opts: { project?: string; fleet?: boolean; apply?: boolean; json?: boolean }) => {
+      const { ledgerRepair } = await import("./ledger-cmd.js");
+      ledgerRepair(opts);
+    });
+
   const qa = program
     .command("qa")
     .description("Quality gate management");
@@ -383,6 +410,68 @@ export function createProgram(): Command {
       const { qaStatus } = await import("./qa-cmd.js");
       qaStatus(opts);
     });
+
+  const experiment = program
+    .command("experiment")
+    .description("Manage opt-in evidence-bound experiments");
+
+  experiment
+    .command("start <slug>")
+    .description("Create an experiment and capture protected evaluator bytes")
+    .requiredOption("--objective <text>", "Measurable objective or decision criterion")
+    .requiredOption("--hypothesis <text>", "Strategy hypothesis to test")
+    .requiredOption("--protect <paths...>", "Project-relative evaluator files to protect")
+    .option("--strategy <id>", "Logical strategy family")
+    .option("--parent <id>", "Parent experiment id")
+    .option("--branch <name>", "Branch metadata")
+    .option("--worktree <path>", "Worktree metadata")
+    .option("--max-attempts <n>", "Attempt cap for this strategy", "3")
+    .action(async (slug: string, opts: any) => {
+      const { experimentStart } = await import("./experiment-cmd.js");
+      experimentStart(slug, opts);
+    });
+
+  experiment
+    .command("evidence <id>")
+    .description("Record actual command evidence without executing it")
+    .requiredOption("--command <text>", "Command that produced the evidence")
+    .requiredOption("--cwd <path>", "Receiving working directory")
+    .requiredOption("--exit-code <n>", "Observed integer exit code")
+    .option("--output-file <path>", "Read bounded output from a project file")
+    .option("--output <text>", "Record bounded inline output")
+    .action(async (id: string, opts: any) => {
+      const { experimentEvidence } = await import("./experiment-cmd.js");
+      experimentEvidence(id, opts);
+    });
+
+  experiment
+    .command("conclude <id>")
+    .description("Record a terminal evidence-bound disposition")
+    .requiredOption("--status <status>", "survived, falsified, inconclusive, exhausted, or abandoned")
+    .requiredOption("--conclusion <text>", "Evidence-supported conclusion")
+    .requiredOption("--limit <text>", "Known limitation")
+    .requiredOption("--falsifier <text>", "Evidence that would overturn the conclusion")
+    .option("--lesson <text>", "Unreviewed candidate lesson; not promoted to Cerebrum")
+    .option("--qa <path>", "Linked QA reduction")
+    .option("--review <id>", "Linked review id")
+    .option("--bug <id>", "Linked bug id")
+    .action(async (id: string, opts: any) => {
+      const { experimentConclude } = await import("./experiment-cmd.js");
+      experimentConclude(id, opts);
+    });
+
+  experiment.command("show <id>").option("--json", "Output JSON").action(async (id: string, opts: any) => {
+    const { experimentShow } = await import("./experiment-cmd.js"); experimentShow(id, opts);
+  });
+  experiment.command("list").option("--json", "Output JSON").action(async (opts: any) => {
+    const { experimentList } = await import("./experiment-cmd.js"); experimentList(opts);
+  });
+  experiment.command("verify <id>").option("--json", "Output JSON").action(async (id: string, opts: any) => {
+    const { experimentVerify } = await import("./experiment-cmd.js"); experimentVerify(id, opts);
+  });
+  experiment.command("status [id]").option("--check", "Exit nonzero on lifecycle or integrity problems").option("--json", "Output JSON").action(async (id: string | undefined, opts: any) => {
+    const { experimentStatus } = await import("./experiment-cmd.js"); experimentStatus(id, opts);
+  });
 
   program
     .command("trace <target>")

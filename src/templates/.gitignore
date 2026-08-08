@@ -22,6 +22,11 @@ suggestions.json
 reviewlog.json
 skill-receipts/
 
+# experiment records are durable; only optional bulky artifacts are ignored
+!experiments/
+!experiments/*.json
+experiments/artifacts/
+
 # design QC captures and reports
 designqc-report.json
 designqc-captures/

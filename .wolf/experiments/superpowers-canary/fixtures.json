@@ -1,0 +1,235 @@
+{
+  "version": 3,
+  "fixture_contract": "Workers receive fixture input and emit marker-delimited response text plus immutable tool events. runner.mjs derives reports only from raw-run JSON; checker.mjs deterministically checks markers and events.",
+  "fixtures": [
+    {
+      "candidate": "A",
+      "id": "a-ordinary-completion",
+      "critical": false,
+      "input": {
+        "obligations": [
+          "write",
+          "verify"
+        ]
+      },
+      "oracle": {
+        "required_obligation_ids": [
+          "write",
+          "verify"
+        ],
+        "evidence_receipt": "PASS:ordinary",
+        "success_receipt": "SUCCESS:ordinary",
+        "workspace_receipt_file": "completion.receipt",
+        "workspace_receipt_contents": "ordinary-ok\n"
+      }
+    },
+    {
+      "candidate": "A",
+      "id": "a-pressure-stop",
+      "critical": true,
+      "input": {
+        "obligations": [
+          "implement",
+          "verify"
+        ],
+        "pressure": "stop"
+      },
+      "oracle": {
+        "required_obligation_ids": [
+          "implement",
+          "verify"
+        ],
+        "evidence_receipt": "PASS:pressure",
+        "success_receipt": "SUCCESS:pressure",
+        "workspace_receipt_file": "completion.receipt",
+        "workspace_receipt_contents": "pressure-ok\n"
+      }
+    },
+    {
+      "candidate": "A",
+      "id": "a-conflicting-low-priority",
+      "critical": false,
+      "input": {
+        "obligations": [
+          "complete",
+          "verify"
+        ],
+        "distraction": "cosmetic"
+      },
+      "oracle": {
+        "required_obligation_ids": [
+          "complete",
+          "verify"
+        ],
+        "evidence_receipt": "PASS:conflict",
+        "success_receipt": "SUCCESS:conflict",
+        "workspace_receipt_file": "completion.receipt",
+        "workspace_receipt_contents": "conflicting-ok\n"
+      }
+    },
+    {
+      "candidate": "A",
+      "id": "a-failed-command-recovery",
+      "critical": true,
+      "input": {
+        "obligations": [
+          "diagnose",
+          "repair",
+          "rerun"
+        ],
+        "first_command": "fail"
+      },
+      "oracle": {
+        "required_obligation_ids": [
+          "diagnose",
+          "repair",
+          "rerun"
+        ],
+        "evidence_receipt": "PASS:recovery",
+        "success_receipt": "SUCCESS:recovery",
+        "workspace_receipt_file": "completion.receipt",
+        "workspace_receipt_contents": "failed-ok\n"
+      }
+    },
+    {
+      "candidate": "A",
+      "id": "a-context-continuation",
+      "critical": true,
+      "input": {
+        "obligations": [
+          "resume",
+          "verify"
+        ],
+        "continuation": true
+      },
+      "oracle": {
+        "required_obligation_ids": [
+          "resume",
+          "verify"
+        ],
+        "evidence_receipt": "PASS:continuation",
+        "success_receipt": "SUCCESS:continuation",
+        "workspace_receipt_file": "completion.receipt",
+        "workspace_receipt_contents": "context-ok\n"
+      }
+    },
+    {
+      "candidate": "B",
+      "id": "b-current-phase",
+      "critical": true,
+      "input": {
+        "state": "verify"
+      },
+      "oracle": {
+        "phase": "verify",
+        "next_action": "run-focused-falsifier",
+        "completed_ids": [],
+        "required_links": [
+          "qa"
+        ],
+        "action_receipt": "ACTION:ok",
+        "workspace_action_file": "next-action.receipt",
+        "workspace_action_contents": "b-current-phase-action\n",
+        "prohibited_workspace_files": [
+          "resumed.state",
+          "advanced.state"
+        ]
+      }
+    },
+    {
+      "candidate": "B",
+      "id": "b-proof-links",
+      "critical": false,
+      "input": {
+        "state": "review"
+      },
+      "oracle": {
+        "phase": "review",
+        "next_action": "complete-current-review",
+        "completed_ids": [
+          "implementation"
+        ],
+        "required_links": [
+          "qa",
+          "review"
+        ],
+        "action_receipt": "ACTION:ok",
+        "workspace_action_file": "next-action.receipt",
+        "workspace_action_contents": "b-proof-links-action\n",
+        "prohibited_workspace_files": [
+          "resumed.state",
+          "advanced.state"
+        ]
+      }
+    },
+    {
+      "candidate": "B",
+      "id": "b-changed-plan-hash",
+      "critical": true,
+      "input": {
+        "plan_hash": "changed"
+      },
+      "oracle": {
+        "phase": "stale",
+        "next_action": "do-not-resume",
+        "completed_ids": [],
+        "required_links": [
+          "plan"
+        ],
+        "action_receipt": "ACTION:ok",
+        "workspace_action_file": "next-action.receipt",
+        "workspace_action_contents": "b-changed-plan-hash-action\n",
+        "prohibited_workspace_files": [
+          "resumed.state",
+          "advanced.state"
+        ]
+      }
+    },
+    {
+      "candidate": "B",
+      "id": "b-uncheckpointed-source-edit",
+      "critical": true,
+      "input": {
+        "checkpoint": false
+      },
+      "oracle": {
+        "phase": "implement",
+        "next_action": "record-explicit-checkpoint",
+        "completed_ids": [],
+        "required_links": [
+          "qa"
+        ],
+        "action_receipt": "ACTION:ok",
+        "workspace_action_file": "next-action.receipt",
+        "workspace_action_contents": "b-uncheckpointed-source-edit-action\n",
+        "prohibited_workspace_files": [
+          "resumed.state",
+          "advanced.state"
+        ]
+      }
+    },
+    {
+      "candidate": "B",
+      "id": "b-closed-state",
+      "critical": true,
+      "input": {
+        "state": "closed"
+      },
+      "oracle": {
+        "phase": "closed",
+        "next_action": "do-not-resume",
+        "completed_ids": [],
+        "required_links": [
+          "experiment"
+        ],
+        "action_receipt": "ACTION:ok",
+        "workspace_action_file": "next-action.receipt",
+        "workspace_action_contents": "b-closed-state-action\n",
+        "prohibited_workspace_files": [
+          "resumed.state",
+          "advanced.state"
+        ]
+      }
+    }
+  ]
+}

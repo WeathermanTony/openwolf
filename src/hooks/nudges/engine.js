@@ -13,7 +13,7 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { NUDGE_STATES, SUPPRESS_REASONS, computeFingerprint, shortNudgeId, dispositionSuppression, readState, tryClaim, markEmitted, canonicalPath, } from "./state.js";
+import { NUDGE_STATES, SUPPRESS_REASONS, computeFingerprint, shortNudgeId, dispositionSuppression, readState, tryClaim, markEmitted, canonicalPath, markLineageEscalated, } from "./state.js";
 export const NUDGE_DEFAULTS = Object.freeze({
     enabled: true,
     max_per_stop: 1,
@@ -257,6 +257,11 @@ export function evaluate({ wolfDir, candidates, nudgeCfg, sessionId = "", sessio
         if (!marked.ok && marked.degraded && !result.degraded) {
             result.degraded = marked.error || "emission not persisted";
             diag({ event: "state_error", nudge_id: c.nudge_id, error: result.degraded });
+        }
+        if (marked.ok && c.rule_id === "review.escalate" && c.lineage_id) {
+            const escalated = markLineageEscalated(wolfDir, c.lineage_id, { clock });
+            if (!escalated && !result.degraded)
+                result.degraded = "review escalation state not persisted";
         }
         diag({ event: "candidate_emitted", nudge_id: c.nudge_id, rule_id: c.rule_id, owner_root: c.owner_root, chars: message.length });
     }

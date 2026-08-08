@@ -2,6 +2,7 @@
 target: <relative path to the file this reduction is about>
 target-hash: <sha256 of the target file — `sha256sum <file> | awk '{print $1}'`>
 created: YYYY-MM-DD
+experiment: <optional `.wolf/experiments/<id>.json` link>
 reproduction_command: <one-liner someone else can run to reproduce the falsifier, e.g. `node --test tests/foo.test.js`>
 ---
 

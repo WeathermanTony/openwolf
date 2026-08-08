@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { getWolfDir, ensureWolfDir, readJSON, writeJSON, parseAnatomy, serializeAnatomy, extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath, getSizeDisciplineConfig, getQualityGateConfig, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex } from "./shared.js";
-import { rollingWindowJson, acquireFileLock } from "../utils/size-discipline.js";
+import { rollingWindowJson, acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
@@ -451,7 +451,8 @@ function autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr) {
             if (detection.context && !recentDupe.fix.includes(detection.context)) {
                 recentDupe.fix += ` | Also: ${detection.context}`;
             }
-            writeJSON(bugLogPath, bugLog);
+            if (!atomicWriteJson(bugLogPath, bugLog))
+                return;
             return;
         }
         // ID generation uses max(existing numeric suffix) + 1, NOT array.length + 1.
@@ -459,12 +460,12 @@ function autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr) {
         // earlier ones, and with parallel writers that all saw the same length.
         let maxId = 0;
         for (const b of bugLog.bugs) {
-            const m = /^bug-(\d+)$/.exec(b.id || "");
-            if (m) {
-                const n = parseInt(m[1], 10);
-                if (Number.isFinite(n) && n > maxId)
-                    maxId = n;
-            }
+            const m = /^bug-(\d+)$/.exec(b?.id ?? "");
+            if (!m)
+                continue;
+            const n = Number(m[1]);
+            if (Number.isSafeInteger(n) && n >= 0 && n > maxId)
+                maxId = n;
         }
         const nextId = `bug-${String(maxId + 1).padStart(3, "0")}`;
         bugLog.bugs.push({
@@ -481,7 +482,8 @@ function autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr) {
             commit: null,
             reduction: null,
         });
-        writeJSON(bugLogPath, bugLog);
+        if (!atomicWriteJson(bugLogPath, bugLog))
+            return;
     }
     finally {
         lockRelease();
