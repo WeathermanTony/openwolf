@@ -273,11 +273,16 @@ function structuredReferenceCounts(
     pathParts: Array<string | number> = [],
   ): void => {
     if (typeof value === "string") {
-      const isPrimaryId =
+      const isObjectRootPrimaryId =
         pathParts.length === 3 &&
         pathParts[0] === primaryArrayKey &&
         typeof pathParts[1] === "number" &&
         pathParts[2] === "id";
+      const isArrayRootPrimaryId =
+        pathParts.length === 2 &&
+        typeof pathParts[0] === "number" &&
+        pathParts[1] === "id";
+      const isPrimaryId = isObjectRootPrimaryId || isArrayRootPrimaryId;
       if (!isPrimaryId && wanted.has(value))
         counts.set(value, (counts.get(value) ?? 0) + 1);
     } else if (Array.isArray(value))

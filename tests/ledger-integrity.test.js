@@ -88,9 +88,12 @@ test("reference inventory excludes only direct primary IDs", async () => {
   const document = JSON.parse(fs.readFileSync(file, "utf8"));
   document.metadata = { id: "bug-001" };
   fs.writeFileSync(file, JSON.stringify(document, null, 2) + "\n");
-  const { auditLedger } = await fresh();
+  const { auditLedger, planLedgerNormalize } = await fresh();
   const audit = auditLedger(root, "bug");
   assert.deepEqual(audit.ambiguousReferences, [{ file: ".wolf/buglog.json", id: "bug-001", count: 3 }], "only bugs[*].id is excluded; nested and root metadata id values remain references");
+
+  fs.writeFileSync(file, JSON.stringify([{ id: "bug-001" }, { id: "bug-001" }], null, 2) + "\n");
+  assert.deepEqual(planLedgerNormalize(root, "bug").referenceInventory, [], "bare-array records' own IDs are also primary IDs, not external references");
 });
 
 test("normalization accepts bare arrays, preserves root metadata, and records invalid provenance", async () => {
