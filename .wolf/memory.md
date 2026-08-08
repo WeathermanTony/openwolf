@@ -1289,3 +1289,4 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 21:40 | Canary-normalized metatrader-indicators bug ledger and verified exact backup, payload/order/provenance/reference invariants | metatrader-indicators/.wolf/buglog.json | 688 records preserved; no-op rerun clean | ~5000 |
 | 21:41 | Normalized remaining 14 malformed fleet ledgers one-by-one and audited entire fleet | 15 fleet ledgers; normalization receipts | 90 projects / 180 ledgers clean; zero malformed/repairable | ~8000 |
 | 21:42 | Ran final project verification | tests; install payload | 178/178 tests and install verification passed | ~4000 |
+| 17:44 | Session end: 31 writes across 9 files (ledger-integrity.ts, size-discipline.ts, size-discipline.js, ledger-cmd.ts, index.ts) | 9 reads | ~44696 tok |
