@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-08T21:38:29.777Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-08T21:54:34.348Z
 > Files: 215 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
@@ -201,7 +201,7 @@
 
 ## src/ledger/
 
-- `ledger-integrity.ts` — Exports LedgerKind, LedgerClassification, LedgerRecord, LedgerAudit + 14 more (~9089 tok)
+- `ledger-integrity.ts` — Exports LedgerKind, LedgerClassification, LedgerRecord, LedgerAudit + 13 more (~10781 tok)
 
 ## src/scanner/
 
@@ -327,7 +327,7 @@
 - `experiment-cmd.test.js` — project: inProject (~2898 tok)
 - `hook-packaging.test.js` — Hook packaging: every module a hook imports must actually ship. (~1113 tok)
 - `learning-capture.test.js` — root: fixture, transcript (~2450 tok)
-- `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~3541 tok)
+- `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~3620 tok)
 - `ledger-writer-safety.test.js` — fixture: entry (~649 tok)
 - `mem0-canary.test.js` — root: score, clone (~1914 tok)
 - `nudge-engine.test.js` — Regression suite for the evidence-addressed nudge engine. (~13866 tok)
