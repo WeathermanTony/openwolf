@@ -1290,3 +1290,4 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 21:41 | Normalized remaining 14 malformed fleet ledgers one-by-one and audited entire fleet | 15 fleet ledgers; normalization receipts | 90 projects / 180 ledgers clean; zero malformed/repairable | ~8000 |
 | 21:42 | Ran final project verification | tests; install payload | 178/178 tests and install verification passed | ~4000 |
 | 17:44 | Session end: 31 writes across 9 files (ledger-integrity.ts, size-discipline.ts, size-discipline.js, ledger-cmd.ts, index.ts) | 9 reads | ~44696 tok |
+| 17:46 | Session end: 35 writes across 13 files (ledger-integrity.ts, size-discipline.ts, size-discipline.js, ledger-cmd.ts, index.ts) | 9 reads | ~45758 tok |
