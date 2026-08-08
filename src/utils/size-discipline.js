@@ -374,11 +374,15 @@ export function atomicWriteJson(filePath, data) {
     return atomicWriteText(filePath, JSON.stringify(data, null, 2) + "\n");
 }
 export function atomicWriteText(filePath, content) {
+    return atomicWriteBytes(filePath, Buffer.from(content, "utf8"));
+}
+/** Atomically persist bytes without text decoding or newline transformation. */
+export function atomicWriteBytes(filePath, content) {
     const tmp = filePath + "." + crypto.randomBytes(4).toString("hex") + ".tmp";
     let fd = null;
     try {
         fd = fs.openSync(tmp, "wx", 0o600);
-        fs.writeFileSync(fd, content, "utf-8");
+        fs.writeFileSync(fd, content);
         fs.fsyncSync(fd);
         fs.closeSync(fd);
         fd = null;

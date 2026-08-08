@@ -1236,3 +1236,56 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 15:41 | Edited src/cli/experiment-cmd.ts | added 1 condition(s) | ~204 |
 | 15:41 | Edited tests/experiment-cmd.test.js | expanded (+10 lines) | ~228 |
 | 15:43 | Session end: 2 writes across 2 files (experiment-cmd.ts, experiment-cmd.test.js) | 2 reads | ~13666 tok |
+| 15:54 | Session end: 5 writes across 3 files (experiment-cmd.ts, experiment-cmd.test.js, experiment-policy-enforcement.md) | 2 reads | ~13766 tok |
+| 16:53 | Created ../../../../../home/tony/.claude/plans/jaunty-splashing-globe.md | — | ~2404 |
+| 16:57 | Edited src/ledger/ledger-integrity.ts | expanded (+36 lines) | ~328 |
+| 16:58 | Edited src/ledger/ledger-integrity.ts | added error handling | ~3054 |
+| 16:58 | Edited src/cli/ledger-cmd.ts | inline fix | ~58 |
+| 16:59 | Edited src/cli/ledger-cmd.ts | added nullish coalescing | ~595 |
+| 16:59 | Edited src/cli/index.ts | added 1 condition(s) | ~544 |
+| 16:59 | Edited tests/ledger-integrity.test.js | expanded (+40 lines) | ~752 |
+| 17:00 | Edited src/ledger/ledger-integrity.ts | 7→7 lines | ~146 |
+| 17:00 | Edited src/cli/ledger-cmd.ts | inline fix | ~41 |
+| 17:00 | Edited src/cli/ledger-cmd.ts | 3→6 lines | ~140 |
+| 17:02 | Edited src/templates/OPENWOLF.md | inline fix | ~180 |
+| 17:02 | Edited templates/wolf/OPENWOLF.md | inline fix | ~180 |
+
+## Session: 2026-08-08 17:06
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:11 | Created src/ledger/ledger-integrity.ts | — | ~8215 |
+| 17:11 | Edited src/utils/size-discipline.ts | modified atomicWriteText() | ~129 |
+| 17:11 | Edited src/utils/size-discipline.js | modified atomicWriteText() | ~129 |
+| 17:11 | Edited templates/wolf/utils/size-discipline.js | modified atomicWriteText() | ~129 |
+| 17:12 | Edited src/cli/ledger-cmd.ts | added 3 condition(s) | ~530 |
+| 17:12 | Edited src/cli/index.ts | added 1 condition(s) | ~542 |
+| 17:12 | Edited src/cli/ledger-cmd.ts | inline fix | ~63 |
+| 17:13 | Edited tests/ledger-integrity.test.js | 3→6 lines | ~90 |
+| 17:13 | Edited tests/ledger-integrity.test.js | 6→10 lines | ~253 |
+| 17:13 | Edited tests/ledger-integrity.test.js | 2→2 lines | ~40 |
+| 17:14 | Edited tests/ledger-integrity.test.js | expanded (+13 lines) | ~219 |
+| 17:17 | Edited src/ledger/ledger-integrity.ts | inline fix | ~209 |
+| 17:17 | Edited src/ledger/ledger-integrity.ts | inline fix | ~92 |
+| 17:23 | Edited src/ledger/ledger-integrity.ts | inline fix | ~245 |
+| 17:23 | Edited src/ledger/ledger-integrity.ts | inline fix | ~62 |
+| 17:23 | Edited src/ledger/ledger-integrity.ts | added nullish coalescing | ~515 |
+| 17:24 | Edited src/ledger/ledger-integrity.ts | added error handling | ~182 |
+| 17:24 | Edited src/ledger/ledger-integrity.ts | added nullish coalescing | ~31 |
+| 17:24 | Edited src/ledger/ledger-integrity.ts | inline fix | ~630 |
+| 17:24 | Edited src/ledger/ledger-integrity.ts | inline fix | ~20 |
+| 17:24 | Edited tests/ledger-integrity.test.js | expanded (+15 lines) | ~248 |
+| 17:24 | Edited tests/ledger-integrity.test.js | expanded (+19 lines) | ~372 |
+| 17:25 | Edited tests/ledger-integrity.test.js | 1→2 lines | ~55 |
+| 17:31 | Edited src/ledger/ledger-integrity.ts | inline fix | ~36 |
+| 17:31 | Edited src/ledger/ledger-integrity.ts | inline fix | ~30 |
+| 17:31 | Edited src/ledger/ledger-integrity.ts | inline fix | ~26 |
+| 17:31 | Edited tests/ledger-integrity.test.js | expanded (+19 lines) | ~307 |
+| 17:35 | Created ../../../../../tmp/normalize-ledger-rollout.mjs | — | ~1073 |
+| 17:37 | Session end: 29 writes across 8 files (ledger-integrity.ts, size-discipline.ts, size-discipline.js, ledger-cmd.ts, index.ts) | 8 reads | ~44256 tok |
+| 17:38 | Edited src/templates/OPENWOLF.md | inline fix | ~206 |
+| 17:38 | Edited templates/wolf/OPENWOLF.md | inline fix | ~206 |
+| 21:39 | Implemented, reviewed, and adversarially verified governed ledger normalization/recovery | src/ledger/ledger-integrity.ts; src/cli/*; src/utils/*; tests/ledger-integrity.test.js | build + 10/10 focused + independent review convergence | ~95000 |
+| 21:40 | Canary-normalized metatrader-indicators bug ledger and verified exact backup, payload/order/provenance/reference invariants | metatrader-indicators/.wolf/buglog.json | 688 records preserved; no-op rerun clean | ~5000 |
+| 21:41 | Normalized remaining 14 malformed fleet ledgers one-by-one and audited entire fleet | 15 fleet ledgers; normalization receipts | 90 projects / 180 ledgers clean; zero malformed/repairable | ~8000 |
+| 21:42 | Ran final project verification | tests; install payload | 178/178 tests and install verification passed | ~4000 |

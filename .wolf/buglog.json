@@ -5323,6 +5323,721 @@
       "reduction": null
     },
     {
+      "id": "bug-631",
+      "timestamp": "2026-07-16T00:00:00Z",
+      "error_message": "Independent review found emitted provider-companion --file arguments used JSON double quotes, allowing shell expansion, and compact default nudges omitted the gov/US-only profile restriction.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "JSON quoting is not POSIX shell quoting because command substitutions and variable expansion remain active inside double quotes; profile guidance was conditionally emitted only for standard/verbose despite compact being the default.",
+      "fix": "Added POSIX single-quote escaping for file arguments, added a metacharacter filename regression test, and emit profile guidance in compact, standard, and verbose nudges.",
+      "tags": [
+        "review-companion",
+        "shell-quoting",
+        "gov-profile",
+        "compact-nudge",
+        "security"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-16T00:00:00Z",
+      "commit": null,
+      "reduction": ".wolf/qa/review-companion-ops.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-632",
+      "timestamp": "2026-07-18T20:06:00-04:00",
+      "error_message": "openwolf daemon restart drops explicit dashboard mode",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "daemonRestart rebuilt the PM2 environment with only OPENWOLF_PROJECT_ROOT and omitted the existing OPENWOLF_DASHBOARD_ENABLED state.",
+      "fix": "Route restart through ensurePm2Daemon and preserve the existing explicit dashboard marker with a tested helper.",
+      "tags": [
+        "daemon",
+        "dashboard",
+        "pm2",
+        "restart",
+        "state-transition",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-259"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T20:06:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/pm2-lifecycle-cleanup.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-633",
+      "timestamp": "2026-07-18T20:23:00-04:00",
+      "error_message": "openwolf daemon restart reports success without restarting a healthy daemon",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "daemonRestart delegated to the idempotent ensure path without forcing a restart, so matching active state returned already-running.",
+      "fix": "Added an explicit forceRestart lifecycle option and use it only from daemonRestart while preserving dashboard mode.",
+      "tags": [
+        "daemon",
+        "pm2",
+        "restart",
+        "no-op",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-260"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T20:23:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/pm2-lifecycle-cleanup.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-634",
+      "timestamp": "2026-07-18T20:39:00-04:00",
+      "error_message": "managed background daemon can expose dashboard when legacy config enables it",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Runtime dashboard mode used config.enabled OR env=1, so the explicit PM2 env value 0 could not override a true or fallback config.",
+      "fix": "Made explicit PM2 env 0/1 authoritative while retaining config behavior only when the env marker is absent.",
+      "tags": [
+        "dashboard",
+        "pm2",
+        "configuration",
+        "default-off",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-259",
+        "bug-260"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T20:39:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-disabled-runtime.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-635",
+      "timestamp": "2026-07-18T20:39:00-04:00",
+      "error_message": "dashboard readiness succeeds when dashboard UI build is missing",
+      "file": "src/cli/dashboard.ts",
+      "root_cause": "Health readiness reported mode enabled but did not prove dist/dashboard/index.html existed and could be served.",
+      "fix": "Added dashboard_available to daemon health and require it in dashboard readiness before reporting success or opening the browser.",
+      "tags": [
+        "dashboard",
+        "readiness",
+        "missing-build",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-259"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T20:39:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-on-demand.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-636",
+      "timestamp": "2026-07-18T21:10:00-04:00",
+      "error_message": "Scoped update cannot clean an owned daemon for a missing registered project",
+      "file": "src/cli/update.ts",
+      "root_cause": "Scoped matching filtered missing projects before PM2 correlation and returned before cleanup.",
+      "fix": "Match --project against all registrations, update only extant targets, and pass missing selected roots directly to ownership-safe cleanup.",
+      "tags": [
+        "update",
+        "pm2",
+        "stale",
+        "scoped"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:10:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/daemon-update-migration.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-637",
+      "timestamp": "2026-07-18T21:10:00-04:00",
+      "error_message": "Copied dead daemon lock from another project root blocks startup permanently",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "Stale lock reclamation required the stored project root to match even when the stored PID was dead.",
+      "fix": "Reclaim any structurally valid lock whose PID is no longer alive while retaining live-lock duplicate protection.",
+      "tags": [
+        "daemon",
+        "lock",
+        "stale",
+        "startup"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:10:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-disabled-runtime.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-638",
+      "timestamp": "2026-07-18T21:10:00-04:00",
+      "error_message": "Unauthenticated dashboard root discloses the bearer API token",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "The root HTML injected the API token before requiring any bootstrap credential.",
+      "fix": "Require a one-time query token to establish an HttpOnly same-site session before serving token-bearing HTML; the CLI opens that authenticated bootstrap URL.",
+      "tags": [
+        "dashboard",
+        "auth",
+        "token",
+        "security"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:10:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-on-demand.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-639",
+      "timestamp": "2026-07-18T21:05:00-04:00",
+      "error_message": "openwolf update --project <missing> cannot clean that project's PM2 daemon",
+      "file": "src/cli/update.ts",
+      "root_cause": "The --project filter searched only entries with an existing .wolf dir, so a deleted registered project never reached cleanupOpenWolfPm2 despite prune correlation intent.",
+      "fix": "Select against all registry entries, split targets into existing vs missing roots, and include missing selected roots in the scoped PM2 cleanup list.",
+      "tags": [
+        "update",
+        "pm2",
+        "cleanup",
+        "scoped",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-258"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:05:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/daemon-update-migration.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-640",
+      "timestamp": "2026-07-18T21:05:00-04:00",
+      "error_message": "stale daemon.pid from a different project root blocks daemon startup permanently",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "acquireDaemonSingleton only reclaimed stale locks when the recorded root matched the current project; a copied/moved lock with a dead PID from another root fell through to EEXIST and exit(0).",
+      "fix": "Reclaim any valid lock whose PID is dead regardless of recorded root; the .wolf directory itself scopes lock ownership.",
+      "tags": [
+        "daemon",
+        "lock",
+        "singleton",
+        "review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:05:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-disabled-runtime.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-641",
+      "timestamp": "2026-07-18T21:05:00-04:00",
+      "error_message": "unauthenticated GET / discloses daemon auth token to any local client",
+      "file": "src/daemon/wolf-daemon.ts",
+      "root_cause": "The dashboard index was served without auth and embedded window.__OPENWOLF_DAEMON__.token, letting any local process fetch / and reuse the token against authenticated APIs.",
+      "fix": "Gate / and SPA fallback with requireDashboardBootstrap: token-bearing URL from the CLI sets an HttpOnly cookie; CLI now opens /?token=... to bootstrap the session.",
+      "tags": [
+        "dashboard",
+        "auth",
+        "security",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-259"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T21:05:00-04:00",
+      "commit": "cf0d09a",
+      "reduction": ".wolf/qa/dashboard-on-demand.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-642",
+      "timestamp": "2026-07-18T22:00:00-04:00",
+      "error_message": "review nudge re-fires indefinitely on Windows scratchpad files",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "SCRATCH_PATH_EXCLUDES was Unix-only (/tmp/**, **/tmp/**); globToRegex is anchored and case-sensitive, so %LOCALAPPDATA%\\Temp\\claude\\...\\scratchpad\\ never matched and every Windows scratch file counted as reviewable production work.",
+      "fix": "Added **/scratchpad/** and **/AppData/Local/Temp/** to SCRATCH_PATH_EXCLUDES in source and all three JS mirrors; regression tests run the real stop hook against home-dir fixtures with a production-file control. Originally found and fixed in the computertuning project runtime; upstreamed here.",
+      "tags": [
+        "review-nudge",
+        "windows",
+        "scratch",
+        "false-positive",
+        "cross-platform"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T22:00:00-04:00",
+      "commit": "18f0f15",
+      "reduction": ".wolf/qa/scratch-path-excludes-windows.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-643",
+      "timestamp": "2026-07-18T22:20:00-04:00",
+      "error_message": "**/AppData/Local/Temp/** exclude would silence real projects checked out under Windows Temp",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "First-pass Windows scratch fix excluded all of AppData/Local/Temp rather than the claude/ scratch root; SCRATCH_PATH_EXCLUDES feeds review, quality gate, and buglog scan defaults.",
+      "fix": "Narrowed to **/AppData/Local/Temp/claude/** and added a regression test asserting a Temp-shaped real checkout still fires the review nudge.",
+      "tags": [
+        "review-nudge",
+        "windows",
+        "over-broad-exclude",
+        "review"
+      ],
+      "related_bugs": [
+        "bug-267"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T22:20:00-04:00",
+      "commit": "18f0f15",
+      "reduction": ".wolf/qa/scratch-path-excludes-windows.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-644",
+      "timestamp": "2026-07-19T07:00:00-04:00",
+      "error_message": "Stacked stop-hook nudges inject ~800 tokens/turn of repeated boilerplate; AIs seem too busy to read user input promptly",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Every nudge carried full guidance text (review ~1100 chars, queue-watch ~600, git ~550, simplicity ~460); a 4-nudge stop added ~3000 chars to every subsequent turn. Simplicity default (500 tokens) fired on any substantive session, and advisory nudges stacked with actionable gates.",
+      "fix": "Terse one/two-line nudge format across all gates (verbose mode retains full guidance); simplicity default raised 500->2500; simplicity suppressed when review/quality fired the same stop. A/B measured: 2237->1463 chars (-35%) on a 4-eligible-nudge stop.",
+      "tags": [
+        "nudge",
+        "context-tokens",
+        "simplicity",
+        "consolidation",
+        "ux"
+      ],
+      "related_bugs": [
+        "bug-434"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-19T07:00:00-04:00",
+      "commit": "f5d57ba",
+      "reduction": ".wolf/qa/terse-nudge-consolidation.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-645",
+      "timestamp": "2026-07-21T00:00:00-04:00",
+      "error_message": "git_discipline Stop-hook nags \"not-a-git-repo\" / \"run git init\" on an actively-committed repo (Windows)",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "gitRootForProject used bare execFileSync(\"git\", ...) — a PATH lookup. Claude Code launched from a stale shell inherits a PATH without Git even when Git is on the Machine PATH; ENOENT was conflated with rev-parse failure, so the hook reported not-a-repo and advised git init. Reported by a PowerShell Claude Code session.",
+      "fix": "resolveGitBin() tries WOLFPACK_GIT_BIN env, git_discipline.git_bin config, PATH, then well-known Windows install locations (Program Files, LOCALAPPDATA). Three-way state: ok / not-a-repo (init advice) / git-not-found (misconfiguration advice, never init). Commit activity in the session transcript suppresses init advice; safety items unaffected.",
+      "tags": [
+        "git-discipline",
+        "windows",
+        "path",
+        "false-positive",
+        "hook-environment"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-21T00:00:00-04:00",
+      "commit": "34f459c",
+      "reduction": ".wolf/qa/git-discipline-not-found-vs-not-repo.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-646",
+      "timestamp": "2026-07-22T03:38:40.966Z",
+      "error_message": "openwolf init upgrade could overwrite .wolf/.gitignore with zero bytes when the .gitignore template file is missing from the install layout (companion review MEDIUM)",
+      "file": "src/cli/init.ts",
+      "root_cause": ".gitignore was added to ALWAYS_OVERWRITE; writeTemplateFile falls through to generateTemplate when the template is absent, and the embedded fallback map had no .gitignore entry, so `templates[file] ?? \"\"` wrote an empty file, clearing existing ignore policy.",
+      "fix": "Added an embedded .gitignore fallback to generateTemplate mirroring src/templates/.gitignore, so a missing template regenerates the full policy instead of zero bytes.",
+      "status": "resolved",
+      "tags": [
+        "init",
+        "templates",
+        "gitignore",
+        "companion-review"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T03:38:40.966Z",
+      "commit": null,
+      "reduction": ".wolf/qa/feedback-harness-improvements.md (companion review round: init with template absent wrote 647-byte policy file)"
+    },
+    {
+      "id": "bug-647",
+      "timestamp": "2026-07-22T03:51:22.635Z",
+      "error_message": "openwolf update silently skipped .wolf/.gitignore propagation when the .gitignore template file was missing from the install layout, leaving fleet projects on stale buglog-ignoring policy (companion review round 2, MEDIUM)",
+      "file": "src/cli/update.ts",
+      "root_cause": "update.ts ALWAYS_OVERWRITE loop copies only when the template file exists and had no fallback branch, unlike init.ts which routes missing templates through generateTemplate. Asymmetric failure handling meant the new nested ignore policy would propagate via init but never via update in a broken packaging layout.",
+      "fix": "Exported generateTemplate from init.ts and call it as the fallback for .gitignore in update.ts when the template file is absent, so update writes the same embedded 25-pattern policy.",
+      "status": "resolved",
+      "tags": [
+        "update",
+        "templates",
+        "gitignore",
+        "companion-review"
+      ],
+      "related_bugs": [
+        "bug-438"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T03:51:22.636Z",
+      "commit": null,
+      "reduction": ".wolf/qa/feedback-harness-improvements.md (round 2/3: fixture project with stale policy + template absent -> update wrote 647-byte embedded policy, buglog.json no longer ignored)"
+    },
+    {
+      "id": "bug-648",
+      "timestamp": "2026-07-22T03:57:16.826Z",
+      "error_message": "TypeError [ERR_INVALID_ARG_TYPE]: The \"path\" argument must be of type string. Received undefined — openwolf update crashes on a registry entry missing the root field",
+      "file": "src/cli/update.ts",
+      "root_cause": "updateCommand filters/maps registry entries assuming entry.root is always a string (p.root.toLowerCase(), path.join(project.root, ...)); a malformed entry with a missing/renamed key crashes the entire fleet update before any project is processed.",
+      "fix": "Rewrote readRegistry() in src/cli/registry.ts to filter malformed entries (missing/renamed root or name) at the single read point via isWellFormedEntry guard; warns to stderr with the drop count; the next writeRegistry from any caller (registerProject, update, stale-drop) persists the cleanup to disk. All downstream consumers (update.ts path.join / toLowerCase) are protected without per-call changes.",
+      "status": "resolved",
+      "tags": [
+        "update",
+        "registry",
+        "robustness"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T19:02:37.303Z",
+      "commit": "154ceaa",
+      "reduction": ".wolf/qa/registry-malformed-entry-guard.md"
+    },
+    {
+      "id": "bug-649",
+      "timestamp": "2026-07-22T04:15:54.811Z",
+      "error_message": "review nudge reports ~76 lines changed on a 1-line comment edit; small follow-up edits spawn fresh review rounds (Grok feedback: over-sensitivity)",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "maybeNudgeReview computed approxLines from sessionEntry.totals.output_tokens_estimated, which is session-CUMULATIVE. Once cumulative output crossed min_diff_lines, every later stop with writes re-triggered the size gate and attributed all prior work to the new edit.",
+      "fix": "Session-baseline delta: each review entry records covered_tokens = session output already under a review obligation; the size trigger uses (cumulative - max covered_tokens for this session)/17, so only genuinely new work counts. Also compressed the nudge with project-relative paths (986 -> 768 chars measured).",
+      "status": "resolved",
+      "tags": [
+        "stop-hook",
+        "review",
+        "token-discipline",
+        "grok-feedback"
+      ],
+      "related_bugs": [
+        "bug-436"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T04:15:54.811Z",
+      "commit": null,
+      "reduction": ".wolf/qa/review-baseline-delta.md"
+    },
+    {
+      "id": "bug-650",
+      "timestamp": "2026-08-08T20:58:48.772Z",
+      "error_message": "Missing error handling in auditProjectLedgers",
+      "file": "src/ledger/ledger-integrity.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T20:58:48.772Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-651",
+      "timestamp": "2026-08-08T20:59:10.631Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/cli/ledger-cmd.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T20:59:10.631Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-652",
+      "timestamp": "2026-08-08T20:59:26.145Z",
+      "error_message": "Missing guard clause",
+      "file": "src/cli/index.ts",
+      "root_cause": "No early return/throw for edge case: opts.apply && !opts.acknowledge",
+      "fix": "Added guard clause: if (opts.apply && !opts.acknowledge)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T20:59:26.145Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-653",
+      "timestamp": "2026-08-08T20:59:45.459Z",
+      "error_message": "Missing await",
+      "file": "tests/ledger-integrity.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T20:59:45.459Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-654",
+      "timestamp": "2026-08-08T21:00:29.580Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/cli/ledger-cmd.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 3→6 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T21:00:29.580Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-655",
+      "timestamp": "2026-08-08T21:12:14.931Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/cli/index.ts",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 24→28 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T21:12:14.931Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-656",
+      "timestamp": "2026-08-08T21:13:25.237Z",
+      "error_message": "Significant refactor of ",
+      "file": "tests/ledger-integrity.test.js",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 6→10 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T21:13:25.237Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-657",
+      "timestamp": "2026-08-08T21:14:28.118Z",
+      "error_message": "Missing await",
+      "file": "tests/ledger-integrity.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T21:14:28.118Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-658",
+      "timestamp": "2026-08-08T21:17:49.686Z",
+      "error_message": "Wrong return value",
+      "file": "src/ledger/ledger-integrity.ts",
+      "root_cause": "Was returning: { kind, classification: \"repairable\", applied: fal",
+      "fix": "Now returns: { kind, classification: \"repairable\", applied: fal",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T21:17:49.686Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-659",
+      "timestamp": "2026-08-08T21:23:28.570Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/ledger/ledger-integrity.ts",
+      "root_cause": "Had \"id\"",
+      "fix": "Changed to \"number\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-08-08T21:24:30.128Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-660",
+      "timestamp": "2026-08-08T21:23:51.956Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/ledger/ledger-integrity.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: project_root: realProjectRoot(projectRoot) ?? path.resolve(p",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-08-08T21:24:08.823Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-661",
+      "timestamp": "2026-08-08T21:24:01.811Z",
+      "error_message": "Missing error handling in originalId",
+      "file": "src/ledger/ledger-integrity.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T21:24:01.811Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-662",
+      "timestamp": "2026-08-08T21:24:35.177Z",
+      "error_message": "Wrong reference: receiptPath should be receiptReal",
+      "file": "src/ledger/ledger-integrity.ts",
+      "root_cause": "Used \"receiptPath\" instead of \"receiptReal\"",
+      "fix": "Changed receiptPath → receiptReal",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T21:24:35.177Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-663",
+      "timestamp": "2026-08-08T21:24:46.244Z",
+      "error_message": "Missing await",
+      "file": "tests/ledger-integrity.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call | Also: test(\"recovery rejects symlink receipts and backups\", async ; const root = project();",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-08-08T21:24:57.702Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-664",
+      "timestamp": "2026-08-08T21:25:53.738Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/ledger-integrity.test.js",
+      "root_cause": "Had \"bug-000\"",
+      "fix": "Changed to \"id\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T21:25:53.738Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-665",
+      "timestamp": "2026-08-08T21:31:53.399Z",
+      "error_message": "Missing await",
+      "file": "tests/ledger-integrity.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-08T21:31:53.399Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-666",
+      "timestamp": "2026-08-08T21:38:19.204Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/templates/OPENWOLF.md",
+      "root_cause": "Had `wolfpack ledger normalize`",
+      "fix": "Changed to `wolfpack ledger normalize --kind <bug|review>`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-08-08T21:38:29.965Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
       "id": "bug-141",
       "timestamp": "2026-06-30T01:36:23.561Z",
       "error_message": "Significant refactor of ",
@@ -6220,415 +6935,6 @@
       "commit": null,
       "reduction": ".wolf/qa/review-provenance-cli.md",
       "status": "resolved"
-    },
-    {
-      "id": "bug-631",
-      "timestamp": "2026-07-16T00:00:00Z",
-      "error_message": "Independent review found emitted provider-companion --file arguments used JSON double quotes, allowing shell expansion, and compact default nudges omitted the gov/US-only profile restriction.",
-      "file": "src/hooks/stop.ts",
-      "root_cause": "JSON quoting is not POSIX shell quoting because command substitutions and variable expansion remain active inside double quotes; profile guidance was conditionally emitted only for standard/verbose despite compact being the default.",
-      "fix": "Added POSIX single-quote escaping for file arguments, added a metacharacter filename regression test, and emit profile guidance in compact, standard, and verbose nudges.",
-      "tags": [
-        "review-companion",
-        "shell-quoting",
-        "gov-profile",
-        "compact-nudge",
-        "security"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-07-16T00:00:00Z",
-      "commit": null,
-      "reduction": ".wolf/qa/review-companion-ops.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-632",
-      "timestamp": "2026-07-18T20:06:00-04:00",
-      "error_message": "openwolf daemon restart drops explicit dashboard mode",
-      "file": "src/cli/daemon-cmd.ts",
-      "root_cause": "daemonRestart rebuilt the PM2 environment with only OPENWOLF_PROJECT_ROOT and omitted the existing OPENWOLF_DASHBOARD_ENABLED state.",
-      "fix": "Route restart through ensurePm2Daemon and preserve the existing explicit dashboard marker with a tested helper.",
-      "tags": [
-        "daemon",
-        "dashboard",
-        "pm2",
-        "restart",
-        "state-transition",
-        "review"
-      ],
-      "related_bugs": [
-        "bug-259"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T20:06:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/pm2-lifecycle-cleanup.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-633",
-      "timestamp": "2026-07-18T20:23:00-04:00",
-      "error_message": "openwolf daemon restart reports success without restarting a healthy daemon",
-      "file": "src/cli/daemon-cmd.ts",
-      "root_cause": "daemonRestart delegated to the idempotent ensure path without forcing a restart, so matching active state returned already-running.",
-      "fix": "Added an explicit forceRestart lifecycle option and use it only from daemonRestart while preserving dashboard mode.",
-      "tags": [
-        "daemon",
-        "pm2",
-        "restart",
-        "no-op",
-        "review"
-      ],
-      "related_bugs": [
-        "bug-260"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T20:23:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/pm2-lifecycle-cleanup.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-634",
-      "timestamp": "2026-07-18T20:39:00-04:00",
-      "error_message": "managed background daemon can expose dashboard when legacy config enables it",
-      "file": "src/daemon/wolf-daemon.ts",
-      "root_cause": "Runtime dashboard mode used config.enabled OR env=1, so the explicit PM2 env value 0 could not override a true or fallback config.",
-      "fix": "Made explicit PM2 env 0/1 authoritative while retaining config behavior only when the env marker is absent.",
-      "tags": [
-        "dashboard",
-        "pm2",
-        "configuration",
-        "default-off",
-        "review"
-      ],
-      "related_bugs": [
-        "bug-259",
-        "bug-260"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T20:39:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/dashboard-disabled-runtime.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-635",
-      "timestamp": "2026-07-18T20:39:00-04:00",
-      "error_message": "dashboard readiness succeeds when dashboard UI build is missing",
-      "file": "src/cli/dashboard.ts",
-      "root_cause": "Health readiness reported mode enabled but did not prove dist/dashboard/index.html existed and could be served.",
-      "fix": "Added dashboard_available to daemon health and require it in dashboard readiness before reporting success or opening the browser.",
-      "tags": [
-        "dashboard",
-        "readiness",
-        "missing-build",
-        "review"
-      ],
-      "related_bugs": [
-        "bug-259"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T20:39:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/dashboard-on-demand.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-636",
-      "timestamp": "2026-07-18T21:10:00-04:00",
-      "error_message": "Scoped update cannot clean an owned daemon for a missing registered project",
-      "file": "src/cli/update.ts",
-      "root_cause": "Scoped matching filtered missing projects before PM2 correlation and returned before cleanup.",
-      "fix": "Match --project against all registrations, update only extant targets, and pass missing selected roots directly to ownership-safe cleanup.",
-      "tags": [
-        "update",
-        "pm2",
-        "stale",
-        "scoped"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T21:10:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/daemon-update-migration.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-637",
-      "timestamp": "2026-07-18T21:10:00-04:00",
-      "error_message": "Copied dead daemon lock from another project root blocks startup permanently",
-      "file": "src/daemon/wolf-daemon.ts",
-      "root_cause": "Stale lock reclamation required the stored project root to match even when the stored PID was dead.",
-      "fix": "Reclaim any structurally valid lock whose PID is no longer alive while retaining live-lock duplicate protection.",
-      "tags": [
-        "daemon",
-        "lock",
-        "stale",
-        "startup"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T21:10:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/dashboard-disabled-runtime.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-638",
-      "timestamp": "2026-07-18T21:10:00-04:00",
-      "error_message": "Unauthenticated dashboard root discloses the bearer API token",
-      "file": "src/daemon/wolf-daemon.ts",
-      "root_cause": "The root HTML injected the API token before requiring any bootstrap credential.",
-      "fix": "Require a one-time query token to establish an HttpOnly same-site session before serving token-bearing HTML; the CLI opens that authenticated bootstrap URL.",
-      "tags": [
-        "dashboard",
-        "auth",
-        "token",
-        "security"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T21:10:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/dashboard-on-demand.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-639",
-      "timestamp": "2026-07-18T21:05:00-04:00",
-      "error_message": "openwolf update --project <missing> cannot clean that project's PM2 daemon",
-      "file": "src/cli/update.ts",
-      "root_cause": "The --project filter searched only entries with an existing .wolf dir, so a deleted registered project never reached cleanupOpenWolfPm2 despite prune correlation intent.",
-      "fix": "Select against all registry entries, split targets into existing vs missing roots, and include missing selected roots in the scoped PM2 cleanup list.",
-      "tags": [
-        "update",
-        "pm2",
-        "cleanup",
-        "scoped",
-        "review"
-      ],
-      "related_bugs": [
-        "bug-258"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T21:05:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/daemon-update-migration.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-640",
-      "timestamp": "2026-07-18T21:05:00-04:00",
-      "error_message": "stale daemon.pid from a different project root blocks daemon startup permanently",
-      "file": "src/daemon/wolf-daemon.ts",
-      "root_cause": "acquireDaemonSingleton only reclaimed stale locks when the recorded root matched the current project; a copied/moved lock with a dead PID from another root fell through to EEXIST and exit(0).",
-      "fix": "Reclaim any valid lock whose PID is dead regardless of recorded root; the .wolf directory itself scopes lock ownership.",
-      "tags": [
-        "daemon",
-        "lock",
-        "singleton",
-        "review"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T21:05:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/dashboard-disabled-runtime.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-641",
-      "timestamp": "2026-07-18T21:05:00-04:00",
-      "error_message": "unauthenticated GET / discloses daemon auth token to any local client",
-      "file": "src/daemon/wolf-daemon.ts",
-      "root_cause": "The dashboard index was served without auth and embedded window.__OPENWOLF_DAEMON__.token, letting any local process fetch / and reuse the token against authenticated APIs.",
-      "fix": "Gate / and SPA fallback with requireDashboardBootstrap: token-bearing URL from the CLI sets an HttpOnly cookie; CLI now opens /?token=... to bootstrap the session.",
-      "tags": [
-        "dashboard",
-        "auth",
-        "security",
-        "review"
-      ],
-      "related_bugs": [
-        "bug-259"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T21:05:00-04:00",
-      "commit": "cf0d09a",
-      "reduction": ".wolf/qa/dashboard-on-demand.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-642",
-      "timestamp": "2026-07-18T22:00:00-04:00",
-      "error_message": "review nudge re-fires indefinitely on Windows scratchpad files",
-      "file": "src/hooks/shared.ts",
-      "root_cause": "SCRATCH_PATH_EXCLUDES was Unix-only (/tmp/**, **/tmp/**); globToRegex is anchored and case-sensitive, so %LOCALAPPDATA%\\Temp\\claude\\...\\scratchpad\\ never matched and every Windows scratch file counted as reviewable production work.",
-      "fix": "Added **/scratchpad/** and **/AppData/Local/Temp/** to SCRATCH_PATH_EXCLUDES in source and all three JS mirrors; regression tests run the real stop hook against home-dir fixtures with a production-file control. Originally found and fixed in the computertuning project runtime; upstreamed here.",
-      "tags": [
-        "review-nudge",
-        "windows",
-        "scratch",
-        "false-positive",
-        "cross-platform"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T22:00:00-04:00",
-      "commit": "18f0f15",
-      "reduction": ".wolf/qa/scratch-path-excludes-windows.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-643",
-      "timestamp": "2026-07-18T22:20:00-04:00",
-      "error_message": "**/AppData/Local/Temp/** exclude would silence real projects checked out under Windows Temp",
-      "file": "src/hooks/shared.ts",
-      "root_cause": "First-pass Windows scratch fix excluded all of AppData/Local/Temp rather than the claude/ scratch root; SCRATCH_PATH_EXCLUDES feeds review, quality gate, and buglog scan defaults.",
-      "fix": "Narrowed to **/AppData/Local/Temp/claude/** and added a regression test asserting a Temp-shaped real checkout still fires the review nudge.",
-      "tags": [
-        "review-nudge",
-        "windows",
-        "over-broad-exclude",
-        "review"
-      ],
-      "related_bugs": [
-        "bug-267"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-18T22:20:00-04:00",
-      "commit": "18f0f15",
-      "reduction": ".wolf/qa/scratch-path-excludes-windows.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-644",
-      "timestamp": "2026-07-19T07:00:00-04:00",
-      "error_message": "Stacked stop-hook nudges inject ~800 tokens/turn of repeated boilerplate; AIs seem too busy to read user input promptly",
-      "file": "src/hooks/stop.ts",
-      "root_cause": "Every nudge carried full guidance text (review ~1100 chars, queue-watch ~600, git ~550, simplicity ~460); a 4-nudge stop added ~3000 chars to every subsequent turn. Simplicity default (500 tokens) fired on any substantive session, and advisory nudges stacked with actionable gates.",
-      "fix": "Terse one/two-line nudge format across all gates (verbose mode retains full guidance); simplicity default raised 500->2500; simplicity suppressed when review/quality fired the same stop. A/B measured: 2237->1463 chars (-35%) on a 4-eligible-nudge stop.",
-      "tags": [
-        "nudge",
-        "context-tokens",
-        "simplicity",
-        "consolidation",
-        "ux"
-      ],
-      "related_bugs": [
-        "bug-434"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-19T07:00:00-04:00",
-      "commit": "f5d57ba",
-      "reduction": ".wolf/qa/terse-nudge-consolidation.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-645",
-      "timestamp": "2026-07-21T00:00:00-04:00",
-      "error_message": "git_discipline Stop-hook nags \"not-a-git-repo\" / \"run git init\" on an actively-committed repo (Windows)",
-      "file": "src/hooks/stop.ts",
-      "root_cause": "gitRootForProject used bare execFileSync(\"git\", ...) — a PATH lookup. Claude Code launched from a stale shell inherits a PATH without Git even when Git is on the Machine PATH; ENOENT was conflated with rev-parse failure, so the hook reported not-a-repo and advised git init. Reported by a PowerShell Claude Code session.",
-      "fix": "resolveGitBin() tries WOLFPACK_GIT_BIN env, git_discipline.git_bin config, PATH, then well-known Windows install locations (Program Files, LOCALAPPDATA). Three-way state: ok / not-a-repo (init advice) / git-not-found (misconfiguration advice, never init). Commit activity in the session transcript suppresses init advice; safety items unaffected.",
-      "tags": [
-        "git-discipline",
-        "windows",
-        "path",
-        "false-positive",
-        "hook-environment"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-07-21T00:00:00-04:00",
-      "commit": "34f459c",
-      "reduction": ".wolf/qa/git-discipline-not-found-vs-not-repo.md",
-      "status": "resolved"
-    },
-    {
-      "id": "bug-646",
-      "timestamp": "2026-07-22T03:38:40.966Z",
-      "error_message": "openwolf init upgrade could overwrite .wolf/.gitignore with zero bytes when the .gitignore template file is missing from the install layout (companion review MEDIUM)",
-      "file": "src/cli/init.ts",
-      "root_cause": ".gitignore was added to ALWAYS_OVERWRITE; writeTemplateFile falls through to generateTemplate when the template is absent, and the embedded fallback map had no .gitignore entry, so `templates[file] ?? \"\"` wrote an empty file, clearing existing ignore policy.",
-      "fix": "Added an embedded .gitignore fallback to generateTemplate mirroring src/templates/.gitignore, so a missing template regenerates the full policy instead of zero bytes.",
-      "status": "resolved",
-      "tags": [
-        "init",
-        "templates",
-        "gitignore",
-        "companion-review"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-07-22T03:38:40.966Z",
-      "commit": null,
-      "reduction": ".wolf/qa/feedback-harness-improvements.md (companion review round: init with template absent wrote 647-byte policy file)"
-    },
-    {
-      "id": "bug-647",
-      "timestamp": "2026-07-22T03:51:22.635Z",
-      "error_message": "openwolf update silently skipped .wolf/.gitignore propagation when the .gitignore template file was missing from the install layout, leaving fleet projects on stale buglog-ignoring policy (companion review round 2, MEDIUM)",
-      "file": "src/cli/update.ts",
-      "root_cause": "update.ts ALWAYS_OVERWRITE loop copies only when the template file exists and had no fallback branch, unlike init.ts which routes missing templates through generateTemplate. Asymmetric failure handling meant the new nested ignore policy would propagate via init but never via update in a broken packaging layout.",
-      "fix": "Exported generateTemplate from init.ts and call it as the fallback for .gitignore in update.ts when the template file is absent, so update writes the same embedded 25-pattern policy.",
-      "status": "resolved",
-      "tags": [
-        "update",
-        "templates",
-        "gitignore",
-        "companion-review"
-      ],
-      "related_bugs": [
-        "bug-438"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-22T03:51:22.636Z",
-      "commit": null,
-      "reduction": ".wolf/qa/feedback-harness-improvements.md (round 2/3: fixture project with stale policy + template absent -> update wrote 647-byte embedded policy, buglog.json no longer ignored)"
-    },
-    {
-      "id": "bug-648",
-      "timestamp": "2026-07-22T03:57:16.826Z",
-      "error_message": "TypeError [ERR_INVALID_ARG_TYPE]: The \"path\" argument must be of type string. Received undefined — openwolf update crashes on a registry entry missing the root field",
-      "file": "src/cli/update.ts",
-      "root_cause": "updateCommand filters/maps registry entries assuming entry.root is always a string (p.root.toLowerCase(), path.join(project.root, ...)); a malformed entry with a missing/renamed key crashes the entire fleet update before any project is processed.",
-      "fix": "Rewrote readRegistry() in src/cli/registry.ts to filter malformed entries (missing/renamed root or name) at the single read point via isWellFormedEntry guard; warns to stderr with the drop count; the next writeRegistry from any caller (registerProject, update, stale-drop) persists the cleanup to disk. All downstream consumers (update.ts path.join / toLowerCase) are protected without per-call changes.",
-      "status": "resolved",
-      "tags": [
-        "update",
-        "registry",
-        "robustness"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-07-23T19:02:37.303Z",
-      "commit": "154ceaa",
-      "reduction": ".wolf/qa/registry-malformed-entry-guard.md"
-    },
-    {
-      "id": "bug-649",
-      "timestamp": "2026-07-22T04:15:54.811Z",
-      "error_message": "review nudge reports ~76 lines changed on a 1-line comment edit; small follow-up edits spawn fresh review rounds (Grok feedback: over-sensitivity)",
-      "file": "src/hooks/stop.ts",
-      "root_cause": "maybeNudgeReview computed approxLines from sessionEntry.totals.output_tokens_estimated, which is session-CUMULATIVE. Once cumulative output crossed min_diff_lines, every later stop with writes re-triggered the size gate and attributed all prior work to the new edit.",
-      "fix": "Session-baseline delta: each review entry records covered_tokens = session output already under a review obligation; the size trigger uses (cumulative - max covered_tokens for this session)/17, so only genuinely new work counts. Also compressed the nudge with project-relative paths (986 -> 768 chars measured).",
-      "status": "resolved",
-      "tags": [
-        "stop-hook",
-        "review",
-        "token-discipline",
-        "grok-feedback"
-      ],
-      "related_bugs": [
-        "bug-436"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-07-22T04:15:54.811Z",
-      "commit": null,
-      "reduction": ".wolf/qa/review-baseline-delta.md"
     }
   ]
 }

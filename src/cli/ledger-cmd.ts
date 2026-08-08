@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { findProjectRoot } from "../scanner/project-root.js";
-import { auditProjectLedgers, repairLedger, type LedgerAudit, type RepairResult } from "../ledger/ledger-integrity.js";
+import { auditProjectLedgers, normalizeLedger, recoverLedgerNormalize, repairLedger, type LedgerAudit, type LedgerKind, type NormalizeResult, type RecoverResult, type RepairResult } from "../ledger/ledger-integrity.js";
 import { getRegisteredProjects } from "./registry.js";
 
 export interface LedgerCommandOptions {
@@ -21,7 +21,7 @@ function roots(options: LedgerCommandOptions): string[] {
   return [path.resolve(options.project ?? findProjectRoot())];
 }
 
-function aggregate(reports: ProjectReport[]): Record<string, number> {
+function aggregate(reports: Array<{ project: string; ledgers: Array<LedgerAudit | RepairResult | NormalizeResult> }>): Record<string, number> {
   const counts: Record<string, number> = { projects: reports.length, clean: 0, repairable: 0, malformed: 0, unreadable: 0, "lock-blocked": 0, repaired: 0, verified: 0, incomplete_receipts: 0, records_preserved: 0, ids_rekeyed: 0, ambiguous_references_retained: 0 };
   for (const report of reports) for (const ledger of report.ledgers) {
     counts[ledger.classification] = (counts[ledger.classification] ?? 0) + 1;
@@ -62,4 +62,23 @@ export function ledgerRepair(options: LedgerCommandOptions = {}): void {
     reports.push({ project, ledgers: [repairLedger(project, "bug", Boolean(options.apply)), repairLedger(project, "review", Boolean(options.apply))] });
   }
   print({ mode: "repair", apply: Boolean(options.apply), reports, counts: aggregate(reports) }, options.json);
+}
+
+export function ledgerNormalize(options: LedgerCommandOptions & { kind?: LedgerKind; acknowledgeStructuralNormalization?: boolean } = {}): void {
+  if (!options.kind) throw new Error("ledger normalize requires --kind bug|review");
+  if (options.fleet && options.apply) throw new Error("ledger normalize --apply refuses --fleet; select one project explicitly");
+  if (options.apply && !options.acknowledgeStructuralNormalization) throw new Error("ledger normalize --apply requires --acknowledge-structural-normalization");
+  const reports: Array<{ project: string; ledgers: NormalizeResult[] }> = [];
+  for (const project of roots(options)) reports.push({ project, ledgers: [normalizeLedger(project, options.kind, Boolean(options.apply))] });
+  const counts = aggregate(reports);
+  if (options.json) console.log(JSON.stringify({ mode: "normalize", kind: options.kind, apply: Boolean(options.apply), reports, counts }, null, 2));
+  else for (const report of reports) for (const ledger of report.ledgers) console.log(`${report.project}: ${ledger.kind}: ${ledger.classification}${ledger.mappings.length ? ` (${ledger.mappings.length} rekeyed)` : ""}`);
+}
+
+export function ledgerRecover(options: { project?: string; receipt: string; kind?: LedgerKind; apply?: boolean; acknowledgeStructuralNormalization?: boolean; json?: boolean }): void {
+  if (!options.kind) throw new Error("ledger recover requires --kind bug|review");
+  const project = path.resolve(options.project ?? findProjectRoot());
+  const result: RecoverResult = recoverLedgerNormalize(project, options.kind, path.resolve(options.receipt), Boolean(options.apply), Boolean(options.acknowledgeStructuralNormalization));
+  if (options.json) console.log(JSON.stringify(result, null, 2));
+  else console.log(`Wolfpack ledger recover: ${result.verified ? "verified" : result.error ?? "not applied"}`);
 }

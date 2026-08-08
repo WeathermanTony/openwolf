@@ -397,6 +397,35 @@ export function createProgram(): Command {
       ledgerRepair(opts);
     });
 
+  ledger
+    .command("normalize")
+    .description("Plan or explicitly normalize one governed ledger; references are inventoried, never rewritten")
+    .requiredOption("--kind <kind>", "Ledger kind: bug or review")
+    .option("--project <path>", "Normalize one project root")
+    .option("--fleet", "Dry-run registered projects only (apply is refused)")
+    .option("--apply", "Apply normalization after explicit acknowledgement")
+    .option("--acknowledge-structural-normalization", "Acknowledge root-shape, ID, and provenance changes")
+    .option("--json", "Output JSON")
+    .action(async (opts: { project?: string; fleet?: boolean; kind?: "bug" | "review"; apply?: boolean; acknowledgeStructuralNormalization?: boolean; json?: boolean }) => {
+      if (opts.kind !== "bug" && opts.kind !== "review") throw new Error("ledger normalize --kind must be bug or review");
+      const { ledgerNormalize } = await import("./ledger-cmd.js");
+      ledgerNormalize(opts);
+    });
+
+  ledger
+    .command("recover <receipt>")
+    .description("Restore one receipt-targeted normalized ledger from its exact-byte backup")
+    .requiredOption("--kind <kind>", "Ledger kind: bug or review")
+    .option("--project <path>", "Project root containing the ledger")
+    .requiredOption("--apply", "Apply the hash-guarded recovery")
+    .requiredOption("--acknowledge-structural-normalization", "Acknowledge recovery overwrites the receipt-matched live ledger")
+    .option("--json", "Output JSON")
+    .action(async (receipt: string, opts: { project?: string; kind?: "bug" | "review"; apply?: boolean; acknowledgeStructuralNormalization?: boolean; json?: boolean }) => {
+      if (opts.kind !== "bug" && opts.kind !== "review") throw new Error("ledger recover --kind must be bug or review");
+      const { ledgerRecover } = await import("./ledger-cmd.js");
+      ledgerRecover({ ...opts, receipt });
+    });
+
   const qa = program
     .command("qa")
     .description("Quality gate management");

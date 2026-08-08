@@ -1,15 +1,16 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-08T19:41:56.292Z
-> Files: 214 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-08T21:38:29.777Z
+> Files: 215 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
-- `jaunty-splashing-globe.md` — Context (~2490 tok)
+- `jaunty-splashing-globe.md` — Context (~2254 tok)
 
 ## ../../../../../tmp/
 
 - `add-hook-ledger-bug.mjs` — Declares file (~509 tok)
+- `normalize-ledger-rollout.mjs` — Declares cli (~1073 tok)
 
 ## ./
 
@@ -77,9 +78,9 @@
 - `dashboard.ts` — Exports isExpectedDashboardHealth, dashboardCommand (~1171 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `experiment-cmd.ts` — Exports validateExperiment, verifyExperimentRecord, startExperiment (~5690 tok)
-- `index.ts` — Exports createProgram (~5364 tok)
+- `index.ts` — Exports createProgram (~5906 tok)
 - `init.ts` — Exports initCommand (~10936 tok)
-- `ledger-cmd.ts` — Exports LedgerCommandOptions, ledgerAudit, ledgerRepair (~1041 tok)
+- `ledger-cmd.ts` — Exports LedgerCommandOptions, ledgerAudit, ledgerRepair, ledgerNormalize, ledgerRecover (~1621 tok)
 - `managed-skills.ts` — Exports MANAGED_CLAUDE_SKILL_FILES, installManagedClaudeSkills, backupManagedClaudeSkills, restoreManagedClaudeSkills (~727 tok)
 - `nudge-cmd.ts` — `wolfpack nudge …` — explicit disposition commands. (~3106 tok)
 - `qa-cmd.ts` — Exports QaStatus, buildQaStatusReport, qaStatus (~1289 tok)
@@ -200,7 +201,7 @@
 
 ## src/ledger/
 
-- `ledger-integrity.ts` — Exports LedgerKind, LedgerClassification, LedgerRecord, LedgerAudit + 7 more (~4096 tok)
+- `ledger-integrity.ts` — Exports LedgerKind, LedgerClassification, LedgerRecord, LedgerAudit + 14 more (~9089 tok)
 
 ## src/scanner/
 
@@ -222,7 +223,7 @@
 - `designqc-report.json` (~26 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~5275 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~5375 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 - `reviewlog.json` (~11 tok)
@@ -257,8 +258,8 @@
 - `platform.ts` — Exports isWindows, isMac, isLinux, whichCommand (~99 tok)
 - `port-allocator.js` — Exports deterministicBasePort, isPortFree, allocateProjectPorts (~307 tok)
 - `port-allocator.ts` — @ts-nocheck (~312 tok)
-- `size-discipline.js` — size-discipline.ts (~10504 tok)
-- `size-discipline.ts` — size-discipline.ts (~10542 tok)
+- `size-discipline.js` — size-discipline.ts (~10630 tok)
+- `size-discipline.ts` — size-discipline.ts (~10598 tok)
 
 ## templates/claude/
 
@@ -276,7 +277,7 @@
 - `config.json` (~2041 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~5275 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol (~5375 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 
@@ -318,7 +319,7 @@
 - `paths.js` — Exports normalizePath, getWolfDir, resolveWolfFile, ensureDir, relativeToCwd (~190 tok)
 - `platform.js` — Exports isWindows, isMac, isLinux, whichCommand (~101 tok)
 - `port-allocator.js` — Exports deterministicBasePort, isPortFree, allocateProjectPorts (~307 tok)
-- `size-discipline.js` — size-discipline.ts (~10574 tok)
+- `size-discipline.js` — size-discipline.ts (~10630 tok)
 
 ## tests/
 
@@ -326,7 +327,7 @@
 - `experiment-cmd.test.js` — project: inProject (~2898 tok)
 - `hook-packaging.test.js` — Hook packaging: every module a hook imports must actually ship. (~1113 tok)
 - `learning-capture.test.js` — root: fixture, transcript (~2450 tok)
-- `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~1616 tok)
+- `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~3541 tok)
 - `ledger-writer-safety.test.js` — fixture: entry (~649 tok)
 - `mem0-canary.test.js` — root: score, clone (~1914 tok)
 - `nudge-engine.test.js` — Regression suite for the evidence-addressed nudge engine. (~13866 tok)
