@@ -952,3 +952,4 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 |------|--------|---------|---------|--------|
 | 06:04 | Repaired pre-commit buglog data loss and revalidated release | .wolf/buglog.json, runtime trees | Restored 46 missing historical IDs; 141/141 tests, focused 10/10, install verify pass; generated hashes identical | ~1800 |
 | 06:08 | Committed canonical 1.2.0-custom.18 learning release and backfilled proof links | commit 152b3fb, .wolf/buglog.json | Release commit created; resolved session bugs linked to canonical commit | ~500 |
+| 07:15 | Deployed 1.2.0-custom.18 to registered fleet and audited downstream Git safety | 90 project .wolf trees | 90/90 learning runtimes hash-match and config enabled; 46 targets non-Git, 41 Git repos have no remotes, cllmgit2 points to upstream karpathy, openphone remote is invalid; no downstream commits/pushes made and unrelated work untouched | ~2200 |
