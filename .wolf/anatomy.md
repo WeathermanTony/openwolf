@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-08T21:54:34.348Z
-> Files: 215 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-08T22:03:32.524Z
+> Files: 216 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
@@ -10,6 +10,7 @@
 ## ../../../../../tmp/
 
 - `add-hook-ledger-bug.mjs` — Declares file (~509 tok)
+- `log-bare-array-reference-bug.mjs` — Declares file (~510 tok)
 - `normalize-ledger-rollout.mjs` — Declares cli (~1073 tok)
 
 ## ./

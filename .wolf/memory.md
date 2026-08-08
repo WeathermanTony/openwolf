@@ -1295,3 +1295,5 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 17:50 | Session end: 38 writes across 15 files (ledger-integrity.ts, size-discipline.ts, size-discipline.js, ledger-cmd.ts, index.ts) | 9 reads | ~46549 tok |
 | 17:54 | Edited src/ledger/ledger-integrity.ts | 5→10 lines | ~116 |
 | 17:54 | Edited tests/ledger-integrity.test.js | 14→17 lines | ~293 |
+| 18:03 | Session end: 41 writes across 15 files (ledger-integrity.ts, size-discipline.ts, size-discipline.js, ledger-cmd.ts, index.ts) | 9 reads | ~48562 tok |
+| 18:03 | Created ../../../../../tmp/log-bare-array-reference-bug.mjs | — | ~510 |
