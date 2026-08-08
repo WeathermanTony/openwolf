@@ -1,60 +1,1259 @@
 import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { acquireFileLock, atomicWriteBytes, atomicWriteJson } from "../utils/size-discipline.js";
+import {
+  acquireFileLock,
+  atomicWriteBytes,
+  atomicWriteJson,
+} from "../utils/size-discipline.js";
 
 export type LedgerKind = "bug" | "review";
-export type LedgerClassification = "clean" | "repairable" | "malformed" | "unreadable" | "lock-blocked";
+export type LedgerClassification =
+  | "clean"
+  | "repairable"
+  | "malformed"
+  | "unreadable"
+  | "lock-blocked";
 const PROVENANCE_FIELD = "__openwolf_normalization_provenance";
 const NORMALIZATION_SCHEMA_VERSION = 1;
 
-interface LedgerSpec { kind: LedgerKind; file: string; arrayKey: string; prefix: string; width: number; }
-export interface LedgerRecord { index: number; id: string; digest: string; record: Record<string, unknown>; }
-export interface LedgerAudit { kind: LedgerKind; file: string; classification: LedgerClassification; recordCount: number; duplicateIds: Array<{ id: string; indices: number[]; exact: boolean }>; invalidIndices: number[]; ambiguousReferences: Array<{ file: string; id: string; count: number }>; error?: string; }
-export interface RekeyMapping { index: number; digest: string; from: string; to: string; }
-export interface RepairPlan { kind: LedgerKind; file: string; classification: LedgerClassification; mappings: RekeyMapping[]; recordCount: number; ambiguousReferences: LedgerAudit["ambiguousReferences"]; }
-export interface RepairResult { kind: LedgerKind; classification: LedgerClassification; applied: boolean; verified: boolean; incompleteReceipt: boolean; recordCount: number; mappings: RekeyMapping[]; ambiguousReferences: LedgerAudit["ambiguousReferences"]; backupPath?: string; receiptPath?: string; error?: string; }
-export interface OriginalId { present: boolean; value?: unknown; }
-export interface NormalizeMapping { index: number; digest: string; from: OriginalId; to: string; reason: "duplicate" | "invalid"; collisionBlock?: { id: string; firstIndex: number; firstDigest: string }; }
-export interface ProvenanceAddition { index: number; field: typeof PROVENANCE_FIELD; value: { schema_version: number; original_id: OriginalId; reason: "invalid-id" }; }
-export interface ReferenceInventory { file: string; id: string; count: number; reason: "duplicate" | "invalid"; }
-export interface NormalizePlan { kind: LedgerKind; file: string; classification: LedgerClassification; recordCount: number; inputShape: "object" | "array"; rootTransition: { from: "object" | "array"; to: "object"; versionAdded: boolean }; invalidIndices: number[]; duplicateGroups: Array<{ id: string; indices: number[]; exact: boolean }>; maxSuffix: number; mappings: NormalizeMapping[]; provenanceAdditions: ProvenanceAddition[]; referenceInventory: ReferenceInventory[]; expectedPolicy: { backup: "exact-byte-fsynced-atomic"; receipt: "versioned-with-verification" }; error?: string; }
-export interface NormalizeResult extends NormalizePlan { applied: boolean; verified: boolean; incompleteReceipt: boolean; backupPath?: string; receiptPath?: string; }
-export interface RecoverResult { kind?: LedgerKind; applied: boolean; verified: boolean; backupPath?: string; receiptPath: string; recoveryReceiptPath?: string; error?: string; }
+interface LedgerSpec {
+  kind: LedgerKind;
+  file: string;
+  arrayKey: string;
+  prefix: string;
+  width: number;
+}
+export interface LedgerRecord {
+  index: number;
+  id: string;
+  digest: string;
+  record: Record<string, unknown>;
+}
+export interface LedgerAudit {
+  kind: LedgerKind;
+  file: string;
+  classification: LedgerClassification;
+  recordCount: number;
+  duplicateIds: Array<{ id: string; indices: number[]; exact: boolean }>;
+  invalidIndices: number[];
+  ambiguousReferences: Array<{ file: string; id: string; count: number }>;
+  error?: string;
+}
+export interface RekeyMapping {
+  index: number;
+  digest: string;
+  from: string;
+  to: string;
+}
+export interface RepairPlan {
+  kind: LedgerKind;
+  file: string;
+  classification: LedgerClassification;
+  mappings: RekeyMapping[];
+  recordCount: number;
+  ambiguousReferences: LedgerAudit["ambiguousReferences"];
+}
+export interface RepairResult {
+  kind: LedgerKind;
+  classification: LedgerClassification;
+  applied: boolean;
+  verified: boolean;
+  incompleteReceipt: boolean;
+  recordCount: number;
+  mappings: RekeyMapping[];
+  ambiguousReferences: LedgerAudit["ambiguousReferences"];
+  backupPath?: string;
+  receiptPath?: string;
+  error?: string;
+}
+export interface OriginalId {
+  present: boolean;
+  value?: unknown;
+}
+export interface NormalizeMapping {
+  index: number;
+  digest: string;
+  from: OriginalId;
+  to: string;
+  reason: "duplicate" | "invalid";
+  collisionBlock?: { id: string; firstIndex: number; firstDigest: string };
+}
+export interface ProvenanceAddition {
+  index: number;
+  field: typeof PROVENANCE_FIELD;
+  value: {
+    schema_version: number;
+    original_id: OriginalId;
+    reason: "invalid-id";
+  };
+}
+export interface ReferenceInventory {
+  file: string;
+  id: string;
+  count: number;
+  reason: "duplicate" | "invalid";
+}
+export interface NormalizePlan {
+  kind: LedgerKind;
+  file: string;
+  classification: LedgerClassification;
+  recordCount: number;
+  inputShape: "object" | "array";
+  rootTransition: {
+    from: "object" | "array";
+    to: "object";
+    versionAdded: boolean;
+  };
+  invalidIndices: number[];
+  duplicateGroups: Array<{ id: string; indices: number[]; exact: boolean }>;
+  maxSuffix: number;
+  mappings: NormalizeMapping[];
+  provenanceAdditions: ProvenanceAddition[];
+  referenceInventory: ReferenceInventory[];
+  expectedPolicy: {
+    backup: "exact-byte-fsynced-atomic";
+    receipt: "versioned-with-verification";
+  };
+  error?: string;
+}
+export interface NormalizeResult extends NormalizePlan {
+  applied: boolean;
+  verified: boolean;
+  incompleteReceipt: boolean;
+  backupPath?: string;
+  receiptPath?: string;
+}
+export interface RecoverResult {
+  kind?: LedgerKind;
+  applied: boolean;
+  verified: boolean;
+  backupPath?: string;
+  receiptPath: string;
+  recoveryReceiptPath?: string;
+  error?: string;
+}
 
-function specFor(projectRoot: string, kind: LedgerKind): LedgerSpec { const base = kind === "bug" ? { file: "buglog.json", arrayKey: "bugs", prefix: "bug", width: 3 } : { file: "reviewlog.json", arrayKey: "reviews", prefix: "review", width: 4 }; return { kind, ...base, file: path.join(projectRoot, ".wolf", base.file) }; }
-function digest(value: unknown): string { return crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
-function sha256(bytes: string | Buffer): string { return crypto.createHash("sha256").update(bytes).digest("hex"); }
-function parseId(id: unknown, spec: LedgerSpec): number | null { if (typeof id !== "string") return null; const match = new RegExp(`^${spec.prefix}-(\\d+)$`).exec(id); if (!match) return null; const value = Number(match[1]); return Number.isSafeInteger(value) && value >= 0 ? value : null; }
-function formatId(n: number, spec: LedgerSpec): string { return `${spec.prefix}-${String(n).padStart(spec.width, "0")}`; }
-function originalId(record: Record<string, unknown>): OriginalId { return Object.prototype.hasOwnProperty.call(record, "id") ? { present: true, value: record.id } : { present: false }; }
-function realProjectRoot(projectRoot: string): string | null { try { return fs.realpathSync(projectRoot); } catch { return null; } }
-function regularFileWithin(filePath: string, root: string): string | null { try { const stat = fs.lstatSync(filePath); if (!stat.isFile()) return null; const real = fs.realpathSync(filePath); const realRoot = fs.realpathSync(root); return real.startsWith(realRoot + path.sep) ? real : null; } catch { return null; } }
-function duplicateGroups(records: LedgerRecord[]): LedgerAudit["duplicateIds"] { const groups = new Map<string, LedgerRecord[]>(); for (const record of records) groups.set(record.id, [...(groups.get(record.id) ?? []), record]); return [...groups.entries()].filter(([, matches]) => matches.length > 1).map(([id, matches]) => ({ id, indices: matches.map((record) => record.index), exact: new Set(matches.map((record) => record.digest)).size === 1 })).sort((a, b) => a.id.localeCompare(b.id)); }
+function specFor(projectRoot: string, kind: LedgerKind): LedgerSpec {
+  const base =
+    kind === "bug"
+      ? { file: "buglog.json", arrayKey: "bugs", prefix: "bug", width: 3 }
+      : {
+          file: "reviewlog.json",
+          arrayKey: "reviews",
+          prefix: "review",
+          width: 4,
+        };
+  return { kind, ...base, file: path.join(projectRoot, ".wolf", base.file) };
+}
+function digest(value: unknown): string {
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(value))
+    .digest("hex");
+}
+function sha256(bytes: string | Buffer): string {
+  return crypto.createHash("sha256").update(bytes).digest("hex");
+}
+function parseId(id: unknown, spec: LedgerSpec): number | null {
+  if (typeof id !== "string") return null;
+  const match = new RegExp(`^${spec.prefix}-(\\d+)$`).exec(id);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+function formatId(n: number, spec: LedgerSpec): string {
+  return `${spec.prefix}-${String(n).padStart(spec.width, "0")}`;
+}
+function originalId(record: Record<string, unknown>): OriginalId {
+  return Object.prototype.hasOwnProperty.call(record, "id")
+    ? { present: true, value: record.id }
+    : { present: false };
+}
+function realProjectRoot(projectRoot: string): string | null {
+  try {
+    return fs.realpathSync(projectRoot);
+  } catch {
+    return null;
+  }
+}
+function regularFileWithin(filePath: string, root: string): string | null {
+  try {
+    const stat = fs.lstatSync(filePath);
+    if (!stat.isFile()) return null;
+    const real = fs.realpathSync(filePath);
+    const realRoot = fs.realpathSync(root);
+    return real.startsWith(realRoot + path.sep) ? real : null;
+  } catch {
+    return null;
+  }
+}
+function duplicateGroups(records: LedgerRecord[]): LedgerAudit["duplicateIds"] {
+  const groups = new Map<string, LedgerRecord[]>();
+  for (const record of records)
+    groups.set(record.id, [...(groups.get(record.id) ?? []), record]);
+  return [...groups.entries()]
+    .filter(([, matches]) => matches.length > 1)
+    .map(([id, matches]) => ({
+      id,
+      indices: matches.map((record) => record.index),
+      exact: new Set(matches.map((record) => record.digest)).size === 1,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
 
-function load(spec: LedgerSpec): { raw: string; document: Record<string, unknown>; records: LedgerRecord[] } | { error: string; unreadable: boolean } {
-  let raw: string; try { raw = fs.readFileSync(spec.file, "utf8"); } catch (error) { return { error: error instanceof Error ? error.message : String(error), unreadable: true }; }
-  let document: unknown; try { document = JSON.parse(raw); } catch (error) { return { error: error instanceof Error ? error.message : String(error), unreadable: false }; }
-  if (!document || typeof document !== "object" || Array.isArray(document) || !Array.isArray((document as Record<string, unknown>)[spec.arrayKey])) return { error: `expected object with ${spec.arrayKey} array`, unreadable: false };
-  const records: LedgerRecord[] = []; for (const [index, record] of ((document as Record<string, unknown>)[spec.arrayKey] as unknown[]).entries()) { if (!record || typeof record !== "object" || Array.isArray(record)) return { error: `record ${index} is not an object`, unreadable: false }; records.push({ index, id: String((record as Record<string, unknown>).id ?? ""), digest: digest(record), record: record as Record<string, unknown> }); }
+function load(
+  spec: LedgerSpec,
+):
+  | { raw: string; document: Record<string, unknown>; records: LedgerRecord[] }
+  | { error: string; unreadable: boolean } {
+  let raw: string;
+  try {
+    raw = fs.readFileSync(spec.file, "utf8");
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : String(error),
+      unreadable: true,
+    };
+  }
+  let document: unknown;
+  try {
+    document = JSON.parse(raw);
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : String(error),
+      unreadable: false,
+    };
+  }
+  if (
+    !document ||
+    typeof document !== "object" ||
+    Array.isArray(document) ||
+    !Array.isArray((document as Record<string, unknown>)[spec.arrayKey])
+  )
+    return {
+      error: `expected object with ${spec.arrayKey} array`,
+      unreadable: false,
+    };
+  const records: LedgerRecord[] = [];
+  for (const [index, record] of (
+    (document as Record<string, unknown>)[spec.arrayKey] as unknown[]
+  ).entries()) {
+    if (!record || typeof record !== "object" || Array.isArray(record))
+      return { error: `record ${index} is not an object`, unreadable: false };
+    records.push({
+      index,
+      id: String((record as Record<string, unknown>).id ?? ""),
+      digest: digest(record),
+      record: record as Record<string, unknown>,
+    });
+  }
   return { raw, document: document as Record<string, unknown>, records };
 }
-export function resolveLedgerRecords(records: LedgerRecord[], id: string): LedgerRecord[] { return records.filter((record) => record.id === id); }
-function structuredReferenceCounts(text: string, wanted: Set<string>, primaryArrayKey: string): Map<string, number> | null { let parsed: unknown; try { parsed = JSON.parse(text); } catch { return null; } const counts = new Map<string, number>(); const visit = (value: unknown, pathParts: Array<string | number> = []): void => { if (typeof value === "string") { const isPrimaryId = pathParts.length === 3 && pathParts[0] === primaryArrayKey && typeof pathParts[1] === "number" && pathParts[2] === "id"; if (!isPrimaryId && wanted.has(value)) counts.set(value, (counts.get(value) ?? 0) + 1); } else if (Array.isArray(value)) value.forEach((item, index) => visit(item, [...pathParts, index])); else if (value && typeof value === "object") for (const [key, child] of Object.entries(value)) visit(child, [...pathParts, key]); }; visit(parsed); return counts; }
-function referenceInventory(projectRoot: string, wantedReasons: Map<string, "duplicate" | "invalid">): ReferenceInventory[] { if (!wantedReasons.size) return []; const wanted = new Set(wantedReasons.keys()); const root = path.join(projectRoot, ".wolf"); const found: ReferenceInventory[] = []; const walk = (dir: string): void => { let entries: fs.Dirent[]; try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; } for (const entry of entries) { if (["backups", "archive", "node_modules"].includes(entry.name)) continue; const full = path.join(dir, entry.name); if (entry.isDirectory()) { walk(full); continue; } if (!entry.isFile() || entry.name.endsWith(".lock")) continue; let text: string; try { text = fs.readFileSync(full, "utf8"); } catch { continue; } const primaryArrayKey = entry.name === "buglog.json" ? "bugs" : entry.name === "reviewlog.json" ? "reviews" : null; const structured = primaryArrayKey ? structuredReferenceCounts(text, wanted, primaryArrayKey) : null; for (const id of wanted) { const count = structured ? (structured.get(id) ?? 0) : text.split(id).length - 1; if (count) found.push({ file: path.relative(projectRoot, full).replace(/\\\\/g, "/"), id, count, reason: wantedReasons.get(id)! }); } } }; walk(root); return found.sort((a, b) => a.file.localeCompare(b.file) || a.id.localeCompare(b.id)); }
-function duplicateReferenceInventory(projectRoot: string, groups: LedgerAudit["duplicateIds"]): LedgerAudit["ambiguousReferences"] { return referenceInventory(projectRoot, new Map(groups.map((group) => [group.id, "duplicate" as const]))).map(({ file, id, count }) => ({ file, id, count })); }
+export function resolveLedgerRecords(
+  records: LedgerRecord[],
+  id: string,
+): LedgerRecord[] {
+  return records.filter((record) => record.id === id);
+}
+function structuredReferenceCounts(
+  text: string,
+  wanted: Set<string>,
+  primaryArrayKey: string,
+): Map<string, number> | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  const counts = new Map<string, number>();
+  const visit = (
+    value: unknown,
+    pathParts: Array<string | number> = [],
+  ): void => {
+    if (typeof value === "string") {
+      const isPrimaryId =
+        pathParts.length === 3 &&
+        pathParts[0] === primaryArrayKey &&
+        typeof pathParts[1] === "number" &&
+        pathParts[2] === "id";
+      if (!isPrimaryId && wanted.has(value))
+        counts.set(value, (counts.get(value) ?? 0) + 1);
+    } else if (Array.isArray(value))
+      value.forEach((item, index) => visit(item, [...pathParts, index]));
+    else if (value && typeof value === "object")
+      for (const [key, child] of Object.entries(value))
+        visit(child, [...pathParts, key]);
+  };
+  visit(parsed);
+  return counts;
+}
+function referenceInventory(
+  projectRoot: string,
+  wantedReasons: Map<string, "duplicate" | "invalid">,
+): ReferenceInventory[] {
+  if (!wantedReasons.size) return [];
+  const wanted = new Set(wantedReasons.keys());
+  const root = path.join(projectRoot, ".wolf");
+  const found: ReferenceInventory[] = [];
+  const walk = (dir: string): void => {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (["backups", "archive", "node_modules"].includes(entry.name)) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!entry.isFile() || entry.name.endsWith(".lock")) continue;
+      let text: string;
+      try {
+        text = fs.readFileSync(full, "utf8");
+      } catch {
+        continue;
+      }
+      const primaryArrayKey =
+        entry.name === "buglog.json"
+          ? "bugs"
+          : entry.name === "reviewlog.json"
+            ? "reviews"
+            : null;
+      const structured = primaryArrayKey
+        ? structuredReferenceCounts(text, wanted, primaryArrayKey)
+        : null;
+      for (const id of wanted) {
+        const count = structured
+          ? (structured.get(id) ?? 0)
+          : text.split(id).length - 1;
+        if (count)
+          found.push({
+            file: path.relative(projectRoot, full).replace(/\\\\/g, "/"),
+            id,
+            count,
+            reason: wantedReasons.get(id)!,
+          });
+      }
+    }
+  };
+  walk(root);
+  return found.sort(
+    (a, b) => a.file.localeCompare(b.file) || a.id.localeCompare(b.id),
+  );
+}
+function duplicateReferenceInventory(
+  projectRoot: string,
+  groups: LedgerAudit["duplicateIds"],
+): LedgerAudit["ambiguousReferences"] {
+  return referenceInventory(
+    projectRoot,
+    new Map(groups.map((group) => [group.id, "duplicate" as const])),
+  ).map(({ file, id, count }) => ({ file, id, count }));
+}
 
-export function auditLedger(projectRoot: string, kind: LedgerKind): LedgerAudit { const spec = specFor(projectRoot, kind); const loaded = load(spec); if ("error" in loaded) return { kind, file: spec.file, classification: loaded.unreadable ? "unreadable" : "malformed", recordCount: 0, duplicateIds: [], invalidIndices: [], ambiguousReferences: [], error: loaded.error }; const invalidIndices = loaded.records.filter((record) => parseId(record.record.id, spec) === null).map((record) => record.index); const duplicateIds = duplicateGroups(loaded.records).filter((group) => parseId(group.id, spec) !== null); const classification: LedgerClassification = invalidIndices.length ? "malformed" : duplicateIds.length ? "repairable" : "clean"; return { kind, file: spec.file, classification, recordCount: loaded.records.length, duplicateIds, invalidIndices, ambiguousReferences: duplicateReferenceInventory(projectRoot, duplicateIds) }; }
-export function planLedgerRepair(projectRoot: string, kind: LedgerKind): RepairPlan { const spec = specFor(projectRoot, kind); const audit = auditLedger(projectRoot, kind); if (audit.classification !== "repairable") return { kind, file: spec.file, classification: audit.classification, mappings: [], recordCount: audit.recordCount, ambiguousReferences: audit.ambiguousReferences }; const loaded = load(spec); if ("error" in loaded) return { kind, file: spec.file, classification: "unreadable", mappings: [], recordCount: 0, ambiguousReferences: [] }; const used = new Set(loaded.records.map((record) => parseId(record.record.id, spec)).filter((id): id is number => id !== null)); let next = Math.max(-1, ...used) + 1; const seen = new Set<string>(); const mappings: RekeyMapping[] = []; for (const record of loaded.records) { if (seen.has(record.id)) { while (used.has(next)) next++; const to = formatId(next++, spec); used.add(parseId(to, spec)!); mappings.push({ index: record.index, digest: record.digest, from: record.id, to }); } else seen.add(record.id); } return { kind, file: spec.file, classification: "repairable", mappings, recordCount: loaded.records.length, ambiguousReferences: audit.ambiguousReferences }; }
-export function repairLedger(projectRoot: string, kind: LedgerKind, apply = false): RepairResult { const spec = specFor(projectRoot, kind); const initial = planLedgerRepair(projectRoot, kind); if (!apply || initial.classification !== "repairable") return { kind, classification: initial.classification, applied: false, verified: false, incompleteReceipt: false, recordCount: initial.recordCount, mappings: initial.mappings, ambiguousReferences: initial.ambiguousReferences }; const release = acquireFileLock(spec.file); if (!release) return { kind, classification: "lock-blocked", applied: false, verified: false, incompleteReceipt: false, recordCount: initial.recordCount, mappings: [], ambiguousReferences: initial.ambiguousReferences }; try { const plan = planLedgerRepair(projectRoot, kind); if (plan.classification !== "repairable") return { kind, classification: plan.classification, applied: false, verified: false, incompleteReceipt: false, recordCount: plan.recordCount, mappings: plan.mappings, ambiguousReferences: plan.ambiguousReferences }; const loaded = load(spec); if ("error" in loaded) return { kind, classification: loaded.unreadable ? "unreadable" : "malformed", applied: false, verified: false, incompleteReceipt: false, recordCount: 0, mappings: [], ambiguousReferences: plan.ambiguousReferences, error: loaded.error }; const backupDir = path.join(projectRoot, ".wolf", "backups", `ledger-repair-${new Date().toISOString().replace(/[:.]/g, "-")}`); const backupPath = path.join(backupDir, path.basename(spec.file)); try { fs.mkdirSync(backupDir, { recursive: true }); } catch (error) { return { kind, classification: "repairable", applied: false, verified: false, incompleteReceipt: true, recordCount: plan.recordCount, mappings: plan.mappings, ambiguousReferences: plan.ambiguousReferences, error: String(error) }; } if (!atomicWriteBytes(backupPath, Buffer.from(loaded.raw))) return { kind, classification: "repairable", applied: false, verified: false, incompleteReceipt: true, recordCount: plan.recordCount, mappings: plan.mappings, ambiguousReferences: plan.ambiguousReferences, backupPath, error: "backup write failed" }; if (sha256(fs.readFileSync(backupPath)) !== sha256(loaded.raw)) return { kind, classification: "repairable", applied: false, verified: false, incompleteReceipt: true, recordCount: plan.recordCount, mappings: plan.mappings, ambiguousReferences: plan.ambiguousReferences, backupPath, error: "exact-byte backup verification failed" }; const changed = JSON.parse(JSON.stringify(loaded.document)) as Record<string, unknown>; for (const mapping of plan.mappings) (changed[spec.arrayKey] as Array<Record<string, unknown>>)[mapping.index].id = mapping.to; if (!atomicWriteJson(spec.file, changed)) return { kind, classification: "repairable", applied: false, verified: false, incompleteReceipt: true, recordCount: plan.recordCount, mappings: plan.mappings, ambiguousReferences: plan.ambiguousReferences, backupPath, error: "ledger write failed; backup retained" }; const after = auditLedger(projectRoot, kind); const reloaded = load(spec); const expectedIds = new Map(plan.mappings.map((mapping) => [mapping.index, mapping.to])); const payloadDigest = (record: Record<string, unknown>) => { const { id: _id, ...payload } = record; return digest(payload); }; const recordsPreserved = !("error" in reloaded) && reloaded.records.length === loaded.records.length && reloaded.records.every((record, index) => payloadDigest(record.record) === payloadDigest(loaded.records[index].record)); const expectedMapping = !("error" in reloaded) && reloaded.records.every((record) => record.id === (expectedIds.get(record.index) ?? loaded.records[record.index].id)); const verified = after.classification === "clean" && after.recordCount === plan.recordCount && recordsPreserved && expectedMapping; const receiptPath = path.join(backupDir, `${kind}-receipt.json`); const receiptOk = atomicWriteJson(receiptPath, { version: 1, kind, before_hash: sha256(loaded.raw), backup_hash: sha256(fs.readFileSync(backupPath)), after_hash: sha256(fs.readFileSync(spec.file)), before_count: plan.recordCount, after_count: after.recordCount, mappings: plan.mappings, ambiguous_references: plan.ambiguousReferences, verification: { clean: after.classification === "clean", count_preserved: after.recordCount === plan.recordCount, records_preserved: recordsPreserved, expected_mapping: expectedMapping, verified } }); return { kind, classification: after.classification, applied: true, verified, incompleteReceipt: !receiptOk, recordCount: after.recordCount, mappings: plan.mappings, ambiguousReferences: plan.ambiguousReferences, backupPath, receiptPath: receiptOk ? receiptPath : undefined, error: verified && receiptOk ? undefined : "post-write verification or receipt failed; backup retained" }; } finally { release(); } }
-export function auditProjectLedgers(projectRoot: string): LedgerAudit[] { return [auditLedger(projectRoot, "bug"), auditLedger(projectRoot, "review")]; }
+export function auditLedger(
+  projectRoot: string,
+  kind: LedgerKind,
+): LedgerAudit {
+  const spec = specFor(projectRoot, kind);
+  const loaded = load(spec);
+  if ("error" in loaded)
+    return {
+      kind,
+      file: spec.file,
+      classification: loaded.unreadable ? "unreadable" : "malformed",
+      recordCount: 0,
+      duplicateIds: [],
+      invalidIndices: [],
+      ambiguousReferences: [],
+      error: loaded.error,
+    };
+  const invalidIndices = loaded.records
+    .filter((record) => parseId(record.record.id, spec) === null)
+    .map((record) => record.index);
+  const duplicateIds = duplicateGroups(loaded.records).filter(
+    (group) => parseId(group.id, spec) !== null,
+  );
+  const classification: LedgerClassification = invalidIndices.length
+    ? "malformed"
+    : duplicateIds.length
+      ? "repairable"
+      : "clean";
+  return {
+    kind,
+    file: spec.file,
+    classification,
+    recordCount: loaded.records.length,
+    duplicateIds,
+    invalidIndices,
+    ambiguousReferences: duplicateReferenceInventory(projectRoot, duplicateIds),
+  };
+}
+export function planLedgerRepair(
+  projectRoot: string,
+  kind: LedgerKind,
+): RepairPlan {
+  const spec = specFor(projectRoot, kind);
+  const audit = auditLedger(projectRoot, kind);
+  if (audit.classification !== "repairable")
+    return {
+      kind,
+      file: spec.file,
+      classification: audit.classification,
+      mappings: [],
+      recordCount: audit.recordCount,
+      ambiguousReferences: audit.ambiguousReferences,
+    };
+  const loaded = load(spec);
+  if ("error" in loaded)
+    return {
+      kind,
+      file: spec.file,
+      classification: "unreadable",
+      mappings: [],
+      recordCount: 0,
+      ambiguousReferences: [],
+    };
+  const used = new Set(
+    loaded.records
+      .map((record) => parseId(record.record.id, spec))
+      .filter((id): id is number => id !== null),
+  );
+  let next = Math.max(-1, ...used) + 1;
+  const seen = new Set<string>();
+  const mappings: RekeyMapping[] = [];
+  for (const record of loaded.records) {
+    if (seen.has(record.id)) {
+      while (used.has(next)) next++;
+      const to = formatId(next++, spec);
+      used.add(parseId(to, spec)!);
+      mappings.push({
+        index: record.index,
+        digest: record.digest,
+        from: record.id,
+        to,
+      });
+    } else seen.add(record.id);
+  }
+  return {
+    kind,
+    file: spec.file,
+    classification: "repairable",
+    mappings,
+    recordCount: loaded.records.length,
+    ambiguousReferences: audit.ambiguousReferences,
+  };
+}
+export function repairLedger(
+  projectRoot: string,
+  kind: LedgerKind,
+  apply = false,
+): RepairResult {
+  const spec = specFor(projectRoot, kind);
+  const initial = planLedgerRepair(projectRoot, kind);
+  if (!apply || initial.classification !== "repairable")
+    return {
+      kind,
+      classification: initial.classification,
+      applied: false,
+      verified: false,
+      incompleteReceipt: false,
+      recordCount: initial.recordCount,
+      mappings: initial.mappings,
+      ambiguousReferences: initial.ambiguousReferences,
+    };
+  const release = acquireFileLock(spec.file);
+  if (!release)
+    return {
+      kind,
+      classification: "lock-blocked",
+      applied: false,
+      verified: false,
+      incompleteReceipt: false,
+      recordCount: initial.recordCount,
+      mappings: [],
+      ambiguousReferences: initial.ambiguousReferences,
+    };
+  try {
+    const plan = planLedgerRepair(projectRoot, kind);
+    if (plan.classification !== "repairable")
+      return {
+        kind,
+        classification: plan.classification,
+        applied: false,
+        verified: false,
+        incompleteReceipt: false,
+        recordCount: plan.recordCount,
+        mappings: plan.mappings,
+        ambiguousReferences: plan.ambiguousReferences,
+      };
+    const loaded = load(spec);
+    if ("error" in loaded)
+      return {
+        kind,
+        classification: loaded.unreadable ? "unreadable" : "malformed",
+        applied: false,
+        verified: false,
+        incompleteReceipt: false,
+        recordCount: 0,
+        mappings: [],
+        ambiguousReferences: plan.ambiguousReferences,
+        error: loaded.error,
+      };
+    const backupDir = path.join(
+      projectRoot,
+      ".wolf",
+      "backups",
+      `ledger-repair-${new Date().toISOString().replace(/[:.]/g, "-")}`,
+    );
+    const backupPath = path.join(backupDir, path.basename(spec.file));
+    try {
+      fs.mkdirSync(backupDir, { recursive: true });
+    } catch (error) {
+      return {
+        kind,
+        classification: "repairable",
+        applied: false,
+        verified: false,
+        incompleteReceipt: true,
+        recordCount: plan.recordCount,
+        mappings: plan.mappings,
+        ambiguousReferences: plan.ambiguousReferences,
+        error: String(error),
+      };
+    }
+    if (!atomicWriteBytes(backupPath, Buffer.from(loaded.raw)))
+      return {
+        kind,
+        classification: "repairable",
+        applied: false,
+        verified: false,
+        incompleteReceipt: true,
+        recordCount: plan.recordCount,
+        mappings: plan.mappings,
+        ambiguousReferences: plan.ambiguousReferences,
+        backupPath,
+        error: "backup write failed",
+      };
+    if (sha256(fs.readFileSync(backupPath)) !== sha256(loaded.raw))
+      return {
+        kind,
+        classification: "repairable",
+        applied: false,
+        verified: false,
+        incompleteReceipt: true,
+        recordCount: plan.recordCount,
+        mappings: plan.mappings,
+        ambiguousReferences: plan.ambiguousReferences,
+        backupPath,
+        error: "exact-byte backup verification failed",
+      };
+    const changed = JSON.parse(JSON.stringify(loaded.document)) as Record<
+      string,
+      unknown
+    >;
+    for (const mapping of plan.mappings)
+      (changed[spec.arrayKey] as Array<Record<string, unknown>>)[
+        mapping.index
+      ].id = mapping.to;
+    if (!atomicWriteJson(spec.file, changed))
+      return {
+        kind,
+        classification: "repairable",
+        applied: false,
+        verified: false,
+        incompleteReceipt: true,
+        recordCount: plan.recordCount,
+        mappings: plan.mappings,
+        ambiguousReferences: plan.ambiguousReferences,
+        backupPath,
+        error: "ledger write failed; backup retained",
+      };
+    const after = auditLedger(projectRoot, kind);
+    const reloaded = load(spec);
+    const expectedIds = new Map(
+      plan.mappings.map((mapping) => [mapping.index, mapping.to]),
+    );
+    const payloadDigest = (record: Record<string, unknown>) => {
+      const { id: _id, ...payload } = record;
+      return digest(payload);
+    };
+    const recordsPreserved =
+      !("error" in reloaded) &&
+      reloaded.records.length === loaded.records.length &&
+      reloaded.records.every(
+        (record, index) =>
+          payloadDigest(record.record) ===
+          payloadDigest(loaded.records[index].record),
+      );
+    const expectedMapping =
+      !("error" in reloaded) &&
+      reloaded.records.every(
+        (record) =>
+          record.id ===
+          (expectedIds.get(record.index) ?? loaded.records[record.index].id),
+      );
+    const verified =
+      after.classification === "clean" &&
+      after.recordCount === plan.recordCount &&
+      recordsPreserved &&
+      expectedMapping;
+    const receiptPath = path.join(backupDir, `${kind}-receipt.json`);
+    const receiptOk = atomicWriteJson(receiptPath, {
+      version: 1,
+      kind,
+      before_hash: sha256(loaded.raw),
+      backup_hash: sha256(fs.readFileSync(backupPath)),
+      after_hash: sha256(fs.readFileSync(spec.file)),
+      before_count: plan.recordCount,
+      after_count: after.recordCount,
+      mappings: plan.mappings,
+      ambiguous_references: plan.ambiguousReferences,
+      verification: {
+        clean: after.classification === "clean",
+        count_preserved: after.recordCount === plan.recordCount,
+        records_preserved: recordsPreserved,
+        expected_mapping: expectedMapping,
+        verified,
+      },
+    });
+    return {
+      kind,
+      classification: after.classification,
+      applied: true,
+      verified,
+      incompleteReceipt: !receiptOk,
+      recordCount: after.recordCount,
+      mappings: plan.mappings,
+      ambiguousReferences: plan.ambiguousReferences,
+      backupPath,
+      receiptPath: receiptOk ? receiptPath : undefined,
+      error:
+        verified && receiptOk
+          ? undefined
+          : "post-write verification or receipt failed; backup retained",
+    };
+  } finally {
+    release();
+  }
+}
+export function auditProjectLedgers(projectRoot: string): LedgerAudit[] {
+  return [auditLedger(projectRoot, "bug"), auditLedger(projectRoot, "review")];
+}
 
-interface NormalizableLedger { raw: Buffer; document: Record<string, unknown> | unknown[]; records: Array<Record<string, unknown>>; inputShape: "object" | "array"; }
-function loadNormalizable(spec: LedgerSpec): NormalizableLedger | { error: string; unreadable: boolean } { let raw: Buffer; try { raw = fs.readFileSync(spec.file); } catch (error) { return { error: error instanceof Error ? error.message : String(error), unreadable: true }; } let document: unknown; try { document = JSON.parse(raw.toString("utf8")); } catch (error) { return { error: error instanceof Error ? error.message : String(error), unreadable: false }; } const inputShape = Array.isArray(document) ? "array" : "object"; const records: unknown[] | null = inputShape === "array" ? document as unknown[] : document && typeof document === "object" && Array.isArray((document as Record<string, unknown>)[spec.arrayKey]) ? (document as Record<string, unknown>)[spec.arrayKey] as unknown[] : null; if (!records) return { error: `expected an array or object with ${spec.arrayKey} array`, unreadable: false }; if (records.some((record) => !record || typeof record !== "object" || Array.isArray(record))) return { error: "all records must be objects", unreadable: false }; return { raw, document: document as Record<string, unknown> | unknown[], records: records as Array<Record<string, unknown>>, inputShape }; }
-function emptyNormalizePlan(spec: LedgerSpec, loaded: { error: string; unreadable: boolean }): NormalizePlan { return { kind: spec.kind, file: spec.file, classification: loaded.unreadable ? "unreadable" : "malformed", recordCount: 0, inputShape: "object", rootTransition: { from: "object", to: "object", versionAdded: false }, invalidIndices: [], duplicateGroups: [], maxSuffix: -1, mappings: [], provenanceAdditions: [], referenceInventory: [], expectedPolicy: { backup: "exact-byte-fsynced-atomic", receipt: "versioned-with-verification" }, error: loaded.error }; }
-export function planLedgerNormalize(projectRoot: string, kind: LedgerKind): NormalizePlan { const spec = specFor(projectRoot, kind); const loaded = loadNormalizable(spec); if ("error" in loaded) return emptyNormalizePlan(spec, loaded); const ids = loaded.records.map((record) => parseId(record.id, spec)); const maxSuffix = Math.max(-1, ...ids.filter((id): id is number => id !== null)); const groups = new Map<string, number[]>(); for (const [index, record] of loaded.records.entries()) { if (typeof record.id === "string" && parseId(record.id, spec) !== null) groups.set(record.id, [...(groups.get(record.id) ?? []), index]); } const duplicateGroupsOut = [...groups.entries()].filter(([, indices]) => indices.length > 1).map(([id, indices]) => ({ id, indices, exact: new Set(indices.map((index) => digest(loaded.records[index]))).size === 1 })).sort((a, b) => a.id.localeCompare(b.id)); const invalidIndices = loaded.records.flatMap((record, index) => parseId(record.id, spec) === null ? [index] : []); const provenanceAdditions: ProvenanceAddition[] = invalidIndices.map((index) => ({ index, field: PROVENANCE_FIELD, value: { schema_version: NORMALIZATION_SCHEMA_VERSION, original_id: originalId(loaded.records[index]), reason: "invalid-id" } })); const collision = provenanceAdditions.find(({ index }) => Object.prototype.hasOwnProperty.call(loaded.records[index], PROVENANCE_FIELD)); const wanted = new Map<string, "duplicate" | "invalid">(); for (const group of duplicateGroupsOut) wanted.set(group.id, "duplicate"); for (const index of invalidIndices) { const value = loaded.records[index].id; if (typeof value === "string") wanted.set(value, "invalid"); } if (collision) return { ...emptyNormalizePlan(spec, { error: `reserved provenance field ${PROVENANCE_FIELD} already exists on invalid record ${collision.index}`, unreadable: false }), recordCount: loaded.records.length, inputShape: loaded.inputShape, rootTransition: { from: loaded.inputShape, to: "object", versionAdded: loaded.inputShape === "array" }, invalidIndices, duplicateGroups: duplicateGroupsOut, maxSuffix, provenanceAdditions, referenceInventory: referenceInventory(projectRoot, wanted) }; const used = new Set(ids.filter((id): id is number => id !== null)); let next = maxSuffix + 1; const first = new Map<string, { index: number; digest: string }>(); const mappings: NormalizeMapping[] = []; for (const [index, record] of loaded.records.entries()) { const parsed = parseId(record.id, spec); const canonical = typeof record.id === "string" ? record.id : ""; const keeper = parsed === null ? undefined : first.get(canonical); if (parsed !== null && !keeper) { first.set(canonical, { index, digest: digest(record) }); continue; } while (used.has(next)) next++; const to = formatId(next++, spec); used.add(parseId(to, spec)!); mappings.push({ index, digest: digest(record), from: originalId(record), to, reason: keeper ? "duplicate" : "invalid", ...(keeper ? { collisionBlock: { id: canonical, firstIndex: keeper.index, firstDigest: keeper.digest } } : {}) }); } const clean = loaded.inputShape === "object" && mappings.length === 0; return { kind, file: spec.file, classification: clean ? "clean" : "malformed", recordCount: loaded.records.length, inputShape: loaded.inputShape, rootTransition: { from: loaded.inputShape, to: "object", versionAdded: loaded.inputShape === "array" }, invalidIndices, duplicateGroups: duplicateGroupsOut, maxSuffix, mappings, provenanceAdditions, referenceInventory: referenceInventory(projectRoot, wanted), expectedPolicy: { backup: "exact-byte-fsynced-atomic", receipt: "versioned-with-verification" } }; }
-function normalizedDocument(loaded: NormalizableLedger, spec: LedgerSpec, plan: NormalizePlan): Record<string, unknown> { const changed = JSON.parse(JSON.stringify(loaded.document)) as Record<string, unknown> | unknown[]; const document = Array.isArray(changed) ? { version: 1, [spec.arrayKey]: changed } : changed; const records = document[spec.arrayKey] as Array<Record<string, unknown>>; for (const mapping of plan.mappings) records[mapping.index].id = mapping.to; for (const addition of plan.provenanceAdditions) records[addition.index][addition.field] = addition.value; return document; }
-function stripped(record: Record<string, unknown>): string { const clone = JSON.parse(JSON.stringify(record)); delete clone.id; delete clone[PROVENANCE_FIELD]; return digest(clone); }
-function verifyNormalization(projectRoot: string, spec: LedgerSpec, before: NormalizableLedger, plan: NormalizePlan): Record<string, unknown> { const after = loadNormalizable(spec); if ("error" in after) return { readable: false, error: after.error, verified: false }; const expectedIds = new Map(plan.mappings.map((mapping) => [mapping.index, mapping.to])); const recordsPreserved = after.records.length === before.records.length && after.records.every((record, index) => stripped(record) === stripped(before.records[index])); const idsExpected = after.records.every((record, index) => record.id === (expectedIds.get(index) ?? before.records[index].id)); const provenanceExpected = after.records.every((record, index) => { const addition = plan.provenanceAdditions.find((item) => item.index === index); return addition ? digest(record[PROVENANCE_FIELD]) === digest(addition.value) : !Object.prototype.hasOwnProperty.call(record, PROVENANCE_FIELD); }); const rootMetadataPreserved = before.inputShape === "array" || Object.entries(before.document as Record<string, unknown>).filter(([key]) => key !== spec.arrayKey).every(([key, value]) => digest((after.document as Record<string, unknown>)[key]) === digest(value)); const audit = auditLedger(projectRoot, spec.kind); const noOpPlan = planLedgerNormalize(projectRoot, spec.kind); const deterministicNoop = noOpPlan.classification === "clean" && noOpPlan.mappings.length === 0 && noOpPlan.provenanceAdditions.length === 0 && noOpPlan.inputShape === "object"; const verified = audit.classification === "clean" && recordsPreserved && idsExpected && provenanceExpected && rootMetadataPreserved && deterministicNoop; return { canonical_clean_unique: audit.classification === "clean", count_order_payload_preserved: recordsPreserved, ids_expected: idsExpected, provenance_expected: provenanceExpected, root_metadata_preserved: rootMetadataPreserved, deterministic_noop: deterministicNoop, verified }; }
-export function normalizeLedger(projectRoot: string, kind: LedgerKind, apply = false): NormalizeResult { const spec = specFor(projectRoot, kind); const initial = planLedgerNormalize(projectRoot, kind); const needsChange = initial.inputShape === "array" || initial.mappings.length > 0 || initial.provenanceAdditions.length > 0; if (!apply || initial.error || !needsChange) return { ...initial, applied: false, verified: false, incompleteReceipt: false }; const release = acquireFileLock(spec.file); if (!release) return { ...initial, classification: "lock-blocked", applied: false, verified: false, incompleteReceipt: false }; try { const plan = planLedgerNormalize(projectRoot, kind); if (plan.error) return { ...plan, applied: false, verified: false, incompleteReceipt: false }; const loaded = loadNormalizable(spec); if ("error" in loaded) return { ...plan, classification: loaded.unreadable ? "unreadable" : "malformed", applied: false, verified: false, incompleteReceipt: false, error: loaded.error }; const backupDir = path.join(projectRoot, ".wolf", "backups", `ledger-normalize-${new Date().toISOString().replace(/[:.]/g, "-")}`); const backupPath = path.join(backupDir, path.basename(spec.file)); try { fs.mkdirSync(backupDir, { recursive: true }); } catch (error) { return { ...plan, applied: false, verified: false, incompleteReceipt: true, backupPath, error: String(error) }; } if (!atomicWriteBytes(backupPath, loaded.raw)) return { ...plan, applied: false, verified: false, incompleteReceipt: true, backupPath, error: "fsynced exact-byte backup write failed" }; const beforeHash = sha256(loaded.raw); const backupHash = sha256(fs.readFileSync(backupPath)); if (backupHash !== beforeHash) return { ...plan, applied: false, verified: false, incompleteReceipt: true, backupPath, error: "exact-byte backup verification failed" }; if (!atomicWriteJson(spec.file, normalizedDocument(loaded, spec, plan))) return { ...plan, applied: false, verified: false, incompleteReceipt: true, backupPath, error: "ledger write failed; backup retained" }; const verification = verifyNormalization(projectRoot, spec, loaded, plan); const receiptPath = path.join(backupDir, `${kind}-normalize-receipt.json`); const receipt = { version: 3, operation: "ledger-normalize", schema_version: NORMALIZATION_SCHEMA_VERSION, project_root: realProjectRoot(projectRoot) ?? path.resolve(projectRoot), kind, file: fs.realpathSync(spec.file), source_root: { shape: plan.inputShape, sha256: beforeHash }, target_root: { shape: "object", sha256: sha256(fs.readFileSync(spec.file)) }, backup: { path: fs.realpathSync(backupPath), sha256: backupHash, policy: "exact-byte-fsynced-atomic" }, receipt_policy: "versioned-with-verification", record_count: plan.recordCount, invalid_indices: plan.invalidIndices, duplicate_groups: plan.duplicateGroups, max_suffix: plan.maxSuffix, mappings: plan.mappings, provenance_additions: plan.provenanceAdditions, reference_inventory: plan.referenceInventory, verifier: verification }; const receiptOk = atomicWriteJson(receiptPath, receipt); return { ...plan, classification: verification.verified ? "clean" : "malformed", applied: true, verified: Boolean(verification.verified), incompleteReceipt: !receiptOk, backupPath, receiptPath: receiptOk ? receiptPath : undefined, error: verification.verified && receiptOk ? undefined : "post-write verification or receipt failed; backup retained" }; } finally { release(); } }
-export function recoverLedgerNormalize(projectRoot: string, kind: LedgerKind, receiptPath: string, apply = false, acknowledge = false): RecoverResult { if (!apply || !acknowledge) return { kind, applied: false, verified: false, receiptPath, error: "recovery requires --apply and explicit acknowledgement" }; const realProject = realProjectRoot(projectRoot); const backupRoot = realProject ? path.join(realProject, ".wolf", "backups") : null; const receiptReal = backupRoot ? regularFileWithin(receiptPath, backupRoot) : null; if (!realProject || !backupRoot || !receiptReal) return { kind, applied: false, verified: false, receiptPath, error: "receipt must be a regular file under this project's .wolf/backups" }; let receipt: any; try { receipt = JSON.parse(fs.readFileSync(receiptReal, "utf8")); } catch (error) { return { kind, applied: false, verified: false, receiptPath, error: String(error) }; } const spec = specFor(realProject, kind); const targetReal = regularFileWithin(spec.file, path.join(realProject, ".wolf")); if (!targetReal || targetReal !== path.join(realProject, ".wolf", kind === "bug" ? "buglog.json" : "reviewlog.json")) return { kind, applied: false, verified: false, receiptPath, error: "ledger target must be this project's non-symlink canonical ledger" }; if (!receipt || receipt.version !== 3 || receipt.operation !== "ledger-normalize" || receipt.kind !== kind || receipt.project_root !== realProject || receipt.file !== targetReal || !receipt.target_root || typeof receipt.target_root.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(receipt.target_root.sha256) || !receipt.backup || typeof receipt.backup.path !== "string" || typeof receipt.backup.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(receipt.backup.sha256)) return { kind, applied: false, verified: false, receiptPath, error: "receipt is not a matching project/kind normalization receipt under .wolf/backups" }; const backupPath = regularFileWithin(receipt.backup.path, backupRoot); if (!backupPath) return { kind, applied: false, verified: false, receiptPath, error: "backup must be a regular file under this project's .wolf/backups" }; const release = acquireFileLock(spec.file); if (!release) return { kind, applied: false, verified: false, receiptPath, error: "ledger lock unavailable" }; try { if (sha256(fs.readFileSync(spec.file)) !== receipt.target_root?.sha256) return { kind, applied: false, verified: false, receiptPath, backupPath, error: "live ledger hash does not match receipt target hash; refusing recovery" }; const backup = fs.readFileSync(backupPath); if (sha256(backup) !== receipt.backup.sha256) return { kind, applied: false, verified: false, receiptPath, backupPath, error: "backup hash does not match receipt" }; if (!atomicWriteBytes(spec.file, backup)) return { kind, applied: false, verified: false, receiptPath, backupPath, error: "atomic recovery write failed" }; const verified = sha256(fs.readFileSync(spec.file)) === receipt.backup.sha256; const recoveryReceiptPath = path.join(path.dirname(receiptReal), `${kind}-recovery-receipt.json`); const recoveryReceiptOk = atomicWriteJson(recoveryReceiptPath, { version: 1, operation: "ledger-normalize-recovery", project_root: path.resolve(projectRoot), kind, source_receipt: receiptPath, restored_backup: { path: backupPath, sha256: receipt.backup.sha256 }, before_hash: receipt.target_root.sha256, after_hash: sha256(fs.readFileSync(spec.file)), verified }); return { kind, applied: verified, verified, receiptPath, backupPath, recoveryReceiptPath: recoveryReceiptOk ? recoveryReceiptPath : undefined, error: verified && recoveryReceiptOk ? undefined : "recovery verification or receipt failed" }; } catch (error) { return { kind, applied: false, verified: false, receiptPath, backupPath, error: error instanceof Error ? error.message : String(error) }; } finally { release(); } }
+interface NormalizableLedger {
+  raw: Buffer;
+  document: Record<string, unknown> | unknown[];
+  records: Array<Record<string, unknown>>;
+  inputShape: "object" | "array";
+}
+function loadNormalizable(
+  spec: LedgerSpec,
+): NormalizableLedger | { error: string; unreadable: boolean } {
+  let raw: Buffer;
+  try {
+    raw = fs.readFileSync(spec.file);
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : String(error),
+      unreadable: true,
+    };
+  }
+  let document: unknown;
+  try {
+    document = JSON.parse(raw.toString("utf8"));
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : String(error),
+      unreadable: false,
+    };
+  }
+  const inputShape = Array.isArray(document) ? "array" : "object";
+  const records: unknown[] | null =
+    inputShape === "array"
+      ? (document as unknown[])
+      : document &&
+          typeof document === "object" &&
+          Array.isArray((document as Record<string, unknown>)[spec.arrayKey])
+        ? ((document as Record<string, unknown>)[spec.arrayKey] as unknown[])
+        : null;
+  if (!records)
+    return {
+      error: `expected an array or object with ${spec.arrayKey} array`,
+      unreadable: false,
+    };
+  if (
+    records.some(
+      (record) =>
+        !record || typeof record !== "object" || Array.isArray(record),
+    )
+  )
+    return { error: "all records must be objects", unreadable: false };
+  return {
+    raw,
+    document: document as Record<string, unknown> | unknown[],
+    records: records as Array<Record<string, unknown>>,
+    inputShape,
+  };
+}
+function emptyNormalizePlan(
+  spec: LedgerSpec,
+  loaded: { error: string; unreadable: boolean },
+): NormalizePlan {
+  return {
+    kind: spec.kind,
+    file: spec.file,
+    classification: loaded.unreadable ? "unreadable" : "malformed",
+    recordCount: 0,
+    inputShape: "object",
+    rootTransition: { from: "object", to: "object", versionAdded: false },
+    invalidIndices: [],
+    duplicateGroups: [],
+    maxSuffix: -1,
+    mappings: [],
+    provenanceAdditions: [],
+    referenceInventory: [],
+    expectedPolicy: {
+      backup: "exact-byte-fsynced-atomic",
+      receipt: "versioned-with-verification",
+    },
+    error: loaded.error,
+  };
+}
+export function planLedgerNormalize(
+  projectRoot: string,
+  kind: LedgerKind,
+): NormalizePlan {
+  const spec = specFor(projectRoot, kind);
+  const loaded = loadNormalizable(spec);
+  if ("error" in loaded) return emptyNormalizePlan(spec, loaded);
+  const ids = loaded.records.map((record) => parseId(record.id, spec));
+  const maxSuffix = Math.max(
+    -1,
+    ...ids.filter((id): id is number => id !== null),
+  );
+  const groups = new Map<string, number[]>();
+  for (const [index, record] of loaded.records.entries()) {
+    if (typeof record.id === "string" && parseId(record.id, spec) !== null)
+      groups.set(record.id, [...(groups.get(record.id) ?? []), index]);
+  }
+  const duplicateGroupsOut = [...groups.entries()]
+    .filter(([, indices]) => indices.length > 1)
+    .map(([id, indices]) => ({
+      id,
+      indices,
+      exact:
+        new Set(indices.map((index) => digest(loaded.records[index]))).size ===
+        1,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const invalidIndices = loaded.records.flatMap((record, index) =>
+    parseId(record.id, spec) === null ? [index] : [],
+  );
+  const provenanceAdditions: ProvenanceAddition[] = invalidIndices.map(
+    (index) => ({
+      index,
+      field: PROVENANCE_FIELD,
+      value: {
+        schema_version: NORMALIZATION_SCHEMA_VERSION,
+        original_id: originalId(loaded.records[index]),
+        reason: "invalid-id",
+      },
+    }),
+  );
+  const collision = provenanceAdditions.find(({ index }) =>
+    Object.prototype.hasOwnProperty.call(
+      loaded.records[index],
+      PROVENANCE_FIELD,
+    ),
+  );
+  const wanted = new Map<string, "duplicate" | "invalid">();
+  for (const group of duplicateGroupsOut) wanted.set(group.id, "duplicate");
+  for (const index of invalidIndices) {
+    const value = loaded.records[index].id;
+    if (typeof value === "string") wanted.set(value, "invalid");
+  }
+  if (collision)
+    return {
+      ...emptyNormalizePlan(spec, {
+        error: `reserved provenance field ${PROVENANCE_FIELD} already exists on invalid record ${collision.index}`,
+        unreadable: false,
+      }),
+      recordCount: loaded.records.length,
+      inputShape: loaded.inputShape,
+      rootTransition: {
+        from: loaded.inputShape,
+        to: "object",
+        versionAdded: loaded.inputShape === "array",
+      },
+      invalidIndices,
+      duplicateGroups: duplicateGroupsOut,
+      maxSuffix,
+      provenanceAdditions,
+      referenceInventory: referenceInventory(projectRoot, wanted),
+    };
+  const used = new Set(ids.filter((id): id is number => id !== null));
+  let next = maxSuffix + 1;
+  const first = new Map<string, { index: number; digest: string }>();
+  const mappings: NormalizeMapping[] = [];
+  for (const [index, record] of loaded.records.entries()) {
+    const parsed = parseId(record.id, spec);
+    const canonical = typeof record.id === "string" ? record.id : "";
+    const keeper = parsed === null ? undefined : first.get(canonical);
+    if (parsed !== null && !keeper) {
+      first.set(canonical, { index, digest: digest(record) });
+      continue;
+    }
+    while (used.has(next)) next++;
+    const to = formatId(next++, spec);
+    used.add(parseId(to, spec)!);
+    mappings.push({
+      index,
+      digest: digest(record),
+      from: originalId(record),
+      to,
+      reason: keeper ? "duplicate" : "invalid",
+      ...(keeper
+        ? {
+            collisionBlock: {
+              id: canonical,
+              firstIndex: keeper.index,
+              firstDigest: keeper.digest,
+            },
+          }
+        : {}),
+    });
+  }
+  const clean = loaded.inputShape === "object" && mappings.length === 0;
+  return {
+    kind,
+    file: spec.file,
+    classification: clean ? "clean" : "malformed",
+    recordCount: loaded.records.length,
+    inputShape: loaded.inputShape,
+    rootTransition: {
+      from: loaded.inputShape,
+      to: "object",
+      versionAdded: loaded.inputShape === "array",
+    },
+    invalidIndices,
+    duplicateGroups: duplicateGroupsOut,
+    maxSuffix,
+    mappings,
+    provenanceAdditions,
+    referenceInventory: referenceInventory(projectRoot, wanted),
+    expectedPolicy: {
+      backup: "exact-byte-fsynced-atomic",
+      receipt: "versioned-with-verification",
+    },
+  };
+}
+function normalizedDocument(
+  loaded: NormalizableLedger,
+  spec: LedgerSpec,
+  plan: NormalizePlan,
+): Record<string, unknown> {
+  const changed = JSON.parse(JSON.stringify(loaded.document)) as
+    | Record<string, unknown>
+    | unknown[];
+  const document = Array.isArray(changed)
+    ? { version: 1, [spec.arrayKey]: changed }
+    : changed;
+  const records = document[spec.arrayKey] as Array<Record<string, unknown>>;
+  for (const mapping of plan.mappings) records[mapping.index].id = mapping.to;
+  for (const addition of plan.provenanceAdditions)
+    records[addition.index][addition.field] = addition.value;
+  return document;
+}
+function stripped(record: Record<string, unknown>): string {
+  const clone = JSON.parse(JSON.stringify(record));
+  delete clone.id;
+  delete clone[PROVENANCE_FIELD];
+  return digest(clone);
+}
+function verifyNormalization(
+  projectRoot: string,
+  spec: LedgerSpec,
+  before: NormalizableLedger,
+  plan: NormalizePlan,
+): Record<string, unknown> {
+  const after = loadNormalizable(spec);
+  if ("error" in after)
+    return { readable: false, error: after.error, verified: false };
+  const expectedIds = new Map(
+    plan.mappings.map((mapping) => [mapping.index, mapping.to]),
+  );
+  const recordsPreserved =
+    after.records.length === before.records.length &&
+    after.records.every(
+      (record, index) => stripped(record) === stripped(before.records[index]),
+    );
+  const idsExpected = after.records.every(
+    (record, index) =>
+      record.id === (expectedIds.get(index) ?? before.records[index].id),
+  );
+  const provenanceExpected = after.records.every((record, index) => {
+    const addition = plan.provenanceAdditions.find(
+      (item) => item.index === index,
+    );
+    return addition
+      ? digest(record[PROVENANCE_FIELD]) === digest(addition.value)
+      : !Object.prototype.hasOwnProperty.call(record, PROVENANCE_FIELD);
+  });
+  const rootMetadataPreserved =
+    before.inputShape === "array" ||
+    Object.entries(before.document as Record<string, unknown>)
+      .filter(([key]) => key !== spec.arrayKey)
+      .every(
+        ([key, value]) =>
+          digest((after.document as Record<string, unknown>)[key]) ===
+          digest(value),
+      );
+  const audit = auditLedger(projectRoot, spec.kind);
+  const noOpPlan = planLedgerNormalize(projectRoot, spec.kind);
+  const deterministicNoop =
+    noOpPlan.classification === "clean" &&
+    noOpPlan.mappings.length === 0 &&
+    noOpPlan.provenanceAdditions.length === 0 &&
+    noOpPlan.inputShape === "object";
+  const verified =
+    audit.classification === "clean" &&
+    recordsPreserved &&
+    idsExpected &&
+    provenanceExpected &&
+    rootMetadataPreserved &&
+    deterministicNoop;
+  return {
+    canonical_clean_unique: audit.classification === "clean",
+    count_order_payload_preserved: recordsPreserved,
+    ids_expected: idsExpected,
+    provenance_expected: provenanceExpected,
+    root_metadata_preserved: rootMetadataPreserved,
+    deterministic_noop: deterministicNoop,
+    verified,
+  };
+}
+export function normalizeLedger(
+  projectRoot: string,
+  kind: LedgerKind,
+  apply = false,
+): NormalizeResult {
+  const spec = specFor(projectRoot, kind);
+  const initial = planLedgerNormalize(projectRoot, kind);
+  const needsChange =
+    initial.inputShape === "array" ||
+    initial.mappings.length > 0 ||
+    initial.provenanceAdditions.length > 0;
+  if (!apply || initial.error || !needsChange)
+    return {
+      ...initial,
+      applied: false,
+      verified: false,
+      incompleteReceipt: false,
+    };
+  const release = acquireFileLock(spec.file);
+  if (!release)
+    return {
+      ...initial,
+      classification: "lock-blocked",
+      applied: false,
+      verified: false,
+      incompleteReceipt: false,
+    };
+  try {
+    const plan = planLedgerNormalize(projectRoot, kind);
+    if (plan.error)
+      return {
+        ...plan,
+        applied: false,
+        verified: false,
+        incompleteReceipt: false,
+      };
+    const loaded = loadNormalizable(spec);
+    if ("error" in loaded)
+      return {
+        ...plan,
+        classification: loaded.unreadable ? "unreadable" : "malformed",
+        applied: false,
+        verified: false,
+        incompleteReceipt: false,
+        error: loaded.error,
+      };
+    const backupDir = path.join(
+      projectRoot,
+      ".wolf",
+      "backups",
+      `ledger-normalize-${new Date().toISOString().replace(/[:.]/g, "-")}`,
+    );
+    const backupPath = path.join(backupDir, path.basename(spec.file));
+    try {
+      fs.mkdirSync(backupDir, { recursive: true });
+    } catch (error) {
+      return {
+        ...plan,
+        applied: false,
+        verified: false,
+        incompleteReceipt: true,
+        backupPath,
+        error: String(error),
+      };
+    }
+    if (!atomicWriteBytes(backupPath, loaded.raw))
+      return {
+        ...plan,
+        applied: false,
+        verified: false,
+        incompleteReceipt: true,
+        backupPath,
+        error: "fsynced exact-byte backup write failed",
+      };
+    const beforeHash = sha256(loaded.raw);
+    const backupHash = sha256(fs.readFileSync(backupPath));
+    if (backupHash !== beforeHash)
+      return {
+        ...plan,
+        applied: false,
+        verified: false,
+        incompleteReceipt: true,
+        backupPath,
+        error: "exact-byte backup verification failed",
+      };
+    if (!atomicWriteJson(spec.file, normalizedDocument(loaded, spec, plan)))
+      return {
+        ...plan,
+        applied: false,
+        verified: false,
+        incompleteReceipt: true,
+        backupPath,
+        error: "ledger write failed; backup retained",
+      };
+    const verification = verifyNormalization(projectRoot, spec, loaded, plan);
+    const receiptPath = path.join(backupDir, `${kind}-normalize-receipt.json`);
+    const receipt = {
+      version: 3,
+      operation: "ledger-normalize",
+      schema_version: NORMALIZATION_SCHEMA_VERSION,
+      project_root: realProjectRoot(projectRoot) ?? path.resolve(projectRoot),
+      kind,
+      file: fs.realpathSync(spec.file),
+      source_root: { shape: plan.inputShape, sha256: beforeHash },
+      target_root: {
+        shape: "object",
+        sha256: sha256(fs.readFileSync(spec.file)),
+      },
+      backup: {
+        path: fs.realpathSync(backupPath),
+        sha256: backupHash,
+        policy: "exact-byte-fsynced-atomic",
+      },
+      receipt_policy: "versioned-with-verification",
+      record_count: plan.recordCount,
+      invalid_indices: plan.invalidIndices,
+      duplicate_groups: plan.duplicateGroups,
+      max_suffix: plan.maxSuffix,
+      mappings: plan.mappings,
+      provenance_additions: plan.provenanceAdditions,
+      reference_inventory: plan.referenceInventory,
+      verifier: verification,
+    };
+    const receiptOk = atomicWriteJson(receiptPath, receipt);
+    return {
+      ...plan,
+      classification: verification.verified ? "clean" : "malformed",
+      applied: true,
+      verified: Boolean(verification.verified),
+      incompleteReceipt: !receiptOk,
+      backupPath,
+      receiptPath: receiptOk ? receiptPath : undefined,
+      error:
+        verification.verified && receiptOk
+          ? undefined
+          : "post-write verification or receipt failed; backup retained",
+    };
+  } finally {
+    release();
+  }
+}
+export function recoverLedgerNormalize(
+  projectRoot: string,
+  kind: LedgerKind,
+  receiptPath: string,
+  apply = false,
+  acknowledge = false,
+): RecoverResult {
+  if (!apply || !acknowledge)
+    return {
+      kind,
+      applied: false,
+      verified: false,
+      receiptPath,
+      error: "recovery requires --apply and explicit acknowledgement",
+    };
+  const realProject = realProjectRoot(projectRoot);
+  const backupRoot = realProject
+    ? path.join(realProject, ".wolf", "backups")
+    : null;
+  const receiptReal = backupRoot
+    ? regularFileWithin(receiptPath, backupRoot)
+    : null;
+  if (!realProject || !backupRoot || !receiptReal)
+    return {
+      kind,
+      applied: false,
+      verified: false,
+      receiptPath,
+      error:
+        "receipt must be a regular file under this project's .wolf/backups",
+    };
+  let receipt: any;
+  try {
+    receipt = JSON.parse(fs.readFileSync(receiptReal, "utf8"));
+  } catch (error) {
+    return {
+      kind,
+      applied: false,
+      verified: false,
+      receiptPath,
+      error: String(error),
+    };
+  }
+  const spec = specFor(realProject, kind);
+  const targetReal = regularFileWithin(
+    spec.file,
+    path.join(realProject, ".wolf"),
+  );
+  if (
+    !targetReal ||
+    targetReal !==
+      path.join(
+        realProject,
+        ".wolf",
+        kind === "bug" ? "buglog.json" : "reviewlog.json",
+      )
+  )
+    return {
+      kind,
+      applied: false,
+      verified: false,
+      receiptPath,
+      error:
+        "ledger target must be this project's non-symlink canonical ledger",
+    };
+  if (
+    !receipt ||
+    receipt.version !== 3 ||
+    receipt.operation !== "ledger-normalize" ||
+    receipt.kind !== kind ||
+    receipt.project_root !== realProject ||
+    receipt.file !== targetReal ||
+    !receipt.target_root ||
+    typeof receipt.target_root.sha256 !== "string" ||
+    !/^[a-f0-9]{64}$/.test(receipt.target_root.sha256) ||
+    !receipt.backup ||
+    typeof receipt.backup.path !== "string" ||
+    typeof receipt.backup.sha256 !== "string" ||
+    !/^[a-f0-9]{64}$/.test(receipt.backup.sha256)
+  )
+    return {
+      kind,
+      applied: false,
+      verified: false,
+      receiptPath,
+      error:
+        "receipt is not a matching project/kind normalization receipt under .wolf/backups",
+    };
+  const backupPath = regularFileWithin(receipt.backup.path, backupRoot);
+  if (!backupPath)
+    return {
+      kind,
+      applied: false,
+      verified: false,
+      receiptPath,
+      error: "backup must be a regular file under this project's .wolf/backups",
+    };
+  const release = acquireFileLock(spec.file);
+  if (!release)
+    return {
+      kind,
+      applied: false,
+      verified: false,
+      receiptPath,
+      error: "ledger lock unavailable",
+    };
+  try {
+    if (sha256(fs.readFileSync(spec.file)) !== receipt.target_root?.sha256)
+      return {
+        kind,
+        applied: false,
+        verified: false,
+        receiptPath,
+        backupPath,
+        error:
+          "live ledger hash does not match receipt target hash; refusing recovery",
+      };
+    const backup = fs.readFileSync(backupPath);
+    if (sha256(backup) !== receipt.backup.sha256)
+      return {
+        kind,
+        applied: false,
+        verified: false,
+        receiptPath,
+        backupPath,
+        error: "backup hash does not match receipt",
+      };
+    if (!atomicWriteBytes(spec.file, backup))
+      return {
+        kind,
+        applied: false,
+        verified: false,
+        receiptPath,
+        backupPath,
+        error: "atomic recovery write failed",
+      };
+    const verified =
+      sha256(fs.readFileSync(spec.file)) === receipt.backup.sha256;
+    const recoveryReceiptPath = path.join(
+      path.dirname(receiptReal),
+      `${kind}-recovery-receipt.json`,
+    );
+    const recoveryReceiptOk = atomicWriteJson(recoveryReceiptPath, {
+      version: 1,
+      operation: "ledger-normalize-recovery",
+      project_root: path.resolve(projectRoot),
+      kind,
+      source_receipt: receiptPath,
+      restored_backup: { path: backupPath, sha256: receipt.backup.sha256 },
+      before_hash: receipt.target_root.sha256,
+      after_hash: sha256(fs.readFileSync(spec.file)),
+      verified,
+    });
+    return {
+      kind,
+      applied: verified,
+      verified,
+      receiptPath,
+      backupPath,
+      recoveryReceiptPath: recoveryReceiptOk ? recoveryReceiptPath : undefined,
+      error:
+        verified && recoveryReceiptOk
+          ? undefined
+          : "recovery verification or receipt failed",
+    };
+  } catch (error) {
+    return {
+      kind,
+      applied: false,
+      verified: false,
+      receiptPath,
+      backupPath,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  } finally {
+    release();
+  }
+}

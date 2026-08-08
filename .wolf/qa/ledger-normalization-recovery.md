@@ -1,6 +1,6 @@
 ---
 target: src/ledger/ledger-integrity.ts
-target-hash: d35feaf54ed0d235ce2b64cab0579e366403f3f26838284adf3b147718d34ea1
+target-hash: ac1700f38248d328db8a552639b606aaa7704a51fe160f6b9e75c26a1ee6485e
 created: 2026-08-08
 reproduction_command: npm run build && node --test tests/ledger-integrity.test.js
 ---
