@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-12T17:05:05.390Z
-> Files: 225 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-12T17:10:35.047Z
+> Files: 227 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
@@ -11,11 +11,13 @@
 ## ../../../../../tmp/
 
 - `add-hook-ledger-bug.mjs` — Declares file (~509 tok)
+- `canary-hook-check.mjs` — Exports color, color, ok, ok + 2 more (~544 tok)
 - `log-bare-array-reference-bug.mjs` — Declares file (~510 tok)
 - `log-current-hook-bugs.mjs` — Declares wolf (~385 tok)
 - `log-learning-boilerplate-bug.mjs` — Declares file (~548 tok)
 - `normalize-ledger-rollout.mjs` — Declares cli (~1073 tok)
 - `rebuild-buglog-final.mjs` — Declares file (~207 tok)
+- `resolve-current-hook-bugs.mjs` — Declares file (~275 tok)
 - `restore-buglog-records.mjs` — Declares livePath (~284 tok)
 - `restore-current-buglog.mjs` — Declares file (~288 tok)
 
