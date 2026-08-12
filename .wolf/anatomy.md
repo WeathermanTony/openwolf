@@ -1,17 +1,20 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-08T22:03:32.524Z
-> Files: 216 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-12T01:13:39.564Z
+> Files: 220 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
+- `eager-dancing-naur.md` — Context (~1676 tok)
 - `jaunty-splashing-globe.md` — Context (~2254 tok)
 
 ## ../../../../../tmp/
 
 - `add-hook-ledger-bug.mjs` — Declares file (~509 tok)
 - `log-bare-array-reference-bug.mjs` — Declares file (~510 tok)
+- `log-learning-boilerplate-bug.mjs` — Declares file (~548 tok)
 - `normalize-ledger-rollout.mjs` — Declares cli (~1073 tok)
+- `restore-buglog-records.mjs` — Declares livePath (~284 tok)
 
 ## ./
 
@@ -52,6 +55,7 @@
 
 - `hermes-agent-evaluation-2026-08-08.md` — Source-level Hermes Agent mechanism evaluation and no-integration disposition (~1260 tok)
 - `hook-ledger-recurrence.md` — Real hook-runtime safe-suffix and atomic-persistence reduction (~430 tok)
+- `learning-rule-boilerplate-filter.md` — Falsification evidence for harness-envelope filtering in explicit learning capture (~900 tok)
 - `mem0-canary-2026-08-08.md` — Protected offline fixture-conformance evidence, initial secret-filter falsification, fix, and survivor-for-design disposition (~1700 tok)
 - `mem0-evaluation-2026-08-08.md` — Source-level Mem0 evaluation and bounded ADD-only candidate-extraction canary recommendation (~1400 tok)
 
@@ -176,7 +180,7 @@
 - `session-start.js` — @ts-nocheck (~1309 tok)
 - `session-start.ts` — @ts-nocheck (~1309 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~28790 tok)
-- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~28830 tok)
+- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~29297 tok)
 - `stop.js` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37529 tok)
 - `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37451 tok)
 
@@ -196,7 +200,7 @@
 - `conclusion.js` — Conclusion / reduction gate — EVIDENCE-GATED. (~1868 tok)
 - `conclusion.ts` — Conclusion / reduction gate — EVIDENCE-GATED. (~1824 tok)
 - `learning.js` — Explicit user-stated learning signals. Transcript text is evidence, never instruction. (~1260 tok)
-- `learning.ts` — Explicit user-stated learning signals. Transcript text is evidence, never instruction. (~1226 tok)
+- `learning.ts` — Explicit user-stated learning signals. Transcript text is evidence, never instruction. (~1351 tok)
 - `review.js` — Review lifecycle rule — IMMUTABLE SNAPSHOTS, AUTOMATIC SUPERSEDE, LINEAGE CAP. (~3597 tok)
 - `review.ts` — Review lifecycle rule — IMMUTABLE SNAPSHOTS, AUTOMATIC SUPERSEDE, LINEAGE CAP. (~3575 tok)
 
@@ -327,7 +331,7 @@
 - `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
 - `experiment-cmd.test.js` — project: inProject (~2898 tok)
 - `hook-packaging.test.js` — Hook packaging: every module a hook imports must actually ship. (~1113 tok)
-- `learning-capture.test.js` — root: fixture, transcript (~2450 tok)
+- `learning-capture.test.js` — root: fixture, transcript, transcriptEntries (~3517 tok)
 - `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~3620 tok)
 - `ledger-writer-safety.test.js` — fixture: entry (~649 tok)
 - `mem0-canary.test.js` — root: score, clone (~1914 tok)

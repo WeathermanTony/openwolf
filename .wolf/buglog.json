@@ -6956,6 +6956,233 @@
       "last_seen": "2026-08-08T22:00:00.000Z",
       "commit": "6ddd3b5",
       "reduction": ".wolf/qa/ledger-normalization-recovery.md"
+    },
+    {
+      "id": "bug-668",
+      "timestamp": "2026-08-12T00:38:55.602Z",
+      "error_message": "Missing guard clause",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "No early return/throw for edge case: SESSION_RESUME_PREAMBLE.test(remaining",
+      "fix": "Added guard clause: if (SESSION_RESUME_PREAMBLE.test(remaining)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-08-12T00:39:05.029Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-669",
+      "timestamp": "2026-08-12T00:39:46.846Z",
+      "error_message": "Significant refactor of ",
+      "file": "tests/learning-capture.test.js",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 9→47 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T00:39:46.846Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-670",
+      "timestamp": "2026-08-12T00:40:02.594Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Condition was: if (!normalized || normalized === \"[Request interrupte)",
+      "fix": "Changed to: if (raw.length > bound && HARNESS_BLOCK_OPEN.test(raw)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T00:40:02.594Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-671",
+      "timestamp": "2026-08-12T00:40:09.902Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/learning-capture.test.js",
+      "root_cause": "Had 'I prefer concise output rather than essays.<bash-",
+      "fix": "Changed to `I prefer concise output rather than essays.${'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T00:40:09.902Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-672",
+      "timestamp": "2026-08-12T00:43:54.611Z",
+      "error_message": "Missing guard clause",
+      "file": "../../../../../tmp/log-learning-boilerplate-bug.mjs",
+      "root_cause": "No early return/throw for edge case: !release",
+      "fix": "Added guard clause: if (!release)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "mjs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T00:43:54.611Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-673",
+      "timestamp": "2026-08-12T00:43:58.894Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../../tmp/log-learning-boilerplate-bug.mjs",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→5 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "mjs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T00:43:58.894Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-674",
+      "timestamp": "2026-08-12T00:44:02.142Z",
+      "error_message": "Learning capture false-positive: harness-injected transcript wrappers were classified as user corrections or decisions.",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "readRecentUserTurns treated raw transcript user records as user-authored evidence and only suppressed a small prefix allowlist; local-command caveats, command metadata, Bash output, agent messages, and continuation preambles reached broad learning regexes.",
+      "fix": "Structurally remove complete known harness envelopes before classification, hash only retained user evidence, fail closed on malformed or unsafe bounded wrappers, preserve genuine queued/mixed-turn text, and reject interrogative forensic questions.",
+      "status": "open",
+      "tags": [
+        "learning-capture",
+        "false-positive",
+        "transcript",
+        "harness-boilerplate",
+        "attribution"
+      ],
+      "related_bugs": [
+        "bug-543"
+      ],
+      "occurrences": 4,
+      "last_seen": "2026-08-12T00:44:02.143Z",
+      "commit": null,
+      "reduction": ".wolf/qa/learning-rule-boilerplate-filter.md",
+      "reported_nudges": [
+        "learning-1f6f3e06",
+        "learning-275f9f88",
+        "learning-9450aba8",
+        "learning-6c6e0cd0"
+      ]
+    },
+    {
+      "id": "bug-675",
+      "timestamp": "2026-08-12T00:49:31.881Z",
+      "error_message": "Wrong reference: normalized should be bounded",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Used \"normalized\" instead of \"bounded\"",
+      "fix": "Changed normalized → bounded",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T00:49:31.882Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-676",
+      "timestamp": "2026-08-12T00:50:37.077Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/learning-capture.test.js",
+      "root_cause": "Had 'reader rejects wrapper-only, continuation, malfor",
+      "fix": "Changed to 'reader rejects wrapper-only, continuation, and ma",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T00:50:37.078Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-677",
+      "timestamp": "2026-08-12T00:55:25.971Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→3 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T00:55:25.971Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-678",
+      "timestamp": "2026-08-12T01:02:11.947Z",
+      "error_message": "Type error",
+      "file": "src/hooks/nudges/rules/learning.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T01:02:11.947Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-679",
+      "timestamp": "2026-08-12T01:02:23.723Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/learning-capture.test.js",
+      "root_cause": "Had 'No, use the lookup action instead.'",
+      "fix": "Changed to 'The user message says: do not commit directly, us",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T01:02:23.723Z",
+      "commit": null,
+      "reduction": null
     }
   ]
 }
