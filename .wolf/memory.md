@@ -11,16 +11,6 @@
 | 17:16 | Hardened canary evaluation against promotion-invalidating self-report and matrix drift | .wolf/experiments/superpowers-canary/, tests/superpowers-canary.test.js, .wolf/qa/superpowers-canary-scorer.md, .wolf/anatomy.md | Exact replicated matrix, fixture oracles, hash-bound artifacts, candidate treatment hashes, integral costs, and zero-baseline guard tested 4/4 | ~7000 |
 | 17:21 | Replaced self-attested reports with runner-generated checker receipts from raw worker/tool artifacts; fixed cohort control matching and authoritative-byte binding | .wolf/experiments/superpowers-canary/{checker,runner,scorer,fixtures,manifest}.mjs/json, tests/superpowers-canary.test.js | Fabricated receipts, tampered fixture oracle, reordered cohort regression, redispatches, and omitted links cannot produce survival; focused suite passed 3/3 | ~9000 |
 
-## Session: 2026-07-12 03:00
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-
-## Session: 2026-07-13 04:00
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-
 ## Session: 2026-07-14 07:44
 
 | Time | Action | File(s) | Outcome | ~Tokens |
@@ -1297,3 +1287,119 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 17:54 | Edited tests/ledger-integrity.test.js | 14→17 lines | ~293 |
 | 18:03 | Session end: 41 writes across 15 files (ledger-integrity.ts, size-discipline.ts, size-discipline.js, ledger-cmd.ts, index.ts) | 9 reads | ~48562 tok |
 | 18:03 | Created ../../../../../tmp/log-bare-array-reference-bug.mjs | — | ~510 |
+| 18:04 | Session end: 42 writes across 16 files (ledger-integrity.ts, size-discipline.ts, size-discipline.js, ledger-cmd.ts, index.ts) | 9 reads | ~49109 tok |
+
+## Session: 2026-08-10 20:02
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:06 | Recorded preference for appropriate skill-triggered workflows | .wolf/cerebrum.md | Native workflow orchestration welcomed; ownership distinction retained | ~80 |
+| 20:07 | Clarified recent Wolfpack skill-first addition | .wolf/cerebrum.md | Recorded policy ownership versus native workflow implementation | ~60 |
+| 20:38 | Created ../../../../../home/tony/.claude/plans/eager-dancing-naur.md | — | ~1788 |
+| 20:38 | Edited src/hooks/shared.ts | added 4 condition(s) | ~448 |
+| 20:39 | Edited src/hooks/shared.ts | 6→5 lines | ~70 |
+| 20:39 | Edited src/hooks/nudges/rules/learning.ts | 5→5 lines | ~170 |
+| 20:39 | Edited tests/learning-capture.test.js | modified transcript() | ~106 |
+| 20:39 | Edited tests/learning-capture.test.js | expanded (+38 lines) | ~739 |
+| 20:39 | Edited src/hooks/shared.ts | modified extractUserEvidenceText() | ~78 |
+| 20:40 | Edited src/hooks/shared.ts | added 1 condition(s) | ~127 |
+| 20:40 | Edited tests/learning-capture.test.js | 3→3 lines | ~60 |
+| 20:41 | Edited tests/learning-capture.test.js | 2→2 lines | ~26 |
+| 20:41 | Session end: 10 writes across 4 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js) | 11 reads | ~116590 tok |
+| 20:43 | Created ../../../../../tmp/log-learning-boilerplate-bug.mjs | — | ~554 |
+| 20:43 | Edited ../../../../../tmp/log-learning-boilerplate-bug.mjs | 2→2 lines | ~34 |
+| 20:43 | Edited ../../../../../tmp/log-learning-boilerplate-bug.mjs | added 1 condition(s) | ~35 |
+| 20:43 | Edited ../../../../../tmp/log-learning-boilerplate-bug.mjs | 5→5 lines | ~16 |
+| 20:44 | Fixed learning.explicit harness-boilerplate false positives | src/hooks/shared.ts; src/hooks/nudges/rules/learning.ts; tests/learning-capture.test.js; runtime/template copies; .wolf/qa/learning-rule-boilerplate-filter.md | 13 focused and 181 full tests pass; install verification passed | ~1800 |
+| 20:45 | Created ../../../../../tmp/restore-buglog-records.mjs | — | ~284 |
+| 20:45 | Restored buglog corpus after detecting stale truncated live snapshot | .wolf/buglog.json; .wolf/cerebrum.md | Merged 359 committed records with 7 verified additions; 366 total | ~220 |
+| 20:46 | Session end: 16 writes across 7 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~118622 tok |
+| 20:49 | Edited src/hooks/shared.ts | 7→7 lines | ~116 |
+| 20:49 | Edited src/hooks/shared.ts | 2→2 lines | ~24 |
+| 20:49 | Edited src/hooks/nudges/rules/learning.ts | 2→2 lines | ~30 |
+| 20:49 | Edited tests/learning-capture.test.js | expanded (+15 lines) | ~363 |
+| 20:50 | Edited tests/learning-capture.test.js | 2→2 lines | ~26 |
+| 20:50 | Edited tests/learning-capture.test.js | — | ~0 |
+| 20:55 | Edited src/hooks/shared.ts | 3→2 lines | ~45 |
+| 20:55 | Edited src/hooks/shared.ts | test() → replace() | ~47 |
+| 20:55 | Edited src/hooks/nudges/rules/learning.ts | 2→2 lines | ~49 |
+| 20:55 | Edited tests/learning-capture.test.js | 2→3 lines | ~77 |
+| 20:55 | Edited tests/learning-capture.test.js | 2→3 lines | ~69 |
+| 20:55 | Edited src/hooks/shared.ts | 3→5 lines | ~19 |
+| 20:56 | Edited src/hooks/nudges/rules/learning.ts | 2→2 lines | ~127 |
+| 20:56 | Edited tests/learning-capture.test.js | 2→4 lines | ~64 |
+| 20:56 | Edited src/hooks/shared.ts | 2→3 lines | ~90 |
+| 20:57 | Edited src/hooks/shared.ts | 2→2 lines | ~30 |
+| 20:57 | Edited src/hooks/nudges/rules/learning.ts | 2→2 lines | ~50 |
+| 20:58 | Session end: 33 writes across 7 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~119848 tok |
+| 21:02 | Edited src/hooks/nudges/rules/learning.ts | 2→2 lines | ~71 |
+| 21:02 | Edited tests/learning-capture.test.js | 2→3 lines | ~69 |
+| 21:03 | Session end: 35 writes across 7 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~119988 tok |
+| 21:07 | Review-0088 hit convergence round cap | src/hooks/shared.ts; src/hooks/nudges/rules/learning.ts | Pending remains open: final reviewer found continuation preamble after stripped wrapper; exact falsifier recorded in session, requires human re-scope before another review round | ~180 |
+| 21:07 | Session end: 35 writes across 7 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~119988 tok |
+| 21:07 | Session end: 35 writes across 7 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~119988 tok |
+| 21:08 | Edited tests/learning-capture.test.js | 2→3 lines | ~90 |
+| 21:09 | Added current falsification reduction for unresolved learning sanitizer ordering | .wolf/qa/learning-rule-boilerplate-filter.md; tests/learning-capture.test.js | Compound wrapper+continuation fixture fails as expected: 13/14 pass; review-0088 remains open at cap | ~260 |
+| 21:09 | Session end: 37 writes across 7 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~120927 tok |
+| 21:09 | Session end: 37 writes across 7 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~120927 tok |
+| 21:12 | Session end: 37 writes across 7 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~120927 tok |
+| 21:13 | Edited src/hooks/shared.ts | modified extractUserEvidenceText() | ~38 |
+| 21:13 | Edited src/hooks/shared.ts | added 1 condition(s) | ~63 |
+| 21:14 | Session end: 39 writes across 7 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~121028 tok |
+| 21:22 | Created ../../../../../tmp/rebuild-buglog-final.mjs | — | ~207 |
+| 21:23 | Session end: 41 writes across 8 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 12 reads | ~122275 tok |
+| 21:29 | Released learning capture boilerplate fix | commits f283341,e72ff50; review-0088; 84-project registry | CLEAN GLM arbitration; 14 focused/182 full tests; canary verified; 83 deployable projects updated to custom.22, source repo intentionally skipped | ~700 |
+| 21:29 | Session end: 41 writes across 8 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 13 reads | ~122275 tok |
+| 21:43 | Session end: 41 writes across 8 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 13 reads | ~122275 tok |
+| 09:58 | Session end: 41 writes across 8 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 23 reads | ~175516 tok |
+| 09:59 | Session end: 41 writes across 8 files (eager-dancing-naur.md, shared.ts, learning.ts, learning-capture.test.js, learning-rule-boilerplate-filter.md) | 23 reads | ~175516 tok |
+| 11:48 | Created ../../../../../home/tony/.claude/plans/eager-dancing-naur.md | — | ~1946 |
+
+## Session: 2026-08-12 11:51
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 12:51 | Edited src/hooks/post-write.ts | inline fix | ~20 |
+| 12:51 | Edited src/hooks/post-write.ts | 3→4 lines | ~27 |
+| 12:51 | Edited src/hooks/post-write.ts | inline fix | ~17 |
+| 12:51 | Edited src/hooks/post-write.ts | "Null/undefined access in " → "Null/undefined access in " | ~18 |
+| 12:51 | Edited src/hooks/post-write.ts | — | ~0 |
+| 12:51 | Edited src/hooks/post-write.ts | removed 19 lines | ~19 |
+| 12:51 | Edited src/hooks/post-write.ts | — | ~0 |
+| 12:52 | Edited src/buglog/bug-tracker.ts | 2→3 lines | ~18 |
+| 12:52 | Edited src/buglog/bug-tracker.ts | added 1 condition(s) | ~89 |
+| 12:52 | Edited src/buglog/bug-tracker.ts | 2→3 lines | ~20 |
+| 12:52 | Edited src/buglog/bug-tracker.ts | 3→4 lines | ~34 |
+| 12:52 | Edited src/hooks/nudges/rules/conclusion.ts | "${uncovered.length} edite" → "Owner: ${owner.root}. Ins" | ~72 |
+| 12:53 | Edited tests/review-completion.test.js | 3→4 lines | ~85 |
+| 12:53 | Edited tests/review-completion.test.js | added optional chaining | ~564 |
+| 12:53 | Edited tests/ledger-writer-safety.test.js | 1→5 lines | ~69 |
+| 12:53 | Edited tests/ledger-writer-safety.test.js | 2→3 lines | ~47 |
+| 12:53 | Edited tests/ledger-writer-safety.test.js | expanded (+12 lines) | ~179 |
+| 12:54 | Edited tests/ledger-writer-safety.test.js | expanded (+29 lines) | ~709 |
+| 12:54 | Edited tests/nudge-engine.test.js | inline fix | ~38 |
+| 12:54 | Edited tests/nudge-engine.test.js | expanded (+40 lines) | ~677 |
+| 12:54 | Edited tests/nudge-engine.test.js | 3→3 lines | ~48 |
+| 12:56 | Edited src/hooks/nudges/rules/conclusion.js | "${uncovered.length} edite" → "Owner: ${owner.root}. Ins" | ~72 |
+| 12:56 | Edited templates/wolf/hooks/nudges/rules/conclusion.js | "${uncovered.length} edite" → "Owner: ${owner.root}. Ins" | ~72 |
+| 12:56 | Edited tests/ledger-writer-safety.test.js | 2→6 lines | ~113 |
+| 12:58 | Created ../../../../../tmp/restore-current-buglog.mjs | — | ~288 |
+| 12:58 | Created ../../../../../tmp/log-current-hook-bugs.mjs | — | ~385 |
+| 12:59 | implemented high-precision auto-bug records and exact conclusion QA ownership diagnostics | src/hooks/post-write.ts; src/buglog/bug-tracker.ts; src/hooks/nudges/rules/conclusion.ts; tests/*; .wolf/qa/* | focused regressions pass; restored complete buglog corpus and logged bug-686/687 | ~18000 |
+| 13:00 | Edited package.json | inline fix | ~5 |
+| 13:00 | Edited package-lock.json | inline fix | ~5 |
+| 13:00 | Edited VERSION | inline fix | ~4 |
+| 13:00 | Session end: 31 writes across 14 files (post-write.ts, bug-tracker.ts, conclusion.ts, review-completion.test.js, ledger-writer-safety.test.js) | 10 reads | ~127082 tok |
+| 13:01 | full verification for custom.23 hook precision release | npm test; npm run verify; runtime mirrors | 187/187 tests pass; install verification passed | ~44000 |
+| 13:03 | Edited src/buglog/bug-tracker.ts | 8→6 lines | ~72 |
+| 13:03 | Edited src/hooks/post-write.ts | — | ~0 |
+| 13:03 | Edited src/hooks/post-write.ts | — | ~0 |
+| 13:04 | Edited src/hooks/nudges/rules/conclusion.ts | added 2 condition(s) | ~55 |
+| 13:04 | Edited tests/ledger-writer-safety.test.js | expanded (+18 lines) | ~210 |
+| 13:04 | Edited tests/review-completion.test.js | 3→4 lines | ~60 |
+| 13:04 | Edited tests/nudge-engine.test.js | expanded (+13 lines) | ~256 |
+| 13:05 | Edited src/hooks/nudges/rules/conclusion.js | added 2 condition(s) | ~60 |
+| 13:05 | Edited templates/wolf/hooks/nudges/rules/conclusion.js | added 2 condition(s) | ~60 |
+| 13:07 | addressed independent review findings | bug-tracker similarity; operator auto-detection; conclusion frontmatter; tests | focused suites pass; remaining busy-wait/coverage findings documented for scoped follow-up | ~12000 |
+| 13:07 | Session end: 47 writes across 14 files (post-write.ts, bug-tracker.ts, conclusion.ts, review-completion.test.js, ledger-writer-safety.test.js) | 11 reads | ~138837 tok |
+| 13:08 | Session end: 47 writes across 14 files (post-write.ts, bug-tracker.ts, conclusion.ts, review-completion.test.js, ledger-writer-safety.test.js) | 11 reads | ~138837 tok |

@@ -33,7 +33,7 @@ Use `wolfpack experiment` only for measurable alternatives or competing strategi
 
 ## Ledger Integrity
 
-Use `wolfpack ledger audit` before repairing duplicate durable IDs. `wolfpack ledger repair` is a dry-run unless `--apply` is explicit. Repairs preserve every record, keep the first occurrence's ID, deterministically rekey later collisions, retain exact-byte backups and verified receipts, and report ambiguous historical references without rewriting or guessing them.
+Use `wolfpack ledger audit` before repairing duplicate durable IDs. `wolfpack ledger repair` is a dry-run unless `--apply` is explicit. For malformed IDs or legacy bare-array ledgers, use `wolfpack ledger normalize --kind <bug|review>`: it is dry-run by default, refuses fleet apply, requires both `--apply` and `--acknowledge-structural-normalization`, preserves root metadata/order/payloads, and records exact invalid-ID provenance plus collision blocks in a versioned receipt. Normalization does not rewrite historical references. It takes a fsynced exact-byte backup under `.wolf/backups/`; `wolfpack ledger recover <receipt> --kind <bug|review> --apply --acknowledge-structural-normalization` restores only when the live ledger and backup hashes match that receipt.
 
 ## Link Fixes to Proof
 

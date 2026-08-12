@@ -7183,6 +7183,217 @@
       "last_seen": "2026-08-12T01:02:23.723Z",
       "commit": null,
       "reduction": null
+    },
+    {
+      "id": "bug-680",
+      "timestamp": "2026-08-12T16:51:28.669Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/post-write.ts",
+      "root_cause": "Had `Null/undefined access in ${path.basename(path.bas",
+      "fix": "Changed to `Null/undefined access in ${basename}`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T16:51:28.669Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
+    },
+    {
+      "id": "bug-681",
+      "timestamp": "2026-08-12T16:51:52.936Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/hooks/post-write.ts",
+      "root_cause": "13 lines replaced/restructured",
+      "fix": "Rewrote 19→4 lines (13 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T16:51:52.936Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
+    },
+    {
+      "id": "bug-682",
+      "timestamp": "2026-08-12T16:52:54.881Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/hooks/nudges/rules/conclusion.ts",
+      "root_cause": "Had `${uncovered.length} edited file(s) lack a current",
+      "fix": "Changed to `Owner: ${owner.root}. Inspected: ${qaDir}. ${unco",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T16:52:54.881Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
+    },
+    {
+      "id": "bug-683",
+      "timestamp": "2026-08-12T16:53:25.672Z",
+      "error_message": "Null/undefined access in ",
+      "file": "tests/review-completion.test.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T16:53:25.673Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
+    },
+    {
+      "id": "bug-684",
+      "timestamp": "2026-08-12T16:54:13.797Z",
+      "error_message": "Missing await",
+      "file": "tests/ledger-writer-safety.test.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T16:54:13.797Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
+    },
+    {
+      "id": "bug-685",
+      "timestamp": "2026-08-12T16:54:55.926Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/nudge-engine.test.js",
+      "root_cause": "Had `^Owner: ${nested.root.replace(/[.*+?^${}()|[\\\\]\\\\",
+      "fix": "Changed to `Owner: ${nested.root}. Inspected: ${qaDir}.`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T16:54:55.926Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
+    },
+    {
+      "id": "bug-686",
+      "timestamp": "2026-08-12T16:58:40.772Z",
+      "error_message": "Post-write auto bug detection files unsupported wrong-value/reference and refactor guesses, emits blank filenames, and omits required status.",
+      "file": "src/hooks/post-write.ts",
+      "root_cause": "The hook inferred defects from generic syntax-only diffs, constructed summaries from an empty path, and wrote records without the canonical status field.",
+      "fix": "Removed unsupported guess branches, passed the edited basename into retained detection, and defaulted auto records to status open.",
+      "tags": [
+        "post-write",
+        "auto-detection",
+        "false-positive",
+        "schema"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T16:58:40.772Z",
+      "commit": null,
+      "reduction": ".wolf/qa/auto-bug-detector-precision.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-687",
+      "timestamp": "2026-08-12T16:58:40.851Z",
+      "error_message": "Conclusion quality-gate feedback hides the actual owner root and QA directory inspected.",
+      "file": "src/hooks/nudges/rules/conclusion.ts",
+      "root_cause": "Ownership was resolved correctly but the rendered reason used only the generic .wolf/qa label, which is ambiguous in cross-project sessions.",
+      "fix": "Prefixed the reason with the canonical owner root and absolute inspected QA directory while preserving evidence and fingerprint semantics.",
+      "tags": [
+        "conclusion-gate",
+        "cross-project",
+        "diagnostics",
+        "quality-gate"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T16:58:40.851Z",
+      "commit": null,
+      "reduction": ".wolf/qa/conclusion-owner-path-diagnostics.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-688",
+      "timestamp": "2026-08-12T17:03:33.367Z",
+      "error_message": "Wrong operator: || should be ===",
+      "file": "src/buglog/bug-tracker.ts",
+      "root_cause": "Used \"||\" instead of \"===\"",
+      "fix": "Changed operator || → ===",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T17:03:33.367Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
+    },
+    {
+      "id": "bug-689",
+      "timestamp": "2026-08-12T17:04:00.766Z",
+      "error_message": "Missing guard clause",
+      "file": "src/hooks/nudges/rules/conclusion.ts",
+      "root_cause": "No early return/throw for edge case: !head.startsWith(\"---\\n\"",
+      "fix": "Added guard clause: if (!head.startsWith(\"---\\n\")",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-12T17:04:00.766Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
+    },
+    {
+      "id": "bug-690",
+      "timestamp": "2026-08-12T17:05:03.907Z",
+      "error_message": "Missing guard clause",
+      "file": "src/hooks/nudges/rules/conclusion.js",
+      "root_cause": "No early return/throw for edge case: !head.startsWith(\"---\\n\"",
+      "fix": "Added guard clause: if (!head.startsWith(\"---\\n\")",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-08-12T17:05:05.531Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
     }
   ]
 }

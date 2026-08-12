@@ -16,6 +16,7 @@ interface BugEntry {
   last_seen: string;
   commit: string | null;
   reduction: string | null;
+  status: "open" | "resolved";
 }
 
 interface BugLog {
@@ -32,6 +33,7 @@ export function readBugLog(wolfDir: string): BugLog {
   for (const entry of bugLog.bugs || []) {
     if (!Object.prototype.hasOwnProperty.call(entry, "commit")) entry.commit = null;
     if (!Object.prototype.hasOwnProperty.call(entry, "reduction")) entry.reduction = null;
+    if (entry.status !== "open" && entry.status !== "resolved") entry.status = "open";
   }
   return bugLog;
 }
@@ -47,6 +49,7 @@ export function logBug(
     tags: string[];
     commit?: string | null;
     reduction?: string | null;
+    status?: "open" | "resolved";
   }
 ): void {
   const bugLogPath = getBugLogPath(wolfDir);
@@ -95,6 +98,7 @@ export function logBug(
       last_seen: now,
       commit: bug.commit ?? null,
       reduction: bug.reduction ?? null,
+      status: bug.status ?? "open",
     });
 
     if (!atomicWriteJson(bugLogPath, bugLog)) throw new Error(`could not atomically write ${bugLogPath}`);
@@ -130,11 +134,9 @@ function findSimilarBugsInLog(bugLog: BugLog, errorMessage: string): ScoredBug[]
   for (const bug of bugLog.bugs) {
     let score = 0;
 
-    // Exact substring match
-    if (
-      normalize(bug.error_message).includes(normalizedInput) ||
-      normalizedInput.includes(normalize(bug.error_message))
-    ) {
+    // Exact normalized equality is strong evidence. Substring containment is not:
+    // short generic records such as "timeout" otherwise absorb distinct defects.
+    if (normalize(bug.error_message) === normalizedInput) {
       score += 1.0;
     }
 

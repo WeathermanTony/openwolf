@@ -47,8 +47,10 @@ export function reductionTargetHashes(qaFile) {
     } catch {
         return [];
     }
+    if (!head.startsWith("---\n") && !head.startsWith("---\r\n")) return [];
     const end = head.indexOf("\n---", 4);
-    const front = end === -1 ? head : head.slice(0, end + 5);
+    if (end === -1) return [];
+    const front = head.slice(0, end + 5);
     // Supports both `target-hash:` and the suffixed multi-file form
     // `target-hash-<slug>:` so one reduction can cover several files.
     const re = /^target-hash(?:-[a-zA-Z0-9_-]+)?:\s*["']?([a-f0-9]{16,64})["']?\s*$/gm;
@@ -144,7 +146,7 @@ export function collect({
             confidence: 0.85,
             schemaVersion: SCHEMA_VERSION,
             title: "Conclusion without current reduction",
-            reason: `${uncovered.length} edited file(s) lack a current .wolf/qa reduction: ${shown.join(", ")}${more}. Add ≥${minAssumptions} assumptions + the riskiest falsifier's actual output before finalizing.`,
+            reason: `Owner: ${owner.root}. Inspected: ${qaDir}. ${uncovered.length} edited file(s) lack a current reduction: ${shown.join(", ")}${more}. Add ≥${minAssumptions} assumptions + the riskiest falsifier's actual output before finalizing.`,
             action: { command: null, label: "Write a reduction" },
             // Fingerprint over the FULL uncovered set + their exact bytes: a new
             // edit changes a hash → new fingerprint → the gate legitimately

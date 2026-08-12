@@ -482,6 +482,46 @@ test('stop hook nudges autonomy continuation on obvious next-step language', asy
   }
 });
 
+test('post-write hook writes precise open records and rejects unsupported diff guesses', async () => {
+  const dir = await fixture();
+  try {
+    await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
+    const target = path.join(dir, 'src', 'account.js');
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(path.join(dir, '.wolf', 'buglog.json'), JSON.stringify({ version: 1, bugs: [] }, null, 2));
+    await writeFile(path.join(dir, '.wolf', 'hooks', '_session.json'), JSON.stringify({
+      files_written: [], edit_counts: {}, stop_count: 0,
+    }, null, 2));
+
+    const nullSafety = runPostWriteHook(dir, {
+      file_path: target,
+      old_string: 'export const name = user.name;\n',
+      new_string: 'export const name = user?.name;\n',
+    });
+    assert.equal(nullSafety.status, 0, nullSafety.stderr);
+    let log = JSON.parse(await readFile(path.join(dir, '.wolf', 'buglog.json'), 'utf8'));
+    assert.equal(log.bugs.length, 1);
+    assert.equal(log.bugs[0].error_message, 'Null/undefined access in account.js');
+    assert.equal(log.bugs[0].status, 'open');
+
+    for (const edit of [
+      { old_string: 'export const color = "blue";\n', new_string: 'export const color = "green";\n' },
+      { old_string: 'export const ok = a && b;\n', new_string: 'export const ok = a || b;\n' },
+      {
+        old_string: 'const one = first();\nconst two = second();\nconst three = third();\n',
+        new_string: 'const values = [first(), second(), third()];\nreturn values;\nlog(values);\n',
+      },
+    ]) {
+      const result = runPostWriteHook(dir, { file_path: target, ...edit });
+      assert.equal(result.status, 0, result.stderr);
+    }
+    log = JSON.parse(await readFile(path.join(dir, '.wolf', 'buglog.json'), 'utf8'));
+    assert.equal(log.bugs.length, 1, 'string/token changes and refactor-shaped edits are not defect evidence');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('post-write hook ignores unsafe bug suffixes when allocating an auto-detected entry', async () => {
   const dir = await fixture();
   try {
@@ -507,6 +547,7 @@ test('post-write hook ignores unsafe bug suffixes when allocating an auto-detect
     assert.equal(result.status, 0, result.stderr);
     const log = JSON.parse(await readFile(path.join(dir, '.wolf', 'buglog.json'), 'utf8'));
     assert.equal(log.bugs.at(-1).id, 'bug-011', 'unsafe suffixes must not affect max-suffix allocation');
+    assert.equal(log.bugs.at(-1).status, 'open', 'auto-detected records begin unverified/open');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

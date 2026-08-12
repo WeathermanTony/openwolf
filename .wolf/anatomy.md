@@ -1,27 +1,30 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-12T01:13:39.564Z
-> Files: 220 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-12T17:05:05.390Z
+> Files: 225 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
-- `eager-dancing-naur.md` — Context (~1676 tok)
+- `eager-dancing-naur.md` — Context (~1824 tok)
 - `jaunty-splashing-globe.md` — Context (~2254 tok)
 
 ## ../../../../../tmp/
 
 - `add-hook-ledger-bug.mjs` — Declares file (~509 tok)
 - `log-bare-array-reference-bug.mjs` — Declares file (~510 tok)
+- `log-current-hook-bugs.mjs` — Declares wolf (~385 tok)
 - `log-learning-boilerplate-bug.mjs` — Declares file (~548 tok)
 - `normalize-ledger-rollout.mjs` — Declares cli (~1073 tok)
+- `rebuild-buglog-final.mjs` — Declares file (~207 tok)
 - `restore-buglog-records.mjs` — Declares livePath (~284 tok)
+- `restore-current-buglog.mjs` — Declares file (~288 tok)
 
 ## ./
 
 - `.editorconfig` — Editor configuration (~51 tok)
 - `.gitignore` — Git ignore rules (~315 tok)
 - `CLAUDE.md` — Wolfpack (~74 tok)
-- `package-lock.json` — npm lock file (~69276 tok)
+- `package-lock.json` (~69276 tok)
 - `package.json` — Node.js package manifest (~578 tok)
 - `README.md` — Project documentation (~752 tok)
 - `tsconfig.json` — TypeScript configuration (~140 tok)
@@ -53,6 +56,8 @@
 
 ## .wolf/qa/
 
+- `auto-bug-detector-precision.md` — Real-hook precision, schema, and concurrent canonical-writer reduction (~700 tok)
+- `conclusion-owner-path-diagnostics.md` — Nested-owner and truncation-safe QA-path diagnostic reduction (~600 tok)
 - `hermes-agent-evaluation-2026-08-08.md` — Source-level Hermes Agent mechanism evaluation and no-integration disposition (~1260 tok)
 - `hook-ledger-recurrence.md` — Real hook-runtime safe-suffix and atomic-persistence reduction (~430 tok)
 - `learning-rule-boilerplate-filter.md` — Falsification evidence for harness-envelope filtering in explicit learning capture (~900 tok)
@@ -71,7 +76,7 @@
 ## src/buglog/
 
 - `bug-matcher.ts` — Re-export from bug-tracker for convenience (~32 tok)
-- `bug-tracker.ts` — Exports getBugLogPath, readBugLog, logBug, findSimilarBugs, searchBugs (~1463 tok)
+- `bug-tracker.ts` — Exports getBugLogPath, readBugLog, logBug, findSimilarBugs, searchBugs (~1532 tok)
 
 ## src/cli/
 
@@ -172,7 +177,7 @@
 - `post-read.js` — Declares main (~799 tok)
 - `post-read.ts` — @ts-nocheck (~793 tok)
 - `post-write.js` — Declares main (~10337 tok)
-- `post-write.ts` — Declares main (~10326 tok)
+- `post-write.ts` — Declares main (~9302 tok)
 - `pre-read.js` — Declares main (~914 tok)
 - `pre-read.ts` — @ts-nocheck (~908 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
@@ -197,8 +202,8 @@
 
 - `cerebrum.js` — Cerebrum freshness rule — PROJECT-SCOPED. (~1305 tok)
 - `cerebrum.ts` — Cerebrum freshness rule — PROJECT-SCOPED. (~1328 tok)
-- `conclusion.js` — Conclusion / reduction gate — EVIDENCE-GATED. (~1868 tok)
-- `conclusion.ts` — Conclusion / reduction gate — EVIDENCE-GATED. (~1824 tok)
+- `conclusion.js` — Conclusion / reduction gate — EVIDENCE-GATED. (~1907 tok)
+- `conclusion.ts` — Conclusion / reduction gate — EVIDENCE-GATED. (~1858 tok)
 - `learning.js` — Explicit user-stated learning signals. Transcript text is evidence, never instruction. (~1260 tok)
 - `learning.ts` — Explicit user-stated learning signals. Transcript text is evidence, never instruction. (~1351 tok)
 - `review.js` — Review lifecycle rule — IMMUTABLE SNAPSHOTS, AUTOMATIC SUPERSEDE, LINEAGE CAP. (~3597 tok)
@@ -307,7 +312,7 @@
 ## templates/wolf/hooks/nudges/rules/
 
 - `cerebrum.js` — Cerebrum freshness rule — PROJECT-SCOPED. (~1305 tok)
-- `conclusion.js` — Conclusion / reduction gate — EVIDENCE-GATED. (~1868 tok)
+- `conclusion.js` — Conclusion / reduction gate — EVIDENCE-GATED. (~1907 tok)
 - `learning.js` — Explicit user-stated learning signals. Transcript text is evidence, never instruction. (~1260 tok)
 - `review.js` — Review lifecycle rule — IMMUTABLE SNAPSHOTS, AUTOMATIC SUPERSEDE, LINEAGE CAP. (~3597 tok)
 
@@ -333,14 +338,14 @@
 - `hook-packaging.test.js` — Hook packaging: every module a hook imports must actually ship. (~1113 tok)
 - `learning-capture.test.js` — root: fixture, transcript, transcriptEntries (~3517 tok)
 - `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~3620 tok)
-- `ledger-writer-safety.test.js` — fixture: entry (~649 tok)
+- `ledger-writer-safety.test.js` — repoRoot: fixture, entry (~1595 tok)
 - `mem0-canary.test.js` — root: score, clone (~1914 tok)
-- `nudge-engine.test.js` — Regression suite for the evidence-addressed nudge engine. (~13866 tok)
+- `nudge-engine.test.js` — Regression suite for the evidence-addressed nudge engine. (~14717 tok)
 - `qa-cmd.test.js` — sha256: fixture (~656 tok)
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)
 - `registry.test.js` — Tests for bug-440: malformed registry entries (missing root/name) must not (~1109 tok)
 - `review-cmd.test.js` — repoRoot: fixture, sha256, manifestHash, runWolf (~1291 tok)
-- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 8 more (~20888 tok)
+- `review-completion.test.js` — repoRoot: fixture, writeReviewLog, readReviewLog + 8 more (~21477 tok)
 - `scientific-skills.test.js` — root: git, run, fixture + 3 more (~2783 tok)
 - `skill-deployment.test.js` — root: fixture, runCli, seedProject, seedRegistry (~2396 tok)
 - `skill-receipt.test.js` — sha256: fixture (~2614 tok)

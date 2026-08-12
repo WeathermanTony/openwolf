@@ -47,7 +47,7 @@ const stateMod = await import(N('state.js'));
 const { computeFingerprint, readState, setDisposition, tryClaim, markEmitted,
         NUDGE_STATES, bumpLineageRound, writeStateOrThrow, nudgeStatePath,
         markLineageEscalated } = stateMod;
-const { evaluate, makeCandidate, NUDGE_DEFAULTS, getNudgeConfig, rankCandidates } = await import(N('engine.js'));
+const { evaluate, makeCandidate, NUDGE_DEFAULTS, getNudgeConfig, rankCandidates, formatCandidate } = await import(N('engine.js'));
 const { resolveOwningProject, groupByOwner } = await import(N('project-scope.js'));
 const cerebrumRule = await import(N('rules/cerebrum.js'));
 const conclusionRule = await import(N('rules/conclusion.js'));
@@ -264,6 +264,59 @@ test('8. edit after a valid reduction fires the gate exactly once', () => {
   const second = conclusionRule.collect({ text, patterns, minHits: 2, codeFiles: [file] });
   const r2 = evaluate({ wolfDir: P.wolf, candidates: second.candidates, nudgeCfg: cfg(), sessionId: 's1' });
   assert.equal(r2.emitted.length, 0, 'fires once, then quiet until evidence changes');
+  fs.rmSync(base, { recursive: true, force: true });
+});
+
+test('8a. unterminated reduction frontmatter cannot claim coverage from body text', () => {
+  const base = tmp();
+  const P = makeProject(base, 'p');
+  const [file] = writeFiles(P.root, ['src/thing.ts'], 'export const answer = 42;\n');
+  fs.writeFileSync(path.join(P.wolf, 'qa', 'unterminated.md'),
+    `---\ntitle: incomplete\nbody text\ntarget-hash: ${sha(file)}\n`);
+  const text = 'The verdict is confirmed: it works and the bug is fixed. '.repeat(8);
+  const patterns = ['\\b(verdict)\\b', '\\b(confirmed|proven)\\b', '\\b(works|fixed)\\b'];
+  const { candidates } = conclusionRule.collect({ text, patterns, minHits: 2, codeFiles: [file] });
+  assert.equal(candidates.length, 1, 'malformed frontmatter must fail closed as uncovered');
+  fs.rmSync(base, { recursive: true, force: true });
+});
+
+test('8b. conclusion diagnostics name exact nearest owner and inspected QA path first', () => {
+  const base = tmp();
+  const outer = makeProject(base, 'outer');
+  const nested = makeProject(outer.root, 'nested');
+  const files = writeFiles(nested.root, Array.from({ length: 8 }, (_, i) => `src/very-long-component-name-${i}.ts`));
+  const text = 'The verdict is confirmed: it works and the bug is fixed. '.repeat(8);
+  const patterns = ['\\b(verdict)\\b', '\\b(confirmed|proven)\\b', '\\b(works|fixed)\\b'];
+
+  const { candidates, unattributed } = conclusionRule.collect({ text, patterns, minHits: 2, codeFiles: files });
+  assert.equal(unattributed.length, 0);
+  assert.equal(candidates.length, 1);
+  const candidate = candidates[0];
+  const qaDir = path.join(nested.wolf, 'qa');
+  assert.equal(candidate.owner_root, nested.root);
+  assert.equal(candidate.evidence.owner_root, nested.root);
+  assert.equal(candidate.evidence.qa_dir, '.wolf/qa');
+  assert.ok(candidate.reason.startsWith(`Owner: ${nested.root}. Inspected: ${qaDir}.`));
+  assert.equal(candidate.reason.includes(path.join(outer.wolf, 'qa')), false);
+
+  const rendered = formatCandidate(candidate, { ...NUDGE_DEFAULTS, max_chars: 220 });
+  assert.match(rendered, /Owner:/);
+  assert.match(rendered, /Inspected:/);
+  assert.ok(rendered.includes(nested.root));
+  assert.ok(rendered.includes(qaDir), 'path diagnostics survive message truncation');
+  fs.rmSync(base, { recursive: true, force: true });
+});
+
+test('8c. conclusion gate leaves unattributed files unattributed', () => {
+  const base = tmp();
+  const orphan = path.join(base, 'orphan', 'x.ts');
+  fs.mkdirSync(path.dirname(orphan), { recursive: true });
+  fs.writeFileSync(orphan, 'export const x = 1;\n');
+  const text = 'The verdict is confirmed: it works and the bug is fixed. '.repeat(8);
+  const patterns = ['\\b(verdict)\\b', '\\b(confirmed|proven)\\b', '\\b(works|fixed)\\b'];
+  const { candidates, unattributed } = conclusionRule.collect({ text, patterns, minHits: 2, codeFiles: [orphan] });
+  assert.equal(candidates.length, 0);
+  assert.deepEqual(unattributed, [orphan]);
   fs.rmSync(base, { recursive: true, force: true });
 });
 

@@ -414,7 +414,7 @@ function autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr) {
     const basename = path.basename(absolutePath);
     const ext = path.extname(basename).toLowerCase();
     // Detect what kind of fix this is — cheap, do it before taking the lock.
-    const detection = detectFixPattern(oldStr, newStr, ext);
+    const detection = detectFixPattern(oldStr, newStr, ext, basename);
     if (!detection)
         return;
     // Lock the buglog for the full read-modify-write. Without this, two parallel
@@ -481,6 +481,7 @@ function autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr) {
             last_seen: new Date().toISOString(),
             commit: null,
             reduction: null,
+            status: "open",
         });
         if (!atomicWriteJson(bugLogPath, bugLog))
             return;
@@ -504,7 +505,7 @@ function autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr) {
     }
     catch { }
 }
-function detectFixPattern(oldStr, newStr, ext) {
+function detectFixPattern(oldStr, newStr, ext, basename) {
     const oldLines = oldStr.split("\n");
     const newLines = newStr.split("\n");
     // --- Error handling added ---
@@ -524,7 +525,7 @@ function detectFixPattern(oldStr, newStr, ext) {
         (/!==?\s*(null|undefined)/.test(newStr) && !/!==?\s*(null|undefined)/.test(oldStr))) {
         return {
             category: "null-safety",
-            summary: `Null/undefined access in ${path.basename(path.basename(""))}`,
+            summary: `Null/undefined access in ${basename}`,
             rootCause: "Property access on potentially null/undefined value",
             fix: `Added null safety (optional chaining or null check)`,
             context: extractChangedLines(oldStr, newStr),
@@ -541,43 +542,6 @@ function detectFixPattern(oldStr, newStr, ext) {
             fix: `Added guard clause: if (${condition.slice(0, 40)})`,
         };
     }
-    // --- Wrong value / string fix (very common bug) ---
-    if (oldLines.length <= 3 && newLines.length <= 3) {
-        const oldJoined = oldStr.trim();
-        const newJoined = newStr.trim();
-        // String literal changed
-        const oStrs = oldJoined.match(/['"`]([^'"`]{2,})['"`]/g) || [];
-        const nStrs = newJoined.match(/['"`]([^'"`]{2,})['"`]/g) || [];
-        if (oStrs.length > 0 && nStrs.length > 0) {
-            for (let i = 0; i < Math.min(oStrs.length, nStrs.length); i++) {
-                if (oStrs[i] !== nStrs[i]) {
-                    return {
-                        category: "wrong-value",
-                        summary: `Incorrect value in code`,
-                        rootCause: `Had ${oStrs[i].slice(0, 50)}`,
-                        fix: `Changed to ${nStrs[i].slice(0, 50)}`,
-                    };
-                }
-            }
-        }
-        // Variable name / method call changed
-        const oldTokens = tokenizeCode(oldJoined);
-        const newTokens = tokenizeCode(newJoined);
-        const changed = [];
-        for (let i = 0; i < Math.min(oldTokens.length, newTokens.length); i++) {
-            if (oldTokens[i] !== newTokens[i]) {
-                changed.push([oldTokens[i], newTokens[i]]);
-            }
-        }
-        if (changed.length === 1 && changed[0][0].length > 2) {
-            return {
-                category: "wrong-reference",
-                summary: `Wrong reference: ${changed[0][0]} should be ${changed[0][1]}`,
-                rootCause: `Used "${changed[0][0]}" instead of "${changed[0][1]}"`,
-                fix: `Changed ${changed[0][0]} → ${changed[0][1]}`,
-            };
-        }
-    }
     // --- Logic fix (condition changed) ---
     const oldCond = oldStr.match(/if\s*\(([^)]+)\)/)?.[1];
     const newCond = newStr.match(/if\s*\(([^)]+)\)/)?.[1];
@@ -587,16 +551,6 @@ function detectFixPattern(oldStr, newStr, ext) {
             summary: `Wrong condition in logic`,
             rootCause: `Condition was: if (${oldCond.slice(0, 50)})`,
             fix: `Changed to: if (${newCond.slice(0, 50)})`,
-        };
-    }
-    // --- Operator fix (=== vs ==, > vs >=, etc.) ---
-    const opChange = findOperatorChange(oldStr, newStr);
-    if (opChange) {
-        return {
-            category: "operator-fix",
-            summary: `Wrong operator: ${opChange.old} should be ${opChange.new}`,
-            rootCause: `Used "${opChange.old}" instead of "${opChange.new}"`,
-            fix: `Changed operator ${opChange.old} → ${opChange.new}`,
         };
     }
     // --- Missing import/require ---
@@ -669,21 +623,6 @@ function detectFixPattern(oldStr, newStr, ext) {
             };
         }
     }
-    // --- Significant diff (catch-all for substantial edits) ---
-    const diffRatio = Math.abs(newStr.length - oldStr.length) / Math.max(oldStr.length, 1);
-    if (diffRatio > 0.3 && oldLines.length >= 3 && newLines.length >= 3) {
-        // Only log if there's meaningful structural change, not just additions
-        const removedLines = oldLines.filter(l => l.trim() && !newLines.some(nl => nl.trim() === l.trim()));
-        if (removedLines.length >= 2) {
-            return {
-                category: "refactor",
-                summary: `Significant refactor of ${path.basename("")}`,
-                rootCause: `${removedLines.length} lines replaced/restructured`,
-                fix: `Rewrote ${oldLines.length}→${newLines.length} lines (${removedLines.length} removed)`,
-                context: removedLines.slice(0, 2).map(l => l.trim().slice(0, 50)).join("; "),
-            };
-        }
-    }
     return null;
 }
 function extractChangedLines(oldStr, newStr) {
@@ -691,22 +630,6 @@ function extractChangedLines(oldStr, newStr) {
     const newLines = newStr.split("\n").map(l => l.trim()).filter(Boolean);
     const added = newLines.filter(l => !oldLines.has(l));
     return added.slice(0, 2).map(l => l.slice(0, 60)).join("; ");
-}
-function tokenizeCode(code) {
-    return code.replace(/[^\w$]/g, " ").split(/\s+/).filter(t => t.length > 0);
-}
-function findOperatorChange(oldStr, newStr) {
-    const operators = ["===", "!==", "==", "!=", ">=", "<=", ">>", "<<", "&&", "||", "??"];
-    for (const op of operators) {
-        if (oldStr.includes(op) && !newStr.includes(op)) {
-            for (const op2 of operators) {
-                if (op2 !== op && newStr.includes(op2) && !oldStr.includes(op2)) {
-                    return { old: op, new: op2 };
-                }
-            }
-        }
-    }
-    return null;
 }
 function extractCSSProps(code) {
     const props = new Map();
