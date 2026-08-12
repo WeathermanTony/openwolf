@@ -1406,3 +1406,5 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 13:09 | Created ../../../../../tmp/resolve-current-hook-bugs.mjs | — | ~275 |
 | 13:10 | Created ../../../../../tmp/canary-hook-check.mjs | — | ~544 |
 | 13:14 | released and fleet-deployed custom.23 | commits 06dcbf4,6735d24; canary cllmgit2; 84-project registry | clean GLM arbitration; canary functional probe passed; 83 deployed projects at custom.23, source repo intentionally skipped; no malformed ledgers | ~18000 |
+| 13:15 | Session end: 49 writes across 16 files (post-write.ts, bug-tracker.ts, conclusion.ts, review-completion.test.js, ledger-writer-safety.test.js) | 11 reads | ~139714 tok |
+| 13:16 | extended conclusion reduction to runtime/template mirrors | .wolf/qa/conclusion-owner-path-diagnostics.md | nudge conclusion-af09d1e4 resolved; 39/39 tests pass | ~3000 |
