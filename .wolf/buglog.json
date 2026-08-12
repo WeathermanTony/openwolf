@@ -7314,9 +7314,9 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-12T16:58:40.772Z",
-      "commit": null,
+      "commit": "06dcbf4",
       "reduction": ".wolf/qa/auto-bug-detector-precision.md",
-      "status": "open"
+      "status": "resolved"
     },
     {
       "id": "bug-687",
@@ -7334,9 +7334,9 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-12T16:58:40.851Z",
-      "commit": null,
+      "commit": "06dcbf4",
       "reduction": ".wolf/qa/conclusion-owner-path-diagnostics.md",
-      "status": "open"
+      "status": "resolved"
     },
     {
       "id": "bug-688",
