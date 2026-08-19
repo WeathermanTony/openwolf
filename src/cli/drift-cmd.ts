@@ -93,7 +93,12 @@ const MAX_WALK_FILES = 20000;
 function listCodeFiles(root: string, wolfDir: string): { files: string[]; truncated: boolean } {
   const out: string[] = [];
   let truncated = false;
-  const skip = new Set(["node_modules", ".git", "dist", "build", "coverage", ".wolf", ".next", "out"]);
+  const skip = new Set(["node_modules", ".git", "dist", "build", "coverage", ".wolf", ".next", "out", "tests", "test", "__tests__", "spec"]);
+  // Test files construct fixture content containing marker-shaped strings. Those
+  // are data, not shipped seams, and counting them reports phantom orphans in any
+  // project whose tests mention a UQ id. This mirrors the quality gate's own
+  // scope, which excludes test dirs and *.test.*/*.spec.* files.
+  const isTestFile = (name: string): boolean => /\.(test|spec)\.[cm]?[jt]sx?$/.test(name);
   const exts = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".go", ".rs", ".sh", ".sql", ".rb", ".java"]);
   const MAX_DEPTH = 8;
   const walk = (dir: string, depth: number): void => {
@@ -118,7 +123,7 @@ function listCodeFiles(root: string, wolfDir: string): { files: string[]; trunca
       if (e.isDirectory()) {
         if (skip.has(e.name) || full === wolfDir) continue;
         walk(full, depth + 1);
-      } else if (exts.has(path.extname(e.name))) {
+      } else if (exts.has(path.extname(e.name)) && !isTestFile(e.name)) {
         out.push(full);
         if (out.length >= MAX_WALK_FILES) {
           truncated = true;

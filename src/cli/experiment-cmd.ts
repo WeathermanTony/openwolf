@@ -224,6 +224,29 @@ export function startExperiment(slug: string, opts: any = {}) {
   } finally { release(); }
 }
 
+/**
+ * Parse an optional `--metric name=value` reading. Returns null when absent so
+ * older records stay valid. A non-numeric value is rejected rather than stored
+ * as a string: the journal's whole purpose is comparing attempts numerically,
+ * and a silently-unparseable metric would sort and compare as garbage.
+ */
+function parseMetric(raw: any): { name: string; value: number } | null {
+  if (raw === undefined || raw === null || raw === "") return null;
+  const text = String(raw);
+  const eq = text.indexOf("=");
+  if (eq <= 0) throw new Error("metric must be name=value");
+  const name = text.slice(0, eq).trim();
+  const rawValue = text.slice(eq + 1).trim();
+  // Number("") is 0, so an empty value would silently record a real-looking
+  // zero reading. A missing metric must be an error, never a data point.
+  if (rawValue === "") throw new Error("metric value is required");
+  const value = Number(rawValue);
+  if (!name) throw new Error("metric name is required");
+  if (!Number.isFinite(value)) throw new Error("metric value must be a finite number");
+  if (name.length > 64) throw new Error("metric name cannot exceed 64 characters");
+  return { name, value };
+}
+
 export function addExperimentEvidence(id: string, opts: any = {}) {
   const projectRoot = root();
   const policy = requireExperimentMutation(projectRoot);
@@ -256,6 +279,10 @@ export function addExperimentEvidence(id: string, opts: any = {}) {
       cwd: cwd.rel || ".",
       exit_code: exitCode,
       output,
+      // Optional quantitative reading for this attempt. Kept on the evidence
+      // entry rather than the record so it stays bound to the command and exit
+      // code that produced it — a metric with no run behind it is a claim.
+      metric: parseMetric(opts.metric),
     });
     record.status = "running";
     record.updated_at = nowIso();
@@ -296,6 +323,103 @@ export function concludeExperiment(id: string, opts: any = {}) {
     writeVerified(file, record);
     return record;
   } finally { release(); }
+}
+
+/**
+ * Quantitative experiment journal — one row per attempt.
+ *
+ * This is a PROJECTION over the experiment records, not a second store. Writing
+ * a standalone journal file would create a source of truth that can silently
+ * disagree with the records it summarizes; regenerating on demand cannot drift.
+ *
+ * Falsified and inconclusive attempts are included deliberately. An experiment
+ * log that only lists winners cannot show what was already ruled out, which is
+ * most of a journal's value on the next attempt.
+ */
+export function buildExperimentJournal(projectRoot: string): {
+  rows: Array<Record<string, string>>;
+  malformed: number;
+} {
+  const rows: Array<Record<string, string>> = [];
+  let malformed = 0;
+  for (const record of listRecords(projectRoot)) {
+    if (!record || record.malformed) {
+      malformed += 1;
+      // A malformed record still gets a row: dropping it would understate the
+      // attempt count and make the journal look tidier than the work was.
+      rows.push({
+        experiment: String(record?.id ?? "?"),
+        attempt: "-",
+        strategy: "-",
+        status: "MALFORMED",
+        metric: "-",
+        value: "-",
+        commit: "-",
+        description: "unreadable record",
+      });
+      continue;
+    }
+    // Last evidence entry carrying a metric is the attempt's reading.
+    const withMetric = (record.evidence ?? []).filter((e: any) => e && e.metric);
+    const metric = withMetric.length > 0 ? withMetric[withMetric.length - 1].metric : null;
+    rows.push({
+      experiment: String(record.id ?? "?"),
+      attempt: record.attempt ? `${record.attempt.number}/${record.attempt.max}` : "-",
+      strategy: String(record.strategy_family ?? "-"),
+      status: String(record.status ?? "-"),
+      metric: metric ? String(metric.name) : "-",
+      value: metric ? String(metric.value) : "-",
+      commit: String(record.result?.links?.review ?? record.result?.links?.bug ?? "-"),
+      description: String(record.objective ?? record.result?.conclusion ?? "-").replace(/\s+/g, " ").slice(0, 120),
+    });
+  }
+  return { rows, malformed };
+}
+
+const JOURNAL_COLUMNS = ["experiment", "attempt", "strategy", "status", "metric", "value", "commit", "description"];
+
+export function experimentJournal(opts: { json?: boolean } = {}): void {
+  try {
+    const { rows, malformed } = buildExperimentJournal(root());
+    if (opts.json) {
+      console.log(JSON.stringify({ version: 1, rows, malformed }, null, 2));
+      return;
+    }
+    if (rows.length === 0) {
+      console.log("No experiments recorded.");
+      return;
+    }
+    // TSV so the journal pastes straight into a spreadsheet or `sort`/`awk`.
+    console.log(JOURNAL_COLUMNS.join("\t"));
+    for (const row of rows) console.log(JOURNAL_COLUMNS.map((c) => row[c] ?? "-").join("\t"));
+    const counts = rows.reduce<Record<string, number>>((acc, r) => {
+      acc[r.status] = (acc[r.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    console.error(
+      `\n${rows.length} attempt(s): ` +
+        Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(" ") +
+        (malformed > 0 ? ` (${malformed} malformed)` : ""),
+    );
+    // Plateau heuristic: repeated non-survival in one strategy family means the
+    // family is exhausted, not that the next attempt needs more effort.
+    const byFamily = new Map<string, number>();
+    for (const r of rows) {
+      if (r.status === "falsified" || r.status === "inconclusive") {
+        byFamily.set(r.strategy, (byFamily.get(r.strategy) ?? 0) + 1);
+      }
+    }
+    for (const [family, n] of byFamily) {
+      if (n >= 3 && family !== "-") {
+        console.error(
+          `PLATEAU: ${n} non-surviving attempts in "${family}". Diversify to a different strategy family, ` +
+            `combine independent winners, or run a simplification pass before another variation.`,
+        );
+      }
+    }
+  } catch (e) {
+    printFailure(e);
+  }
 }
 
 function summarize(record: any) {

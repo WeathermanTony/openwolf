@@ -478,6 +478,7 @@ export function createProgram(): Command {
     .requiredOption("--exit-code <n>", "Observed integer exit code")
     .option("--output-file <path>", "Read bounded output from a project file")
     .option("--output <text>", "Record bounded inline output")
+    .option("--metric <name=value>", "Optional quantitative reading for this attempt")
     .action(async (id: string, opts: any) => {
       const { experimentEvidence } = await import("./experiment-cmd.js");
       experimentEvidence(id, opts);
@@ -502,6 +503,15 @@ export function createProgram(): Command {
   experiment.command("show <id>").option("--json", "Output JSON").action(async (id: string, opts: any) => {
     const { experimentShow } = await import("./experiment-cmd.js"); experimentShow(id, opts);
   });
+  experiment
+    .command("journal")
+    .description("Quantitative attempt journal projected from experiment records")
+    .option("--json", "Output JSON")
+    .action(async (opts: any) => {
+      const { experimentJournal } = await import("./experiment-cmd.js");
+      experimentJournal(opts);
+    });
+
   experiment.command("list").option("--json", "Output JSON").action(async (opts: any) => {
     const { experimentList } = await import("./experiment-cmd.js"); experimentList(opts);
   });

@@ -7675,6 +7675,69 @@
       "last_seen": "2026-08-19T00:00:00.000Z",
       "commit": "e9dd132",
       "reduction": ".wolf/qa/challenge-gate.md"
+    },
+    {
+      "id": "bug-703",
+      "timestamp": "2026-08-19T20:17:10.997Z",
+      "error_message": "`openwolf experiment evidence --metric acc=` silently recorded a metric value of 0",
+      "file": "src/cli/experiment-cmd.ts",
+      "root_cause": "Number(\"\") returns 0 in JS, so an empty metric value parsed as a real-looking zero reading instead of erroring. A missing measurement became a data point.",
+      "fix": "parseMetric() rejects an empty value before calling Number(), so a missing metric is an error rather than a silent 0.",
+      "status": "resolved",
+      "tags": [
+        "experiment",
+        "parsing",
+        "silent-default",
+        "javascript-coercion"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T20:17:10.997Z",
+      "commit": null,
+      "reduction": ".wolf/qa/experiment-journal.md"
+    },
+    {
+      "id": "bug-704",
+      "timestamp": "2026-08-19T20:17:10.997Z",
+      "error_message": "driftcheck reported phantom orphan TODO(UQ-7) markers that did not exist in real source",
+      "file": "src/cli/drift-cmd.ts",
+      "root_cause": "The source walker read test fixture strings containing TODO(UQ-n) literals as if they were real markers in production code.",
+      "fix": "listCodeFiles excludes test dirs and *.test.*/*.spec.* files, mirroring the quality gate's own scope definition.",
+      "status": "resolved",
+      "tags": [
+        "driftcheck",
+        "false-positive",
+        "test-fixtures",
+        "scope"
+      ],
+      "related_bugs": [
+        "bug-698"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T20:17:10.997Z",
+      "commit": null,
+      "reduction": ".wolf/qa/driftcheck.md"
+    },
+    {
+      "id": "bug-705",
+      "timestamp": "2026-08-19T20:17:10.997Z",
+      "error_message": "Skill installs accepted SKILL.md frontmatter whose description named a specific vendor, silently narrowing the skill's trigger surface",
+      "file": "src/cli/skillsbench.ts",
+      "root_cause": "validateSkill only checked the frontmatter `name:`. The `description:` is the routing surface Claude matches against user requests; provider-specific wording means the skill never fires for equivalent generic phrasing, with no error emitted.",
+      "fix": "validateSkill extracts description (quoted/unquoted/block-scalar forms), rejects missing or empty ones, and warns on provider-specific wording via providerWordingHits().",
+      "status": "resolved",
+      "tags": [
+        "skills",
+        "install",
+        "lint",
+        "silent-failure",
+        "routing"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T20:17:10.997Z",
+      "commit": null,
+      "reduction": ".wolf/qa/skill-description-lint.md"
     }
   ]
 }

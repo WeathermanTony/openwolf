@@ -62,6 +62,12 @@ function currentHashSummary(files: string[] = []): { hashes: Record<string, stri
   return { hashes, manifestHash, unreadable };
 }
 
+// TODO(UQ-1): see .wolf/parked-questions.md
+// Single seam for reviewed-hash provenance. A companion receipt digest is NOT
+// accepted here — it attests to receipt integrity, not to reviewed bytes. If
+// companions expose a per-source content-hash map, a locally DERIVED manifest
+// hash would enter through this function and nowhere else.
+// Proposal and derivation: docs/receipt-hash-interop.md
 function reviewedProvenanceHash(review: ReviewEntry): string | undefined {
   if (typeof review.reviewed_hash === "string" && review.reviewed_hash.length > 0) return review.reviewed_hash;
   if (review.receipt?.kind === "reviewed-byte" && typeof review.receipt.reviewed_hash === "string") return review.receipt.reviewed_hash;

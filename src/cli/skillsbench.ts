@@ -13,6 +13,7 @@ export interface SkillsBenchConfig {
 }
 
 interface SkillLock {
+  description?: string;
   id: string;
   path: string;
   hash: string;
@@ -128,6 +129,61 @@ function ensureCheckout(config: SkillsBenchConfig): string {
   return revision;
 }
 
+// Provider-specific wording in a skill's `description:` narrows the trigger
+// surface: Claude matches the description against the user's request, so a
+// description naming one vendor's product only fires when the user happens to
+// name that same product. The skill then silently never activates for the
+// equivalent request phrased generically -- a miss with no error, which is why
+// this is linted at install time rather than discovered in use.
+//
+// Only `description:` is linted. Skill BODIES legitimately name providers
+// (that is where concrete instructions live); the frontmatter is the routing
+// surface and must stay vendor-neutral.
+const PROVIDER_WORDING = [
+  /\bazure\b/i,
+  /\baws\b/i,
+  /\bamazon web services\b/i,
+  /\bgcp\b/i,
+  /\bgoogle cloud\b/i,
+  /\bopenai\b/i,
+  /\bchatgpt\b/i,
+  /\bgithub copilot\b/i,
+  /\bvs ?code\b/i,
+  /\bvisual studio\b/i,
+  /\bjetbrains\b/i,
+];
+
+export function providerWordingHits(description: string): string[] {
+  const hits: string[] = [];
+  for (const pattern of PROVIDER_WORDING) {
+    const match = description.match(pattern);
+    if (match) hits.push(match[0]);
+  }
+  return hits;
+}
+
+// Extracts the `description:` value from frontmatter. Handles the quoted,
+// unquoted, and folded/literal block forms YAML permits, because a description
+// that this function fails to extract is a description this lint cannot check
+// -- silently returning "" would make the lint vacuous for exactly the skills
+// whose frontmatter is least conventional.
+export function extractDescription(frontmatter: string): string | null {
+  const inline = frontmatter.match(/^description:[ \t]*(?!$)([|>][-+]?\s*$)?(.*)$/m);
+  if (!inline) return null;
+  if (inline[1]) {
+    // Block scalar: collect the indented continuation lines that follow.
+    const lines = frontmatter.split(/\r?\n/);
+    const start = lines.findIndex(line => /^description:[ \t]*[|>]/.test(line));
+    const collected: string[] = [];
+    for (const line of lines.slice(start + 1)) {
+      if (line.trim() !== "" && !/^\s/.test(line)) break;
+      collected.push(line.trim());
+    }
+    return collected.join(" ").trim();
+  }
+  return inline[2].trim().replace(/^["']|["']$/g, "");
+}
+
 function validateSkill(checkout: string, skill: { id: string; path: string }): SkillLock {
   const source = path.resolve(checkout, skill.path);
   if (!isInside(checkout, source) || !fs.statSync(source).isDirectory()) throw new Error(`Skill ${skill.id} path is missing or escapes the checkout.`);
@@ -137,7 +193,18 @@ function validateSkill(checkout: string, skill: { id: string; path: string }): S
   const frontmatter = body.match(/^---\s*\n([\s\S]*?)\n---/);
   const name = frontmatter?.[1].match(/^name:\s*["']?([^\s"']+)["']?\s*$/m)?.[1];
   if (name !== skill.id) throw new Error(`Skill ${skill.id} frontmatter name must exactly equal its configured id.`);
-  return { id: skill.id, path: skill.path, hash: hashDirectory(source) };
+  const description = frontmatter ? extractDescription(frontmatter[1]) : null;
+  if (description === null || description === "") {
+    throw new Error(`Skill ${skill.id} frontmatter is missing a description; Claude cannot route to a skill it cannot match.`);
+  }
+  const providerHits = providerWordingHits(description);
+  if (providerHits.length > 0) {
+    // Warn, do not throw: an upstream skill that legitimately targets one
+    // provider is still installable, but the operator must see that its
+    // trigger surface is narrowed before wondering why it never fires.
+    console.warn(`WARN skill ${skill.id}: description names provider-specific wording (${providerHits.join(", ")}); it will only match requests using those words.`);
+  }
+  return { id: skill.id, path: skill.path, hash: hashDirectory(source), description };
 }
 
 interface SymlinkReplacement { restore(): void; commit(): void; }
