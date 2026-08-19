@@ -294,6 +294,54 @@ When fixes require another review round on the same work:
 
 Carry verified invariants in the QA reduction and quote them in re-review prompts; the reviewer re-checks only invariants whose functions changed. Wolfpack does not auto-invalidate invariants by line range — a stale "verified" invariant is worse than a re-check.
 
+### Challenge Gate (pre-writeup finding filter)
+
+A companion review returns findings; some are wrong. The expensive failure is not
+the wrong finding itself but everything downstream of it — an edit made to satisfy
+it, a re-review of that edit, and a root-cause ledger entry that never described a
+real defect. Challenge findings **before** they drive work, not after.
+
+Run the gate on a finding when it matches one of the patterns below. These are
+where false positives concentrate; a finding matching none of them proceeds
+directly.
+
+| Trigger | Why it earns a challenge |
+|---|---|
+| Security-class finding (credential exposure, auth bypass, injection) | Severity calibration auto-escalates these, and the reviewer is incentivized to defend them |
+| A design-decision comment sits within ~10 lines of the cited location | A WHY note, an explaining TODO, or a linked decision record suggests a deliberate choice, not an oversight |
+| The "expected behavior" cites no spec, doc, or test | The requirement may be the reviewer's opinion rather than a violated contract |
+| Another code path handles the same concern differently | Real inconsistency and intentional divergence look identical from one side |
+| The finding is missing functionality rather than incorrect behavior | "Does not do X" is a feature gap unless X was actually promised |
+
+Each challenged finding gets **two rounds, each in a fresh sub-agent** that has no
+stake in the finding. Read the cited code fresh — never trust the snippet quoted in
+the report.
+
+1. **Round 1 — is this a real defect?** Give the sub-agent the finding and the
+   actual source at the cited lines, including surrounding comments. Ask for a
+   common-sense judgement first: would a maintainer seeing this for the first time
+   call it a defect, or say "that is how it works"? Rationalizing past an obvious
+   "not a defect" is the failure this round exists to catch.
+2. **Round 2 — argue the other side.** If round 1 confirmed, ask a fresh sub-agent
+   to make the strongest maintainer's case that it is *not* a defect. If round 1
+   dismissed, ask for the strongest case that it *is* — an intentional choice can
+   still be wrong. Then have it state whether its own argument changed its mind.
+
+Assign one verdict: **CONFIRMED** (proceeds to fix and ledger), **DOWNGRADED**
+(real but over-severed — adjust and proceed), or **REJECTED** (record the finding
+and the reasoning that killed it in the QA reduction, and do not fix it).
+
+**A challenge is not a review round.** Challenge sub-agents are fresh verification
+sub-agents, not companion review passes: they do not consume the three-round budget
+of the convergence cap above. Budget roughly two sub-agent calls per challenged
+finding — far cheaper than an edit-plus-re-review cycle spent on a finding that was
+never real. When many findings trigger at once, run round 1 across all of them
+first and reserve round 2 for the ambiguous ones.
+
+Record every REJECTED and DOWNGRADED verdict with its reasoning. A rejection you
+cannot later justify is indistinguishable from ignoring a reviewer, and the record
+is what makes the difference visible.
+
 ## Operational Verification
 
 Use `/ops:live-debug` as the default bounded workflow for collecting evidence from explicit process, log, file, and HTTP targets. Use `/ops:deploy-verify` as the default workflow for an explicit deployment target, including local/served byte evidence where applicable.

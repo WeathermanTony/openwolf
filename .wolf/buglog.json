@@ -7651,6 +7651,30 @@
       "last_seen": "2026-08-19T00:00:00.000Z",
       "commit": "985c90d",
       "reduction": ".wolf/qa/drift-check-command.md"
+    },
+    {
+      "id": "bug-702",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "error_message": "driftcheck reported a deleted file as clean: anatomy entry \"auth.ts\" under \"## src/api/\" resolved against an unrelated auth.ts at the project root",
+      "file": "src/cli/drift-cmd.ts",
+      "root_cause": "The root fallback added for bug-699 (entries carrying their own section prefix) was applied UNCONDITIONALLY. Any entry could therefore resolve against a same-named file anywhere the root candidate landed, so a genuinely deleted/moved file was rescued by a basename collision — the exact stale-entry class the command exists to detect. Generic basenames (index.ts, config.ts, README.md) make the collision ordinary rather than exotic. The existing regression test did not cover it: docs/nowhere.md was absent under BOTH candidate paths, so it proved only that the fallback cannot rescue a name absent everywhere — a strictly weaker claim that a single-base implementation would also satisfy.",
+      "fix": "Gate the root fallback on selfPrefixed: the entry must literally begin with its own section path. Verified by negative control — reverting the guard turns the new collision test red (exit=1) and restoring it returns 17/17. bug-699 confirmed still fixed on real mt5automation data (0 doubled-prefix false positives). Surfaced 26 previously-hidden stale entries on that project alone (360 -> 386), 8 of 8 spot-checked as genuinely absent.",
+      "status": "resolved",
+      "tags": [
+        "drift",
+        "anatomy",
+        "false-negative",
+        "path-resolution",
+        "challenge-gate"
+      ],
+      "related_bugs": [
+        "bug-695",
+        "bug-699"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T00:00:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/challenge-gate.md"
     }
   ]
 }

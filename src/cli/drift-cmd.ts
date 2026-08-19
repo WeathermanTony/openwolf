@@ -174,11 +174,23 @@ export function buildDriftReport(from?: string): DriftCheckReport {
       // An entry may be a bare name relative to its heading ("index.ts" under
       // "## src/cli/") OR already project-root-relative and carrying the same
       // prefix (".wolf/qa/x.md" under "## .wolf/qa/"). Joining unconditionally
-      // doubles the prefix and reports existing files as missing. Accept either
-      // resolution; only an entry that satisfies neither is drift.
+      // doubles the prefix and reports existing files as missing.
+      //
+      // The root fallback is deliberately NARROW: it applies only when the entry
+      // already begins with its own section path. An unconditional root fallback
+      // resolves a stale entry against any same-named file elsewhere in the tree
+      // ("src/api/auth.ts" deleted, unrelated "auth.ts" at root -> reported
+      // clean), which is precisely the stale-entry class this check exists to
+      // catch. Generic basenames (index.ts, config.ts, README.md) make that
+      // collision ordinary, not exotic.
+      const sectionPrefix = section.trim().replace(/^\.?\//, "").replace(/\/+$/, "");
+      const selfPrefixed =
+        sectionPrefix !== "" &&
+        (name === sectionPrefix || name.startsWith(`${sectionPrefix}/`));
       const resolves = (v: string): boolean => {
         const norm = path.normalize(v);
         if (fs.existsSync(path.resolve(base ?? root, norm))) return true;
+        if (!selfPrefixed) return false;
         return fs.existsSync(path.resolve(root, norm));
       };
       // Every brace variant must exist; report the entry once if any is absent.

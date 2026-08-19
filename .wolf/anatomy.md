@@ -230,7 +230,7 @@
 - `designqc-report.json` (~26 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~5375 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol; loaded into every session in all managed projects, so its size is a fleet-wide context cost (~7000 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 - `reviewlog.json` (~11 tok)
@@ -284,7 +284,7 @@
 - `config.json` (~2041 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
-- `OPENWOLF.md` — Wolfpack Operating Protocol (~5375 tok)
+- `OPENWOLF.md` — Wolfpack Operating Protocol; loaded into every session in all managed projects, so its size is a fleet-wide context cost (~7000 tok)
 - `PROTOCOL-UPGRADE-2026-06.md` — OpenWolf Protocol Upgrade — 2026-06 (~684 tok)
 - `reframe-frameworks.md` — OpenWolf Reframe — UI Framework Knowledge Base (~6554 tok)
 

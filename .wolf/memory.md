@@ -1445,3 +1445,5 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 |------|--------|---------|---------|--------|
 | 13:05 | P1 drift check: fixed root-relative base, denominator drop, prose headings, brace expansion | src/cli/drift-cmd.ts, tests/drift-cmd.test.js | 200/200 tests; 4/4 false positives cleared | ~28k |
 | 13:55 | Definitive fleet drift scan: 85/85 checked, 2096/14800 stale entries across 37 projects | .wolf/qa/drift-check-command.md | verified; top result spot-checked as real | ~6k |
+| 14:20 | P2: Challenge Gate section added to review lifecycle (pre-writeup finding filter, 2 fresh-subagent rounds, not a review round) | src/templates/OPENWOLF.md, .wolf/OPENWOLF.md | staged locally; exercised on a real finding | ~12k |
+| 14:50 | Challenge gate first run reversed round 1: found+fixed real false negative (bug-702) in drift check | src/cli/drift-cmd.ts, tests/drift-cmd.test.js | 207/207; negative control verified | ~14k |

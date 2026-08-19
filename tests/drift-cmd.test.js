@@ -181,3 +181,28 @@ test('a truncated source walk is reported as vacuous, not silently partial', () 
     `truncation must be reported, got ${JSON.stringify(r.vacuous)}`,
   );
 });
+
+test('a stale entry is not rescued by an unrelated same-named file at the root (bug-702)', () => {
+  // The root fallback exists for entries carrying their own section prefix. An
+  // UNCONDITIONAL fallback resolves a deleted file against any same-named file
+  // elsewhere, which silently hides exactly the stale-entry class this command
+  // exists to catch. Generic basenames make the collision ordinary.
+  const r = buildDriftReport(
+    fixture('# Anatomy\n\n## src/api/\n\n- `auth.ts` — API auth middleware (~1 tok)\n', {
+      'src/api/other.ts': 'x\n', // auth.ts is gone from src/api/
+      'auth.ts': 'unrelated root-level file\n', // same basename, different file
+    }),
+  );
+  const missing = r.findings.filter((f) => f.kind === 'anatomy-missing');
+  assert.equal(missing.length, 1, 'src/api/auth.ts is genuinely absent and must be reported');
+  assert.match(missing[0].detail, /src[/\\]api[/\\]auth\.ts/);
+});
+
+test('the narrowed fallback still accepts a self-prefixed entry (bug-699 stays fixed)', () => {
+  // "## .wolf/qa/" + ".wolf/qa/x.md" must still resolve — narrowing the fallback
+  // must not reintroduce the doubled-prefix false positive it was added to fix.
+  const r = buildDriftReport(
+    fixture('# Anatomy\n\n## docs/\n\n- `docs/real.md` — self-prefixed entry (~1 tok)\n', { 'docs/real.md': 'x\n' }),
+  );
+  assert.deepEqual(r.findings, [], 'a self-prefixed entry whose file exists must not report drift');
+});
