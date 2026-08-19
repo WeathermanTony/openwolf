@@ -7465,6 +7465,27 @@
       "last_seen": "2026-08-19T02:08:05.428Z",
       "commit": "9d846f3059d42aba993ab8768e96cee09a3351e3",
       "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
+    },
+    {
+      "id": "bug-694",
+      "timestamp": "2026-08-19T02:25:40.213Z",
+      "error_message": "learning.explicit nudge misfired twice (learning-c2405746, learning-f7b7ade9) on turns that relay a third-party review or announce a handoff document, classifying them as user corrections for ## Do-Not-Repeat.",
+      "file": "src/hooks/nudges/rules/learning.ts",
+      "root_cause": "The correction pattern matches bare never/always/don't anywhere in the turn. Role filtering was NOT the problem (readRecentUserTurns already restricts to entry.type===user); the problem is that a user turn quoting an assistant ship report or reviewer verdict is user bytes carrying directive tokens. The existing quotation guard was ^-anchored on here's/quoted/example only, so attribution prefixes and document-report openers were uncovered. Review-pipeline prose is maximally dense in these tokens.",
+      "fix": "Added a ^-anchored RELAY guard covering attribution prefixes and document-report openers. Both misfire texts now classify null; all true positives preserved, including a genuine correction that mentions a handoff document. Regression test added; 190/190 pass. Deployed hook copies synced fleet-wide and verified behaviourally.",
+      "status": "resolved",
+      "tags": [
+        "nudge",
+        "classifier",
+        "false-positive",
+        "learning",
+        "relay"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-08-19T02:25:40.213Z",
+      "commit": null,
+      "reduction": ".wolf/qa/learning-relay-guard.md"
     }
   ]
 }

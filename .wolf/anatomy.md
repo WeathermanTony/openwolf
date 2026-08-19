@@ -61,6 +61,7 @@
 - `auto-bug-detector-precision.md` — Real-hook precision, schema, and concurrent canonical-writer reduction (~700 tok)
 - `conclusion-owner-path-diagnostics.md` — Nested-owner and truncation-safe QA-path diagnostic reduction (~600 tok)
 - `fleet-section-coverage-verifier.md` — Registry-based fleet coverage verifier reduction; globstar/exit-2 vacuity controls (~800 tok)
+- `learning-relay-guard.md` — Relay/report guard for learning.explicit false positives; before/after classifier matrix (~700 tok)
 - `hermes-agent-evaluation-2026-08-08.md` — Source-level Hermes Agent mechanism evaluation and no-integration disposition (~1260 tok)
 - `hook-ledger-recurrence.md` — Real hook-runtime safe-suffix and atomic-persistence reduction (~430 tok)
 - `learning-rule-boilerplate-filter.md` — Falsification evidence for harness-envelope filtering in explicit learning capture (~900 tok)

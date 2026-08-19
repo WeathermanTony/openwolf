@@ -193,3 +193,33 @@ test('secret-like and prompt-control content never becomes a candidate or govern
   } finally { process.chdir(cwd); }
   assert.equal(stateMod.readState(F.wolf).dispositions[candidates[0].fingerprint], undefined);
 });
+
+test('relayed third-party guidance and document reports are not user corrections (bug-694)', () => {
+  // Both texts are verbatim-shaped reproductions of nudges that misfired in
+  // production: a handoff-brief announcement and a relay of another session's
+  // ship report. Each is dense with directive language the user is only
+  // QUOTING, not issuing.
+  const relayed = [
+    'Handoff brief #2 written to .wolf/handoff-confirmation-and-blast-radius.md, indexed and logged. Proposal B — Blast-Radius Checklist: never close the escape hatch with the block, and stage project to user-scope/fleet.',
+    'from the other AI: Verified independently — all three sections are live. Staged Rollout has canary-first. Never close an escape hatch in the same change as a new block.',
+    'their session says the checklist is sound but you should never denyRead a directory that mixes config and credentials.',
+    'the reviewer noted that we should always iterate the registry instead of globbing.',
+  ];
+  for (const text of relayed) {
+    assert.equal(learning.classifyExplicitLearning(text), null, `should not classify relay/report: ${text.slice(0, 48)}`);
+  }
+
+  // Negative control: the guard must not swallow genuine corrections, including
+  // ones that mention a document later in the sentence.
+  const genuine = [
+    ["No, don't use the glob — always iterate the registry instead.", 'correction'],
+    ['Never commit to main without asking me first.', 'correction'],
+    ['I prefer terse nudges rather than verbose ones.', 'preference'],
+    ['Always bind the section hash before you write the handoff brief.', 'correction'],
+  ];
+  for (const [text, kind] of genuine) {
+    const r = learning.classifyExplicitLearning(text);
+    assert.ok(r, `should still classify: ${text.slice(0, 48)}`);
+    assert.equal(r.kind, kind);
+  }
+});
