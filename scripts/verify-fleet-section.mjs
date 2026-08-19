@@ -43,6 +43,29 @@ if (roots.length === 0) {
   process.exit(2);
 }
 
+// --only <root> restricts verification to a single registered project. This
+// exists for the CANARY phase of a staged rollout, where exactly one project is
+// deliberately ahead of the fleet and a fleet-wide FAIL is the expected state,
+// not a signal. The filter is applied against the REGISTRY, so an --only target
+// that is not registered is a hard error rather than a silent zero-project pass
+// -- otherwise a typo'd path would report "checked=0 ... PASS".
+const onlyIdx = process.argv.indexOf("--only");
+let scope = roots;
+if (onlyIdx !== -1) {
+  const target = process.argv[onlyIdx + 1];
+  if (!target) {
+    console.error("FAIL: --only requires a project root");
+    process.exit(2);
+  }
+  const resolved = path.resolve(target);
+  scope = roots.filter((r) => path.resolve(r) === resolved);
+  if (scope.length === 0) {
+    console.error(`FAIL: --only ${resolved} is not a registered project — refusing to report coverage over 0 projects`);
+    process.exit(2);
+  }
+  console.log(`scope: --only ${resolved} (1 of ${roots.length} registered)`);
+}
+
 // Content binding (bug-692): a heading-presence check passes when the heading
 // survives but the BODY is stale or reverted. Extract the canonical section
 // from the template and compare a normalized hash per project.
@@ -88,7 +111,7 @@ const missing = [];
 const unreadable = [];
 const drifted = [];
 
-for (const root of roots) {
+for (const root of scope) {
   const f = path.join(root, ".wolf", "OPENWOLF.md");
   if (!existsSync(f)) { unreadable.push(`${f} (absent)`); continue; }
   let body;
@@ -102,12 +125,12 @@ for (const root of roots) {
   }
 }
 
-console.log(`registry=${roots.length} checked=${checked} missing=${missing.length} drifted=${drifted.length} unreadable=${unreadable.length}`);
+console.log(`registry=${roots.length} scope=${scope.length} checked=${checked} missing=${missing.length} drifted=${drifted.length} unreadable=${unreadable.length}`);
 for (const m of missing) console.log(`  MISSING: ${m}`);
 for (const d of drifted) console.log(`  DRIFTED (heading present, body differs): ${d}`);
 for (const u of unreadable) console.log(`  UNREADABLE: ${u}`);
 
 // Fail closed: zero-examined is a failure, never a silent pass.
-const ok = checked === roots.length && missing.length === 0 && drifted.length === 0;
+const ok = checked === scope.length && missing.length === 0 && drifted.length === 0;
 console.log(ok ? "RESULT: PASS" : "RESULT: FAIL");
 process.exit(ok ? 0 : 1);

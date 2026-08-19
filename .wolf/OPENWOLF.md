@@ -364,6 +364,14 @@ Blast radius scales with enforcement strength, so scope inversely. A restrictive
 
 A change to the harness itself is a fleet change: it lands in one project and survives one real session before it propagates. Never close an escape hatch in the same change as a new block — one at a time, so a bad block stays recoverable. Full checklist: `docs/blast-radius.md` in the harness repo.
 
+Scope the deployment explicitly; the default is not the safe one. `openwolf update`
+targets **every registered project**, and running it from inside a project directory does
+not narrow it — the working directory has no bearing on targeting. Canary with
+`openwolf update --project <name>`, then verify that one project with
+`scripts/verify-fleet-section.mjs '<heading>' --only <root>` before widening to a bare
+`openwolf update`. A rule that mandates staged rollout without naming the flag that
+achieves it is followed literally and still deploys fleet-wide.
+
 Verify propagation by **content**, not by heading: bind the canonical section hash from the template and assert every registered project matches it. A heading-presence check passes on a stale or reverted body.
 
 ## Session End

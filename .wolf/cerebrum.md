@@ -64,6 +64,17 @@
 - Two distinct version constants live in the nudge system and must not be conflated: `NUDGE_STATE_VERSION` (state.ts, currently 2) is the on-disk state-file format; `SCHEMA_VERSION` (each rule, currently 3) participates in the fingerprint hash. Bump the rule `SCHEMA_VERSION` whenever the fingerprint algorithm changes, or stale dispositions keep suppressing nudges that should now fire — verified by hashing identical evidence at v2 vs v3 and confirming the digests differ.
 - `.wolf/buglog.json` has real, pre-existing integrity drift: as of 2026-07-26 it holds 188 entries but only 169 unique IDs (16 duplicated IDs, incl. bug-264/265/266 three times each) and 24 entries with no `status` at all, spanning bug-217..bug-470. Any programmatic read MUST assume duplicates — `find(x => x.id === id)` can return the wrong record. See the Do-Not-Repeat entries dated 2026-07-23 and 2026-07-26 for the write-side rules.
 
+- **2026-08-19 — `openwolf update` targeting.** Fleet-wide by default (`update.ts:2`,
+  `let selected = allProjects`); `--project <substr>` matches against both name and root.
+  Source repo (customopenwolf) self-skips. On the `/mnt/j` WSL2 mount a full fleet update
+  takes minutes and sits in uninterruptible disk sleep (state `D`) — that is real I/O, not
+  a hang; verify with `/proc/<pid>/status` before killing it.
+- **2026-08-19 — Skill `description:` is the routing surface.** Claude matches it against the
+  user's request, so provider-specific wording there silently prevents the skill from ever
+  firing for equivalent generic phrasing. Skill *bodies* may name providers freely. Linted
+  at install in `validateSkill` (bug-705).
+
+
 ## Do-Not-Repeat
 
 - [2026-08-19] A regression test can pin the easy half of a defect class and read as full coverage. `'the dual-resolution fallback still fails on a genuinely absent file'` used `docs/nowhere.md`, which was absent under BOTH candidate paths — so it proved only that a name absent everywhere is caught, a claim a single-base implementation also satisfies. The actual failure mode (one candidate is the real target and absent, the OTHER exists by basename collision) was never constructed, and a real false negative hid behind a green test. When a fix adds an alternative path, the test must make the alternatives DISAGREE, not merely both fail. Evidence: bug-702, `.wolf/qa/challenge-gate.md`.
@@ -146,6 +157,21 @@
 
 - [2026-08-08] For fleet releases, deploy to and verify a canary first, then update all registered projects without profile overrides, and follow deployment with a read-only health audit for malformed files, excessive corpus sizes, duplicate IDs, and other normally unseen state problems.
 - [2026-08-08] Ledger repair must validate under the same file lock immediately before mutation, preserve first occurrence and array order, verify non-ID record digests after the atomic write, and inventory collided-ID references without rewriting ambiguous history. Reduction: `.wolf/qa/ledger-integrity-core.md`.
+
+- **2026-08-19 — A process rule must name the command that satisfies it.** The Staged Rollout
+  section mandated canary-first deployment but named no flag; `openwolf update` is
+  fleet-wide by default and cwd does NOT scope it (`src/cli/update.ts:102`). Following the
+  rule literally still wrote 84 projects. Canary with `openwolf update --project <name>`.
+  When writing a governance rule, name the exact invocation — an unexecutable rule produces
+  false confidence that staging happened. See bug-706, `.wolf/qa/canary-rollout-scope.md`.
+- **2026-08-19 — Do not measure a fleet while a fleet write is in flight.** An interim
+  `verify-fleet-section` run reported 5 MISSING; those files were mid-write and converged
+  to the template moments later. Re-measure after the writer exits, and check process state
+  before treating a partial reading as a finding.
+- **2026-08-19 — A canary's success is invisible in a fleet-wide check.** Mid-canary the correct
+  signature is 1 PASS and N DRIFTED. Without a single-project scope (`--only`), the
+  canary's own correctness cannot be asserted and the expected FAIL reads as breakage.
+
 
 ## Decision Log
 

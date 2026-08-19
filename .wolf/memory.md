@@ -1452,3 +1452,8 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 16:20 | P0 skill description lint: validateSkill rejects missing descriptions, warns on provider wording | src/cli/skillsbench.ts, tests/skill-description-lint.test.js | 10/10 pass; negative control 5 fail when extraction disconnected | ~9k |
+| 16:35 | Canary upgrade on skillsbench — found bare `openwolf update` is fleet-wide, wrote 84 projects | src/cli/update.ts (read) | bug-706 logged; rule now names --project | ~7k |
+| 16:45 | Added --only <root> to verify-fleet-section for canary-scoped verification | scripts/verify-fleet-section.mjs | 3 negative controls all exit=2 (fail closed) | ~5k |
+| 16:55 | Correct canary redeploy via --project skillsbench | .wolf/OPENWOLF.md, src/templates/OPENWOLF.md | canary PASS, fleet 83 DRIFTED (correct mid-canary signature) | ~4k |
+| 17:00 | driftcheck exercised in canary + negative control | .wolf/qa/canary-rollout-scope.md | 47/47 clean; injected entry detected 48/48 findings=1 | ~4k |

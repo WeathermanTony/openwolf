@@ -7738,6 +7738,28 @@
       "last_seen": "2026-08-19T20:17:10.997Z",
       "commit": null,
       "reduction": ".wolf/qa/skill-description-lint.md"
+    },
+    {
+      "id": "bug-706",
+      "timestamp": "2026-08-19T20:22:33.065Z",
+      "error_message": "Bare `openwolf update` deployed template changes to all 84 registered projects when a single-project canary was intended",
+      "file": "src/cli/update.ts",
+      "root_cause": "`openwolf update` is fleet-wide by DEFAULT (src/cli/update.ts:2, `let selected = allProjects` at line 102). Scope narrows only when --project is passed; there is no bare-vs---all distinction. Running it from inside a project directory does NOT scope it to that project -- cwd is irrelevant to targeting. The Staged Rollout section mandates canary-first deployment but names no command that actually achieves it, so following the rule literally still produces a fleet write.",
+      "fix": "Use `openwolf update --project <name>` for canary deployment. Documented the scoping flag in the Staged Rollout section of the protocol template so the rule names the mechanism that satisfies it. verify-fleet-section.mjs gained --only <root> to verify a single canary project without fleet staleness masking the result; --only fails closed when the target is unregistered rather than reporting PASS over zero projects.",
+      "status": "resolved",
+      "tags": [
+        "staged-rollout",
+        "blast-radius",
+        "fleet",
+        "update",
+        "cli-defaults",
+        "canary"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T20:22:33.065Z",
+      "commit": null,
+      "reduction": ".wolf/qa/canary-rollout-scope.md"
     }
   ]
 }
