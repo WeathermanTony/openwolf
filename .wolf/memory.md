@@ -1461,3 +1461,37 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 17:55 | Content-bound verification of all 3 sections fleet-wide | scripts/verify-fleet-section.mjs | 85/85 PASS each, drifted=0, unreadable=0 | ~3k |
 | 18:00 | Negative control: corrupted one body, heading left intact | .wolf/qa/fleet-rollout-2026-08-19.md | exit=1, named mr.he2; heading check would have passed | ~3k |
 | 18:05 | driftcheck exercised in non-canary project mr.he | — | 65/65 checked, 19 real stale entries found | ~2k |
+| 18:20 | Backfilled commit SHAs for bug-703..706 (c7f668d, 0edcf8a) | .wolf/buglog.json | all 4 now link problem→fix→proof | ~3k |
+| 18:30 | Found 2 bugs citing reduction files that did not exist; bug-703 had no proof at all | .wolf/qa/experiment-metric-parse.md | wrote missing reduction with real run: acc= errors, acc=0.91 stores 0.91 | ~6k |
+| 18:40 | Swept all 130 reduction paths in buglog for dangling links | .wolf/buglog.json | 0 genuinely dangling (first sweep mis-flagged 8 compound strings) | ~2k |
+
+## Session summary — 2026-08-19
+
+Completed the remaining P-items from the handoff brief, canaried on skillsbench, then
+rolled out fleet-wide on user authorization and pushed.
+
+**Shipped:** P0 (skill `description:` provider-wording lint — bug-705), P3 (QA template
+evidence fields), P4 (experiment journal as a projection; empty-metric rejection —
+bug-703), P5 (receipt-hash interop proposal + UQ-1 behavioural seam), P6 (cerebrum
+conventions). P1/P2 landed earlier in the session.
+
+**Canary found a defect in my own rule (bug-706):** the Staged Rollout section mandated
+canary-first deployment but named no command achieving it. `openwolf update` is fleet-wide
+by default and cwd does NOT scope it — running it from inside skillsbench wrote 84
+projects. Section now names `openwolf update --project <name>`; verify-fleet-section
+gained `--only <root>` (fails closed on unregistered targets).
+
+**Fleet rollout:** 84 updated, 1 skipped (source repo), 0 errors. All three protocol
+sections 85/85 content-hash bound, drifted=0; OPENWOLF.md and qa/_template.md 85/85
+byte-identical. Negative control: corrupting one body while leaving its heading intact
+drove the check to exit=1 and named the project — a heading check would have passed it.
+
+**Pushed:** 7 commits (153631a..6d46bca) to origin/feature/autonomy-continuation, verified
+against a fresh fetch. master untouched, no PR opened.
+
+**Ledger hygiene:** backfilled commit SHAs for bug-703..706; found and fixed 2 dangling
+reduction links (one bug had no proof file at all — written now); swept all 130 reduction
+paths, 0 dangling.
+
+**Open:** UQ-1 (companion receipt-hash interop, externally blocked). 9 pre-existing open
+bugs unrelated to this session's work.

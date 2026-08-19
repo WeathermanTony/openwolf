@@ -7693,8 +7693,8 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-19T20:17:10.997Z",
-      "commit": null,
-      "reduction": ".wolf/qa/experiment-journal.md"
+      "commit": "c7f668d",
+      "reduction": ".wolf/qa/experiment-metric-parse.md"
     },
     {
       "id": "bug-704",
@@ -7715,8 +7715,8 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-08-19T20:17:10.997Z",
-      "commit": null,
-      "reduction": ".wolf/qa/driftcheck.md"
+      "commit": "c7f668d",
+      "reduction": ".wolf/qa/drift-check-command.md"
     },
     {
       "id": "bug-705",
@@ -7736,7 +7736,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-19T20:17:10.997Z",
-      "commit": null,
+      "commit": "c7f668d",
       "reduction": ".wolf/qa/skill-description-lint.md"
     },
     {
@@ -7758,7 +7758,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-19T20:22:33.065Z",
-      "commit": null,
+      "commit": "0edcf8a",
       "reduction": ".wolf/qa/canary-rollout-scope.md"
     }
   ]

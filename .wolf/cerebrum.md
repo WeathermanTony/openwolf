@@ -178,6 +178,16 @@
   binary form (`pgrep -f '^node .*X'`) or check the count of real processes. This is the
   same self-match that killed a shell earlier via `pkill -f`.
 
+- **2026-08-19 — Do not write a `reduction:` path from memory.** Two buglog entries cited
+  QA files that did not exist (`driftcheck.md`, `experiment-journal.md`); the real ones were
+  `drift-check-command.md` and, for bug-703, nothing at all — the proof had never been
+  written. A dangling reduction link is a fix with no evidence, which is exactly what the
+  field exists to prevent. Verify with `fs.existsSync` when writing the entry.
+- **2026-08-19 — Extract paths before checking existence.** A first sweep flagged 8
+  "dangling" links that were compound strings (path + prose, or two paths). Checking
+  `startsWith('.wolf/') && existsSync(whole_string)` both mis-flags those and under-counts
+  the denominator (127 vs the real 130). Regex out the `.md` paths, then check each.
+
 
 ## Decision Log
 
