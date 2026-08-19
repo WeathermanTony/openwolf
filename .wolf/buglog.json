@@ -7673,7 +7673,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-08-19T00:00:00.000Z",
-      "commit": null,
+      "commit": "e9dd132",
       "reduction": ".wolf/qa/challenge-gate.md"
     }
   ]
