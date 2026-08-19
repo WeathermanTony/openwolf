@@ -7780,7 +7780,7 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-19T22:50:23.603Z",
-      "commit": null,
+      "commit": "09affd4",
       "reduction": ".wolf/qa/post-write-dedup-path.md"
     }
   ]
