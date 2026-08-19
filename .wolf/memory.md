@@ -1457,3 +1457,7 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 16:45 | Added --only <root> to verify-fleet-section for canary-scoped verification | scripts/verify-fleet-section.mjs | 3 negative controls all exit=2 (fail closed) | ~5k |
 | 16:55 | Correct canary redeploy via --project skillsbench | .wolf/OPENWOLF.md, src/templates/OPENWOLF.md | canary PASS, fleet 83 DRIFTED (correct mid-canary signature) | ~4k |
 | 17:00 | driftcheck exercised in canary + negative control | .wolf/qa/canary-rollout-scope.md | 47/47 clean; injected entry detected 48/48 findings=1 | ~4k |
+| 17:30 | Fleet rollout authorized by user; `openwolf update` → 84 updated, 1 skipped (source repo), 0 errors | all registered projects | 85/85 byte-identical on OPENWOLF.md and qa/_template.md | ~12k |
+| 17:55 | Content-bound verification of all 3 sections fleet-wide | scripts/verify-fleet-section.mjs | 85/85 PASS each, drifted=0, unreadable=0 | ~3k |
+| 18:00 | Negative control: corrupted one body, heading left intact | .wolf/qa/fleet-rollout-2026-08-19.md | exit=1, named mr.he2; heading check would have passed | ~3k |
+| 18:05 | driftcheck exercised in non-canary project mr.he | — | 65/65 checked, 19 real stale entries found | ~2k |

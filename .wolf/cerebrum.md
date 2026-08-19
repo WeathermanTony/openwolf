@@ -172,6 +172,12 @@
   signature is 1 PASS and N DRIFTED. Without a single-project scope (`--only`), the
   canary's own correctness cannot be asserted and the expected FAIL reads as breakage.
 
+- **2026-08-19 — `pgrep -f <pattern>` matches your own waiter shells.** A background
+  `until ! pgrep -f "X"; do sleep; done` contains "X" in its own command string, so it
+  waits on itself forever and reports the target as running after it exited. Match on the
+  binary form (`pgrep -f '^node .*X'`) or check the count of real processes. This is the
+  same self-match that killed a shell earlier via `pkill -f`.
+
 
 ## Decision Log
 
