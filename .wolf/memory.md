@@ -1409,3 +1409,26 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 13:15 | Session end: 49 writes across 16 files (post-write.ts, bug-tracker.ts, conclusion.ts, review-completion.test.js, ledger-writer-safety.test.js) | 11 reads | ~139714 tok |
 | 13:16 | extended conclusion reduction to runtime/template mirrors | .wolf/qa/conclusion-owner-path-diagnostics.md | nudge conclusion-af09d1e4 resolved; 39/39 tests pass | ~3000 |
 | 13:17 | Session end: 51 writes across 16 files (post-write.ts, bug-tracker.ts, conclusion.ts, review-completion.test.js, ledger-writer-safety.test.js) | 11 reads | ~139830 tok |
+| 13:17 | Session end: 51 writes across 16 files (post-write.ts, bug-tracker.ts, conclusion.ts, review-completion.test.js, ledger-writer-safety.test.js) | 11 reads | ~139830 tok |
+| 22:04 | Installed code-review-graph 2.3.7 (--platform claude-code): .mcp.json, 4 skills, hooks merged (settings.json.bak kept), CLAUDE.md marker-append, git pre-commit append; graph built 2546 nodes/25482 edges | .mcp.json, .claude/skills/, .claude/settings.json, CLAUDE.md, .git/hooks/pre-commit | MCP tools live after Claude Code restart | ~45000 |
+| 22:12 | Removed code-review-graph per user cleanup request: uninstaller ran symmetric (7 paths, 4 edits), git checkout restored byte-exact settings.json/CLAUDE.md, .bak + empty .mcp.json removed, uv tool uninstalled | .mcp.json, .claude/skills/*, .claude/settings.json, CLAUDE.md, .git/hooks/pre-commit | repo back to pre-test state; test results preserved in CLIProxyAPI cerebrum | ~2000 |
+
+## Session: 2026-08-17 11:29
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-08-19 21:19
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:30 | Reviewed parked-questions proposal (fresh Claude companion + own verification) | .wolf/handoff-parked-questions.md (skillsbench) | adopt-with-changes: vacuous pin test, no open-state enumerator, broken rollout check, non-portable // marker | ~9k |
+| 21:33 | Added `## Parked Questions` (15 lines) with STATUS field, behavioural pin test, portable marker, BLOCKER required field | src/templates/OPENWOLF.md, .wolf/OPENWOLF.md | inserted before Claim Calibration; template==live byte-identical | ~3k |
+| 21:34 | Wrote registry-based fleet coverage verifier replacing vacuous `grep -L` glob | scripts/verify-fleet-section.mjs | FAIL(missing=84) pre-update → PASS(missing=0) post-update; 3 negative controls fail closed | ~4k |
+| 21:35 | Propagated to fleet via `openwolf update` | 84 registered projects | all 85 carry section; user data (cerebrum/buglog/memory) untouched, backups taken | ~2k |
+| 21:48 | Corrected own vacuous-zero error: registry root check extracted 0 paths (entries use `root`, not `path`/`dir`); 2 of 85 ARE outside main root | scripts/verify-fleet-section.mjs, .wolf/cerebrum.md | bug-691 logged; fail-closed guard added (extracted != entries -> exit 2) | ~5k |
+| 21:52 | Reviewed handoff #2 (Proposals A + B) via fresh Claude companion | .wolf/handoff-confirmation-and-blast-radius.md (skillsbench) | A: adopt-with-changes (permissive-only, closed set, settings precedence); B: relocate to contributor docs + 2-line pointer | ~11k |
+| 21:56 | Falsified reviewer Finding 8 both ways on a real fleet project | scripts/verify-fleet-section.mjs | heading-removal DID fail (reviewer wrong); body-revert PASSED vacuously (reviewer right) -> added canonical section-hash binding, bug-692 | ~6k |
+| 22:00 | Staged canary rule in customopenwolf only (template untouched), exercised it | .wolf/OPENWOLF.md | canary caught bug-693 before fleet push — cwd-relative template made verifier PASS on heading-only from any other cwd | ~6k |
+| 22:04 | Hardened verifier: script-relative template + fail-closed on unbindable section (--allow-unbound override) | scripts/verify-fleet-section.mjs | /tmp run now content-binds; absent section exits 2 | ~4k |
+| 22:06 | Promoted canary; added Proposal A (11 lines) and Proposal B pointer; full checklist to contributor docs | src/templates/OPENWOLF.md, .wolf/OPENWOLF.md, docs/blast-radius.md | all three sections content-bound PASS across 85 projects | ~7k |

@@ -7394,6 +7394,77 @@
       "commit": null,
       "reduction": null,
       "status": "open"
+    },
+    {
+      "id": "bug-691",
+      "timestamp": "2026-08-19T01:44:18.238Z",
+      "error_message": "Registry root-distribution check reported \"outside /mnt/j/projectshome: 0\" when the true answer is 2; extraction had silently yielded 0 paths.",
+      "file": "scripts/verify-fleet-section.mjs",
+      "root_cause": "Ad-hoc verification one-liner extracted registry paths with `x.path || x.dir`, but registry entries use the `root` key. Zero paths extracted meant zero survived the filter, and an empty filter result was read as a substantive negative finding. Same vacuous-zero class as bug-066 (grep -L on a non-matching glob), reproduced in the check written to replace it.",
+      "fix": "Reordered extraction to prefer `root`, and added a fail-closed guard: if extracted path count != registry entry count, exit 2 refusing to report coverage. Falsified with a schema-drift registry ({location:...} entries) which now exits 2 instead of passing.",
+      "status": "resolved",
+      "tags": [
+        "verification",
+        "vacuous-zero",
+        "registry",
+        "fleet",
+        "schema-drift"
+      ],
+      "related_bugs": [
+        "bug-066"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T01:44:18.238Z",
+      "commit": null,
+      "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
+    },
+    {
+      "id": "bug-692",
+      "timestamp": "2026-08-19T01:47:48.887Z",
+      "error_message": "Fleet coverage verifier passed on a project whose section heading was intact but whose BODY had been reverted to a superseded rule.",
+      "file": "scripts/verify-fleet-section.mjs",
+      "root_cause": "Coverage was asserted with body.includes(<heading>). Heading presence is a propagation signal, not a content signal, so stale/partial/reverted section bodies verified as covered. Raised by an external reviewer (Finding 8); the reviewer predicted heading REMOVAL would also pass, which was false (measured: MISSING named the project), but the content case was real.",
+      "fix": "Extract the canonical section from src/templates/OPENWOLF.md, normalize (CRLF, trailing WS) and sha256 it, compare per project, report drifted=<n> naming each, and fail unless drifted==0. Falsified by corrupting one real fleet project body: heading-only check PASS -> content-bound check FAIL naming the project; restored byte-identical after.",
+      "status": "resolved",
+      "tags": [
+        "verification",
+        "fleet",
+        "content-drift",
+        "vacuous-pass"
+      ],
+      "related_bugs": [
+        "bug-066",
+        "bug-691"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T01:47:48.887Z",
+      "commit": null,
+      "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
+    },
+    {
+      "id": "bug-693",
+      "timestamp": "2026-08-19T02:08:05.428Z",
+      "error_message": "verify-fleet-section.mjs printed RESULT: PASS while performing only heading-presence checks when run from any cwd other than the repo root.",
+      "file": "scripts/verify-fleet-section.mjs",
+      "root_cause": "Canonical template resolved with path.join(process.cwd(),\"src/templates/OPENWOLF.md\"). From another cwd the template was not found, canonical stayed null, and the script degraded to the heading-only check bug-692 had just eliminated — then reported PASS. Found by exercising the staged canary rule before fleet propagation.",
+      "fix": "Resolve template relative to the script via fileURLToPath(import.meta.url), and fail closed (exit 2) when no canonical section can be bound, with an explicit --allow-unbound override. Falsified: run from /tmp now content-binds and PASSes; a section absent from the template exits 2 instead of reporting coverage.",
+      "status": "resolved",
+      "tags": [
+        "verification",
+        "fleet",
+        "cwd-dependence",
+        "silent-degrade",
+        "vacuous-pass"
+      ],
+      "related_bugs": [
+        "bug-066",
+        "bug-691",
+        "bug-692"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T02:08:05.428Z",
+      "commit": null,
+      "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
     }
   ]
 }

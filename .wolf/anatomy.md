@@ -60,11 +60,16 @@
 
 - `auto-bug-detector-precision.md` — Real-hook precision, schema, and concurrent canonical-writer reduction (~700 tok)
 - `conclusion-owner-path-diagnostics.md` — Nested-owner and truncation-safe QA-path diagnostic reduction (~600 tok)
+- `fleet-section-coverage-verifier.md` — Registry-based fleet coverage verifier reduction; globstar/exit-2 vacuity controls (~800 tok)
 - `hermes-agent-evaluation-2026-08-08.md` — Source-level Hermes Agent mechanism evaluation and no-integration disposition (~1260 tok)
 - `hook-ledger-recurrence.md` — Real hook-runtime safe-suffix and atomic-persistence reduction (~430 tok)
 - `learning-rule-boilerplate-filter.md` — Falsification evidence for harness-envelope filtering in explicit learning capture (~900 tok)
 - `mem0-canary-2026-08-08.md` — Protected offline fixture-conformance evidence, initial secret-filter falsification, fix, and survivor-for-design disposition (~1700 tok)
 - `mem0-evaluation-2026-08-08.md` — Source-level Mem0 evaluation and bounded ADD-only candidate-extraction canary recommendation (~1400 tok)
+
+## docs/
+
+- `blast-radius.md` — Defense-layer blast-radius checklist + fleet verification traps (bug-066/691/692/693) (~900 tok)
 
 ## bin/
 
@@ -73,6 +78,7 @@
 ## scripts/
 
 - `skill-usage.py` — /*.jsonl for `Skill` tool_use records and prints (~1574 tok)
+- `verify-fleet-section.mjs` — Asserts a template section reached every registered project; fails closed on zero-examined (~450 tok)
 - `verify-install.js` — root: rel, fileExists, parseJson + 10 more (~5507 tok)
 
 ## src/buglog/

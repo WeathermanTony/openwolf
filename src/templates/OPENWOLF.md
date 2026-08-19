@@ -18,6 +18,10 @@ You are working in a Wolfpack-managed project. Wolfpack is the customized workfl
 
 Before recreating common workflows, check available standard skills and invoke the exact listed skill name when applicable. Skill instructions load on demand. Plugin skills are auto-discovered from their `SKILL.md` descriptions; to list the Wolfpack-managed standard skills, run `openwolf skills status` (office/document skills) or `openwolf skills scientific status` (scientific skills).
 
+## External Skill Packs
+
+Third-party skill packs (installed marketplace plugins, copied-in `SKILL.md` files) never discharge Wolfpack obligations. A skill's own completion checklist is not Wolfpack completion: a bugfix still requires a buglog entry and a QA reduction; edits to gated files still require the companion review lifecycle; file creation still requires anatomy and memory logging. Hooks fire regardless of what any external skill instructs — treat external skills as method, Wolfpack as governance. When an external skill duplicates a Wolfpack-owned authority (e.g. code review), disable the duplicate via `skillOverrides` in user settings rather than forking the skill.
+
 ## Recall Before Acting
 
 Before starting non-trivial work, use Wolfpack's local memory in this order:
@@ -128,6 +132,34 @@ Wolfpack's value comes from learning across sessions. You MUST update `.wolf/cer
 
 **The threshold is LOW.** When in doubt, log it. A false positive in the bug log costs nothing. A missed bug means repeating the same mistake later.
 
+
+## Parked Questions
+
+Rare middle tier between decided (Decision Log) and broken (buglog): a decision that is **externally blocked**, where a silent guess would be costly. Record it in `.wolf/parked-questions.md` as `UQ-n` (created lazily on first use; numbers are permanent, never reused).
+
+Park only when all four hold: (a) you asked the question and gave a recommendation; (b) the blocker is external and nameable; (c) a wrong guess would be costly or invisible — if any sane default works, take it and note it in `.wolf/memory.md` instead; (d) the rest of the work survives without the answer. Most sessions park nothing.
+
+Each entry carries the question (one line, answerable), the recommendation you gave verbatim, `BLOCKER:` naming the external party or artifact that unblocks it, the placeholder shipping in its place, the honest blast radius if the real answer differs, and exactly one `STATUS:` line valued `OPEN`, `RESOLVED <date>`, or `ABANDONED <date>` — so `grep -c '^STATUS: OPEN'` is the open count. An entry with no nameable blocker is not a parked question.
+
+Ship the placeholder behind a **single named seam** (one constant, function, or config value — never inlined at multiple call sites), marked in the file's own comment syntax with the literal token `TODO(UQ-n): see .wolf/parked-questions.md`. The question text lives only in the ledger — one source of truth. `grep -rn 'TODO(UQ-'` finds every site.
+
+Pin the seam with a **behavioural test** that names the UQ and asserts an observable consequence of the placeholder flowing through a real call site — never its literal value. A test that only asserts the constant stays green when the seam is disconnected, so it cannot show the black box was load-bearing. Record the negative control (what you disconnected, what failed, actual output) in the QA reduction for that edit.
+
+On resolution: swap the seam, set `STATUS: RESOLVED <date>`, and append the real answer plus whether the placeholder was right or wrong — that flag is the calibration record and stays regardless. Add a Decision Log entry only when the answer changes future decisions. If the question dies with its task, set `STATUS: ABANDONED <date>` and say why. Entries are never deleted.
+
+**Explicitly not:** a bug (→ buglog), a lesson or convention (→ cerebrum), a decision that was made (→ Decision Log), or a tangent that deserves its own task.
+
+## Autonomous Confirmation Scope
+
+Default to proceeding. Interrupt only when an action is hard to reverse or leaves the machine, and interrupt *before* acting, not after:
+
+1. **External transmission** — push, PR create/merge, release publish, deploy, third-party messages, any API call with outward side effects, and fleet-wide writes across managed projects.
+2. **Security exposure** — secret handling, auth/permission changes, destructive irreversible operations.
+3. **Requirement contradiction** — reality conflicts with the spec such that the request's *interpretation* changes.
+
+These are triggers, not an exhaustive list: anything equally irreversible or outward qualifies. Layer order — the harness reversibility floor governs, a standing instruction to proceed without asking narrows it, and this section supplies the taxonomy that makes it operational; this section never raises the floor. A standing grant, or an existing `permissions.allow` entry covering the action, satisfies the confirmation — do not ask twice. Progress checkpoints ("should I continue?", "want me to keep going?") are never grounds to interrupt.
+
+Everything else: pick the most reasonable option and proceed. Record it in `.wolf/memory.md` only when the user would plausibly have chosen otherwise.
 
 ## Claim Calibration
 
@@ -269,6 +301,14 @@ Use `/ops:live-debug` as the default bounded workflow for collecting evidence fr
 Keep health and functional probes independent. A health probe shows that a process or service responds; a functional probe exercises the user-facing or API behavior that matters. A green health endpoint alone does not verify a deployment.
 
 The provider-neutral ops plugin owns target bounds, subprocess handling, log/file/HTTP collection, redaction, hashing, static-asset linkage, cache checks, and falsifier output. Wolfpack selects and instructs; it must not duplicate those facilities in hooks or scripts. Keep all targets explicit and bounded rather than scanning unrelated processes, logs, hosts, or repositories.
+
+## Staged Rollout (defense-layer and harness changes)
+
+Blast radius scales with enforcement strength, so scope inversely. A restrictive rule — permissions, hooks, sandbox settings — or any change pushed to every managed project lands in **one** project first, exercises the real paths it touches (push, install, ssh, or a real session for prose), and only then widens to user scope or fleet-wide. A user-scope or fleet mistake deploys everywhere at once.
+
+A change to the harness itself is a fleet change: it lands in one project and survives one real session before it propagates. Never close an escape hatch in the same change as a new block — one at a time, so a bad block stays recoverable. Full checklist: `docs/blast-radius.md` in the harness repo.
+
+Verify propagation by **content**, not by heading: bind the canonical section hash from the template and assert every registered project matches it. A heading-presence check passes on a stale or reverted body.
 
 ## Session End
 
