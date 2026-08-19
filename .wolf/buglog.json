@@ -7415,7 +7415,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-08-19T01:44:18.238Z",
-      "commit": null,
+      "commit": "9d846f3059d42aba993ab8768e96cee09a3351e3",
       "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
     },
     {
@@ -7438,7 +7438,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-08-19T01:47:48.887Z",
-      "commit": null,
+      "commit": "9d846f3059d42aba993ab8768e96cee09a3351e3",
       "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
     },
     {
@@ -7463,7 +7463,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-08-19T02:08:05.428Z",
-      "commit": null,
+      "commit": "9d846f3059d42aba993ab8768e96cee09a3351e3",
       "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
     }
   ]
