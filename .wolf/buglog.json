@@ -7760,6 +7760,28 @@
       "last_seen": "2026-08-19T20:22:33.065Z",
       "commit": "0edcf8a",
       "reduction": ".wolf/qa/canary-rollout-scope.md"
+    },
+    {
+      "id": "bug-707",
+      "timestamp": "2026-08-19T22:50:23.603Z",
+      "error_message": "Buglog auto-detect merged two DIFFERENT files' fixes into one entry when they shared a basename",
+      "file": "src/hooks/post-write.ts",
+      "root_cause": "autoDetectBugFix's duplicate-suppression predicate compared path.basename(b.file) against the edited file's basename, while the comment above it stated 'same file + same category'. relFile -- the value actually stored as b.file -- was computed 7 lines earlier and left unused. This repo has 21 basenames shared by 2+ tracked files (TS/JS/template triads), so the collision is the dominant editing pattern, not an edge case.",
+      "fix": "Compare the full project-relative path (b.file !== relFile) in all four copies: src/hooks/post-write.ts, src/hooks/post-write.js, .wolf/hooks/post-write.js, templates/wolf/hooks/post-write.js. Added tests/post-write-dedup-path.test.js pinning both directions (distinct files separate, same file still dedupes).",
+      "status": "resolved",
+      "tags": [
+        "buglog",
+        "dedup",
+        "post-write",
+        "path-handling",
+        "companion-review",
+        "challenge-gate"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T22:50:23.603Z",
+      "commit": null,
+      "reduction": ".wolf/qa/post-write-dedup-path.md"
     }
   ]
 }

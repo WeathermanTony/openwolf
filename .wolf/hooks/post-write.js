@@ -436,7 +436,12 @@ function autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr) {
         }
         // Check for recent duplicate (same file + same category within 5 min)
         const recentDupe = bugLog.bugs.find(b => {
-            if (path.basename(b.file) !== basename)
+            // Compare the full project-relative path, not the basename. This repo
+            // routinely edits same-named files in lockstep (a .ts source, its emitted
+            // .js, and a templates/ mirror all named post-write), so a basename match
+            // merged two DISTINCT files' fixes into one entry -- inflating occurrences
+            // and appending the second file's context to the first file's record.
+            if (b.file !== relFile)
                 return false;
             if (!b.tags.includes("auto-detected"))
                 return false;

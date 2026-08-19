@@ -188,6 +188,22 @@
   `startsWith('.wolf/') && existsSync(whole_string)` both mis-flags those and under-counts
   the denominator (127 vs the real 130). Regex out the `.md` paths, then check each.
 
+- **2026-08-19 — Challenge companion findings before they drive edits.** A GLM review
+  returned 5 findings; challenging them killed 2 outright. One claimed `writeJSON` does
+  "a direct fs.writeFileSync" causing torn reads — it actually does tmp-write + renameSync
+  (atomic on POSIX); the reviewer quoted code that does not exist. Another called the 0.8
+  similarity threshold unreachable — measured 1.50 for identical and 1.33 for
+  same-message-different-line, both merging. Read the cited source fresh; never trust the
+  snippet in the report. Evidence: `.wolf/qa/post-write-dedup-path.md`.
+- **2026-08-19 — When code contradicts its own comment, the comment is usually the spec.**
+  `autoDetectBugFix` said "same file + same category" and compared `path.basename`, with
+  the correct `relFile` computed 7 lines above and unused — the signature of a refactor
+  slip. Both challenge rounds converged on REAL DEFECT from that single tell (bug-707).
+- **2026-08-19 — A test with early-return guards can pass vacuously.** The dedup regression
+  test returns early if auto-detection never fires, so "2 passing" was compatible with
+  "nothing exercised". Probed the real hook to confirm entries were actually created before
+  trusting the green.
+
 
 ## Decision Log
 

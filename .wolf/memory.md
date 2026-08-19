@@ -1495,3 +1495,7 @@ paths, 0 dangling.
 
 **Open:** UQ-1 (companion receipt-hash interop, externally blocked). 9 pre-existing open
 bugs unrelated to this session's work.
+| 19:10 | Found pending review-0092 (8 files, 7 days stale); ran GLM companion review | src/hooks/post-write.ts, bug-tracker.ts, conclusion.ts/.js | 5 findings, no CRITICAL | ~11k |
+| 19:25 | Challenge Gate both rounds on the triggering findings | .wolf/qa/post-write-dedup-path.md | 2 REJECTED, 2 DOWNGRADED, 1 CONFIRMED | ~9k |
+| 19:40 | Fixed bug-707 (basename vs relFile) in all 4 post-write copies + regression test | src+.wolf+templates post-write, tests/post-write-dedup-path.test.js | 227/227; negative control reproduces occ=3 and '| Also:' contamination | ~10k |
+| 19:50 | Kimi K3 arbitration CLEAN on current bytes; review-0092 completed via CLI | .wolf/reviewlog.json | lineage lin-7176af379826f888 round 1 | ~4k |
