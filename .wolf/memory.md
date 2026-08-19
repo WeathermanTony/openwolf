@@ -1444,3 +1444,4 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
 | 13:05 | P1 drift check: fixed root-relative base, denominator drop, prose headings, brace expansion | src/cli/drift-cmd.ts, tests/drift-cmd.test.js | 200/200 tests; 4/4 false positives cleared | ~28k |
+| 13:55 | Definitive fleet drift scan: 85/85 checked, 2096/14800 stale entries across 37 projects | .wolf/qa/drift-check-command.md | verified; top result spot-checked as real | ~6k |
