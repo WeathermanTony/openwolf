@@ -302,6 +302,14 @@ Keep health and functional probes independent. A health probe shows that a proce
 
 The provider-neutral ops plugin owns target bounds, subprocess handling, log/file/HTTP collection, redaction, hashing, static-asset linkage, cache checks, and falsifier output. Wolfpack selects and instructs; it must not duplicate those facilities in hooks or scripts. Keep all targets explicit and bounded rather than scanning unrelated processes, logs, hosts, or repositories.
 
+## Drift Checks
+
+Documentation and ledgers rot silently: an anatomy entry outlives its file, a doc quotes a command that no longer exists, a `TODO(UQ-n)` marker outlives its ledger entry. None of these fail a build, and each one sends a future session to read something that is not there.
+
+Run `openwolf driftcheck` when you touch an index, a ledger, or a documented command surface, and before wrapping up a session that created, renamed, or deleted files. `--check` exits nonzero on drift; `--json` is machine-readable.
+
+A drift check must be able to fail for the reason it exists. Every extraction asserts `extracted == checked`, so reported coverage can never exceed what was actually examined; an extraction that yields zero from a non-empty source is reported **VACUOUS** and exits nonzero rather than passing. Absent inputs SKIP explicitly — never a silent pass. When you add a check, add its negative control too: disconnect the extraction, confirm it goes red, and paste that output into the QA reduction. Measure the exit status directly, not through a pipe — in a shell pipeline `$?` is the last command's status, so a control piped through `grep` reports grep's success and masks the real result.
+
 ## Staged Rollout (defense-layer and harness changes)
 
 Blast radius scales with enforcement strength, so scope inversely. A restrictive rule — permissions, hooks, sandbox settings — or any change pushed to every managed project lands in **one** project first, exercises the real paths it touches (push, install, ssh, or a real session for prose), and only then widens to user scope or fleet-wide. A user-scope or fleet mistake deploys everywhere at once.

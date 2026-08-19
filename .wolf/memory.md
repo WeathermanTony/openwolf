@@ -1435,3 +1435,12 @@ would mean deleting under `.wolf/hooks/`, which also holds session state.
 | 22:20 | Reviewed other session's revert advice on post-write.js — declined: all 5 sibling hooks carry the same sourceMappingURL in HEAD, so the change removes an outlier | .wolf/hooks/post-write.js | kept; parses + runs clean; left out of feature commit as unrelated | ~3k |
 | 22:24 | Committed protocol work (9d846f3) + backfilled bug commit SHAs (f4f0062) | src/templates/OPENWOLF.md, docs/, scripts/ | .wolf/qa/ is gitignored — respected, not force-added | ~3k |
 | 22:35 | Root-caused learning.explicit double misfire: directive tokens vs intent, not role filtering | src/hooks/nudges/rules/learning.ts | RELAY guard added, 190/190 tests, deployed hooks synced fleet-wide + behaviourally verified (bug-694) | ~9k |
+| 12:30 | Verified other session's refutation of my P1 demo: both measurements correct, different files (customopenwolf 231/10 vs skillsbench 47/0) | .wolf/anatomy.md (both projects) | mislabeled, not phantom; P0 re-homing confirmed at src/cli/skillsbench.ts:70 | ~5k |
+| 12:42 | skillsbench session removed stale /tmp section (10 deleted scratch scripts) found by drift check; anatomy now 221/0 | .wolf/anatomy.md | clean |
+| 12:45 | Created src/cli/drift-cmd.ts | — | ~2420 |
+
+## Session: 2026-08-19 12:48
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:05 | P1 drift check: fixed root-relative base, denominator drop, prose headings, brace expansion | src/cli/drift-cmd.ts, tests/drift-cmd.test.js | 200/200 tests; 4/4 false positives cleared | ~28k |

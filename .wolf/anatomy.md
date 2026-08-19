@@ -1,25 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-12T17:10:35.047Z
-> Files: 227 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-19T16:45:00.731Z
+> Files: 222 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../home/tony/.claude/plans/
 
 - `eager-dancing-naur.md` — Context (~1824 tok)
 - `jaunty-splashing-globe.md` — Context (~2254 tok)
-
-## ../../../../../tmp/
-
-- `add-hook-ledger-bug.mjs` — Declares file (~509 tok)
-- `canary-hook-check.mjs` — Exports color, color, ok, ok + 2 more (~544 tok)
-- `log-bare-array-reference-bug.mjs` — Declares file (~510 tok)
-- `log-current-hook-bugs.mjs` — Declares wolf (~385 tok)
-- `log-learning-boilerplate-bug.mjs` — Declares file (~548 tok)
-- `normalize-ledger-rollout.mjs` — Declares cli (~1073 tok)
-- `rebuild-buglog-final.mjs` — Declares file (~207 tok)
-- `resolve-current-hook-bugs.mjs` — Declares file (~275 tok)
-- `restore-buglog-records.mjs` — Declares livePath (~284 tok)
-- `restore-current-buglog.mjs` — Declares file (~288 tok)
 
 ## ./
 
@@ -61,20 +48,20 @@
 - `auto-bug-detector-precision.md` — Real-hook precision, schema, and concurrent canonical-writer reduction (~700 tok)
 - `conclusion-owner-path-diagnostics.md` — Nested-owner and truncation-safe QA-path diagnostic reduction (~600 tok)
 - `fleet-section-coverage-verifier.md` — Registry-based fleet coverage verifier reduction; globstar/exit-2 vacuity controls (~800 tok)
-- `learning-relay-guard.md` — Relay/report guard for learning.explicit false positives; before/after classifier matrix (~700 tok)
 - `hermes-agent-evaluation-2026-08-08.md` — Source-level Hermes Agent mechanism evaluation and no-integration disposition (~1260 tok)
 - `hook-ledger-recurrence.md` — Real hook-runtime safe-suffix and atomic-persistence reduction (~430 tok)
+- `learning-relay-guard.md` — Relay/report guard for learning.explicit false positives; before/after classifier matrix (~700 tok)
 - `learning-rule-boilerplate-filter.md` — Falsification evidence for harness-envelope filtering in explicit learning capture (~900 tok)
 - `mem0-canary-2026-08-08.md` — Protected offline fixture-conformance evidence, initial secret-filter falsification, fix, and survivor-for-design disposition (~1700 tok)
 - `mem0-evaluation-2026-08-08.md` — Source-level Mem0 evaluation and bounded ADD-only candidate-extraction canary recommendation (~1400 tok)
 
-## docs/
-
-- `blast-radius.md` — Defense-layer blast-radius checklist + fleet verification traps (bug-066/691/692/693) (~900 tok)
-
 ## bin/
 
 - `openwolf.ts` — Declares major (~97 tok)
+
+## docs/
+
+- `blast-radius.md` — Defense-layer blast-radius checklist + fleet verification traps (bug-066/691/692/693) (~900 tok)
 
 ## scripts/
 
@@ -96,6 +83,7 @@
 - `daemon-cmd.ts` — Exports getPm2NameForRoot, hasPm2, Pm2ProcessInfo, listPm2Processes + 13 more (~4280 tok)
 - `dashboard.ts` — Exports isExpectedDashboardHealth, dashboardCommand (~1171 tok)
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
+- `drift-cmd.ts` — `openwolf driftcheck`: anatomy entries vs real files, documented CLI subcommands vs registered ones, UQ markers vs ledger. Vacuity-guarded (extracted==checked; zero-extraction exits nonzero). (~2420 tok)
 - `experiment-cmd.ts` — Exports validateExperiment, verifyExperimentRecord, startExperiment (~5690 tok)
 - `index.ts` — Exports createProgram (~5906 tok)
 - `init.ts` — Exports initCommand (~10936 tok)
@@ -345,6 +333,7 @@
 - `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
 - `experiment-cmd.test.js` — project: inProject (~2898 tok)
 - `hook-packaging.test.js` — Hook packaging: every module a hook imports must actually ship. (~1113 tok)
+- `drift-cmd.test.js` — driftcheck regression suite: root-relative base, denominator integrity, vacuity on disconnected extraction, prose headings, brace expansion (~1400 tok)
 - `learning-capture.test.js` — root: fixture, transcript, transcriptEntries (~3517 tok)
 - `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~3620 tok)
 - `ledger-writer-safety.test.js` — repoRoot: fixture, entry (~1595 tok)

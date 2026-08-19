@@ -7486,6 +7486,171 @@
       "last_seen": "2026-08-19T02:25:40.213Z",
       "commit": "5837e6bac4b2006e7f1eaf98a0950b02be95df27",
       "reduction": ".wolf/qa/learning-relay-guard.md"
+    },
+    {
+      "id": "bug-695",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "error_message": "openwolf driftcheck reported 221 of 222 anatomy entries missing, including files that demonstrably exist (src/cli/index.ts)",
+      "file": "src/cli/drift-cmd.ts",
+      "root_cause": "Anatomy section headings are project-root-relative (\"## src/cli/\"), but entries were resolved with path.resolve(wolfDir, rel), producing <root>/.wolf/src/cli/index.ts. Every real file therefore reported missing.",
+      "fix": "Resolve anatomy entries against the project root: path.resolve(root, rel). Regression test \"anatomy entries resolve against the project root, not .wolf/\" fails if the base regresses.",
+      "status": "resolved",
+      "tags": [
+        "drift",
+        "anatomy",
+        "path-resolution",
+        "false-positive"
+      ],
+      "related_bugs": [
+        "bug-066",
+        "bug-691",
+        "bug-692",
+        "bug-693"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T00:00:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/drift-check-command.md"
+    },
+    {
+      "id": "bug-696",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "error_message": "Anatomy entries appearing before the first ## heading were dropped without being counted, shrinking the coverage denominator invisibly",
+      "file": "src/cli/drift-cmd.ts",
+      "root_cause": "`if (!e || section === null) continue` skipped unresolvable entries BEFORE incrementing extracted, so an entry that could not be checked simply vanished from the count. The vacuity guard (extracted === checked) could not catch it because both stayed consistent — the same defect class the command exists to detect.",
+      "fix": "Count every matched entry before resolving; report a section-less entry as anatomy-missing with an explicit \"(entry precedes any section heading)\" detail. Found by a unit test asserting the denominator, not by inspection.",
+      "status": "resolved",
+      "tags": [
+        "drift",
+        "vacuity",
+        "denominator",
+        "anatomy"
+      ],
+      "related_bugs": [
+        "bug-691",
+        "bug-695"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T00:00:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/drift-check-command.md"
+    },
+    {
+      "id": "bug-697",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "error_message": "Negative-control harness printed exit=0 for controls that had correctly failed",
+      "file": ".wolf/qa/drift-check-command.md",
+      "root_cause": "Controls were run as `node ... driftcheck --check 2>&1 | grep -E ...; echo exit=$?`. In a pipeline $? is the LAST command's status, so every control reported grep's exit code (0) instead of the checker's. The controls looked like they proved the check cannot fail.",
+      "fix": "Measure exit status directly with output redirected to a file, never through a pipe. Verified: drift=1, vacuous=1, clean=0.",
+      "status": "resolved",
+      "tags": [
+        "testing",
+        "shell",
+        "exit-code",
+        "vacuity",
+        "negative-control"
+      ],
+      "related_bugs": [
+        "bug-691",
+        "bug-696"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T00:00:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/drift-check-command.md"
+    },
+    {
+      "id": "bug-698",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "error_message": "driftcheck reported 4/4 false positives on a hand-written anatomy: existing README.md/CLAUDE.md flagged missing, and brace-notation filenames never matched",
+      "file": "src/cli/drift-cmd.ts",
+      "root_cause": "Two assumptions failed on hand-written indexes: (1) section headings are always directory paths, but prose headings like \"## Top level\" were joined as directories; (2) entries are always literal filenames, but \"koch_1904_{wikipedia,mactutor}.txt\" is brace notation for two files. Also the entry regex only matched backtick format, so a bold-format anatomy extracted 0 entries and tripped the vacuity guard.",
+      "fix": "sectionDir() resolves whitespace-bearing (prose) headings to the project root; expandBraces() expands sibling notation and requires every variant to exist; ANATOMY_ENTRY accepts both `name` and **name**. The vacuity guard is what surfaced the format blindness rather than a false clean pass.",
+      "status": "resolved",
+      "tags": [
+        "drift",
+        "anatomy",
+        "false-positive",
+        "regex",
+        "hand-written"
+      ],
+      "related_bugs": [
+        "bug-695",
+        "bug-696"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T00:00:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/drift-check-command.md"
+    },
+    {
+      "id": "bug-699",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "error_message": "driftcheck reported .wolf/qa/.wolf/qa/<file>.md missing — a doubled path prefix for files that exist",
+      "file": "src/cli/drift-cmd.ts",
+      "root_cause": "Anatomy entries are inconsistent: some are bare names relative to their heading (\"index.ts\" under \"## src/cli/\"), others already carry the full project-root-relative path (\".wolf/qa/x.md\" under \"## .wolf/qa/\"). Unconditional join(section, name) doubled the prefix for the second form. 150 of 411 mt5automation findings were this class.",
+      "fix": "Resolve against the section base OR the project root; only an entry satisfying neither is drift. Guarded by a paired test asserting the fallback still fails on a file absent under both bases, so the extra leniency cannot make the check unfalsifiable.",
+      "status": "resolved",
+      "tags": [
+        "drift",
+        "anatomy",
+        "path-resolution",
+        "false-positive"
+      ],
+      "related_bugs": [
+        "bug-695",
+        "bug-698"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T00:00:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/drift-check-command.md"
+    },
+    {
+      "id": "bug-700",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "error_message": "driftcheck hung past 30s on dependency-heavy projects; 43 of 85 fleet projects returned no parseable output",
+      "file": "src/cli/drift-cmd.ts",
+      "root_cause": "The parked-question check walked every source file to depth 8 unconditionally, even in the overwhelmingly common case where no parked-questions ledger exists and the walk result is discarded. 39s on one project. A session-end check that hangs is a check that does not get run.",
+      "fix": "Skip the walk when no ledger exists and say so explicitly in the SKIP text (\"code not scanned for orphan TODO(UQ-n) markers\") rather than emitting a bare \"no parked questions\" that implies a scan. Walk is additionally capped at 20000 files, reporting VACUOUS on truncation instead of silently returning partial coverage. 39s -> 3.7s.",
+      "status": "resolved",
+      "tags": [
+        "drift",
+        "performance",
+        "timeout",
+        "honest-skip"
+      ],
+      "related_bugs": [
+        "bug-695"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T00:00:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/drift-check-command.md"
+    },
+    {
+      "id": "bug-701",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "error_message": "Fleet drift scan reported \"455 stale across 10 projects\" while 43 of 85 projects had silently failed to produce output",
+      "file": "/tmp/fleet-drift2.cjs",
+      "root_cause": "Per-project results were aggregated without asserting that the number of projects successfully checked equalled the registry count. Projects that timed out contributed nothing and were invisible in the totals, so a half-fleet sample read as a fleet result.",
+      "fix": "Assert checked === roots.length and emit an explicit WARN naming the shortfall and parse-error count. The guard is what exposed the timeout defect (bug-700); without it the partial numbers would have been reported as fleet-wide truth.",
+      "status": "resolved",
+      "tags": [
+        "vacuity",
+        "denominator",
+        "fleet",
+        "aggregation"
+      ],
+      "related_bugs": [
+        "bug-066",
+        "bug-691",
+        "bug-700"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-19T00:00:00.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/drift-check-command.md"
     }
   ]
 }

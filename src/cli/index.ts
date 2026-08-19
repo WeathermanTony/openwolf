@@ -440,6 +440,16 @@ export function createProgram(): Command {
       qaStatus(opts);
     });
 
+  program
+    .command("driftcheck")
+    .description("Detect rot between docs/ledgers and the code they describe")
+    .option("--check", "Exit nonzero when drift or a vacuous check is found")
+    .option("--json", "Output JSON")
+    .action(async (opts: { check?: boolean; json?: boolean }) => {
+      const { driftCheck } = await import("./drift-cmd.js");
+      driftCheck(opts);
+    });
+
   const experiment = program
     .command("experiment")
     .description("Manage opt-in evidence-bound experiments");
