@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { createTmpFixture } from './lib/fixture-cleanup.js';
 
 const HOOK = path.resolve('src/hooks/post-write.js');
 
@@ -21,7 +21,7 @@ function runHook(root, file, oldStr, newStr) {
 }
 
 function setup() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ow-dedup-'));
+  const root = createTmpFixture('ow-dedup-');
   fs.mkdirSync(path.join(root, '.wolf'), { recursive: true });
   fs.writeFileSync(path.join(root, '.wolf', 'buglog.json'), JSON.stringify({ version: 1, bugs: [] }, null, 2));
   fs.writeFileSync(path.join(root, '.wolf', 'config.json'), JSON.stringify({}));

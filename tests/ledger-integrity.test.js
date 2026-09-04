@@ -2,14 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import { cleanupFixture, createTmpFixture } from "./lib/fixture-cleanup.js";
 
 const LEDGER = new URL("../dist/src/ledger/ledger-integrity.js", import.meta.url);
 const CLI = new URL("../dist/src/cli/ledger-cmd.js", import.meta.url);
 
 function project() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "ow-ledger-test-"));
+  const root = createTmpFixture("ow-ledger-test-");
   fs.mkdirSync(path.join(root, ".wolf"));
   return root;
 }
@@ -170,9 +170,13 @@ test("normalization through a symlinked project root recovers against canonical 
   assert.equal(receipt.project_root, fs.realpathSync(root));
   assert.equal(receipt.file, fs.realpathSync(file));
   assert.equal(receipt.backup.path, fs.realpathSync(normalized.backupPath));
-  const recovered = recoverLedgerNormalize(linkedRoot, "bug", normalized.receiptPath, true, true);
-  assert.equal(recovered.verified, true);
-  assert.equal(fs.readFileSync(file, "utf8"), raw);
+  try {
+    const recovered = recoverLedgerNormalize(linkedRoot, "bug", normalized.receiptPath, true, true);
+    assert.equal(recovered.verified, true);
+    assert.equal(fs.readFileSync(file, "utf8"), raw);
+  } finally {
+    fs.rmSync(linkedRoot, { force: true });
+  }
 });
 
 test("recovery rejects symlink receipts and backups", async () => {
@@ -200,7 +204,7 @@ test("fleet dry-run aggregates independently without mutation", async () => {
   write(rootA, "buglog.json", "bugs", [{ id: "bug-001" }, { id: "bug-001" }]);
   write(rootA, "reviewlog.json", "reviews", []);
   write(rootB, "buglog.json", "bugs", []); write(rootB, "reviewlog.json", "reviews", []);
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), "ow-ledger-home-"));
+  const home = createTmpFixture("ow-ledger-home-");
   fs.mkdirSync(path.join(home, ".openwolf"));
   fs.writeFileSync(path.join(home, ".openwolf", "registry.json"), JSON.stringify({ version: 1, projects: [
     { root: rootA, name: "a" }, { root: rootB, name: "b" },
@@ -210,7 +214,12 @@ test("fleet dry-run aggregates independently without mutation", async () => {
   try {
     const { ledgerRepair } = await import(`${CLI.href}?t=${Date.now()}`);
     ledgerRepair({ fleet: true, json: true });
-  } finally { console.log = oldLog; process.env.HOME = previous; }
+  } finally {
+    console.log = oldLog;
+    if (previous === undefined) delete process.env.HOME;
+    else process.env.HOME = previous;
+    cleanupFixture(home);
+  }
   const report = JSON.parse(output.join("\n"));
   assert.equal(report.counts.projects, 2);
   assert.equal(report.counts.ids_rekeyed, 1);

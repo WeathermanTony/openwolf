@@ -20,6 +20,7 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { execFileSync, spawnSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { createTmpFixture } from './lib/fixture-cleanup.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const N = (p) => path.join(repoRoot, 'dist/src/hooks/nudges', p);
@@ -56,7 +57,9 @@ const reviewRule = await import(N('rules/review.js'));
 // ── fixtures ────────────────────────────────────────────────────────────────
 
 function tmp(prefix = 'ow-nudge-') {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  return prefix === 'ow-nudge-'
+    ? createTmpFixture(prefix)
+    : fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
 /** Create a WolfPack project with a cerebrum of a chosen age. */

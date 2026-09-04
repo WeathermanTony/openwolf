@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, rm, utimes } from 'node:fs/promises';
-import { tmpdir, homedir } from 'node:os';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { cleanupFixture, createHomeFixture } from './lib/fixture-cleanup.js';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -553,8 +554,7 @@ test('post-write hook ignores unsafe bug suffixes when allocating an auto-detect
   }
 });
 
-async function stopHookReviewFixture(files) {
-  const dir = await mkdtemp(path.join(homedir(), 'ow-review-scope-'));
+async function stopHookReviewFixture(dir, files) {
   await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
   for (const file of files) {
     await mkdir(path.dirname(file), { recursive: true });
@@ -593,7 +593,7 @@ test('stop hook simplicity nudge names the most-edited file when it is notable',
   // win the single slot. Seed a buglog entry below so simplicity is the only
   // eligible nudge and this test still measures what it was written to
   // measure: the most-edited-file lens.
-  const base = await mkdtemp(path.join(homedir(), 'ow-simplicity-lens-'));
+  const base = createHomeFixture('ow-simplicity-lens-');
   try {
     const dir = base;
     await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
@@ -646,12 +646,12 @@ test('stop hook simplicity nudge names the most-edited file when it is notable',
     assert.match(result.stdout, /Wolfpack simplicity/);
     assert.match(result.stdout, /Most-edited: .*hot\.py \(6 edits/);
   } finally {
-    await rm(base, { recursive: true, force: true });
+    cleanupFixture(base);
   }
 });
 
 test('stop hook simplicity nudge omits the lens hint when edit counts are low', async () => {
-  const base = await mkdtemp(path.join(homedir(), 'ow-simplicity-lens-'));
+  const base = createHomeFixture('ow-simplicity-lens-');
   try {
     const dir = base;
     await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
@@ -685,14 +685,14 @@ test('stop hook simplicity nudge omits the lens hint when edit counts are low', 
     assert.match(result.stdout, /Wolfpack simplicity/);
     assert.doesNotMatch(result.stdout, /Most-edited:/);
   } finally {
-    await rm(base, { recursive: true, force: true });
+    cleanupFixture(base);
   }
 });
 
 async function reviewBaselineFixture({ sessionTokens, coveredTokens, coveredBasis }) {
   // Fixture for bug-441: a completed review from THIS session already covers
   // coveredTokens of output; only (sessionTokens - coveredTokens) is new work.
-  const base = await mkdtemp(path.join(homedir(), 'ow-review-baseline-'));
+  const base = createHomeFixture('ow-review-baseline-');
   const dir = base;
   await mkdir(path.join(dir, '.wolf', 'hooks'), { recursive: true });
   const target = path.join(base, 'src', 'feature.ts');
@@ -822,38 +822,38 @@ test('stop hook ignores unsafe review suffixes when allocating a pending review'
 test('stop hook review nudge excludes Windows scratchpad and Temp paths', async () => {
   // Fixture must live outside /tmp — **/tmp/** would otherwise exclude every
   // path vacuously and prove nothing about the Windows patterns.
-  const base = await mkdtemp(path.join(homedir(), 'ow-review-scope-'));
+  const base = createHomeFixture('ow-review-scope-');
   const scratchFiles = [
     path.join(base, 'AppData', 'Local', 'Temp', 'claude', 'sess', 'scratchpad', 'note.txt'),
     path.join(base, 'work', 'scratchpad', 'draft.txt'),
   ];
-  const { dir, transcript } = await stopHookReviewFixture(scratchFiles);
+  const { dir, transcript } = await stopHookReviewFixture(base, scratchFiles);
   try {
     const result = runStopHook(dir, transcript, 'sess-review-scope');
     assert.equal(result.status, 0, result.stderr);
     assert.doesNotMatch(result.stdout, /Wolfpack review/);
   } finally {
-    await rm(base, { recursive: true, force: true });
+    cleanupFixture(base);
   }
 });
 
 test('stop hook review nudge still fires for production files outside scratch paths', async () => {
-  const base = await mkdtemp(path.join(homedir(), 'ow-review-scope-'));
-  const { dir, transcript } = await stopHookReviewFixture([path.join(base, 'src', 'engine.py')]);
+  const base = createHomeFixture('ow-review-scope-');
+  const { dir, transcript } = await stopHookReviewFixture(base, [path.join(base, 'src', 'engine.py')]);
   try {
     const result = runStopHook(dir, transcript, 'sess-review-scope');
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /Wolfpack review/);
   } finally {
-    await rm(base, { recursive: true, force: true });
+    cleanupFixture(base);
   }
 });
 
 test('stop hook review nudge still fires for a real checkout under a Windows-Temp-shaped path', async () => {
   // The Temp exclusion is scoped to the claude/ scratch root only; a project
   // living elsewhere under AppData/Local/Temp keeps its review obligations.
-  const base = await mkdtemp(path.join(homedir(), 'ow-review-scope-'));
-  const { dir, transcript } = await stopHookReviewFixture([
+  const base = createHomeFixture('ow-review-scope-');
+  const { dir, transcript } = await stopHookReviewFixture(base, [
     path.join(base, 'AppData', 'Local', 'Temp', 'project', 'src', 'auth', 'session.ts'),
   ]);
   try {
@@ -861,7 +861,7 @@ test('stop hook review nudge still fires for a real checkout under a Windows-Tem
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /Wolfpack review/);
   } finally {
-    await rm(base, { recursive: true, force: true });
+    cleanupFixture(base);
   }
 });
 

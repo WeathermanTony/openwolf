@@ -5,19 +5,20 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
+import { cleanupFixture, createHomeFixture } from "./lib/fixture-cleanup.js";
 
 const DIST_REGISTRY = new URL("../dist/src/cli/registry.js", import.meta.url);
 
 function withHome(fn) {
-  const fixture = fs.mkdtempSync(path.join(os.homedir(), "ow-registry-test-"));
+  const fixture = createHomeFixture("ow-registry-test-");
   const prevHome = process.env.HOME;
   process.env.HOME = fixture;
   return Promise.resolve()
     .then(() => fn(fixture))
     .finally(() => {
-      process.env.HOME = prevHome;
-      fs.rmSync(fixture, { recursive: true, force: true });
+      if (prevHome === undefined) delete process.env.HOME;
+      else process.env.HOME = prevHome;
+      cleanupFixture(fixture);
     });
 }
 
