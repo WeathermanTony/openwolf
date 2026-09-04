@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as net from "node:net";
+import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { findProjectRoot } from "../scanner/project-root.js";
@@ -78,7 +79,35 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'"'"'`)}'`;
 }
 
+export function isPm2DaemonPidAlive(
+  pid: number,
+  signal: (pid: number, signal: 0) => true = process.kill,
+): boolean {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return false;
+  try {
+    signal(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException)?.code === "EPERM";
+  }
+}
+
+function readPm2DaemonPid(): number | null {
+  const configuredHome = process.env.PM2_HOME?.trim();
+  const pm2Home = configuredHome ? configuredHome : path.join(os.homedir(), ".pm2");
+  try {
+    const raw = fs.readFileSync(path.join(pm2Home, "pm2.pid"), "utf-8").trim();
+    if (!/^[1-9]\d*$/.test(raw)) return null;
+    const pid = Number(raw);
+    return Number.isSafeInteger(pid) ? pid : null;
+  } catch {
+    return null;
+  }
+}
+
 export function listPm2Processes(): Pm2ProcessInfo[] {
+  const daemonPid = readPm2DaemonPid();
+  if (daemonPid === null || !isPm2DaemonPidAlive(daemonPid)) return [];
   try {
     const output = execSync("pm2 jlist", { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] });
     return JSON.parse(output) as Pm2ProcessInfo[];

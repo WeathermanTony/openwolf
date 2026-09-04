@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm, mkdir } from 'node:fs/promises';
+import fs from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { isActivePm2Process, isDashboardPm2Process, ownedPm2ProcessForRoot } from '../dist/src/cli/daemon-cmd.js';
+import { spawnSync } from 'node:child_process';
+import { isActivePm2Process, isDashboardPm2Process, isPm2DaemonPidAlive, listPm2Processes, ownedPm2ProcessForRoot } from '../dist/src/cli/daemon-cmd.js';
 import { isExpectedDashboardHealth } from '../dist/src/cli/dashboard.js';
 import { shouldStartDaemonForProject } from '../dist/src/daemon/startup-guard.js';
 import { migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from '../dist/src/cli/init.js';
@@ -18,6 +20,91 @@ test('daemon auto-start is disabled unless explicitly true', () => {
   assert.equal(shouldAutoStartDaemon({ openwolf: { daemon: { auto_start: false } } }), false);
   assert.equal(shouldAutoStartDaemon({ openwolf: { daemon: { auto_start: 'true' } } }), false);
   assert.equal(shouldAutoStartDaemon({ openwolf: { daemon: { auto_start: true } } }), true);
+});
+
+test('PM2 listing does not invoke pm2 without a live daemon pid', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ow-pm2-list-'));
+  const bin = path.join(root, 'bin');
+  const pm2Home = path.join(root, 'pm2');
+  const marker = path.join(root, 'invoked');
+  await mkdir(bin);
+  await mkdir(pm2Home);
+  const fakePm2 = path.join(bin, 'pm2');
+  fs.writeFileSync(fakePm2, `#!/bin/sh\nprintf invoked > "$PM2_MARKER"\nprintf '[{"name":"fixture","pid":123}]'\n`);
+  fs.chmodSync(fakePm2, 0o755);
+  const previous = { PATH: process.env.PATH, PM2_HOME: process.env.PM2_HOME, PM2_MARKER: process.env.PM2_MARKER };
+  process.env.PATH = `${bin}${path.delimiter}${previous.PATH ?? ''}`;
+  process.env.PM2_HOME = pm2Home;
+  process.env.PM2_MARKER = marker;
+  try {
+    assert.deepEqual(listPm2Processes(), []);
+    assert.equal(fs.existsSync(marker), false, 'missing pid file must not invoke pm2');
+
+    for (const invalid of ['', 'abc', '0', '-1', '123junk', '9007199254740992']) {
+      fs.writeFileSync(path.join(pm2Home, 'pm2.pid'), invalid);
+      assert.deepEqual(listPm2Processes(), [], `invalid pid ${JSON.stringify(invalid)} should be rejected`);
+      assert.equal(fs.existsSync(marker), false, 'malformed pid must not invoke pm2');
+    }
+
+    const exited = spawnSync(process.execPath, ['--eval', ''], { stdio: 'ignore' });
+    assert.ok(exited.pid > 0);
+    assert.throws(() => process.kill(exited.pid, 0));
+    fs.writeFileSync(path.join(pm2Home, 'pm2.pid'), String(exited.pid));
+    assert.deepEqual(listPm2Processes(), []);
+    assert.equal(fs.existsSync(marker), false, 'dead pid must not invoke pm2');
+
+    fs.writeFileSync(path.join(pm2Home, 'pm2.pid'), String(process.pid));
+    assert.deepEqual(listPm2Processes(), [{ name: 'fixture', pid: 123 }]);
+    assert.equal(fs.readFileSync(marker, 'utf8'), 'invoked');
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('PM2 listing uses HOME/.pm2 when PM2_HOME is unset', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ow-pm2-home-'));
+  const bin = path.join(root, 'bin');
+  const pm2Home = path.join(root, '.pm2');
+  const marker = path.join(root, 'invoked');
+  await mkdir(bin);
+  await mkdir(pm2Home);
+  fs.writeFileSync(path.join(pm2Home, 'pm2.pid'), String(process.pid));
+  const fakePm2 = path.join(bin, 'pm2');
+  fs.writeFileSync(fakePm2, `#!/bin/sh\nprintf invoked > "$PM2_MARKER"\nprintf '[]'\n`);
+  fs.chmodSync(fakePm2, 0o755);
+  try {
+    const moduleUrl = new URL('../dist/src/cli/daemon-cmd.js', import.meta.url).href;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', `
+      import { listPm2Processes } from ${JSON.stringify(moduleUrl)};
+      console.log(JSON.stringify(listPm2Processes()));
+    `], {
+      env: {
+        ...process.env,
+        HOME: root,
+        PM2_HOME: '',
+        PM2_MARKER: marker,
+        PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}`,
+      },
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), '[]');
+    assert.equal(fs.readFileSync(marker, 'utf8'), 'invoked');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('PM2 daemon pid liveness treats EPERM as alive and ESRCH as dead', () => {
+  const errorWith = (code) => () => { const error = new Error(code); error.code = code; throw error; };
+  assert.equal(isPm2DaemonPidAlive(42, errorWith('EPERM')), true);
+  assert.equal(isPm2DaemonPidAlive(42, errorWith('ESRCH')), false);
+  assert.equal(isPm2DaemonPidAlive(0, () => true), false);
+  assert.equal(isPm2DaemonPidAlive(Number.MAX_SAFE_INTEGER + 1, () => true), false);
 });
 
 test('PM2 daemon activity requires online status and a live pid', () => {
