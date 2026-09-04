@@ -1499,3 +1499,12 @@ bugs unrelated to this session's work.
 | 19:25 | Challenge Gate both rounds on the triggering findings | .wolf/qa/post-write-dedup-path.md | 2 REJECTED, 2 DOWNGRADED, 1 CONFIRMED | ~9k |
 | 19:40 | Fixed bug-707 (basename vs relFile) in all 4 post-write copies + regression test | src+.wolf+templates post-write, tests/post-write-dedup-path.test.js | 227/227; negative control reproduces occ=3 and '| Also:' contamination | ~10k |
 | 19:50 | Kimi K3 arbitration CLEAN on current bytes; review-0092 completed via CLI | .wolf/reviewlog.json | lineage lin-7176af379826f888 round 1 | ~4k |
+
+## Session: 2026-09-04 fixture and PM2 leak fixes
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:25 | Verified fixture lifecycle and PM2 guards with positive and disconnected controls | tests/fixture-cleanup.test.js, tests/daemon-cmd.test.js | focused suites passed; controls exposed registration leak and PM2 invocation | ~4K |
+| 15:42 | Challenged review findings and fixed confirmed stale-sweep race | tests/lib/fixture-cleanup.js, tests/fixture-cleanup.test.js | live-owner marker added; unrelated PM2 findings logged as bug-718..720 | ~8K |
+| 15:43 | Completed clean current-byte arbitration | review-0095 | current hashes reviewed clean by a different provider | ~4K |
+| 15:44 | Re-ran full suite and committed both fixes | fd32fe4, 98de37f | 242/242 passed; bug-716/717 resolved with reductions | ~55K output |

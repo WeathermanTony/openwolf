@@ -7782,6 +7782,108 @@
       "last_seen": "2026-08-19T22:50:23.603Z",
       "commit": "09affd4",
       "reduction": ".wolf/qa/post-write-dedup-path.md"
+    },
+    {
+      "id": "bug-716",
+      "timestamp": "2026-09-04T19:18:12.384Z",
+      "error_message": "Interrupted or killed Node test runs leave allowlisted OpenWolf fixture directories behind",
+      "file": "tests/lib/fixture-cleanup.js",
+      "root_cause": "Fixture cleanup existed only in per-test finally blocks, which do not run after process interruption or forced termination; no bounded stale recovery existed for abandoned roots. The first stale-sweep implementation also trusted root mtime alone, allowing a live process older than 24 hours to be raced by another importer.",
+      "fix": "Added an exact-prefix fixture helper with synchronous exit/SIGINT/SIGTERM cleanup, 24-hour location-specific stale sweeping, and converted the leaking test call sites. Live roots now carry a PID owner marker and are retained when signal-zero probing confirms the owner is alive.",
+      "tags": [
+        "tests",
+        "fixtures",
+        "resource-leak",
+        "signals",
+        "cleanup"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-04T19:26:02.427Z",
+      "commit": "fd32fe4",
+      "reduction": ".wolf/qa/test-fixture-lifecycle-cleanup.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-717",
+      "timestamp": "2026-09-04T19:18:33.202Z",
+      "error_message": "listPm2Processes() starts a PM2 God Daemon while performing a read-only query against an inactive PM2 home",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "`pm2 jlist` starts PM2 when no daemon exists, and the listing path invoked it without first validating a live daemon PID.",
+      "fix": "Resolve PM2 home, validate pm2.pid as a positive safe integer, probe it with signal zero (EPERM alive), and return [] before invoking PM2 when missing, malformed, or dead.",
+      "tags": [
+        "pm2",
+        "daemon",
+        "resource-leak",
+        "side-effect",
+        "pid"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-04T19:26:02.427Z",
+      "commit": "98de37f",
+      "reduction": ".wolf/qa/pm2-readonly-list-guard.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-718",
+      "timestamp": "2026-09-04T19:38:59.934Z",
+      "error_message": "openwolf daemon start can disable dashboard mode on an existing dashboard-enabled PM2 daemon",
+      "file": "src/cli/daemon-cmd.ts",
+      "root_cause": "daemonStart calls ensurePm2Daemon without preserving the existing dashboard flag, so mode comparison restarts the process with dashboard disabled.",
+      "fix": "Open review finding; preserve or explicitly document mode semantics before changing this pre-existing path.",
+      "tags": [
+        "pm2",
+        "daemon",
+        "dashboard",
+        "review-finding"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-04T19:38:59.934Z",
+      "commit": null,
+      "reduction": null,
+      "status": "open"
+    },
+    {
+      "id": "bug-719",
+      "error_message": "cleanupOpenWolfPm2 with an injected process snapshot can restart PM2 after the daemon disappears",
+      "root_cause": "The mutating cleanup path trusts a previously supplied snapshot and invokes pm2 delete/save without rechecking daemon liveness, leaving a TOCTOU side effect.",
+      "fix": "Open review finding; add a pre-mutation liveness policy without weakening intended cleanup behavior.",
+      "tags": [
+        "pm2",
+        "cleanup",
+        "race",
+        "review-finding"
+      ],
+      "file": "src/cli/daemon-cmd.ts",
+      "timestamp": "2026-09-04T19:38:59.934Z",
+      "status": "open",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-04T19:38:59.934Z",
+      "commit": null,
+      "reduction": null
+    },
+    {
+      "id": "bug-720",
+      "error_message": "legacy PM2 migration reports the deleted legacy name instead of the newly started hashed name",
+      "root_cause": "ensurePm2Daemon starts the hashed name but returns and prints existingName from the deleted legacy registration.",
+      "fix": "Open review finding; report the replacement name or explicit old-to-new migration wording.",
+      "tags": [
+        "pm2",
+        "migration",
+        "diagnostics",
+        "review-finding"
+      ],
+      "file": "src/cli/daemon-cmd.ts",
+      "timestamp": "2026-09-04T19:38:59.934Z",
+      "status": "open",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-04T19:38:59.934Z",
+      "commit": null,
+      "reduction": null
     }
   ]
 }

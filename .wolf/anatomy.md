@@ -54,6 +54,8 @@
 - `learning-rule-boilerplate-filter.md` — Falsification evidence for harness-envelope filtering in explicit learning capture (~900 tok)
 - `mem0-canary-2026-08-08.md` — Protected offline fixture-conformance evidence, initial secret-filter falsification, fix, and survivor-for-design disposition (~1700 tok)
 - `mem0-evaluation-2026-08-08.md` — Source-level Mem0 evaluation and bounded ADD-only candidate-extraction canary recommendation (~1400 tok)
+- `pm2-readonly-list-guard.md` — Invocation-marker and installed-PM2 evidence that list operations do not start an inactive daemon (~620 tok)
+- `test-fixture-lifecycle-cleanup.md` — Child-process exit/signal and disconnected-registration evidence for bounded fixture cleanup (~650 tok)
 
 ## bin/
 
@@ -332,6 +334,7 @@
 
 - `daemon-cmd.test.js` — Declares projectRoot (~1816 tok)
 - `experiment-cmd.test.js` — project: inProject (~2898 tok)
+- `fixture-cleanup.test.js` — helperUrl: runChild, runSignalCase (~1600 tok)
 - `hook-packaging.test.js` — Hook packaging: every module a hook imports must actually ship. (~1113 tok)
 - `drift-cmd.test.js` — driftcheck regression suite: root-relative base, denominator integrity, vacuity on disconnected extraction, prose headings, brace expansion (~1400 tok)
 - `learning-capture.test.js` — root: fixture, transcript, transcriptEntries (~3517 tok)
@@ -351,3 +354,7 @@
 - `superpowers-canary.test.js` — Declares root (~576 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)
 - `update-source-exclusion.test.js` — Declares root (~227 tok)
+
+## tests/lib/
+
+- `fixture-cleanup.js` — Exports createHomeFixture, createTmpFixture, cleanupFixture, cleanupAllFixtures (~930 tok)
