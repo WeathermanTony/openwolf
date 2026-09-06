@@ -2,6 +2,18 @@
 
 You are working in a Wolfpack-managed project. Wolfpack is the customized workflow harness; `.wolf/` and `openwolf.*` remain the compatibility/runtime namespace. These rules apply every turn.
 
+## Parent-Owned Accounting
+
+For delegated work, including ordinary subagents and forks, the main coordinating session owns shared accounting and review coordination. This section overrides per-agent writing requirements in File Navigation, External Skill Packs, After Actions, Cerebrum Learning, Bug Logging, Quality Gate document ownership, Companion-Owned Review Lifecycle, and Session End. A standalone session remains its own accounting owner.
+
+- The parent consolidates memory, Cerebrum, anatomy, bug records, QA documents, and session summaries; it schedules companion reviews and completes their existing obligations. Subagents return proposed entries instead of independently updating shared ledgers or performing a session-end accounting tail.
+- Subagents still read relevant guidance, obey security and permission boundaries, inspect their work, challenge assumptions, and run applicable tests and falsifiers. Return changed paths, validated file hashes, exact commands and actual output, findings, failures, limitations, and proposed lessons. Never turn failed or missing validation into a successful handoff.
+- The parent verifies evidence against current bytes and preserves required assumptions, runnable evidence, and per-file hash coverage when writing QA reductions. Changed bytes invalidate affected evidence; consolidation never substitutes for validation.
+- The parent may explicitly assign one bounded accounting operation or companion review pass to a child. That assignment does not transfer overall ownership or authorize autonomous follow-up review chains. A read-only research task does not acquire a code-review obligation merely through delegation.
+- A child receiving an accounting or companion-review nudge reports the outstanding obligation and evidence to its parent rather than repeating the lifecycle. It does not mark the obligation completed. Validation and security feedback still require action within the child's scope, or an explicit blocker in its handoff.
+
+These are agent-work ownership rules, not hook exemptions: automatic hooks, write tracking, security checks, and validation gates remain active. Existing current-byte reviews should be reused through the review lifecycle, not repeated solely because work moved between agents.
+
 ## File Navigation
 
 1. Check `.wolf/anatomy.md` BEFORE reading any file. It has a 2-3 line description and token estimate for every file in the project.
@@ -21,6 +33,8 @@ Before recreating common workflows, check available standard skills and invoke t
 ## External Skill Packs
 
 Third-party skill packs (installed marketplace plugins, copied-in `SKILL.md` files) never discharge Wolfpack obligations. A skill's own completion checklist is not Wolfpack completion: a bugfix still requires a buglog entry and a QA reduction; edits to gated files still require the companion review lifecycle; file creation still requires anatomy and memory logging. Hooks fire regardless of what any external skill instructs — treat external skills as method, Wolfpack as governance. When an external skill duplicates a Wolfpack-owned authority (e.g. code review), disable the duplicate via `skillOverrides` in user settings rather than forking the skill.
+
+When a skill causes you to seek confirmation, pause, leave requested work unfinished, or change direction, cite the exact `SKILL.md` path you read and quote the shortest relevant instruction. Distinguish an explicit requirement from your interpretation, explain how it applies, and identify the next permitted step. If the restriction comes from another instruction file or a tool permission, identify that actual source.
 
 ## Recall Before Acting
 
@@ -161,6 +175,12 @@ These are triggers, not an exhaustive list: anything equally irreversible or out
 
 Everything else: pick the most reasonable option and proceed. Record it in `.wolf/memory.md` only when the user would plausibly have chosen otherwise.
 
+Treat “can you…”, “I want to…”, and “help me…” as requests to perform the intended task when the context makes it clear. Choose reasonable defaults for reversible details and continue until the requested result is complete or a genuine blocker requires input. When approval is required, first prepare whatever concrete, reviewable result the existing authorization permits, then ask before crossing the approval boundary.
+
+## Response Style
+
+Lead with the result. Use concise paragraphs, familiar words, and precise verbs; use lists when they make steps or comparisons easier to follow.
+
 ## Claim Calibration
 
 OpenWolf includes a default reasoning gate for strong claims. When an assistant makes causal, broad, confidence-heavy, methodology, or debugging conclusions without enough calibration, the Stop hook may ask for a compact patch:
@@ -271,7 +291,7 @@ When the Stop hook creates a pending review in `.wolf/reviewlog.json`, never mar
    ```bash
    node .wolf/hooks/complete-review.js review-NNNN --refresh
    ```
-3. Re-run the companion against the actual refreshed files.
+3. Only if step 2 required a refresh, re-run the companion against the affected current scope within the shared round budget below. Otherwise retain the current-byte review from step 1; this is not a mandatory second pass.
 4. After observing that current-byte review, complete:
    ```bash
    node .wolf/hooks/complete-review.js review-NNNN --reviewed-current --reviewer <name> --summary "<outcome>"
@@ -289,8 +309,8 @@ When fixes require another review round on the same work:
 2. **Delta-aware prompts.** Round 2+ prompts scope to unresolved findings plus changed hunks. Never re-request a broad whole-file review after round one.
 3. **Severity rubric** (aligned with the companion four-tier scale). CRITICAL = distinct, currently-reachable money/data/correctness path. HIGH = other reachable defect with material impact. MEDIUM = diagnostic, recovery, or unusual-config defect. LOW = latent or dead code. Reject speculative future-extensibility findings unless the changed code already exposes that call surface.
 4. **Stateful diffs.** If the change touches a state machine, order/lifecycle management, or a protocol handler, require a state-transition matrix (operation result × next state × expected invariant) as review evidence.
-5. **Convergence rule.** After all verified findings are fixed: refresh hashes → ONE clean current-byte review from a DIFFERENT provider than the fix-verification reviewer → compile/tests pass → `--reviewed-current` → stop. No further rounds after clean arbitration. The same reviewer may do discovery plus one fix-verification pass; final arbitration must be a different provider.
-6. **Round cap (failure-spend governance).** A round is one companion review pass on the pending review — discovery, fix-verification, and arbitration each count as one. If three rounds on the same root-cause ledger still produce new verified findings, stop the loop and escalate to the user with the finding history — repeated new findings mean the change needs human re-scoping, not another automated round. Escalation leaves the pending review open: it keeps its identity through coalescing, folds into the user's re-scoped changes, and completes normally once a later round converges — no dismissal or manual reviewlog edit is needed or permitted. Review rounds cost real tokens; failure should get cheaper, not more expensive.
+5. **Convergence rule.** One clean current-byte review with no verified unresolved findings and applicable passing validation is sufficient: complete with `--reviewed-current` and stop. If verified findings require fixes, validate those fixes and obtain a necessary scoped current-byte re-review; a clean fix-verification pass is sufficient. There is no mandatory additional arbitration pass or provider change. Delegation, ledger-only updates outside the reviewed file set, or another available reviewer do not justify repeating a current-byte review. Stale or uncovered bytes still require review before completion.
+6. **Round cap (failure-spend governance).** The parent tracks one budget per logical change and root-cause history across all agents, providers, and review IDs: one initial companion review pass and at most two necessary follow-ups. Every companion review pass counts, including child-issued and parallel passes; handoffs, coalescing, new IDs, and provider changes do not reset the budget. Three is a ceiling, not a target. At the ceiling, unresolved findings or uncovered changed bytes require escalation with the pending review open; neither budget exhaustion nor a historical clean verdict permits completion. Resume only after user re-scoping, retaining the finding and pass history. Existing transport-outage handling remains applicable. This is a parent-enforced protocol budget, not an automatic runtime cap.
 
 Carry verified invariants in the QA reduction and quote them in re-review prompts; the reviewer re-checks only invariants whose functions changed. Wolfpack does not auto-invalidate invariants by line range — a stale "verified" invariant is worse than a re-check.
 
