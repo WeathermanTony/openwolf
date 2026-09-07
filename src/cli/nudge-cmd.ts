@@ -30,6 +30,7 @@ function wolfDir() {
  * Also accepts a full fingerprint or an unambiguous prefix of one.
  */
 export function resolveNudgeFingerprint(dir, nudgeId) {
+    if (typeof nudgeId !== "string" || !nudgeId.trim()) return null;
     const state = readState(dir);
     const pools = [state.emissions || {}, state.dispositions || {}, state.leases || {}];
     const matches = new Set();
@@ -58,6 +59,18 @@ function ruleOf(state, fp) {
 function shortOf(fp, ruleId) {
     const slug = String(ruleId).split(".")[0].replace(/[^a-z0-9]/gi, "").slice(0, 10) || "nudge";
     return `${slug}-${fp.slice(0, 8)}`;
+}
+
+function provenanceOf(emission, disposition) {
+    const value = (emission && emission.provenance) || (disposition && disposition.provenance);
+    return value && typeof value === "object" ? value : null;
+}
+
+function revisionOf(ruleId, provenance) {
+    if (!provenance) return `${ruleId || "unknown"}@unknown`;
+    const schema = provenance.rule_schema_version ?? "unknown";
+    const digest = provenance.config_digest ? String(provenance.config_digest).slice(0, 12) : "unknown";
+    return `${ruleId || "unknown"}@schema-${schema}/config-${digest}`;
 }
 
 export function nudgeList() {
@@ -107,6 +120,16 @@ export function nudgeShow(nudgeId) {
     console.log(`Fingerprint: ${fp}`);
     console.log(`Rule:        ${ruleOf(state, fp)}`);
     console.log(`State:       ${disp ? disp.state : (emission ? NUDGE_STATES.EMITTED : "unknown")}`);
+    const provenance = provenanceOf(emission, disp);
+    console.log(`Revision:    ${revisionOf(ruleOf(state, fp), provenance)}`);
+    if (provenance) {
+        console.log(`Source:      ${provenance.source_module || "unknown"}`);
+        console.log(`Impl hash:   ${provenance.implementation_hash || "unknown"}`);
+        const window = provenance.evidence_window;
+        if (window && (window.from || window.to)) {
+            console.log(`Evidence:    ${window.from || "?"} → ${window.to || "?"}`);
+        }
+    }
     if (emission) {
         console.log(`Project:     ${emission.owner_root || "(unattributed)"}`);
         console.log(`Emitted:     ${emission.emitted_at}`);
@@ -157,6 +180,7 @@ function dispose(nudgeId, stateName, opts = {}) {
         until: opts.until || null,
         sessionId: opts.sessionId || "",
         ruleId: ruleOf(state, fp),
+        provenance: provenanceOf((state.emissions || {})[fp], (state.dispositions || {})[fp]),
     });
     if (!res.ok) {
         // Never claim a disposition was persisted when it was not — that is the
@@ -234,6 +258,11 @@ export function nudgeStats() {
     }
     const state = readState(dir);
     const dispositions = Object.values(state.dispositions || {});
+    const dispositionsByRevision = {};
+    for (const d of dispositions) {
+        const revision = revisionOf(d.rule_id, d.provenance);
+        dispositionsByRevision[revision] = (dispositionsByRevision[revision] || 0) + 1;
+    }
     console.log("Nudge diagnostics");
     console.log(`  candidates created : ${counts.candidate_created || 0}`);
     console.log(`  emitted            : ${emittedCount}`);
@@ -252,6 +281,12 @@ export function nudgeStats() {
         console.log("  emissions by rule:");
         for (const [r, n] of Object.entries(byRule).sort((a, b) => b[1] - a[1])) {
             console.log(`    ${String(r).padEnd(38)} ${n}`);
+        }
+    }
+    if (Object.keys(dispositionsByRevision).length) {
+        console.log("  dispositions by revision:");
+        for (const [r, n] of Object.entries(dispositionsByRevision).sort((a, b) => b[1] - a[1])) {
+            console.log(`    ${String(r).padEnd(56)} ${n}`);
         }
     }
     const lineages = Object.entries(state.lineages || {});

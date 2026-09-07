@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { constants, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -230,22 +230,22 @@ async function checkCleanProjectTemplates() {
 }
 
 async function checkProtocolUpgradeDocs() {
-  for (const file of ['.wolf/OPENWOLF.md', 'src/templates/OPENWOLF.md', 'templates/wolf/OPENWOLF.md']) {
-    const content = await readRequiredText(file);
-    for (const heading of ['## Standard Skills', '## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Companion-Owned Review Lifecycle', '## Operational Verification']) {
-      if (!content.includes(heading)) {
-        failures.push(`${file} missing protocol section ${heading}`);
-      }
-    }
-    for (const marker of ['/ops:live-debug', '/ops:deploy-verify', 'health and functional probes', 'not an OS/filesystem sandbox', 'receipt hashes currently use a different representation']) {
-      if (!content.includes(marker)) failures.push(`${file} missing review/ops protocol marker: ${marker}`);
-    }
-    for (const field of ['"commit": null', '"reduction":']) {
-      if (!content.includes(field)) {
-        failures.push(`${file} buglog schema example missing ${field}`);
-      }
-    }
+  const canonical = await readRequiredText('src/templates/OPENWOLF.md');
+  const portable = await readRequiredText('templates/wolf/OPENWOLF.md');
+  const installed = await readRequiredText('.wolf/OPENWOLF.md');
+  if (Buffer.byteLength(canonical) > 2048) failures.push(`src/templates/OPENWOLF.md exceeds 2048-byte budget`);
+  if (portable !== canonical) failures.push('templates/wolf/OPENWOLF.md must equal src/templates/OPENWOLF.md');
+  if (installed !== canonical) failures.push('.wolf/OPENWOLF.md must equal src/templates/OPENWOLF.md');
+  for (const marker of ['# WolfPack Reference', 'current bytes', 'openwolf --help']) {
+    if (!canonical.includes(marker)) failures.push(`compact OPENWOLF.md missing ${marker}`);
   }
+  const globalContract = await readRequiredText('src/templates/global-claude-wolfpack.md');
+  if (Buffer.byteLength(globalContract.trim()) > 1500) failures.push('global WolfPack contract exceeds 1500-byte budget');
+  if ((globalContract.match(/wolfpack:global:start/g) || []).length !== 1 || (globalContract.match(/wolfpack:global:end/g) || []).length !== 1) {
+    failures.push('global WolfPack contract must contain exactly one marker pair');
+  }
+  const initSource = await readRequiredText('src/cli/init.ts');
+  if (initSource.includes('@.wolf/OPENWOLF.md')) failures.push('src/cli/init.ts must not recreate the unconditional OPENWOLF import');
 
   for (const file of ['.wolf/PROTOCOL-UPGRADE-2026-06.md', 'src/templates/PROTOCOL-UPGRADE-2026-06.md', 'templates/wolf/PROTOCOL-UPGRADE-2026-06.md']) {
     const content = await readRequiredText(file);
@@ -323,9 +323,11 @@ async function checkFreshInitScaffoldOutput() {
         failures.push(`fresh init .wolf/PROTOCOL-UPGRADE-2026-06.md missing ${heading}`);
       }
     }
-    if (!openwolfProtocol.includes('## Standard Skills') || !openwolfProtocol.includes('Skill instructions load on demand.')) {
-      failures.push('fresh init .wolf/OPENWOLF.md missing compact standard-skills discovery guidance');
+    if (!openwolfProtocol.includes('# WolfPack Reference') || Buffer.byteLength(openwolfProtocol) > 2048) {
+      failures.push('fresh init .wolf/OPENWOLF.md must be the compact on-demand reference');
     }
+    if (existsSync(path.join(dir, 'CLAUDE.md'))) failures.push('fresh init must not create a project CLAUDE.md bootstrap');
+    if (existsSync(path.join(dir, '.claude', 'rules', 'openwolf.md'))) failures.push('fresh init must not create the duplicate openwolf all-file rule');
     if (!cerebrum.includes('- **Project:** fresh-verify-app')) {
       failures.push('fresh init .wolf/cerebrum.md did not seed the fresh project name');
     }

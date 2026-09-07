@@ -32,6 +32,7 @@ export function createProgram(): Command {
     .command("init")
     .description("Initialize .wolf/ in current project")
     .option("--profile <name>", "Reviewer recommendation profile: gov, open, or budget")
+    .option("--behavior <mode>", "Automatic coaching behavior: quiet or standard")
     .action(initCommand);
 
   program
@@ -239,16 +240,49 @@ export function createProgram(): Command {
     .command("update")
     .description("Update all registered OpenWolf projects to latest version")
     .option("--dry-run", "Show what would be updated without making changes")
-    .option("--project <name>", "Update only a specific project (partial name match)")
+    .option("--project <name>", "Update one uniquely matching project (use --root for exact targeting)")
+    .option("--root <absolute-path>", "Update one exact registered project root")
     .option("--profile <name>", "Reviewer recommendation profile: gov, open, or budget")
+    .option("--behavior <mode>", "Automatic coaching behavior: quiet or standard")
     .option("--list", "List all registered projects")
-    .action(async (opts: { dryRun?: boolean; project?: string; profile?: string; list?: boolean }) => {
+    .action(async (opts: { dryRun?: boolean; project?: string; root?: string; profile?: string; behavior?: string; list?: boolean }) => {
       const { updateCommand, listProjects } = await import("./update.js");
       if (opts.list) {
         listProjects();
       } else {
         await updateCommand(opts);
       }
+    });
+
+  // --- Instruction consolidation command ---
+  program
+    .command("consolidate-instructions")
+    .description("Remove per-project WolfPack instruction duplication using a reviewed manifest")
+    .option("--root <absolute-path>", "Target one exact registered project root")
+    .option("--fleet", "Target all eligible registered projects")
+    .option("--apply", "Apply the reviewed dry-run manifest")
+    .option("--manifest-hash <sha256>", "Required dry-run manifest hash for apply")
+    .option("--json", "Print the deterministic manifest as JSON")
+    .option("--rollback <migration-id>", "Restore exact instruction preimages")
+    .action(async (opts: { root?: string; fleet?: boolean; apply?: boolean; manifestHash?: string; json?: boolean; rollback?: string }) => {
+      const { consolidateInstructionsCommand } = await import("./instruction-consolidation.js");
+      await consolidateInstructionsCommand(opts);
+    });
+
+  // --- Compact command ---
+  program
+    .command("compact")
+    .description("Plan or apply conservative .wolf archival and cleanup")
+    .option("--root <absolute-path>", "Target one exact registered project root")
+    .option("--apply", "Apply the reviewed dry-run manifest")
+    .option("--manifest-hash <sha256>", "Required dry-run manifest hash for apply")
+    .option("--json", "Print the deterministic manifest as JSON")
+    .option("--rollback <transaction-id>", "Restore exact compact preimages")
+    .option("--ai", "Generate optional derived summaries from archived bytes")
+    .option("--model <id>", "AI model (requires --ai)")
+    .action(async (opts: { root?: string; apply?: boolean; manifestHash?: string; json?: boolean; rollback?: string; ai?: boolean; model?: string }) => {
+      const { compactCommand } = await import("./compact-cmd.js");
+      await compactCommand(opts);
     });
 
   // --- Restore command ---

@@ -1111,6 +1111,40 @@ export function loadConfig() {
     }
     return raw;
 }
+export function normalizeBehaviorMode(value) {
+    if (typeof value !== "string")
+        return undefined;
+    const normalized = value.trim().toLowerCase();
+    return normalized === "quiet" || normalized === "standard" ? normalized : undefined;
+}
+export function resolveBehavior(config, context = {}) {
+    const installationKind = context.installationKind === "fresh" ? "fresh" : "existing";
+    const openwolf = config && typeof config === "object" && !Array.isArray(config)
+        ? config.openwolf
+        : undefined;
+    const behavior = openwolf && typeof openwolf === "object" && !Array.isArray(openwolf)
+        ? openwolf.behavior
+        : undefined;
+    const rawMode = behavior && typeof behavior === "object" && !Array.isArray(behavior)
+        ? behavior.mode
+        : undefined;
+    const explicit = normalizeBehaviorMode(rawMode);
+    if (explicit) {
+        return { mode: explicit, source: "explicit", explicitlyConfigured: true };
+    }
+    const fallback = installationKind === "fresh" ? "quiet" : "standard";
+    if (rawMode !== undefined) {
+        return { mode: fallback, source: "invalid-fallback", explicitlyConfigured: false };
+    }
+    return {
+        mode: fallback,
+        source: installationKind === "fresh" ? "fresh-default" : "legacy-compatibility",
+        explicitlyConfigured: false,
+    };
+}
+export function getBehaviorConfig() {
+    return resolveBehavior(loadConfig(), { installationKind: "existing" });
+}
 /**
  * List tracked project files for extension detection.
  *

@@ -2,6 +2,21 @@
   "version": 1,
   "openwolf": {
     "enabled": true,
+    "behavior": {
+      "mode": "quiet"
+    },
+    "backups": {
+      "retention_days": 30,
+      "keep_last": 3,
+      "protect_pending_reviews": true
+    },
+    "compact": {
+      "ai": {
+        "model": "claude-haiku-4-5-20251001",
+        "timeout_ms": 120000,
+        "max_output_bytes": 65536
+      }
+    },
     "anatomy": {
       "auto_scan_on_init": true,
       "rescan_interval_hours": 6,

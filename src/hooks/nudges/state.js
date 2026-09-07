@@ -32,7 +32,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { acquireFileLock } from "../../utils/size-discipline.js";
-export const NUDGE_STATE_VERSION = 3;
+export const NUDGE_STATE_VERSION = 4;
 /** Lifecycle states a candidate can occupy. */
 export const NUDGE_STATES = Object.freeze({
     NEW: "new",
@@ -140,7 +140,7 @@ export function stableStringify(value) {
  * `rule_schema_version` participates so that changing what a rule MEANS by its
  * evidence invalidates old dispositions instead of silently inheriting them.
  */
-export function computeFingerprint({ ruleId, ownerRoot, targetHashes = {}, eventSequence = null, evidence = {}, schemaVersion = 1, }) {
+export function computeFingerprint({ ruleId, ownerRoot, targetHashes = {}, eventSequence = null, evidence = {}, schemaVersion = 1, configDigest = "", }) {
     // Canonicalize + sort target hashes into pairs so path spelling and key
     // order cannot perturb the digest. The value carries a type tag: without
     // one, String(h) collapses 12345678 and "12345678" to the same digest, so a
@@ -161,6 +161,10 @@ export function computeFingerprint({ ruleId, ownerRoot, targetHashes = {}, event
         // to suppress the other and the noise loop returns.
         evidence: canonicalizeEvidence(evidence),
         rule_schema_version: schemaVersion,
+        // Only the digest of decision-relevant configuration participates. Source
+        // formatting and unrelated config stay out, so they cannot spuriously
+        // re-arm a disposition.
+        config_digest: String(configDigest || ""),
     };
     return crypto.createHash("sha256").update(stableStringify(payload)).digest("hex");
 }
@@ -254,8 +258,17 @@ export function readState(wolfDir, { onCorrupt } = {}) {
     try {
         raw = fs.readFileSync(file, "utf-8");
     }
-    catch {
-        return emptyState(); // absent — normal first run
+    catch (err) {
+        if (err && err.code === "ENOENT")
+            return emptyState(); // normal first run
+        // A read failure is not absence. Preserve the only copy of the state
+        // even when directory permissions would allow renaming over the file.
+        const fallback = emptyState();
+        Object.defineProperty(fallback, UNSAFE_TO_PERSIST, {
+            value: `unreadable state at ${file}: ${(err && err.code) || "read failed"}`,
+            enumerable: false,
+        });
+        return fallback;
     }
     try {
         return migrateState(JSON.parse(raw));
@@ -462,7 +475,7 @@ function sanitizeCandidateDetail(detail) {
     return out.candidate_type === "learning" ? out : null;
 }
 /** Convert a held lease into a durable emission record. */
-export function markEmitted(wolfDir, fingerprint, { token, sessionId = "", ruleId = "", ownerRoot = null, detail = null, clock } = {}) {
+export function markEmitted(wolfDir, fingerprint, { token, sessionId = "", ruleId = "", ownerRoot = null, detail = null, provenance = null, clock } = {}) {
     const file = nudgeStatePath(wolfDir);
     const release = acquireFileLock(file);
     if (!release)
@@ -483,6 +496,7 @@ export function markEmitted(wolfDir, fingerprint, { token, sessionId = "", ruleI
             emitted_at: new Date(nowMs(clock)).toISOString(),
             state: NUDGE_STATES.EMITTED,
             detail: sanitizeCandidateDetail(detail),
+            provenance: provenance && typeof provenance === "object" ? provenance : null,
         };
         if (state.leases)
             delete state.leases[fingerprint];
@@ -527,7 +541,7 @@ export function releaseLease(wolfDir, fingerprint, token) {
  * fingerprint with no disposition, so a genuinely new problem still surfaces
  * (test 6).
  */
-export function setDisposition(wolfDir, fingerprint, dispositionState, { reason = "", until = null, sessionId = "", ruleId = "", clock } = {}) {
+export function setDisposition(wolfDir, fingerprint, dispositionState, { reason = "", until = null, sessionId = "", ruleId = "", provenance = null, clock } = {}) {
     const release = acquireFileLock(nudgeStatePath(wolfDir));
     if (!release)
         return { ok: false, degraded: true };
@@ -539,6 +553,7 @@ export function setDisposition(wolfDir, fingerprint, dispositionState, { reason 
             until: until || null,
             session_id: sessionId,
             rule_id: ruleId,
+            provenance: provenance && typeof provenance === "object" ? provenance : null,
             at: new Date(nowMs(clock)).toISOString(),
         };
         writeStateOrThrow(wolfDir, state);
@@ -601,4 +616,3 @@ export function markLineageEscalated(wolfDir, lineageId, { clock } = {}) {
         release();
     }
 }
-//# sourceMappingURL=state.js.map

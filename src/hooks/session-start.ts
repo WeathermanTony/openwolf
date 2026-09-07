@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getWolfDir, ensureWolfDir, writeJSON, appendMarkdown, readJSON, timestamp, timeShort } from "./shared.js";
+import { getWolfDir, ensureWolfDir, writeJSON, appendMarkdown, readJSON, timestamp, timeShort, getBehaviorConfig } from "./shared.js";
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
@@ -55,6 +55,8 @@ async function main() {
         stop_count: 0,
         cerebrum_baselines: cerebrumBaselines,
     });
+    if (getBehaviorConfig().mode === "quiet")
+        process.exit(0);
     // Append session header to memory.md
     const memoryPath = path.join(wolfDir, "memory.md");
     const header = `\n## Session: ${now.toISOString().slice(0, 10)} ${timeShort()}\n\n| Time | Action | File(s) | Outcome | ~Tokens |\n|------|--------|---------|---------|--------|\n`;

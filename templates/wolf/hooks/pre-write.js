@@ -1,10 +1,13 @@
+// @ts-nocheck
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, readMarkdown, readStdin } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, readMarkdown, readStdin, getBehaviorConfig } from "./shared.js";
 import { acquireFileLock } from "../utils/size-discipline.js";
 async function main() {
     ensureWolfDir();
+    if (getBehaviorConfig().mode === "quiet")
+        process.exit(0);
     const wolfDir = getWolfDir();
     const raw = await readStdin();
     let input;

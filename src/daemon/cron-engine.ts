@@ -6,6 +6,7 @@ import { readJSON, writeJSON, readText, writeText, appendText } from "../utils/f
 import { scanProject } from "../scanner/anatomy-scanner.js";
 import { detectWaste } from "../tracker/waste-detector.js";
 import type { Logger } from "../utils/logger.js";
+import { monthlyRotateMarkdown } from "../utils/size-discipline.js";
 
 interface CronAction {
   type: string;
@@ -387,56 +388,16 @@ export class CronEngine {
   }
 
   private consolidateMemory(olderThanDays: number): void {
-    const memoryPath = path.join(this.wolfDir, "memory.md");
-    const content = readText(memoryPath);
-    if (!content) return;
-
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - olderThanDays);
-
-    const lines = content.split("\n");
-    const result: string[] = [];
-    let inOldSession = false;
-    let oldSessionLines: string[] = [];
-    let currentSessionDate: Date | null = null;
-
-    for (const line of lines) {
-      const sessionMatch = line.match(/^## Session: (\d{4}-\d{2}-\d{2})/);
-      if (sessionMatch) {
-        // Flush previous old session
-        if (inOldSession && oldSessionLines.length > 0) {
-          const actionCount = oldSessionLines.filter((l) => l.startsWith("|") && !l.startsWith("|--") && !l.startsWith("| Time")).length;
-          result.push(`> Consolidated session (${actionCount} actions)`);
-          result.push("");
-        }
-
-        currentSessionDate = new Date(sessionMatch[1]);
-        if (currentSessionDate < cutoff) {
-          inOldSession = true;
-          oldSessionLines = [];
-          result.push(line); // Keep the header
-        } else {
-          inOldSession = false;
-          result.push(line);
-        }
-        continue;
-      }
-
-      if (inOldSession) {
-        oldSessionLines.push(line);
-      } else {
-        result.push(line);
-      }
-    }
-
-    // Flush last old session
-    if (inOldSession && oldSessionLines.length > 0) {
-      const actionCount = oldSessionLines.filter((l) => l.startsWith("|") && !l.startsWith("|--") && !l.startsWith("| Time")).length;
-      result.push(`> Consolidated session (${actionCount} actions)`);
-      result.push("");
-    }
-
-    writeText(memoryPath, result.join("\n"));
+    monthlyRotateMarkdown({
+      file: path.join(this.wolfDir, "memory.md"),
+      retentionDays: olderThanDays,
+      sectionHeaderPattern: /^## Session: /,
+      getSectionDate: (headerLine: string) => {
+        const match = headerLine.match(/^## Session:\s*(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2}))?/);
+        if (!match) return undefined;
+        return match[2] ? `${match[1]}T${match[2]}:00Z` : `${match[1]}T00:00:00Z`;
+      },
+    });
   }
 
   private generateTokenReport(): void {

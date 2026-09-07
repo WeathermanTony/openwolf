@@ -9,12 +9,15 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as os from "node:os";
+import * as crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { getRegisteredProjects, registerProject, type RegisteredProject } from "./registry.js";
-import { applyReviewerProfile, findTemplatesDir, generateTemplate, migrateReviewCompanionConfig, normalizeReviewerProfile, shouldAutoStartDaemon } from "./init.js";
+import { classifyFleetProjects, getRegisteredProjects, registerProject, type RegisteredProject } from "./registry.js";
+import { applyBehaviorMode, applyReviewerProfile, findTemplatesDir, generateTemplate, migrateReviewCompanionConfig, normalizeBehaviorMode, normalizeReviewerProfile, shouldAutoStartDaemon } from "./init.js";
 import { cleanupOpenWolfPm2, listPm2Processes } from "./daemon-cmd.js";
 import { readJSON, writeJSON, readText, writeText, safeCopyFile, safeCopyDir } from "../utils/fs-safe.js";
 import { ensureDir } from "../utils/paths.js";
+import { findProjectRoot } from "../scanner/project-root.js";
 import { backupManagedClaudeSkills, installManagedClaudeSkills, restoreManagedClaudeSkills } from "./managed-skills.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,7 +30,9 @@ function normalizedRealPath(value: string): string {
 }
 
 export function isSourceProject(project: Pick<RegisteredProject, "root" | "name">, sourceRoot = SOURCE_ROOT): boolean {
-  return project.name === "openwolf" || normalizedRealPath(project.root) === normalizedRealPath(sourceRoot);
+  if (project.name === "openwolf" || normalizedRealPath(project.root) === normalizedRealPath(sourceRoot)) return true;
+  const pkg = readJSON<{ name?: string }>(path.join(project.root, "package.json"), {});
+  return pkg.name === "customopenwolf" && fs.existsSync(path.join(project.root, "src", "cli", "update.ts"));
 }
 
 function getVersion(): string {
@@ -84,13 +89,15 @@ interface UpdateResult {
   message: string;
 }
 
-export async function updateCommand(options: { dryRun?: boolean; force?: boolean; project?: string; profile?: string }): Promise<void> {
+export async function updateCommand(options: { dryRun?: boolean; force?: boolean; project?: string; root?: string; profile?: string; behavior?: string }): Promise<void> {
   const version = getVersion();
   const dryRun = options.dryRun ?? false;
   // Keep missing projects long enough to correlate and remove their owned PM2
   // registrations before registry validation drops them.
   const allProjects = getRegisteredProjects(false);
-  const projects = allProjects.filter(project => fs.existsSync(path.join(project.root, ".wolf")));
+  const eligibility = classifyFleetProjects(allProjects, SOURCE_ROOT).map(item =>
+    isSourceProject(item.project) ? { ...item, eligible: false, reason: "source-checkout" as const } : item
+  );
 
   if (allProjects.length === 0) {
     console.log("No registered OpenWolf projects found.");
@@ -98,29 +105,23 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
     return;
   }
 
-  // Filter against all registrations so a scoped update can clean a missing project's owned daemon.
-  let selected = allProjects;
-  if (options.project) {
+  let selectedEligibility = eligibility;
+  if (options.root) {
+    const exact = normalizedRealPath(options.root);
+    selectedEligibility = eligibility.filter(item => normalizedRealPath(item.project.root) === exact);
+    if (selectedEligibility.length !== 1) throw new Error(`No exact registered root: ${options.root}`);
+  } else if (options.project) {
     const search = options.project.toLowerCase();
-    selected = allProjects.filter(p =>
-      p.name.toLowerCase().includes(search) ||
-      p.root.toLowerCase().includes(search)
-    );
-    if (selected.length === 0) {
-      console.log(`No registered project matching "${options.project}".`);
-      console.log("Registered projects:");
-      for (const p of allProjects) {
-        console.log(`  - ${p.name} (${p.root})`);
-      }
-      return;
-    }
+    selectedEligibility = eligibility.filter(item => item.project.name.toLowerCase().includes(search) || item.project.root.toLowerCase().includes(search));
+    if (selectedEligibility.length !== 1) throw new Error(`--project must resolve to exactly one project; use --root for mutation (matched ${selectedEligibility.length})`);
   }
-  const targets = selected.filter(project => fs.existsSync(path.join(project.root, ".wolf")));
-  const missingSelectedRoots = selected.filter(project => !fs.existsSync(path.join(project.root, ".wolf"))).map(project => project.root);
+  const targets = selectedEligibility.filter(item => item.eligible).map(item => item.project);
+  const excluded = selectedEligibility.filter(item => !item.eligible);
+  for (const item of excluded) console.log(`  ○ Excluded ${item.project.root}: ${item.reason}`);
+  const missingSelectedRoots = excluded.filter(item => item.reason === "missing" || item.reason === "missing-wolf-directory").map(item => item.project.root);
 
-  if (options.profile) {
-    normalizeReviewerProfile(options.profile);
-  }
+  if (options.profile) normalizeReviewerProfile(options.profile);
+  if (options.behavior) normalizeBehaviorMode(options.behavior);
 
   console.log(`OpenWolf v${version} — updating ${targets.length} project(s)${dryRun ? " (dry run)" : ""}...\n`);
 
@@ -131,7 +132,7 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
   let daemonNotRunning = 0;
 
   for (const project of targets) {
-    const result = await updateProject(project, version, dryRun, options.profile);
+    const result = await updateProject(project, version, dryRun, options.profile, options.behavior);
     results.push(result);
     if (result.status !== "updated") continue;
     const config = readJSON<unknown>(path.join(project.root, ".wolf", "config.json"), {});
@@ -144,7 +145,7 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
 
   const cleanup = cleanupOpenWolfPm2({
     projectRoots: daemonRootsToRemove,
-    pruneStale: !options.project,
+    pruneStale: !options.project && !options.root,
     dryRun: dryRun,
     processes: pm2Processes,
   });
@@ -190,7 +191,8 @@ async function updateProject(
   project: RegisteredProject,
   version: string,
   dryRun: boolean,
-  profile?: string
+  profile?: string,
+  behavior?: string
 ): Promise<UpdateResult> {
   const { root, name } = project;
   const wolfDir = path.join(root, ".wolf");
@@ -213,14 +215,23 @@ async function updateProject(
   }
 
   if (dryRun) {
-    const profileText = profile ? ` and set reviewer profile to ${normalizeReviewerProfile(profile)}` : "";
-    console.log(`    [dry run] Would backup, update hooks, templates, managed skills, rules${profileText}`);
-    return { project, status: "updated", message: `would update to v${version}${profileText}` };
+    const config = readJSON<any>(path.join(wolfDir, "config.json"), {});
+    const configuredBehavior = config?.openwolf?.behavior?.mode;
+    const currentBehavior = configuredBehavior === "quiet" || configuredBehavior === "standard" ? configuredBehavior : "standard";
+    const resultingBehavior = normalizeBehaviorMode(behavior) ?? currentBehavior;
+    const profileText = profile ? `; reviewer profile → ${normalizeReviewerProfile(profile)}` : "";
+    console.log(`    [dry run] Behavior: ${currentBehavior} → ${resultingBehavior}${configuredBehavior ? " (explicit)" : " (legacy compatibility)"}`);
+    console.log(`    [dry run] Would create a verified backup, preserve pending reviews, update hooks/templates/skills/rules, then apply retention${profileText}`);
+    return { project, status: "updated", message: `would update to v${version}; behavior ${currentBehavior} → ${resultingBehavior}${profileText}` };
   }
 
+  let backupDir: string | undefined;
   try {
+    const preUpdateConfig = readJSON<any>(path.join(wolfDir, "config.json"), {});
+    const preUpdateBehavior = preUpdateConfig?.openwolf?.behavior?.mode;
+    const legacyBehaviorAbsent = preUpdateBehavior !== "quiet" && preUpdateBehavior !== "standard";
     // 1. Create backup
-    const backupDir = createBackup(wolfDir);
+    backupDir = createBackup(wolfDir);
     console.log(`    ✓ Backup: ${path.basename(backupDir)}`);
 
     // 2. Update template files (OPENWOLF.md, config.json)
@@ -247,6 +258,8 @@ async function updateProject(
       }
     }
     mergeConfigDefaults(path.join(templatesDir, "config.json"), path.join(wolfDir, "config.json"));
+    const appliedBehavior = applyBehaviorMode(path.join(wolfDir, "config.json"), behavior ?? (legacyBehaviorAbsent ? "standard" : undefined), "existing");
+    console.log(`    ✓ Behavior: ${appliedBehavior}`);
     const appliedProfile = applyReviewerProfile(path.join(wolfDir, "config.json"), profile);
     if (appliedProfile) {
       console.log(`    ✓ Reviewer profile: ${appliedProfile}`);
@@ -275,23 +288,25 @@ async function updateProject(
     installManagedClaudeSkills(templatesDir, root);
     console.log(`    ✓ Managed Claude skills updated`);
 
-    // 5. Update .claude/rules/openwolf.md
-    const rulesDir = path.join(claudeDir, "rules");
-    ensureDir(rulesDir);
-    const rulesContent = readTemplateContent("claude-rules-openwolf.md", templatesDir);
-    writeText(path.join(rulesDir, "openwolf.md"), rulesContent);
-    console.log(`    ✓ Claude rules updated`);
-
-    // 6. Update CLAUDE.md snippet if it references OpenWolf
+    // 5. Consolidate instructions into the global contract without guessing at user-authored content.
+    const { planClaudeMd, mergeGlobalContract, isOwnedOpenWolfRule } = await import("./instruction-consolidation.js");
     const claudeMdPath = path.join(root, "CLAUDE.md");
-    const snippetContent = readTemplateContent("claude-md-snippet.md", templatesDir);
     if (fs.existsSync(claudeMdPath)) {
-      const existing = readText(claudeMdPath);
-      if (!existing.includes("OpenWolf")) {
-        writeText(claudeMdPath, snippetContent + "\n\n" + existing);
-        console.log(`    ✓ CLAUDE.md updated`);
-      }
+      const plan = planClaudeMd(readText(claudeMdPath));
+      if (plan.action === "delete") fs.unlinkSync(claudeMdPath);
+      else if (plan.action === "remove-bootstrap" && plan.output !== undefined) writeText(claudeMdPath, plan.output);
+      else if (plan.action === "manual-review") console.log(`    ⚠ CLAUDE.md contains an ambiguous WolfPack reference; preserved`);
     }
+    const rulePath = path.join(claudeDir, "rules", "openwolf.md");
+    if (fs.existsSync(rulePath)) {
+      const knownRule = readTemplateContent("claude-rules-openwolf.md", templatesDir);
+      if (isOwnedOpenWolfRule(readText(rulePath), knownRule)) fs.unlinkSync(rulePath);
+      else console.log(`    ⚠ Modified .claude/rules/openwolf.md preserved`);
+    }
+    const globalPath = process.env.OPENWOLF_GLOBAL_CLAUDE_PATH ?? path.join(os.homedir(), ".claude", "CLAUDE.md");
+    const contract = readTemplateContent("global-claude-wolfpack.md", templatesDir);
+    writeText(globalPath, mergeGlobalContract(readText(globalPath), contract));
+    console.log(`    ✓ Instructions consolidated`);
 
     // 7. Clean up stale .tmp files
     try {
@@ -307,6 +322,8 @@ async function updateProject(
 
     // 8. Update registry entry
     registerProject(root, name, version);
+    const pruned = pruneEligibleBackups(wolfDir, backupDir);
+    if (pruned.length > 0) console.log(`    ✓ Pruned ${pruned.length} expired backup(s)`);
 
     return {
       project,
@@ -316,7 +333,8 @@ async function updateProject(
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { project, status: "error", message: msg };
+    const recovery = backupDir ? ` Backup preserved at ${backupDir}. Restore with: openwolf restore ${path.basename(backupDir)}` : " No backup was created.";
+    return { project, status: "error", backupDir, message: msg + recovery };
   }
 }
 
@@ -384,8 +402,69 @@ function createBackup(wolfDir: string): string {
     ensureDir(rulesBackup);
     safeCopyFile(claudeRules, path.join(rulesBackup, "openwolf.md"));
   }
+  const rootClaudeMd = path.join(projectRoot, "CLAUDE.md");
+  writeJSON(path.join(backupDir, "root-claude-state.json"), { present: fs.existsSync(rootClaudeMd) });
+  if (fs.existsSync(rootClaudeMd)) safeCopyFile(rootClaudeMd, path.join(backupDir, "CLAUDE.md"));
 
+  const configBytes = fs.existsSync(path.join(wolfDir, "config.json"))
+    ? fs.readFileSync(path.join(wolfDir, "config.json"))
+    : Buffer.from("");
+  const reviewLog = readJSON<any>(path.join(wolfDir, "reviewlog.json"), { reviews: [] });
+  const pendingReviews = Array.isArray(reviewLog?.reviews)
+    ? reviewLog.reviews.filter((review: any) => !["completed", "resolved", "dismissed", "superseded"].includes(String(review?.status ?? "pending").toLowerCase()))
+      .map((review: any) => ({ id: review.id ?? null, hash: review.hash ?? review.content_hash ?? review.reviewed_hash ?? null }))
+    : [];
+  writeJSON(path.join(backupDir, "backup-manifest.json"), {
+    version: 1,
+    created_at: now.toISOString(),
+    source_version: getVersion(),
+    config_sha256: crypto.createHash("sha256").update(configBytes).digest("hex"),
+    pending_reviews: pendingReviews,
+  });
+  for (const required of ["config.json", "hooks", "backup-manifest.json"]) {
+    if (!fs.existsSync(path.join(backupDir, required))) throw new Error(`Backup verification failed: missing ${required}`);
+  }
   return backupDir;
+}
+
+export function planBackupRetention(wolfDir: string, currentBackup?: string): { keep: string[]; prune: string[]; protected: Record<string, string> } {
+  const cfg = readJSON<any>(path.join(wolfDir, "config.json"), {});
+  const retentionDays = Math.max(0, Number(cfg?.openwolf?.backups?.retention_days ?? 30));
+  const keepLast = Math.max(1, Number(cfg?.openwolf?.backups?.keep_last ?? 3));
+  const protectPending = cfg?.openwolf?.backups?.protect_pending_reviews !== false;
+  const backupsDir = path.join(wolfDir, "backups");
+  if (!fs.existsSync(backupsDir)) return { keep: [], prune: [], protected: {} };
+  const entries = fs.readdirSync(backupsDir, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => path.join(backupsDir, entry.name))
+    .sort((a, b) => b.localeCompare(a));
+  const keep = new Set<string>();
+  const protectedReasons: Record<string, string> = {};
+  entries.slice(0, keepLast).forEach(entry => { keep.add(entry); protectedReasons[entry] = "keep_last"; });
+  const cutoff = Date.now() - retentionDays * 86400000;
+  for (const entry of entries) {
+    if (entry === currentBackup) { keep.add(entry); protectedReasons[entry] = "current_update"; continue; }
+    const manifestPath = path.join(entry, "backup-manifest.json");
+    if (!fs.existsSync(manifestPath)) { keep.add(entry); protectedReasons[entry] = "unverified_or_legacy"; continue; }
+    const manifest = readJSON<any>(manifestPath, null);
+    const created = Date.parse(manifest?.created_at ?? "");
+    if (!Number.isFinite(created)) { keep.add(entry); protectedReasons[entry] = "malformed_manifest"; continue; }
+    if (created >= cutoff) { keep.add(entry); protectedReasons[entry] = "within_retention"; continue; }
+    if (protectPending && Array.isArray(manifest?.pending_reviews) && manifest.pending_reviews.length > 0) {
+      keep.add(entry); protectedReasons[entry] = "pending_reviews";
+    }
+  }
+  return { keep: entries.filter(entry => keep.has(entry)), prune: entries.filter(entry => !keep.has(entry)), protected: protectedReasons };
+}
+
+function pruneEligibleBackups(wolfDir: string, currentBackup: string): string[] {
+  const plan = planBackupRetention(wolfDir, currentBackup);
+  const removed: string[] = [];
+  for (const entry of plan.prune) {
+    fs.rmSync(entry, { recursive: true, force: false });
+    removed.push(entry);
+  }
+  return removed;
 }
 
 // ─── Shared helpers (extracted from init.ts patterns) ─────────────
@@ -441,7 +520,6 @@ function readTemplateContent(filename: string, templatesDir: string): string {
     return fs.readFileSync(filePath, "utf-8");
   }
   const templates: Record<string, string> = {
-    "claude-md-snippet.md": `# OpenWolf\n\n@.wolf/OPENWOLF.md\n\nThis project uses OpenWolf for context management. Read and follow .wolf/OPENWOLF.md every session. Check .wolf/cerebrum.md before generating code. Check .wolf/anatomy.md before reading files.`,
     "claude-rules-openwolf.md": `---\ndescription: OpenWolf protocol enforcement — active on all files\nglobs: **/*\n---\n\n- Check .wolf/anatomy.md before reading any project file\n- Check .wolf/cerebrum.md Do-Not-Repeat list before generating code\n- After writing or editing files, update .wolf/anatomy.md and append to .wolf/memory.md\n- After receiving a user correction, update .wolf/cerebrum.md immediately (Preferences, Learnings, or Do-Not-Repeat)\n- LEARN from every interaction: if you discover a convention, user preference, or project pattern, add it to .wolf/cerebrum.md. Low threshold — when in doubt, log it.\n- BEFORE fixing any bug or error: read .wolf/buglog.json for known fixes\n- AFTER fixing any bug, error, failed test, failed build, or user-reported problem: ALWAYS log to .wolf/buglog.json with error_message, root_cause, fix, and tags\n- If you edit a file more than twice in a session, that likely indicates a bug — log it to .wolf/buglog.json\n- When the user asks to check/evaluate UI design: run \`openwolf designqc\` to capture screenshots, then read them from .wolf/designqc-captures/\n- When the user asks to change/pick/migrate UI framework: read .wolf/reframe-frameworks.md, ask decision questions, recommend a framework, then execute with the framework's prompt`,
   };
   return templates[filename] ?? "";
@@ -569,7 +647,7 @@ export function listProjects(): void {
  * Restore a project's .wolf from a backup
  */
 export function restoreCommand(backupName?: string): void {
-  const wolfDir = path.join(process.cwd(), ".wolf");
+  const wolfDir = path.join(findProjectRoot(), ".wolf");
   const backupsDir = path.join(wolfDir, "backups");
 
   if (!fs.existsSync(backupsDir)) {
@@ -604,7 +682,8 @@ export function restoreCommand(backupName?: string): void {
   }
 
   // Restore files
-  const files = fs.readdirSync(backupDir).filter(f => fs.statSync(path.join(backupDir, f)).isFile());
+  const backupMetadata = new Set(["backup-manifest.json", "root-claude-state.json", "CLAUDE.md"]);
+  const files = fs.readdirSync(backupDir).filter(f => !backupMetadata.has(f) && fs.statSync(path.join(backupDir, f)).isFile());
   for (const file of files) {
     safeCopyFile(path.join(backupDir, file), path.join(wolfDir, file));
   }
@@ -621,10 +700,18 @@ export function restoreCommand(backupName?: string): void {
     safeCopyDir(hooksBackup, hooksDir, () => true);
   }
 
+  const projectRoot = path.dirname(wolfDir);
+  const rootClaudeState = readJSON<{ present?: boolean }>(path.join(backupDir, "root-claude-state.json"), {});
+  const rootClaudeDest = path.join(projectRoot, "CLAUDE.md");
+  if (rootClaudeState.present && fs.existsSync(path.join(backupDir, "CLAUDE.md"))) {
+    safeCopyFile(path.join(backupDir, "CLAUDE.md"), rootClaudeDest);
+  } else if (rootClaudeState.present === false && fs.existsSync(rootClaudeDest)) {
+    fs.unlinkSync(rootClaudeDest);
+  }
+
   // Restore .claude settings if present
   const claudeBackup = path.join(backupDir, ".claude");
   if (fs.existsSync(claudeBackup)) {
-    const projectRoot = path.dirname(wolfDir);
     const settingsBackup = path.join(claudeBackup, "settings.json");
     if (fs.existsSync(settingsBackup)) {
       const dest = path.join(projectRoot, ".claude", "settings.json");

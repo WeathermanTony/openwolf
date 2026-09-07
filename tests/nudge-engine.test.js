@@ -19,7 +19,7 @@ import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import { execFileSync, spawnSync, spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createTmpFixture } from './lib/fixture-cleanup.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -48,7 +48,8 @@ const stateMod = await import(N('state.js'));
 const { computeFingerprint, readState, setDisposition, tryClaim, markEmitted,
         NUDGE_STATES, bumpLineageRound, writeStateOrThrow, nudgeStatePath,
         markLineageEscalated } = stateMod;
-const { evaluate, makeCandidate, NUDGE_DEFAULTS, getNudgeConfig, rankCandidates, formatCandidate } = await import(N('engine.js'));
+const { evaluate, makeCandidate, NUDGE_DEFAULTS, getNudgeConfig, rankCandidates, formatCandidate,
+        decisionConfigDigest, implementationHash, boundedEvidenceWindow } = await import(N('engine.js'));
 const { resolveOwningProject, groupByOwner } = await import(N('project-scope.js'));
 const cerebrumRule = await import(N('rules/cerebrum.js'));
 const conclusionRule = await import(N('rules/conclusion.js'));
@@ -409,6 +410,11 @@ test('11. review scope covers only session-owned files, not pre-existing dirt', 
     wolfDir: P.wolf, ownerRoot: P.root, files: [owned], changedLines: 100,
   });
   assert.equal(res.candidates.length, 1);
+  const candidate = res.candidates[0];
+  assert.equal(candidate.rule_id, 'review.required');
+  assert.equal(candidate.provenance.source_module, 'nudges/rules/review');
+  assert.equal(candidate.provenance.implementation_hash, sha(N('rules/review.js')));
+  assert.notEqual(candidate.provenance.implementation_hash, sha(N('engine.js')));
   const targets = Object.keys(res.candidates[0].evidence.files);
   assert.equal(res.candidates[0].evidence.files.length, 1);
   assert.ok(res.candidates[0].evidence.files[0].includes('session-owned'));
@@ -554,6 +560,159 @@ test('15c. rule_schema_version bump invalidates old dispositions', () => {
   const v1 = computeFingerprint({ ruleId: 'r', evidence: { a: 1 }, schemaVersion: 1 });
   const v2 = computeFingerprint({ ruleId: 'r', evidence: { a: 1 }, schemaVersion: 2 });
   assert.notEqual(v1, v2, 'reinterpreting evidence must not inherit stale dispositions');
+});
+
+test('15d. decision config digest is canonical and semantic changes re-arm', () => {
+  const a = decisionConfigDigest({ threshold: 3, nested: { enabled: true, labels: ['x', 'y'] } });
+  const reordered = decisionConfigDigest({ nested: { labels: ['x', 'y'], enabled: true }, threshold: 3 });
+  const changed = decisionConfigDigest({ threshold: 4, nested: { enabled: true, labels: ['x', 'y'] } });
+  assert.equal(a, reordered, 'object insertion order is not a semantic config change');
+  assert.notEqual(a, changed, 'a decision-relevant value change must alter the digest');
+
+  const f1 = computeFingerprint({ ruleId: 'r', evidence: { a: 1 }, configDigest: a });
+  const f2 = computeFingerprint({ ruleId: 'r', evidence: { a: 1 }, configDigest: changed });
+  assert.notEqual(f1, f2, 'semantic config changes must mint a new fingerprint');
+});
+
+test('15e. irrelevant config and implementation formatting do not re-arm', () => {
+  const base = tmp('ow-provenance-');
+  const implA = path.join(base, 'rule-a.mjs');
+  const implB = path.join(base, 'rule-b.mjs');
+  fs.writeFileSync(implA, 'export const rule = 1;\n');
+  fs.writeFileSync(implB, '// formatting-only comment\nexport const rule = 1;\n');
+
+  const common = {
+    ruleId: 'r', ownerRoot: base, evidence: { item: 1 }, schemaVersion: 2,
+    sourceModule: 'nudges/rules/r', decisionConfig: { threshold: 3 },
+  };
+  const a = makeCandidate({ ...common, implementationUrl: pathToFileURL(implA).href });
+  const b = makeCandidate({ ...common, implementationUrl: pathToFileURL(implB).href });
+  const irrelevant = makeCandidate({ ...common, unrelatedRuntimeSetting: 'ignored', implementationUrl: pathToFileURL(implA).href });
+
+  assert.equal(a.fingerprint, b.fingerprint, 'implementation bytes are diagnostic metadata, not decision identity');
+  assert.equal(a.fingerprint, irrelevant.fingerprint, 'unselected config cannot perturb the fingerprint');
+  assert.notEqual(a.provenance.implementation_hash, b.provenance.implementation_hash,
+    'diagnostics still identify the exact implementation bytes that executed');
+  assert.equal(a.provenance.implementation_hash, implementationHash(pathToFileURL(implA).href));
+  fs.rmSync(base, { recursive: true, force: true });
+});
+
+test('15f. evidence windows are chronological, canonical, bounded, and optional', () => {
+  assert.deepEqual(boundedEvidenceWindow([
+    '2026-08-29T02:00:00+02:00',
+    'invalid',
+    '2026-08-28T23:00:00Z',
+    '2026-08-29T00:00:00Z',
+  ]), { from: '2026-08-28T23:00:00.000Z', to: '2026-08-29T00:00:00.000Z' });
+  assert.equal(boundedEvidenceWindow(['invalid']), null, 'no valid timestamp means unknown, not fabricated provenance');
+});
+
+test('15g. provenance joins diagnostics, emissions, suppressions, and dispositions without changing Stop text', () => {
+  const base = tmp();
+  const P = makeProject(base, 'p');
+  const impl = path.join(base, 'rule.mjs');
+  fs.writeFileSync(impl, 'export const rule = 1;\n');
+  const candidate = makeCandidate({
+    ruleId: 'r.provenance', ownerRoot: P.root, severity: 'warn', title: 'p', reason: 'same terse message',
+    schemaVersion: 4, sourceModule: 'nudges/rules/provenance', implementationUrl: pathToFileURL(impl).href,
+    decisionConfig: { threshold: 7 }, evidenceTimestamps: ['2026-08-29T12:00:00Z'], evidence: { item: 1 },
+  });
+  const withoutProvenance = { ...candidate, provenance: null };
+  assert.equal(formatCandidate(candidate, cfg()), formatCandidate(withoutProvenance, cfg()),
+    'provenance must not add one byte to the Stop message');
+
+  const first = evaluate({ wolfDir: P.wolf, candidates: [candidate], nudgeCfg: cfg(), sessionId: 's1' });
+  assert.equal(first.emitted.length, 1);
+  const second = evaluate({ wolfDir: P.wolf, candidates: [candidate], nudgeCfg: cfg(), sessionId: 's2' });
+  assert.equal(second.suppressed.length, 1);
+  const disposed = setDisposition(P.wolf, candidate.fingerprint, NUDGE_STATES.DISMISSED, {
+    reason: 'measured false positive', ruleId: candidate.rule_id, provenance: candidate.provenance,
+  });
+  assert.equal(disposed.ok, true);
+
+  const state = readState(P.wolf);
+  assert.deepEqual(state.emissions[candidate.fingerprint].provenance, candidate.provenance);
+  assert.deepEqual(state.dispositions[candidate.fingerprint].provenance, candidate.provenance);
+
+  const events = fs.readFileSync(path.join(P.wolf, 'logs', 'nudges.jsonl'), 'utf-8').trim().split('\n').map(JSON.parse);
+  const candidateEvents = events.filter(e => e.fingerprint === candidate.fingerprint);
+  assert.ok(candidateEvents.some(e => e.event === 'candidate_created'));
+  assert.ok(candidateEvents.some(e => e.event === 'candidate_emitted'));
+  assert.ok(candidateEvents.some(e => e.event === 'candidate_suppressed'));
+  for (const event of candidateEvents) {
+    assert.equal(event.provenance.rule_schema_version, 4);
+    assert.equal(event.provenance.config_digest, candidate.provenance.config_digest);
+  }
+
+  const growth = candidateEvents.map(event => {
+    const stripped = { ...event };
+    delete stripped.provenance;
+    return Buffer.byteLength(JSON.stringify(event)) - Buffer.byteLength(JSON.stringify(stripped));
+  }).sort((a, b) => a - b);
+  const median = growth[Math.floor(growth.length / 2)];
+  assert.ok(median < 200, `median diagnostic growth ${median} must stay below 200 bytes/event`);
+  fs.rmSync(base, { recursive: true, force: true });
+});
+
+test('15h. legacy state remains readable with unknown provenance', () => {
+  const base = tmp();
+  const P = makeProject(base, 'p');
+  const fp = 'a'.repeat(64);
+  fs.writeFileSync(nudgeStatePath(P.wolf), JSON.stringify({
+    version: 3,
+    emissions: { [fp]: { rule_id: 'legacy.rule', state: 'emitted' } },
+    dispositions: { [fp]: { rule_id: 'legacy.rule', state: 'dismissed' } },
+    leases: {}, lineages: {},
+  }));
+  const state = readState(P.wolf);
+  assert.equal(state.version, 4);
+  assert.equal(state.emissions[fp].provenance, undefined);
+  assert.equal(state.dispositions[fp].provenance, undefined);
+  fs.rmSync(base, { recursive: true, force: true });
+});
+
+test('15i. nudge show and stats expose revision provenance while legacy rows stay unknown', () => {
+  const base = tmp();
+  const P = makeProject(base, 'p');
+  const currentFp = 'b'.repeat(64);
+  const legacyFp = 'c'.repeat(64);
+  const provenance = {
+    version: 1, rule_schema_version: 4, source_module: 'nudges/rules/example',
+    config_digest: 'd'.repeat(64), implementation_hash: 'e'.repeat(64), evidence_window: null,
+  };
+  fs.writeFileSync(nudgeStatePath(P.wolf), JSON.stringify({
+    version: 4, leases: {}, lineages: {},
+    emissions: {
+      [currentFp]: { rule_id: 'example.rule', owner_root: P.root, state: 'emitted', provenance },
+      [legacyFp]: { rule_id: 'legacy.rule', owner_root: P.root, state: 'emitted' },
+    },
+    dispositions: {
+      [currentFp]: { rule_id: 'example.rule', state: 'dismissed', provenance },
+      [legacyFp]: { rule_id: 'legacy.rule', state: 'dismissed' },
+    },
+  }));
+  fs.mkdirSync(path.join(P.wolf, 'logs'), { recursive: true });
+  fs.writeFileSync(path.join(P.wolf, 'logs', 'nudges.jsonl'), JSON.stringify({ event: 'candidate_created' }) + '\n');
+
+  const cliUrl = pathToFileURL(path.join(repoRoot, 'dist/src/cli/nudge-cmd.js')).href;
+  const run = (body) => spawnSync(process.execPath, ['--input-type=module', '-e', `import('${cliUrl}').then(m=>m.${body})`], {
+    cwd: P.root, encoding: 'utf-8',
+  });
+  const shown = run(`nudgeShow('${currentFp}')`);
+  assert.equal(shown.status, 0, shown.stderr);
+  assert.match(shown.stdout, /Revision:\s+example\.rule@schema-4\/config-dddddddddddd/);
+  assert.match(shown.stdout, /Source:\s+nudges\/rules\/example/);
+  assert.match(shown.stdout, /Impl hash:\s+e{64}/);
+
+  const legacy = run(`nudgeShow('${legacyFp}')`);
+  assert.equal(legacy.status, 0, legacy.stderr);
+  assert.match(legacy.stdout, /Revision:\s+legacy\.rule@unknown/);
+
+  const stats = run('nudgeStats()');
+  assert.equal(stats.status, 0, stats.stderr);
+  assert.match(stats.stdout, /example\.rule@schema-4\/config-dddddddddddd/);
+  assert.match(stats.stdout, /legacy\.rule@unknown/);
+  fs.rmSync(base, { recursive: true, force: true });
 });
 
 // ═══ 16. OUTPUT BUDGET ═════════════════════════════════════════════════════

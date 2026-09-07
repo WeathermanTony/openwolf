@@ -131,6 +131,52 @@ export function getRegisteredProjects(validateExists: boolean = false): Register
   return valid;
 }
 
-function normalizePath(p: string): string {
-  return p.replace(/\\/g, "/").toLowerCase();
+export function normalizePath(p: string): string {
+  return path.resolve(p).replace(/\\/g, "/").toLowerCase();
+}
+
+export type FleetExclusionReason =
+  | "missing"
+  | "missing-wolf-directory"
+  | "archive"
+  | "worktree"
+  | "source-checkout"
+  | "duplicate-real-root"
+  | "invalid-root";
+
+export interface FleetEligibility {
+  project: RegisteredProject;
+  eligible: boolean;
+  realRoot: string;
+  reason?: FleetExclusionReason;
+}
+
+function realPath(value: string): string {
+  const resolved = path.resolve(value);
+  try { return fs.realpathSync.native(resolved); } catch { return resolved; }
+}
+
+export function classifyFleetProjects(
+  projects: RegisteredProject[],
+  sourceRoot?: string,
+): FleetEligibility[] {
+  const source = sourceRoot ? normalizePath(realPath(sourceRoot)) : undefined;
+  const seen = new Set<string>();
+  return projects.map(project => {
+    if (!project.root || !path.isAbsolute(project.root)) {
+      return { project, eligible: false, realRoot: project.root ?? "", reason: "invalid-root" };
+    }
+    const resolved = realPath(project.root);
+    const normalized = normalizePath(resolved);
+    const segments = normalized.split("/").filter(Boolean);
+    let reason: FleetExclusionReason | undefined;
+    if (!fs.existsSync(project.root)) reason = "missing";
+    else if (!fs.existsSync(path.join(project.root, ".wolf"))) reason = "missing-wolf-directory";
+    else if (segments.some(segment => segment === "archive" || segment === "archived" || segment === ".archived")) reason = "archive";
+    else if (normalized.includes("/.claude/worktrees/")) reason = "worktree";
+    else if (source && normalized === source) reason = "source-checkout";
+    else if (seen.has(normalized)) reason = "duplicate-real-root";
+    if (!reason) seen.add(normalized);
+    return { project, eligible: !reason, realRoot: resolved, reason };
+  });
 }

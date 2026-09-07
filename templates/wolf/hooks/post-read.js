@@ -1,7 +1,10 @@
+// @ts-nocheck
 import * as path from "node:path";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, readMarkdown, parseAnatomy, estimateTokens, readStdin, normalizePath } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, readMarkdown, parseAnatomy, estimateTokens, readStdin, normalizePath, getBehaviorConfig } from "./shared.js";
 async function main() {
     ensureWolfDir();
+    if (getBehaviorConfig().mode === "quiet")
+        process.exit(0);
     const wolfDir = getWolfDir();
     const hooksDir = path.join(wolfDir, "hooks");
     const sessionFile = path.join(hooksDir, "_session.json");
