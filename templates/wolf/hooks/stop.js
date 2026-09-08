@@ -280,7 +280,7 @@ function maybeNudgeMidturnInjections(wolfDir, session, transcriptPath) {
     const shown = fresh.slice(0, cfg.max_warn_per_stop);
     const previews = shown.map(d => `"${d.preview}" (${d.timestamp ? d.timestamp.slice(11, 19) + "Z" : "time unknown"})`).join("; ");
     const more = fresh.length > shown.length ? ` +${fresh.length - shown.length} more in log` : "";
-    emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} user message(s) arrived mid-turn: ${previews}${more}. If you already addressed each, say so in one line; otherwise address the unaddressed one(s) now — do not ask the user to re-send. Log: ${logPath}\n`);
+    emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} user message(s) arrived mid-turn: ${previews}${more}. If you already addressed each, say so in one line; otherwise address the unaddressed one(s) now — do not ask the user to re-send. Log: ${logPath}. Then resume your prior task and keep working — do not end your turn at the accounting line.\n`);
     return true;
 }
 /**

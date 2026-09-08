@@ -19,6 +19,7 @@ import { readJSON, writeJSON, readText, writeText, safeCopyFile, safeCopyDir } f
 import { ensureDir } from "../utils/paths.js";
 import { findProjectRoot } from "../scanner/project-root.js";
 import { backupManagedClaudeSkills, installManagedClaudeSkills, restoreManagedClaudeSkills } from "./managed-skills.js";
+import { applyManagedPayloadCleanup, buildManagedPayloadCleanupManifest, CREATE_IF_MISSING_FILES, MANAGED_HOOK_FILES, MANAGED_RUNTIME_UTILITIES, MANAGED_TEMPLATE_FILES, OBSOLETE_PAYLOAD, type CleanupItem } from "./managed-payload.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,23 +46,8 @@ function getVersion(): string {
   }
 }
 
-// Files that are safe to overwrite (protocol/config)
-const ALWAYS_OVERWRITE = ["OPENWOLF.md", "PROTOCOL-UPGRADE-2026-06.md", "reframe-frameworks.md", ".gitignore"];
-const CREATE_IF_MISSING = ["config.json"];
-
-// Files that contain user data — NEVER overwrite, only create if missing
-const USER_DATA_FILES = [
-  "identity.md", "cerebrum.md", "memory.md", "anatomy.md",
-  "token-ledger.json", "buglog.json", "reviewlog.json", "cron-manifest.json", "cron-state.json",
-  "suggestions.json", "designqc-report.json",
-];
-
-// Files to include in backup
-const BACKUP_FILES = [
-  ...ALWAYS_OVERWRITE,
-  ...CREATE_IF_MISSING,
-  ...USER_DATA_FILES,
-];
+const CONFIG_FILES = ["config.json"] as const;
+const BACKUP_FILES = [...MANAGED_TEMPLATE_FILES, ...CONFIG_FILES, ...CREATE_IF_MISSING_FILES];
 
 function hookCommand(file: string): string {
   return `node -e "import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/${file}').href)).catch(()=>{})"`;
@@ -89,7 +75,7 @@ interface UpdateResult {
   message: string;
 }
 
-export async function updateCommand(options: { dryRun?: boolean; force?: boolean; project?: string; root?: string; profile?: string; behavior?: string }): Promise<void> {
+export async function updateCommand(options: { dryRun?: boolean; force?: boolean; project?: string; root?: string; profile?: string; behavior?: string; cleanup?: boolean; cleanupManifestHash?: string }): Promise<void> {
   const version = getVersion();
   const dryRun = options.dryRun ?? false;
   // Keep missing projects long enough to correlate and remove their owned PM2
@@ -117,6 +103,15 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
   }
   const targets = selectedEligibility.filter(item => item.eligible).map(item => item.project);
   const excluded = selectedEligibility.filter(item => !item.eligible);
+  const cleanupPlan = buildManagedPayloadCleanupManifest(targets.map(project => project.root));
+  if (options.cleanup) {
+    if (!options.cleanupManifestHash) throw new Error("--cleanup requires --cleanup-manifest-hash from a reviewed dry run");
+    if (options.cleanupManifestHash !== cleanupPlan.hash) throw new Error(`Cleanup manifest hash mismatch: expected ${options.cleanupManifestHash}, current ${cleanupPlan.hash}`);
+    const inspectionError = cleanupPlan.manifest.projects.flatMap(project => project.items).find(item => item.disposition === "error");
+    if (inspectionError) throw new Error(`Cleanup could not inspect ${inspectionError.path}: ${inspectionError.error ?? "unknown error"}`);
+  } else if (options.cleanupManifestHash) {
+    throw new Error("--cleanup-manifest-hash requires --cleanup");
+  }
   for (const item of excluded) console.log(`  ○ Excluded ${item.project.root}: ${item.reason}`);
   const missingSelectedRoots = excluded.filter(item => item.reason === "missing" || item.reason === "missing-wolf-directory").map(item => item.project.root);
 
@@ -124,6 +119,14 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
   if (options.behavior) normalizeBehaviorMode(options.behavior);
 
   console.log(`OpenWolf v${version} — updating ${targets.length} project(s)${dryRun ? " (dry run)" : ""}...\n`);
+  const cleanupItems = cleanupPlan.manifest.projects.flatMap(project => project.items);
+  const cleanupOwned = cleanupItems.filter(item => item.disposition === "delete-owned");
+  const cleanupPreserved = cleanupItems.filter(item => !["absent", "delete-owned"].includes(item.disposition));
+  console.log(`  Managed payload cleanup manifest: ${cleanupPlan.hash}`);
+  console.log(`  Obsolete owned: ${cleanupOwned.length}; preserved modified/unknown: ${cleanupPreserved.length}`);
+  for (const item of cleanupOwned) console.log(`    ${options.cleanup ? "will remove" : "would remove with --cleanup"} ${item.path}`);
+  for (const item of cleanupPreserved) console.log(`    preserve ${item.path} (${item.disposition}${item.sha256 ? ` ${item.sha256}` : ""})`);
+  console.log("");
 
   const results: UpdateResult[] = [];
   const pm2Processes = listPm2Processes();
@@ -141,6 +144,23 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
       continue;
     }
     daemonRootsToRemove.push(project.root);
+  }
+
+  let payloadCleanup: { removed: string[]; preserved: CleanupItem[] } | undefined;
+  if (options.cleanup && !dryRun) {
+    const failed = results.filter(result => result.status !== "updated" || !result.backupDir);
+    if (failed.length > 0) throw new Error(`Cleanup refused because ${failed.length} project update(s) did not create a verified backup`);
+    const backupDirs = new Map(results.map(result => [path.resolve(result.project.root), result.backupDir!]));
+    payloadCleanup = applyManagedPayloadCleanup(cleanupPlan.hash, targets.map(project => project.root), backupDirs);
+    for (const result of results) {
+      if (!result.backupDir) continue;
+      writeJSON(path.join(result.backupDir, "managed-payload-cleanup-receipt.json"), {
+        version: 1,
+        manifestHash: cleanupPlan.hash,
+        appliedAt: new Date().toISOString(),
+        removed: payloadCleanup.removed.filter(file => file.startsWith(path.resolve(result.project.root) + path.sep)),
+      });
+    }
   }
 
   const cleanup = cleanupOpenWolfPm2({
@@ -177,6 +197,11 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
       console.log(`    ${r.project.name} — ${r.message}`);
     }
   }
+
+  console.log("\n  Managed payload cleanup:");
+  console.log(`    Manifest: ${cleanupPlan.hash}`);
+  console.log(`    ${dryRun || !options.cleanup ? "Would remove with reviewed --cleanup" : "Removed"}: ${payloadCleanup?.removed.length ?? cleanupOwned.length}`);
+  console.log(`    Preserved modified/unknown: ${payloadCleanup?.preserved.length ?? cleanupPreserved.length}`);
 
   console.log("\n  Daemon migration:");
   console.log(`    ${dryRun ? "Would remove" : "Removed"}: ${cleanup.removed.length}`);
@@ -236,7 +261,7 @@ async function updateProject(
 
     // 2. Update template files (OPENWOLF.md, config.json)
     const templatesDir = findTemplatesDir();
-    for (const file of ALWAYS_OVERWRITE) {
+    for (const file of MANAGED_TEMPLATE_FILES) {
       const srcPath = path.join(templatesDir, file);
       const destPath = path.join(wolfDir, file);
       if (fs.existsSync(srcPath)) {
@@ -248,9 +273,9 @@ async function updateProject(
         generateTemplate(destPath, file);
       }
     }
-    console.log(`    ✓ Templates updated (${ALWAYS_OVERWRITE.join(", ")})`);
+    console.log(`    ✓ Templates updated (${MANAGED_TEMPLATE_FILES.join(", ")})`);
 
-    for (const file of CREATE_IF_MISSING) {
+    for (const file of CONFIG_FILES) {
       const srcPath = path.join(templatesDir, file);
       const destPath = path.join(wolfDir, file);
       if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
@@ -366,6 +391,11 @@ function createBackup(wolfDir: string): string {
     if (fs.existsSync(src)) {
       safeCopyFile(src, path.join(backupDir, file));
     }
+  }
+  for (const entry of OBSOLETE_PAYLOAD) {
+    const relativeToWolf = entry.destination.replace(/^\.wolf\//, "");
+    const src = path.join(wolfDir, relativeToWolf);
+    if (fs.existsSync(src) && fs.lstatSync(src).isFile()) safeCopyFile(src, path.join(backupDir, relativeToWolf));
   }
 
   // Also backup hooks
@@ -543,16 +573,7 @@ function copyHookScripts(wolfDir: string): void {
     }
   }
 
-  const hookFiles = [
-    "session-start.js",
-    "pre-read.js",
-    "pre-write.js",
-    "post-read.js",
-    "post-write.js",
-    "stop.js",
-    "shared.js",
-    "complete-review.js",
-  ];
+  const hookFiles = MANAGED_HOOK_FILES;
 
   if (sourceDir) {
     for (const file of hookFiles) {
@@ -579,10 +600,9 @@ function copyHookScripts(wolfDir: string): void {
     if (fs.existsSync(utilsSrcDir)) {
       const utilsDestDir = path.resolve(hooksDir, "..", "utils");
       ensureDir(utilsDestDir);
-      for (const entry of fs.readdirSync(utilsSrcDir)) {
-        if (entry.endsWith(".js")) {
-          safeCopyFile(path.join(utilsSrcDir, entry), path.join(utilsDestDir, entry));
-        }
+      for (const entry of MANAGED_RUNTIME_UTILITIES) {
+        const src = path.join(utilsSrcDir, entry);
+        if (fs.existsSync(src)) safeCopyFile(src, path.join(utilsDestDir, entry));
       }
       fs.writeFileSync(path.join(utilsDestDir, "package.json"), JSON.stringify({ type: "module" }, null, 2) + "\n", "utf-8");
     }
@@ -699,6 +719,8 @@ export function restoreCommand(backupName?: string): void {
     // threw EISDIR and aborted PART-WAY, leaving hooks/ half rolled back.
     safeCopyDir(hooksBackup, hooksDir, () => true);
   }
+  const utilsBackup = path.join(backupDir, "utils");
+  if (fs.existsSync(utilsBackup)) safeCopyDir(utilsBackup, path.join(wolfDir, "utils"), () => true);
 
   const projectRoot = path.dirname(wolfDir);
   const rootClaudeState = readJSON<{ present?: boolean }>(path.join(backupDir, "root-claude-state.json"), {});

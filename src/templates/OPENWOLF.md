@@ -21,5 +21,3 @@ Use `openwolf --help` and `openwolf <command> --help` for current command syntax
 - Review receipts: `openwolf review --help`
 - Status and policy: `openwolf status`
 - Backups and restore: `openwolf restore`
-
-Historical protocol material may exist in `.wolf/PROTOCOL-UPGRADE-2026-06.md`; it is reference history, not an always-loaded instruction source.

@@ -244,8 +244,10 @@ export function createProgram(): Command {
     .option("--root <absolute-path>", "Update one exact registered project root")
     .option("--profile <name>", "Reviewer recommendation profile: gov, open, or budget")
     .option("--behavior <mode>", "Automatic coaching behavior: quiet or standard")
+    .option("--cleanup", "Remove ownership-proven obsolete payload using a reviewed manifest")
+    .option("--cleanup-manifest-hash <sha256>", "Exact cleanup manifest hash required by --cleanup")
     .option("--list", "List all registered projects")
-    .action(async (opts: { dryRun?: boolean; project?: string; root?: string; profile?: string; behavior?: string; list?: boolean }) => {
+    .action(async (opts: { dryRun?: boolean; project?: string; root?: string; profile?: string; behavior?: string; cleanup?: boolean; cleanupManifestHash?: string; list?: boolean }) => {
       const { updateCommand, listProjects } = await import("./update.js");
       if (opts.list) {
         listProjects();

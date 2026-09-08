@@ -12,6 +12,7 @@ import { registerProject } from "./registry.js";
 import { allocateProjectPorts, isPortFree } from "../utils/port-allocator.js";
 import { cleanupOpenWolfPm2, ensurePm2Daemon, hasOpenWolfPm2Daemon } from "./daemon-cmd.js";
 import { installManagedClaudeSkills } from "./managed-skills.js";
+import { CREATE_IF_MISSING_FILES, MANAGED_HOOK_FILES, MANAGED_RUNTIME_UTILITIES, MANAGED_TEMPLATE_FILES } from "./managed-payload.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,28 +28,6 @@ function getVersion(): string {
   }
 }
 
-// Files that are safe to overwrite on upgrade (config/protocol, not user data)
-const ALWAYS_OVERWRITE = [
-  "OPENWOLF.md",
-  "PROTOCOL-UPGRADE-2026-06.md",
-  "reframe-frameworks.md",
-  ".gitignore",
-];
-
-// Files that contain user/session data — only create if missing, never overwrite
-const CREATE_IF_MISSING = [
-  "identity.md",
-  "cerebrum.md",
-  "memory.md",
-  "anatomy.md",
-  "token-ledger.json",
-  "buglog.json",
-  "reviewlog.json",
-  "cron-manifest.json",
-  "cron-state.json",
-  "designqc-report.json",
-  "suggestions.json",
-];
 
 // Resolve $CLAUDE_PROJECT_DIR cross-platform via node -e instead of shell expansion.
 // `$CLAUDE_PROJECT_DIR` is POSIX-only — on Windows cmd/PowerShell the literal reaches
@@ -113,7 +92,7 @@ export async function initCommand(options: { profile?: string; behavior?: string
   let createdCount = 0;
   let skippedCount = 0;
 
-  for (const file of ALWAYS_OVERWRITE) {
+  for (const file of MANAGED_TEMPLATE_FILES) {
     writeTemplateFile(actualTemplatesDir, wolfDir, file);
     createdCount++;
   }
@@ -123,7 +102,7 @@ export async function initCommand(options: { profile?: string; behavior?: string
     createdCount++;
   }
 
-  for (const file of CREATE_IF_MISSING) {
+  for (const file of CREATE_IF_MISSING_FILES) {
     const destPath = path.join(wolfDir, file);
     if (fs.existsSync(destPath)) {
       skippedCount++;
@@ -651,16 +630,7 @@ function copyHookScripts(wolfDir: string): void {
       ? hookSourceDir
       : "";
 
-  const hookFiles = [
-    "session-start.js",
-    "pre-read.js",
-    "pre-write.js",
-    "post-read.js",
-    "post-write.js",
-    "stop.js",
-    "shared.js",
-    "complete-review.js",
-  ];
+  const hookFiles = MANAGED_HOOK_FILES;
 
   let copiedAny = false;
   if (sourceDir) {
@@ -687,10 +657,9 @@ function copyHookScripts(wolfDir: string): void {
     if (fs.existsSync(utilsSrcDir)) {
       const utilsDestDir = path.resolve(hooksDir, "..", "utils");
       try { fs.mkdirSync(utilsDestDir, { recursive: true }); } catch {}
-      for (const entry of fs.readdirSync(utilsSrcDir)) {
-        if (entry.endsWith(".js")) {
-          safeCopyFile(path.join(utilsSrcDir, entry), path.join(utilsDestDir, entry));
-        }
+      for (const entry of MANAGED_RUNTIME_UTILITIES) {
+        const src = path.join(utilsSrcDir, entry);
+        if (fs.existsSync(src)) safeCopyFile(src, path.join(utilsDestDir, entry));
       }
       fs.writeFileSync(path.join(utilsDestDir, "package.json"), JSON.stringify({ type: "module" }, null, 2) + "\n", "utf-8");
     }

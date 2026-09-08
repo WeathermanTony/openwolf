@@ -19,13 +19,14 @@ const hookNames = [
   'complete-review.js',
 ];
 
-const utilNames = [
-  'fs-safe.js',
-  'logger.js',
-  'paths.js',
-  'platform.js',
-  'port-allocator.js',
-  'size-discipline.js',
+const utilNames = ['size-discipline.js'];
+const obsoleteInstalledPaths = [
+  '.wolf/PROTOCOL-UPGRADE-2026-06.md',
+  '.wolf/utils/fs-safe.js',
+  '.wolf/utils/logger.js',
+  '.wolf/utils/paths.js',
+  '.wolf/utils/platform.js',
+  '.wolf/utils/port-allocator.js',
 ];
 
 const requiredFiles = [
@@ -34,7 +35,6 @@ const requiredFiles = [
   '.claude/rules/openwolf.md',
   '.claude/skills/quality-reduction/SKILL.md',
   '.wolf/OPENWOLF.md',
-  '.wolf/PROTOCOL-UPGRADE-2026-06.md',
   '.wolf/config.json',
   '.wolf/anatomy.md',
   '.wolf/memory.md',
@@ -247,13 +247,11 @@ async function checkProtocolUpgradeDocs() {
   const initSource = await readRequiredText('src/cli/init.ts');
   if (initSource.includes('@.wolf/OPENWOLF.md')) failures.push('src/cli/init.ts must not recreate the unconditional OPENWOLF import');
 
-  for (const file of ['.wolf/PROTOCOL-UPGRADE-2026-06.md', 'src/templates/PROTOCOL-UPGRADE-2026-06.md', 'templates/wolf/PROTOCOL-UPGRADE-2026-06.md']) {
-    const content = await readRequiredText(file);
-    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Buglog schema bump']) {
-      if (!content.includes(heading)) {
-        failures.push(`${file} missing portable protocol section ${heading}`);
-      }
-    }
+  for (const file of obsoleteInstalledPaths) {
+    if (existsSync(rel(file))) failures.push(`obsolete installed payload must be absent: ${file}`);
+  }
+  if (existsSync(rel('src/templates/PROTOCOL-UPGRADE-2026-06.md'))) {
+    failures.push('obsolete protocol template must not be packaged from src/templates');
   }
 }
 
@@ -301,7 +299,6 @@ async function checkFreshInitScaffoldOutput() {
     const anatomy = await readFile(path.join(dir, '.wolf', 'anatomy.md'), 'utf8');
     const gateLog = JSON.parse(await readFile(path.join(dir, '.wolf', 'qa', '_gate-log.json'), 'utf8'));
     const config = JSON.parse(await readFile(path.join(dir, '.wolf', 'config.json'), 'utf8'));
-    const protocolUpgrade = await readFile(path.join(dir, '.wolf', 'PROTOCOL-UPGRADE-2026-06.md'), 'utf8');
     const openwolfProtocol = await readFile(path.join(dir, '.wolf', 'OPENWOLF.md'), 'utf8');
     const managedSkill = await readFile(path.join(dir, '.claude', 'skills', 'quality-reduction', 'SKILL.md'), 'utf8');
     const sourceSkill = await readFile(rel('src/templates/claude/skills/quality-reduction/SKILL.md'), 'utf8');
@@ -318,10 +315,8 @@ async function checkFreshInitScaffoldOutput() {
     if (!result.stdout.includes('Wolfpack quality hooks are active')) {
       failures.push('fresh init output must distinguish active quality hooks from optional background services');
     }
-    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Buglog schema bump']) {
-      if (!protocolUpgrade.includes(heading)) {
-        failures.push(`fresh init .wolf/PROTOCOL-UPGRADE-2026-06.md missing ${heading}`);
-      }
+    for (const file of obsoleteInstalledPaths) {
+      if (existsSync(path.join(dir, file))) failures.push(`fresh init installed obsolete payload: ${file}`);
     }
     if (!openwolfProtocol.includes('# WolfPack Reference') || Buffer.byteLength(openwolfProtocol) > 2048) {
       failures.push('fresh init .wolf/OPENWOLF.md must be the compact on-demand reference');
@@ -434,7 +429,6 @@ function checkGitIgnored() {
     '.claude/rules/openwolf.md',
     '.claude/skills/quality-reduction/SKILL.md',
     '.wolf/OPENWOLF.md',
-    '.wolf/PROTOCOL-UPGRADE-2026-06.md',
     '.wolf/config.json',
     '.wolf/anatomy.md',
     '.wolf/memory.md',
