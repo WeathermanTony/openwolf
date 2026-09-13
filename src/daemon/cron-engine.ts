@@ -6,6 +6,7 @@ import { readJSON, writeJSON, readText, writeText, appendText } from "../utils/f
 import { scanProject } from "../scanner/anatomy-scanner.js";
 import { detectWaste } from "../tracker/waste-detector.js";
 import type { Logger } from "../utils/logger.js";
+import { acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 
 interface CronAction {
   type: string;
@@ -82,39 +83,63 @@ export function normalizeCronState(parsed: unknown, fallback: Partial<CronState>
   return state as CronState;
 }
 
+const DEFAULT_CRON_STATE: CronState = {
+  last_heartbeat: null,
+  engine_status: "running",
+  execution_log: [],
+  dead_letter_queue: [],
+  upcoming: [],
+};
+
+function readCronStateForMutation(statePath: string): CronState {
+  try {
+    return normalizeCronState(JSON.parse(fs.readFileSync(statePath, "utf8")));
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException)?.code === "ENOENT") {
+      return structuredClone(DEFAULT_CRON_STATE);
+    }
+    throw new Error(`Refusing to replace malformed or unreadable cron state at ${statePath}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 export function updateCronState(wolfDir: string, updater: (state: CronState) => void): Promise<void> {
   return enqueueCronStateWrite(() => {
-    const state = normalizeCronState(readJSON<unknown>(
-      path.join(wolfDir, "cron-state.json"),
-      { last_heartbeat: null, engine_status: "running", execution_log: [], dead_letter_queue: [], upcoming: [] }
-    ));
-    updater(state);
-    writeJSON(path.join(wolfDir, "cron-state.json"), state);
+    const statePath = path.join(wolfDir, "cron-state.json");
+    const release = acquireFileLock(statePath, { timeoutMs: 5_000 });
+    if (!release) throw new Error(`Could not acquire cron-state lock at ${statePath}.lock`);
+    try {
+      const state = readCronStateForMutation(statePath);
+      updater(state);
+      if (!atomicWriteJson(statePath, state)) throw new Error(`Could not persist cron state at ${statePath}`);
+    } finally {
+      release();
+    }
   });
 }
 
 export function countDeadLetterEntries(wolfDir: string, taskId: string): Promise<number> {
-  return enqueueCronStateWrite(async () => {
-    const state = normalizeCronState(readJSON<unknown>(
-      path.join(wolfDir, "cron-state.json"),
-      { last_heartbeat: null, engine_status: "running", execution_log: [], dead_letter_queue: [], upcoming: [] }
-    ));
-    return state.dead_letter_queue.filter((entry) => entry.task_id === taskId).length;
+  return enqueueCronStateWrite(() => {
+    const statePath = path.join(wolfDir, "cron-state.json");
+    const release = acquireFileLock(statePath, { timeoutMs: 5_000 });
+    if (!release) throw new Error(`Could not acquire cron-state lock at ${statePath}.lock`);
+    try {
+      return readCronStateForMutation(statePath).dead_letter_queue.filter((entry) => entry.task_id === taskId).length;
+    } finally {
+      release();
+    }
   });
 }
 
-export function removeDeadLetterEntry(wolfDir: string, taskId: string): Promise<number> {
-  return enqueueCronStateWrite(async () => {
-    const state = normalizeCronState(readJSON<unknown>(
-      path.join(wolfDir, "cron-state.json"),
-      { last_heartbeat: null, engine_status: "running", execution_log: [], dead_letter_queue: [], upcoming: [] }
-    ));
+export async function removeDeadLetterEntry(wolfDir: string, taskId: string): Promise<number> {
+  let removed = 0;
+  await updateCronState(wolfDir, (state) => {
     const idx = state.dead_letter_queue.findIndex((entry) => entry.task_id === taskId);
-    if (idx === -1) return 0;
-    state.dead_letter_queue.splice(idx, 1);
-    writeJSON(path.join(wolfDir, "cron-state.json"), state);
-    return 1;
+    if (idx !== -1) {
+      state.dead_letter_queue.splice(idx, 1);
+      removed = 1;
+    }
   });
+  return removed;
 }
 
 export function hasDeadLetterEntry(wolfDir: string, taskId: string): Promise<boolean> {
@@ -239,11 +264,7 @@ export class CronEngine {
   }
 
   async updateState(updater: (state: CronState) => void): Promise<void> {
-    await enqueueCronStateWrite(async () => {
-      const state = this.readState();
-      updater(state);
-      writeJSON(path.join(this.wolfDir, "cron-state.json"), state);
-    });
+    await updateCronState(this.wolfDir, updater);
   }
 
   private async executeTask(task: CronTask): Promise<TaskRunResult> {
@@ -442,13 +463,27 @@ export class CronEngine {
   private generateTokenReport(): void {
     const flags = detectWaste(this.wolfDir);
     const ledgerPath = path.join(this.wolfDir, "token-ledger.json");
-    const ledger = readJSON<Record<string, unknown>>(ledgerPath, {});
-    (ledger as { waste_flags: unknown[] }).waste_flags = flags;
-    (ledger as { optimization_report: { last_generated: string; patterns: unknown[] } }).optimization_report = {
-      last_generated: new Date().toISOString(),
-      patterns: flags.map((f) => f.pattern),
-    };
-    writeJSON(ledgerPath, ledger);
+    const release = acquireFileLock(ledgerPath, { timeoutMs: 5_000 });
+    if (!release) throw new Error(`Could not lock token ledger at ${ledgerPath}`);
+    try {
+      let ledger: Record<string, unknown>;
+      try {
+        ledger = JSON.parse(fs.readFileSync(ledgerPath, "utf-8"));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw new Error(`Refusing to replace malformed or unreadable token ledger at ${ledgerPath}`);
+        }
+        ledger = {};
+      }
+      (ledger as { waste_flags: unknown[] }).waste_flags = flags;
+      (ledger as { optimization_report: { last_generated: string; patterns: unknown[] } }).optimization_report = {
+        last_generated: new Date().toISOString(),
+        patterns: flags.map((f) => f.pattern),
+      };
+      if (!atomicWriteJson(ledgerPath, ledger)) throw new Error(`Could not persist token ledger at ${ledgerPath}`);
+    } finally {
+      release();
+    }
   }
 
   private hasClaude(): boolean {

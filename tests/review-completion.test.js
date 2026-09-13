@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { mkdtemp, mkdir, readFile, writeFile, rm, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -29,10 +30,10 @@ async function readReviewLog(dir) {
   return JSON.parse(await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8'));
 }
 
-function runHelper(dir, id = 'review-0001', extra = [], reviewer = 'test') {
+function runHelper(dir, id = 'review-0001', extra = [], reviewer = 'test', envOverrides = {}) {
   return spawnSync(process.execPath, [helper, id, '--reviewer', reviewer, '--summary', 'ok', ...extra], {
     cwd: dir,
-    env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+    env: { ...process.env, CLAUDE_PROJECT_DIR: dir, ...envOverrides },
     encoding: 'utf8',
   });
 }
@@ -123,6 +124,52 @@ test('complete-review completes pending review when stored hashes match current 
   }
 });
 
+test('complete-review prepares reviewlog before lineage and retries final persistence idempotently', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    const bytes = 'const answer = 42;\n';
+    await writeFile(file, bytes);
+    const pending = { id: 'review-0001', status: 'pending', files: [file], content_hashes: { [file]: sha256(bytes) } };
+    await writeReviewLog(dir, [pending]);
+
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    const prepareFailure = runHelper(dir, 'review-0001', [], 'test', {
+      NODE_ENV: 'test', WOLFPACK_TEST_FAIL_REVIEW_WRITE_AT: '1',
+    });
+    assert.equal(prepareFailure.status, 6, prepareFailure.stderr);
+    assert.equal(await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8'), before,
+      'failed canonical preparation must leave the reviewlog unchanged');
+    assert.equal(existsSync(path.join(dir, '.wolf', 'nudge-state.json')), false,
+      'lineage must not advance when canonical preparation fails');
+
+    const finalFailure = runHelper(dir, 'review-0001', [], 'test', {
+      NODE_ENV: 'test', WOLFPACK_TEST_FAIL_REVIEW_WRITE_AT: '2',
+    });
+    assert.equal(finalFailure.status, 6, finalFailure.stderr);
+    let review = (await readReviewLog(dir)).reviews[0];
+    assert.equal(review.status, 'pending');
+    assert.equal(review.completion_transaction.review_id, 'review-0001');
+    let state = JSON.parse(await readFile(path.join(dir, '.wolf', 'nudge-state.json'), 'utf8'));
+    let lineage = Object.values(state.lineages)[0];
+    assert.equal(lineage.rounds, 1);
+    assert.equal(lineage.completion_rounds['review-0001'], 1);
+
+    const retried = runHelper(dir);
+    assert.equal(retried.status, 0, retried.stderr);
+    review = (await readReviewLog(dir)).reviews[0];
+    assert.equal(review.status, 'completed');
+    assert.equal(review.lineage_round, 1, 'retry must reuse the prepared completion round');
+    assert.equal(review.completion_transaction, undefined);
+    state = JSON.parse(await readFile(path.join(dir, '.wolf', 'nudge-state.json'), 'utf8'));
+    lineage = Object.values(state.lineages)[0];
+    assert.equal(lineage.rounds, 1, 'retry must not double-count the lineage round');
+    assert.equal(lineage.completion_rounds['review-0001'], 1);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 function runCheck(dir, id = 'review-0001') {
   // --check must work WITHOUT --reviewer/--summary (read-only dry run).
   return spawnSync(process.execPath, [helper, id, '--check'], {
@@ -146,6 +193,137 @@ test('complete-review --check reports CURRENT and mutates nothing when hashes ma
     assert.doesNotMatch(result.stdout, /STALE/);
     const after = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
     assert.equal(after, before, '--check must not mutate the review log');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review --check reports STALE when stored hashes contain a file outside the review file list', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    const ghost = path.join(dir, 'ghost.js');
+    await writeFile(file, 'const answer = 42;\n');
+    await writeReviewLog(dir, [{
+      id: 'review-0001', status: 'pending', files: [file],
+      content_hashes: { [file]: sha256('const answer = 42;\n'), [ghost]: sha256('legacy bytes\n') },
+    }]);
+
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    const result = runCheck(dir);
+    assert.equal(result.status, 4, `stdout=${result.stdout} stderr=${result.stderr}`);
+    assert.match(result.stdout, /STALE/);
+    assert.match(result.stdout, /missing-from-current-file-list/);
+    assert.match(result.stdout, /ghost\.js/);
+    assert.equal(await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8'), before,
+      '--check must not mutate a receipt with extra stored hashes');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review --check supports completed reviews without mutation', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'const answer = 42;\n');
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'completed', files: [file], content_hashes: { [file]: sha256('const answer = 42;\n') }, reviewer: 'test' }]);
+
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    const result = runCheck(dir);
+    assert.equal(result.status, 0, `stdout=${result.stdout} stderr=${result.stderr}`);
+    assert.match(result.stdout, /CURRENT/);
+    const after = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    assert.equal(after, before, '--check must not mutate a completed review');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review --check fails closed truthfully for a hash-less completed legacy review', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'const answer = 42;\n');
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'completed', files: [file], reviewer: 'legacy' }]);
+
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    const result = runCheck(dir);
+    assert.equal(result.status, 6, `stdout=${result.stdout} stderr=${result.stderr}`);
+    assert.match(result.stderr, /no stored content hashes/);
+    assert.match(result.stderr, /current-byte drift cannot be determined/);
+    assert.doesNotMatch(result.stderr, /--refresh/);
+    const after = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    assert.equal(after, before, '--check must not mutate a hash-less completed review');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review rejects mutation flags combined with --check before reading review state', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'const answer = 42;\n');
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'completed', files: [file], reviewer: 'legacy' }]);
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+
+    for (const flag of ['--refresh', '--reviewed-current', '--reviewed-hash']) {
+      const extra = flag === '--reviewed-hash' ? [flag, '0'.repeat(64)] : [flag];
+      const result = spawnSync(process.execPath, [helper, 'review-0001', '--check', ...extra], {
+        cwd: dir,
+        env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+        encoding: 'utf8',
+      });
+      assert.equal(result.status, 2, `${flag}: stdout=${result.stdout} stderr=${result.stderr}`);
+      assert.match(result.stderr, /--check cannot be combined/);
+      assert.doesNotMatch(result.stdout, /STALE|CURRENT/);
+    }
+    assert.equal(await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8'), before,
+      'invalid mixed modes must not mutate the review log');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review rejects refresh combined with either completion attestation', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'const answer = 42;\n');
+    await writeReviewLog(dir, [{
+      id: 'review-0001', status: 'pending', files: [file],
+      content_hashes: { [file]: sha256('const answer = 42;\n') },
+    }]);
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+
+    for (const attestation of [['--reviewed-current'], ['--reviewed-hash', '0'.repeat(64)]]) {
+      const result = runHelper(dir, 'review-0001', ['--refresh', ...attestation]);
+      assert.equal(result.status, 2, `stdout=${result.stdout} stderr=${result.stderr}`);
+      assert.match(result.stderr, /--refresh cannot be combined/);
+      assert.doesNotMatch(result.stdout, /refreshed|completed/i);
+    }
+    assert.equal(await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8'), before,
+      'invalid refresh/completion combinations must not mutate the review log');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review --check reports STALE for a drifted completed review without mutation', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'const answer = 42;\n');
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'completed', files: [file], content_hashes: { [file]: sha256('const answer = 42;\n') }, reviewer: 'test' }]);
+    await writeFile(file, 'const answer = 43;\n');
+
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    const result = runCheck(dir);
+    assert.equal(result.status, 4, `stdout=${result.stdout} stderr=${result.stderr}`);
+    assert.match(result.stdout, /STALE/);
+    const after = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    assert.equal(after, before, '--check must not mutate a drifted completed review');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -389,10 +567,27 @@ test('complete-review refuses already completed reviews by default', async () =>
     await writeReviewLog(dir, [{ id: 'review-0001', status: 'completed', files: [file], content_hashes: { [file]: sha256('bytes\n') } }]);
 
     const result = runHelper(dir);
-    assert.notEqual(result.status, 0);
+    assert.equal(result.status, 6, result.stderr);
 
     const review = (await readReviewLog(dir)).reviews[0];
     assert.equal(review.completed_at, undefined);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('complete-review refuses to refresh an already completed review', async () => {
+  const dir = await fixture();
+  try {
+    const file = path.join(dir, 'target.js');
+    await writeFile(file, 'bytes\n');
+    await writeReviewLog(dir, [{ id: 'review-0001', status: 'completed', files: [file], content_hashes: { [file]: sha256('bytes\n') }, reviewer: 'test' }]);
+
+    const before = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    const result = runHelper(dir, 'review-0001', ['--refresh']);
+    assert.equal(result.status, 6, result.stderr);
+    const after = await readFile(path.join(dir, '.wolf', 'reviewlog.json'), 'utf8');
+    assert.equal(after, before, '--refresh must not mutate a completed review');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -689,7 +884,13 @@ test('stop hook simplicity nudge omits the lens hint when edit counts are low', 
   }
 });
 
-async function reviewBaselineFixture({ sessionTokens, coveredTokens, coveredBasis }) {
+async function reviewBaselineFixture({
+  sessionTokens,
+  coveredTokens,
+  coveredBasis,
+  reviewStatus = 'completed',
+  extraWrites = [],
+}) {
   // Fixture for bug-441: a completed review from THIS session already covers
   // coveredTokens of output; only (sessionTokens - coveredTokens) is new work.
   const base = createHomeFixture('ow-review-baseline-');
@@ -709,8 +910,9 @@ async function reviewBaselineFixture({ sessionTokens, coveredTokens, coveredBasi
   await writeFile(path.join(dir, '.wolf', 'reviewlog.json'), JSON.stringify({ version: 1, reviews: [{
     id: 'review-0001',
     session_id: 'sess-baseline',
-    status: 'completed',
+    status: reviewStatus,
     files: [target],
+    approx_lines_changed: 0,
     covered_tokens: coveredTokens,
     // Omitted when coveredBasis is undefined, reproducing a pre-bug-498 entry.
     ...(coveredBasis ? { covered_tokens_basis: coveredBasis } : {}),
@@ -720,7 +922,10 @@ async function reviewBaselineFixture({ sessionTokens, coveredTokens, coveredBasi
     session_id: 'sess-baseline',
     started: '2099-06-13T17:00:00.000Z',
     files_read: {},
-    files_written: [{ file: target, at: '2099-06-13T17:00:00.000Z', tokens: sessionTokens, action: 'edit' }],
+    files_written: [
+      { file: target, at: '2099-06-13T17:00:00.000Z', tokens: sessionTokens, action: 'edit' },
+      ...extraWrites,
+    ],
     edit_counts: { [target]: 1 },
     anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
     cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
@@ -1467,43 +1672,49 @@ test('attribution consumer reads the same token field the write producer emits',
 // value and its label disagree in BOTH directions -- each ending in a baseline
 // subtracted across incommensurable scales, 0 effective lines, and a silently
 // dead size trigger.
-test('covered_tokens baseline and its basis marker can never disagree', () => {
-  const SCOPED = 'scoped-writes';
-  const SESSION = 'session-total';
-  // Mirrors advanceCoveredTokens in stop.ts.
-  const advance = (entry, cumulative, complete) => {
-    const incoming = complete ? SCOPED : SESSION;
-    const stored = entry.covered_tokens_basis
-      ?? (typeof entry.covered_tokens === 'number' ? SESSION : null);
-    if (stored === incoming && typeof entry.covered_tokens === 'number') {
-      entry.covered_tokens = Math.max(entry.covered_tokens, cumulative);
-    } else {
-      entry.covered_tokens = cumulative;
-    }
-    entry.covered_tokens_basis = incoming;
-    return entry;
-  };
-  const read = (entry, cumulative, complete) => {
-    const want = complete ? SCOPED : SESSION;
-    const covered = entry.covered_tokens_basis === want ? entry.covered_tokens : 0;
-    return Math.max(0, Math.round((cumulative - covered) / 17));
-  };
+test('stop hook atomically relabels a scoped pending baseline when attribution falls back', async () => {
+  const excluded = path.join(tmpdir(), 'covered-token-fallback.test.js');
+  const { dir, transcript } = await reviewBaselineFixture({
+    sessionTokens: 0,
+    coveredTokens: 100,
+    coveredBasis: 'scoped-writes',
+    reviewStatus: 'pending',
+    extraWrites: [{
+      file: excluded,
+      at: '2099-06-13T17:00:00.000Z',
+      tokens: 10000,
+      action: 'edit',
+    }],
+  });
+  try {
+    const result = runStopHook(dir, transcript, 'sess-baseline');
+    assert.equal(result.status, 0, result.stderr);
+    const pending = (await readReviewLog(dir)).reviews[0];
+    assert.equal(pending.covered_tokens, 10000,
+      'the fallback session-total value must replace the incommensurable scoped value');
+    assert.equal(pending.covered_tokens_basis, 'session-total',
+      'the basis marker must describe the value actually stored');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
 
-  // Direction 1: a stored SCOPED marker must not survive a fallback turn.
-  const d1 = advance({ covered_tokens: 100, covered_tokens_basis: SCOPED }, 10000, false);
-  assert.equal(d1.covered_tokens_basis, SESSION, 'a fallback turn must relabel the baseline it stored');
-  assert.equal(d1.covered_tokens, 10000);
-  assert.ok(read(d1, 800, true) >= 40, 'a later scoped turn must not subtract a session-total baseline');
-
-  // Direction 2: Math.max must not retain an older session-total value while
-  // the current scoped turn stamps SCOPED over it.
-  const d2 = advance({ covered_tokens: 51000 }, 85, true);
-  assert.equal(d2.covered_tokens, 85, 'an incommensurable stored value must be replaced, not max-ed');
-  assert.equal(d2.covered_tokens_basis, SCOPED);
-  assert.ok(read(d2, 3400, true) >= 40, 'a 200-line scoped change must still fire');
-
-  // Same-basis advance keeps monotonic behavior -- the fix must not disable it.
-  const same = advance({ covered_tokens: 500, covered_tokens_basis: SCOPED }, 300, true);
-  assert.equal(same.covered_tokens, 500, 'same-basis baselines still advance monotonically');
-  assert.equal(read(same, 600, true), 6, 'and are still subtracted');
+test('stop hook replaces a session-total pending baseline when scoped attribution resumes', async () => {
+  const { dir, transcript } = await reviewBaselineFixture({
+    sessionTokens: 85,
+    coveredTokens: 51000,
+    coveredBasis: 'session-total',
+    reviewStatus: 'pending',
+  });
+  try {
+    const result = runStopHook(dir, transcript, 'sess-baseline');
+    assert.equal(result.status, 0, result.stderr);
+    const pending = (await readReviewLog(dir)).reviews[0];
+    assert.equal(pending.covered_tokens, 85,
+      'an older session-total value must not win Math.max against scoped units');
+    assert.equal(pending.covered_tokens_basis, 'scoped-writes',
+      'the basis marker and replacement value must change together');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });

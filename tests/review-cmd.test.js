@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile, rm, copyFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, rm, copyFile, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -85,6 +85,7 @@ test('review complete delegates reviewed-hash completion helper', async () => {
   try {
     await copyFile(path.join(repoRoot, 'src/hooks/complete-review.js'), path.join(dir, '.wolf', 'hooks', 'complete-review.js'));
     await copyFile(path.join(repoRoot, 'src/hooks/shared.js'), path.join(dir, '.wolf', 'hooks', 'shared.js'));
+    await cp(path.join(repoRoot, 'src/hooks/nudges'), path.join(dir, '.wolf', 'hooks', 'nudges'), { recursive: true });
     await mkdir(path.join(dir, '.wolf', 'utils'), { recursive: true });
     await copyFile(path.join(repoRoot, 'src/utils/size-discipline.js'), path.join(dir, '.wolf', 'utils', 'size-discipline.js'));
     const file = path.join(dir, 'target.js');

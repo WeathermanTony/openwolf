@@ -119,20 +119,28 @@ const MAX_DESC = 150;
 const READ_BYTES = 12288; // 12KB for better analysis
 
 // ─── Main entry ──────────────────────────────────────────────
-export function extractDescription(filePath: string): string {
+export function extractDescription(filePath: string, suppliedContent?: string): string {
   const basename = path.basename(filePath);
 
   if (KNOWN_FILES[basename]) return KNOWN_FILES[basename];
 
   let content: string;
-  try {
-    const fd = fs.openSync(filePath, "r");
-    const buf = Buffer.alloc(READ_BYTES);
-    const bytesRead = fs.readSync(fd, buf, 0, READ_BYTES, 0);
-    fs.closeSync(fd);
-    content = buf.subarray(0, bytesRead).toString("utf-8");
-  } catch {
-    return "";
+  if (suppliedContent !== undefined) {
+    content = suppliedContent.slice(0, READ_BYTES);
+  } else {
+    let fd: number | undefined;
+    try {
+      fd = fs.openSync(filePath, "r");
+      const buf = Buffer.alloc(READ_BYTES);
+      const bytesRead = fs.readSync(fd, buf, 0, READ_BYTES, 0);
+      content = buf.subarray(0, bytesRead).toString("utf-8");
+    } catch {
+      return "";
+    } finally {
+      if (fd !== undefined) {
+        try { fs.closeSync(fd); } catch {}
+      }
+    }
   }
   if (!content.trim()) return "";
 

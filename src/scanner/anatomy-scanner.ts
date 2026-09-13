@@ -4,6 +4,7 @@ import { extractDescription, capDescription } from "./description-extractor.js";
 import { readJSON } from "../utils/fs-safe.js";
 import { writeText } from "../utils/fs-safe.js";
 import { normalizePath } from "../utils/paths.js";
+import { DEFAULT_EXCLUDE_PATTERNS, isGitIgnored, isVirtualenvDir, loadGitignore, type IgnoreRule } from "./exclusions.js";
 
 interface AnatomyEntry {
   file: string;
@@ -85,6 +86,7 @@ function walkDir(
   dir: string,
   rootDir: string,
   excludePatterns: string[],
+  ignoreRules: IgnoreRule[],
   maxFiles: number,
   entries: Map<string, AnatomyEntry[]>
 ): void {
@@ -106,9 +108,11 @@ function walkDir(
     const relPath = normalizePath(path.relative(rootDir, fullPath));
 
     if (shouldExclude(relPath, excludePatterns)) continue;
+    if (isGitIgnored(ignoreRules, relPath, item.isDirectory())) continue;
 
     if (item.isDirectory()) {
-      walkDir(fullPath, rootDir, excludePatterns, maxFiles, entries);
+      if (isVirtualenvDir(fullPath)) continue;
+      walkDir(fullPath, rootDir, excludePatterns, ignoreRules, maxFiles, entries);
     } else if (item.isFile()) {
       const ext = path.extname(item.name).toLowerCase();
       if (BINARY_EXTENSIONS.has(ext)) continue;
@@ -129,7 +133,7 @@ function walkDir(
         continue;
       }
 
-      const desc = capDescription(extractDescription(fullPath));
+      const desc = capDescription(extractDescription(fullPath, content));
       const tokens = estimateTokens(content, fullPath);
       const section = normalizePath(path.relative(rootDir, dir)) || ".";
       const sectionKey = section === "." ? "./" : section + "/";
@@ -219,17 +223,19 @@ export function buildAnatomy(wolfDir: string, projectRoot: string): { content: s
       anatomy: {
         max_description_length: 100,
         max_files: 500,
-        exclude_patterns: ["node_modules", ".git", "dist", "build", ".wolf"],
+        exclude_patterns: [...DEFAULT_EXCLUDE_PATTERNS],
       },
       token_audit: { chars_per_token_code: 3.5, chars_per_token_prose: 4.0 },
     },
   });
 
   const entries = new Map<string, AnatomyEntry[]>();
+  const ignoreRules = loadGitignore(projectRoot);
   walkDir(
     projectRoot,
     projectRoot,
     config.openwolf.anatomy.exclude_patterns,
+    ignoreRules,
     config.openwolf.anatomy.max_files,
     entries
   );
@@ -290,7 +296,7 @@ export function updateAnatomyEntry(
       return;
     }
 
-    const desc = capDescription(extractDescription(filePath));
+    const desc = capDescription(extractDescription(filePath, fileContent));
     const tokens = estimateTokens(fileContent, filePath);
     const entry: AnatomyEntry = { file: fileName, description: desc, tokens };
 

@@ -1,36 +1,32 @@
 // @ts-nocheck
 import * as path from "node:path";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, readMarkdown, parseAnatomy, estimateTokens, readStdin, normalizePath } from "./shared.js";
+import { getWolfDir, ensureWolfDir, mutateJSON, readMarkdown, parseAnatomy, estimateTokens, readStdin, normalizePath, projectRelativePath, getSessionFilePath, runHook } from "./shared.js";
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
-    const hooksDir = path.join(wolfDir, "hooks");
-    const sessionFile = path.join(hooksDir, "_session.json");
     const raw = await readStdin();
     let input;
     try {
         input = JSON.parse(raw);
     }
     catch {
-        process.exit(0);
+        return;
         return;
     }
     const filePath = input.tool_input?.file_path ?? input.tool_input?.path ?? "";
     const content = input.tool_output?.content ?? "";
     if (!filePath) {
-        process.exit(0);
+        return;
         return;
     }
-    const normalizedFile = normalizePath(filePath);
-    // Skip tracking for .wolf/ internal files — consistent with pre-read
-    const projectDir = normalizePath(process.env.CLAUDE_PROJECT_DIR || process.cwd());
-    const relToProject = normalizedFile.startsWith(projectDir)
-        ? normalizedFile.slice(projectDir.length).replace(/^\//, "")
-        : "";
-    if (relToProject.startsWith(".wolf/") || relToProject.startsWith(".wolf\\")) {
-        process.exit(0);
+    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const relToProject = projectRelativePath(projectDir, filePath);
+    if (relToProject === null || relToProject === "" || relToProject === ".wolf" || relToProject.startsWith(".wolf/")) {
+        return;
         return;
     }
+    const normalizedFile = normalizePath(path.resolve(projectDir, relToProject));
+    const sessionFile = getSessionFilePath(wolfDir, input.session_id);
     const ext = path.extname(filePath).toLowerCase();
     const codeExts = new Set([".ts", ".js", ".tsx", ".jsx", ".py", ".rs", ".go", ".java", ".c", ".cpp", ".css", ".json", ".yaml", ".yml"]);
     const proseExts = new Set([".md", ".txt", ".rst"]);
@@ -43,7 +39,7 @@ async function main() {
         for (const [sectionKey, entries] of sections) {
             for (const entry of entries) {
                 const entryRelPath = normalizePath(path.join(sectionKey, entry.file));
-                if (normalizedFile.endsWith(entryRelPath) || normalizedFile.endsWith("/" + entryRelPath)) {
+                if (relToProject === entryRelPath) {
                     tokens = entry.tokens;
                     break;
                 }
@@ -52,18 +48,20 @@ async function main() {
                 break;
         }
     }
-    const session = readJSON(sessionFile, { files_read: {} });
-    if (session.files_read[normalizedFile]) {
-        session.files_read[normalizedFile].tokens = tokens;
-    }
-    else {
-        session.files_read[normalizedFile] = {
-            count: 1,
-            tokens,
-            first_read: new Date().toISOString(),
-        };
-    }
-    writeJSON(sessionFile, session);
-    process.exit(0);
+    mutateJSON(sessionFile, { session_id: input.session_id ?? "", files_read: {} }, (session) => {
+        session.files_read ??= {};
+        if (session.files_read[normalizedFile]) {
+            session.files_read[normalizedFile].tokens = tokens;
+        }
+        else {
+            session.files_read[normalizedFile] = {
+                count: 1,
+                tokens,
+                first_read: new Date().toISOString(),
+            };
+        }
+        return session;
+    });
+    return;
 }
-main().catch(() => process.exit(0));
+runHook("post-read", main);

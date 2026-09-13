@@ -1,27 +1,58 @@
 // @ts-nocheck
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getWolfDir, ensureWolfDir, writeJSON, appendMarkdown, readJSON, timestamp, timeShort } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, mutateJSON, appendMarkdown, timestamp, timeShort, readStdin, getSessionFilePath, runHook } from "./shared.js";
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
-    // Clean up stale .tmp files left from failed atomic writes
+    // The installed manifest is generated from the CLI's canonical hook manifest.
+    // Checking it here catches partial upgrades and stale support trees before a
+    // silently broken PostToolUse or Stop hook can go unnoticed for days.
     try {
-        const files = fs.readdirSync(wolfDir);
-        for (const f of files) {
-            if (f.endsWith(".tmp")) {
-                try {
-                    fs.unlinkSync(path.join(wolfDir, f));
-                }
-                catch { }
-            }
+        const manifest = readJSON(path.join(wolfDir, "hooks", "manifest.json"), null);
+        const hookFiles = Array.isArray(manifest?.hooks) ? manifest.hooks : [];
+        const utilityFiles = Array.isArray(manifest?.utilities) ? manifest.utilities : [];
+        const missing = [
+            ...hookFiles.map(file => path.join(wolfDir, "hooks", file)),
+            ...utilityFiles.map(file => path.join(wolfDir, "utils", file)),
+        ].filter(file => !fs.existsSync(file));
+        if (!manifest || missing.length > 0) {
+            process.stderr.write(`⚠️ WolfPack: hook installation is incomplete (${manifest ? missing.length : "manifest missing"}); run openwolf update.\n`);
+        }
+        const health = readJSON(path.join(wolfDir, "hooks", "_health.json"), {});
+        const degraded = Object.entries(health?.hooks ?? {})
+            .filter(([, entry]) => Number(entry?.consecutive_failures ?? 0) > 0)
+            .map(([name]) => name);
+        if (degraded.length > 0) {
+            process.stderr.write(`⚠️ WolfPack: hook health degraded: ${degraded.join(", ")}. Run openwolf status and hook self-checks.\n`);
         }
     }
     catch { }
-    const hooksDir = path.join(wolfDir, "hooks");
-    const sessionFile = path.join(hooksDir, "_session.json");
+    // Clean up stale .tmp files left from failed atomic writes
+    try {
+        const files = fs.readdirSync(wolfDir);
+        const staleBefore = Date.now() - 10 * 60 * 1000;
+        for (const f of files) {
+            if (!f.endsWith(".tmp"))
+                continue;
+            try {
+                const tmpPath = path.join(wolfDir, f);
+                if (fs.statSync(tmpPath).mtimeMs < staleBefore)
+                    fs.unlinkSync(tmpPath);
+            }
+            catch { }
+        }
+    }
+    catch { }
+    let input = {};
+    try {
+        input = JSON.parse(await readStdin());
+    }
+    catch { }
     const now = new Date();
-    const sessionId = `session-${now.toISOString().slice(0, 10)}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    const fallbackSessionId = `session-${now.toISOString().slice(0, 10)}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}-${process.pid}`;
+    const sessionId = typeof input.session_id === "string" && input.session_id ? input.session_id : fallbackSessionId;
+    const sessionFile = getSessionFilePath(wolfDir, sessionId, true);
     // Capture a content-hash baseline for this project's cerebrum.md.
     //
     // The Stop-hook freshness rule needs to answer "did cerebrum change during
@@ -41,8 +72,10 @@ async function main() {
         cerebrumBaselines[cerebrumPath.replace(/\\/g, "/")] = createHash("sha256").update(buf).digest("hex");
     }
     catch { }
-    // Create fresh session state
-    writeJSON(sessionFile, {
+    // Initialize this session without replacing state when SessionStart fires again
+    // for a resume or compaction lifecycle event.
+    let newSession = false;
+    const sessionReady = mutateJSON(sessionFile, {
         session_id: sessionId,
         started: timestamp(),
         files_read: {},
@@ -54,11 +87,17 @@ async function main() {
         cerebrum_warnings: 0,
         stop_count: 0,
         cerebrum_baselines: cerebrumBaselines,
+    }, (session, meta) => {
+        newSession = !meta.existed;
+        return session;
     });
-    // Append session header to memory.md
+    if (!sessionReady)
+        return;
+    // Append session header to memory.md only for a genuinely new session.
     const memoryPath = path.join(wolfDir, "memory.md");
     const header = `\n## Session: ${now.toISOString().slice(0, 10)} ${timeShort()}\n\n| Time | Action | File(s) | Outcome | ~Tokens |\n|------|--------|---------|---------|--------|\n`;
-    appendMarkdown(memoryPath, header);
+    if (newSession)
+        appendMarkdown(memoryPath, header);
     // Check cerebrum freshness — remind Claude to learn
     try {
         const cerebrumPath = path.join(wolfDir, "cerebrum.md");
@@ -87,12 +126,19 @@ async function main() {
         }
     }
     catch { }
-    // Increment total_sessions in token-ledger
-    const ledgerPath = path.join(wolfDir, "token-ledger.json");
-    const ledger = readJSON(ledgerPath, { version: 1, lifetime: { total_sessions: 0 } });
-    ledger.lifetime.total_sessions++;
-    writeJSON(ledgerPath, ledger);
-    process.exit(0);
+    // Increment exactly once for this session, under the same cross-process
+    // transaction discipline as hook state.
+    if (newSession) {
+        const ledgerPath = path.join(wolfDir, "token-ledger.json");
+        const ledgerUpdated = mutateJSON(ledgerPath, { version: 1, lifetime: { total_sessions: 0 } }, (ledger) => {
+            ledger.lifetime ??= { total_sessions: 0 };
+            ledger.lifetime.total_sessions = (ledger.lifetime.total_sessions ?? 0) + 1;
+            return ledger;
+        }, { timeoutMs: 4_000 });
+        if (!ledgerUpdated)
+            process.stderr.write(`⚠️ WolfPack: could not record SessionStart in ${ledgerPath}; existing bytes were preserved.\n`);
+    }
+    return;
 }
-main().catch(() => process.exit(0));
+runHook("session-start", main);
 //# sourceMappingURL=session-start.js.map

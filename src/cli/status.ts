@@ -4,6 +4,7 @@ import { findProjectRoot } from "../scanner/project-root.js";
 import { readJSON, readText } from "../utils/fs-safe.js";
 import { hasOpenWolfPm2Daemon } from "./daemon-cmd.js";
 import { shouldAutoStartDaemon } from "./init.js";
+import { HOOK_MANIFEST_FILE, HOOK_PACKAGE_JSON, HOOK_PAYLOAD_FILES, HOOK_UTILITY_FILES, missingHookRegistrations } from "./hook-manifest.js";
 
 export async function statusCommand(): Promise<void> {
   const projectRoot = findProjectRoot();
@@ -36,33 +37,52 @@ export async function statusCommand(): Promise<void> {
     console.log(`  ✓ All ${requiredFiles.length} core files present`);
   }
 
-  // Hook scripts check
-  const hookFiles = [
-    "session-start.js", "pre-read.js", "pre-write.js",
-    "post-read.js", "post-write.js", "stop.js", "shared.js",
-  ];
+  // Hook payload and package-marker check
   const hooksDir = path.join(wolfDir, "hooks");
-  let hooksMissing = 0;
-  for (const file of hookFiles) {
-    if (!fs.existsSync(path.join(hooksDir, file))) hooksMissing++;
+  const requiredHookPaths = [
+    ...HOOK_PAYLOAD_FILES.map(file => path.join(hooksDir, file)),
+    ...HOOK_UTILITY_FILES.map(file => path.join(wolfDir, "utils", file)),
+    path.join(hooksDir, "package.json"),
+    path.join(hooksDir, HOOK_MANIFEST_FILE),
+    path.join(wolfDir, "utils", "package.json"),
+  ];
+  const missingHookPaths = requiredHookPaths.filter(file => !fs.existsSync(file));
+  let hooksMissing = missingHookPaths.length;
+  if (hooksMissing === 0) {
+    const packageFiles = [path.join(hooksDir, "package.json"), path.join(wolfDir, "utils", "package.json")];
+    const invalidPackages = packageFiles.filter(file => readJSON<{ type?: unknown }>(file, {}).type !== HOOK_PACKAGE_JSON.type);
+    hooksMissing += invalidPackages.length;
   }
   if (hooksMissing === 0) {
-    console.log(`  ✓ All ${hookFiles.length} hook scripts present`);
+    console.log(`  ✓ Complete hook runtime payload present (${requiredHookPaths.length} files)`);
   } else {
-    console.log(`  ✗ Missing ${hooksMissing} hook scripts`);
+    console.log(`  ✗ Hook runtime incomplete (${hooksMissing} missing or invalid files)`);
   }
 
   // Claude settings check
   const settingsPath = path.join(projectRoot, ".claude", "settings.json");
   if (fs.existsSync(settingsPath)) {
     const settings = readJSON<Record<string, unknown>>(settingsPath, {});
-    const hooks = settings.hooks as Record<string, unknown[]> | undefined;
-    if (hooks) {
-      const hookCount = Object.values(hooks).reduce((sum, arr) => sum + arr.length, 0);
-      console.log(`  ✓ Claude Code hooks registered (${hookCount} matchers)`);
+    const missingRegistrations = missingHookRegistrations(settings);
+    if (missingRegistrations.length === 0) {
+      console.log("  ✓ Claude Code hook registrations match the current manifest");
+    } else {
+      console.log(`  ✗ ${missingRegistrations.length} Claude Code hook registrations are missing or stale`);
+      hooksMissing += missingRegistrations.length;
     }
   } else {
     console.log("  ✗ .claude/settings.json not found");
+    hooksMissing++;
+  }
+
+  const health = readJSON<{ hooks?: Record<string, { consecutive_failures?: number; last_error?: string }> }>(
+    path.join(hooksDir, "_health.json"),
+    {}
+  );
+  const degradedHooks = Object.entries(health.hooks ?? {}).filter(([, entry]) => (entry.consecutive_failures ?? 0) > 0);
+  if (degradedHooks.length > 0) {
+    console.log(`  ✗ Hook health degraded: ${degradedHooks.map(([name]) => name).join(", ")}`);
+    hooksMissing += degradedHooks.length;
   }
 
   // Token ledger stats

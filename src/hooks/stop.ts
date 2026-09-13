@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, readRecentUserTurns, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, readRecentUserTurns, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex, getSessionFilePath, recordHookHealth, mutateJSON } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 import { evaluate as evaluateNudges, getNudgeConfig } from "./nudges/engine.js";
 import * as cerebrumRule from "./nudges/rules/cerebrum.js";
@@ -413,7 +413,9 @@ function initHookLifecycleLog(wolfDir) {
     }
     catch { }
 }
-function exitWithStopHookResult(block) {
+function exitWithStopHookResult(block, healthRecorded = false) {
+    if (!healthRecorded)
+        recordHookHealth("stop");
     hookLifecycleLog("exit", { ok: true, blocked: !!block, ms: Date.now() - HOOK_START_MS });
     let budgeted = stopHookMessages;
     try {
@@ -455,7 +457,7 @@ function tryConsumeNudgeSlot(sessionFile, field, capN) {
         if (prior >= capN)
             return false;
         onDisk[field] = prior + 1;
-        writeJSON(sessionFile, onDisk);
+        atomicWriteJson(sessionFile, onDisk);
         return true;
     }
     catch {
@@ -570,8 +572,6 @@ async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
     initHookLifecycleLog(wolfDir);
-    const hooksDir = path.join(wolfDir, "hooks");
-    const sessionFile = path.join(hooksDir, "_session.json");
     // Claude Code passes {session_id, transcript_path, stop_hook_active} on stdin.
     // We need transcript_path for the verify-conclusions sub-gate. Tolerate
     // missing/empty stdin — older Claude Code versions or non-Stop invocations
@@ -584,7 +584,8 @@ async function main() {
         }
     }
     catch { }
-    // Acquire a lock for the _session.json read-modify-write so concurrent
+    const sessionFile = getSessionFilePath(wolfDir, hookPayload.session_id);
+    // Acquire a lock for the session-state read-modify-write so concurrent
     // stop hooks cannot lose stop_count increments. We hold the lock only
     // for the increment+persist; the rest of main() reads the local copy.
     // If lock acquisition fails, fall back to a non-persisting read — the
@@ -616,7 +617,7 @@ async function main() {
             const prevCount = typeof session.stop_count === "number" ? session.stop_count : 0;
             session.stop_count = prevCount + 1;
             // Persist the incremented count immediately so a concurrent stop sees it.
-            writeJSON(sessionFile, session);
+            atomicWriteJson(sessionFile, session);
         }
         finally {
             sessionLock();
@@ -756,46 +757,43 @@ async function main() {
     // lose updates via read-modify-write races. cappedSessionsJson uses its
     // own lock, so we release ours before calling it to avoid double-locking.
     const ledgerPath = path.join(wolfDir, "token-ledger.json");
-    const releaseLedger = acquireFileLock(ledgerPath);
-    if (releaseLedger) {
-        try {
-            const ledger = readJSON(ledgerPath, {
-                version: 1,
-                created_at: "",
-                lifetime: {
-                    total_tokens_estimated: 0,
-                    total_reads: 0,
-                    total_writes: 0,
-                    total_sessions: 0,
-                    anatomy_hits: 0,
-                    anatomy_misses: 0,
-                    repeated_reads_blocked: 0,
-                    estimated_savings_vs_bare_cli: 0,
-                },
-                sessions: [],
-                daemon_usage: [],
-                waste_flags: [],
-                optimization_report: { last_generated: null, patterns: [] },
-            });
-            ledger.sessions.push(sessionEntry);
-            ledger.lifetime.total_reads += readCount;
-            ledger.lifetime.total_writes += writeCount;
-            ledger.lifetime.total_tokens_estimated += inputTokens + outputTokens;
-            ledger.lifetime.anatomy_hits += session.anatomy_hits;
-            ledger.lifetime.anatomy_misses += session.anatomy_misses;
-            ledger.lifetime.repeated_reads_blocked += session.repeated_reads_warned;
-            // Estimate savings: anatomy hits save ~200 tokens each, repeated reads blocked save their token count
-            const savedFromAnatomy = session.anatomy_hits * 200;
-            const savedFromRepeats = Object.values(session.files_read)
-                .filter((r) => r.count > 1)
-                .reduce((sum, r) => sum + r.tokens * (r.count - 1), 0);
-            ledger.lifetime.estimated_savings_vs_bare_cli += savedFromAnatomy + savedFromRepeats;
-            writeJSON(ledgerPath, ledger);
-        }
-        finally {
-            releaseLedger();
-        }
-    }
+    const ledgerUpdated = mutateJSON(ledgerPath, {
+        version: 1,
+        created_at: "",
+        lifetime: {
+            total_tokens_estimated: 0,
+            total_reads: 0,
+            total_writes: 0,
+            total_sessions: 0,
+            anatomy_hits: 0,
+            anatomy_misses: 0,
+            repeated_reads_blocked: 0,
+            estimated_savings_vs_bare_cli: 0,
+        },
+        sessions: [],
+        daemon_usage: [],
+        waste_flags: [],
+        optimization_report: { last_generated: null, patterns: [] },
+    }, (ledger) => {
+        ledger.sessions ??= [];
+        ledger.sessions.push(sessionEntry);
+        ledger.lifetime ??= {};
+        ledger.lifetime.total_reads = (ledger.lifetime.total_reads ?? 0) + readCount;
+        ledger.lifetime.total_writes = (ledger.lifetime.total_writes ?? 0) + writeCount;
+        ledger.lifetime.total_tokens_estimated = (ledger.lifetime.total_tokens_estimated ?? 0) + inputTokens + outputTokens;
+        ledger.lifetime.anatomy_hits = (ledger.lifetime.anatomy_hits ?? 0) + session.anatomy_hits;
+        ledger.lifetime.anatomy_misses = (ledger.lifetime.anatomy_misses ?? 0) + session.anatomy_misses;
+        ledger.lifetime.repeated_reads_blocked = (ledger.lifetime.repeated_reads_blocked ?? 0) + session.repeated_reads_warned;
+        // Estimate savings: anatomy hits save ~200 tokens each, repeated reads blocked save their token count
+        const savedFromAnatomy = session.anatomy_hits * 200;
+        const savedFromRepeats = Object.values(session.files_read)
+            .filter((r) => r.count > 1)
+            .reduce((sum, r) => sum + r.tokens * (r.count - 1), 0);
+        ledger.lifetime.estimated_savings_vs_bare_cli = (ledger.lifetime.estimated_savings_vs_bare_cli ?? 0) + savedFromAnatomy + savedFromRepeats;
+        return ledger;
+    }, { timeoutMs: 4_000 });
+    if (!ledgerUpdated)
+        hookLifecycleLog("state_write_failed", { file: "token-ledger.json", ok: false });
     // Cap token-ledger sessions array — silent no-op on error.
     // cappedSessionsJson acquires its own lock internally.
     try {
@@ -1921,7 +1919,7 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
                     at: new Date().toISOString(),
                     files: multiEditDisplay,
                 };
-                writeJSON(sessionFile, onDisk);
+                atomicWriteJson(sessionFile, onDisk);
             }
             catch { }
             finally {
@@ -2701,4 +2699,12 @@ function maybeNudgeConclusionVerification(wolfDir, session, sessionEntry, transc
     }, getHookMessageConfig()));
     return true;
 }
-main().catch(() => exitWithStopHookResult(false));
+if (process.argv.includes("--selfcheck")) {
+    process.stdout.write("ok stop\n");
+}
+else {
+    main().catch((error) => {
+        recordHookHealth("stop", error);
+        exitWithStopHookResult(false, true);
+    });
+}

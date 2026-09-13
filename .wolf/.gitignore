@@ -39,8 +39,10 @@ designqc-captures/
 
 # session + gate internals
 hooks/_session.json
+hooks/sessions/
+hooks/_health.json
 qa/_gate-log.json
-qa/*.md
+qa/**/*.md
 !qa/_README.md
 !qa/_template.md
 

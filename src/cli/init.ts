@@ -11,6 +11,7 @@ import { registerProject } from "./registry.js";
 import { allocateProjectPorts, isPortFree } from "../utils/port-allocator.js";
 import { cleanupOpenWolfPm2, ensurePm2Daemon, hasOpenWolfPm2Daemon } from "./daemon-cmd.js";
 import { installManagedClaudeSkills } from "./managed-skills.js";
+import { HOOK_MANIFEST_FILE, HOOK_PACKAGE_JSON, HOOK_PAYLOAD_FILES, HOOK_RUNTIME_MANIFEST, HOOK_SETTINGS, HOOK_UTILITY_FILES } from "./hook-manifest.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,36 +49,6 @@ const CREATE_IF_MISSING = [
   "designqc-report.json",
   "suggestions.json",
 ];
-
-// Resolve $CLAUDE_PROJECT_DIR cross-platform via node -e instead of shell expansion.
-// `$CLAUDE_PROJECT_DIR` is POSIX-only — on Windows cmd/PowerShell the literal reaches
-// node's argv unmodified, producing paths like `C:\.wolf\hooks\stop.js` that don't
-// exist. Reading `process.env.CLAUDE_PROJECT_DIR` inside `node -e` works on every OS
-// because Node parses env vars the same way everywhere. The trailing `.catch(()=>{})`
-// makes the hook a silent no-op when `.wolf/` is absent (e.g. a project that doesn't
-// use OpenWolf but inherits the hooks from a global settings.json).
-function hookCommand(file: string): string {
-  return `node -e "import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/${file}').href)).catch(()=>{})"`;
-}
-
-const HOOK_SETTINGS = {
-  hooks: {
-    SessionStart: [
-      { matcher: "", hooks: [{ type: "command", command: hookCommand("session-start.js"), timeout: 5 }] },
-    ],
-    PreToolUse: [
-      { matcher: "Read", hooks: [{ type: "command", command: hookCommand("pre-read.js"), timeout: 5 }] },
-      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: hookCommand("pre-write.js"), timeout: 5 }] },
-    ],
-    PostToolUse: [
-      { matcher: "Read", hooks: [{ type: "command", command: hookCommand("post-read.js"), timeout: 5 }] },
-      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: hookCommand("post-write.js"), timeout: 10 }] },
-    ],
-    Stop: [
-      { matcher: "", hooks: [{ type: "command", command: hookCommand("stop.js"), timeout: 10 }] },
-    ],
-  },
-};
 
 export async function initCommand(options: { profile?: string } = {}): Promise<void> {
   // Check Node.js version
@@ -333,10 +304,12 @@ export function writeTemplateFile(templatesDir: string, wolfDir: string, file: s
   const destPath = path.join(wolfDir, file);
   if (fs.existsSync(srcPath)) {
     safeCopyFile(srcPath, destPath);
+  } else if (file === ".gitignore") {
+    generateTemplate(destPath, file);
   } else if (file === "OPENWOLF.md") {
     throw new Error(`Required OpenWolf protocol template missing: ${srcPath}`);
   } else {
-    generateTemplate(destPath, file);
+    throw new Error(`Required Wolfpack template missing: ${srcPath}`);
   }
 }
 
@@ -545,7 +518,60 @@ export function generateTemplate(destPath: string, file: string): void {
     // src/templates/.gitignore. Without this, an upgrade on a packaging layout
     // missing the template would overwrite an existing .wolf/.gitignore with
     // zero bytes (companion review 2026-07-21, MEDIUM).
-    ".gitignore": `# Wolfpack-managed ignore policy for .wolf/ runtime state.\n# Durable knowledge stays trackable: OPENWOLF.md, cerebrum.md, memory.md,\n# anatomy.md, identity.md, config.json, buglog.json, qa/_README.md,\n# qa/_template.md. Everything below is churn/state — safe to ignore.\n\n*.log\n**/*.log\n*-state.json\n**/*-state.json\ncron-state.json\ncron-manifest.json\ntoken-ledger.json\ncerebrum-stats.json\nsuggestions.json\nreviewlog.json\nskill-receipts/\ndesignqc-report.json\ndesignqc-captures/\n*.lock\n*.lock.reclaim\n**/*.lock\n**/*.lock.reclaim\nhooks/_session.json\nqa/_gate-log.json\nqa/*.md\n!qa/_README.md\n!qa/_template.md\nbackups/\nqueue-drops.json\nqueue-injections.json\narchive/\n`,
+    ".gitignore": `# Wolfpack-managed ignore policy for .wolf/ runtime state.
+# Durable knowledge stays trackable: OPENWOLF.md, cerebrum.md, memory.md,
+# anatomy.md, identity.md, config.json, buglog.json, qa/_README.md,
+# qa/_template.md. Everything below is churn/state — safe to ignore.
+
+# logs
+*.log
+**/*.log
+logs/
+**/logs/
+
+# daemon / cron / scheduler state
+*-state.json
+**/*-state.json
+cron-state.json
+cron-manifest.json
+token-ledger.json
+cerebrum-stats.json
+suggestions.json
+
+# review and skill lifecycle state (compact receipts are runtime churn)
+reviewlog.json
+skill-receipts/
+
+# experiment records are durable; only optional bulky artifacts are ignored
+!experiments/
+!experiments/*.json
+experiments/artifacts/
+
+# design QC captures and reports
+designqc-report.json
+designqc-captures/
+
+# lock files
+*.lock
+*.lock.reclaim
+**/*.lock
+**/*.lock.reclaim
+
+# session + gate internals
+hooks/_session.json
+hooks/sessions/
+hooks/_health.json
+qa/_gate-log.json
+qa/**/*.md
+!qa/_README.md
+!qa/_template.md
+
+# backups + queue-watch dedup stores
+backups/
+queue-drops.json
+queue-injections.json
+archive/
+`,
   };
 
   const content = templates[file] ?? "";
@@ -609,61 +635,24 @@ function copyHookScripts(wolfDir: string): void {
       ? hookSourceDir
       : "";
 
-  const hookFiles = [
-    "session-start.js",
-    "pre-read.js",
-    "pre-write.js",
-    "post-read.js",
-    "post-write.js",
-    "stop.js",
-    "shared.js",
-    "complete-review.js",
-  ];
-
   let copiedAny = false;
   if (sourceDir) {
-    for (const file of hookFiles) {
+    for (const file of HOOK_PAYLOAD_FILES) {
       const src = path.join(sourceDir, file);
-      if (fs.existsSync(src)) {
-        safeCopyFile(src, path.join(hooksDir, file));
-        copiedAny = true;
-      }
+      if (!fs.existsSync(src)) continue;
+      safeCopyFile(src, path.join(hooksDir, file));
+      copiedAny = true;
     }
-    // stop.js imports ./nudges/engine.js and ./nudges/rules/*.js. The flat
-    // hookFiles allowlist above cannot express a nested tree, so copy it
-    // wholesale — otherwise the Stop hook dies with ERR_MODULE_NOT_FOUND,
-    // silently, because the project hook wrapper swallows import errors.
-    const nudgesSrcDir = path.join(sourceDir, "nudges");
-    if (fs.existsSync(nudgesSrcDir)) {
-      const n = safeCopyDir(nudgesSrcDir, path.join(hooksDir, "nudges"));
-      if (n > 0) copiedAny = true;
-    }
-    // Hooks reference compiled utilities via "../utils/size-discipline.js".
-    // Place the utils as a sibling of hooks/ under .wolf/ so the relative
-    // path resolves at runtime (.wolf/hooks/post-write.js → .wolf/utils/...).
     const utilsSrcDir = path.resolve(sourceDir, "..", "utils");
-    if (fs.existsSync(utilsSrcDir)) {
-      const utilsDestDir = path.resolve(hooksDir, "..", "utils");
-      try { fs.mkdirSync(utilsDestDir, { recursive: true }); } catch {}
-      for (const entry of fs.readdirSync(utilsSrcDir)) {
-        if (entry.endsWith(".js")) {
-          safeCopyFile(path.join(utilsSrcDir, entry), path.join(utilsDestDir, entry));
-        }
-      }
-      fs.writeFileSync(path.join(utilsDestDir, "package.json"), JSON.stringify({ type: "module" }, null, 2) + "\n", "utf-8");
+    const utilsDestDir = path.resolve(hooksDir, "..", "utils");
+    ensureDir(utilsDestDir);
+    for (const file of HOOK_UTILITY_FILES) {
+      const src = path.join(utilsSrcDir, file);
+      if (fs.existsSync(src)) safeCopyFile(src, path.join(utilsDestDir, file));
     }
+    fs.writeFileSync(path.join(utilsDestDir, "package.json"), JSON.stringify(HOOK_PACKAGE_JSON, null, 2) + "\n", "utf-8");
   } else if (fs.existsSync(srcHooksDir)) {
-    // Dev mode: compile TS hooks inline using a simple copy with note.
-    // In practice, user should run `pnpm build` first.
-    for (const file of hookFiles) {
-      const tsFile = file.replace(".js", ".ts");
-      const src = path.join(srcHooksDir, tsFile);
-      if (fs.existsSync(src)) {
-        const loaderContent = `#!/usr/bin/env node\n// Auto-generated by openwolf init — run 'pnpm build' for compiled version\nimport("${src.replace(/\\/g, "/")}");\n`;
-        fs.writeFileSync(path.join(hooksDir, file), loaderContent, "utf-8");
-        copiedAny = true;
-      }
-    }
+    console.warn("  ⚠ TypeScript hook sources exist but compiled hooks do not. Run 'npm run build' and re-run init.");
   }
 
   if (!copiedAny) {
@@ -672,7 +661,8 @@ function copyHookScripts(wolfDir: string): void {
 
   // Always write a package.json with type:module so ESM hooks work in any project
   const hooksPkgPath = path.join(hooksDir, "package.json");
-  fs.writeFileSync(hooksPkgPath, JSON.stringify({ type: "module" }, null, 2) + "\n", "utf-8");
+  fs.writeFileSync(hooksPkgPath, JSON.stringify(HOOK_PACKAGE_JSON, null, 2) + "\n", "utf-8");
+  fs.writeFileSync(path.join(hooksDir, HOOK_MANIFEST_FILE), JSON.stringify(HOOK_RUNTIME_MANIFEST, null, 2) + "\n", "utf-8");
 }
 
 /**

@@ -16,6 +16,8 @@ import { cleanupOpenWolfPm2, listPm2Processes } from "./daemon-cmd.js";
 import { readJSON, writeJSON, readText, writeText, safeCopyFile, safeCopyDir } from "../utils/fs-safe.js";
 import { ensureDir } from "../utils/paths.js";
 import { backupManagedClaudeSkills, installManagedClaudeSkills, restoreManagedClaudeSkills } from "./managed-skills.js";
+import { EXCLUDE_PATTERNS_ADDED } from "../scanner/exclusions.js";
+import { HOOK_MANIFEST_FILE, HOOK_PACKAGE_JSON, HOOK_PAYLOAD_FILES, HOOK_RUNTIME_MANIFEST, HOOK_SETTINGS, HOOK_UTILITY_FILES } from "./hook-manifest.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,25 +59,6 @@ const BACKUP_FILES = [
   ...CREATE_IF_MISSING,
   ...USER_DATA_FILES,
 ];
-
-function hookCommand(file: string): string {
-  return `node -e "import('node:url').then(({pathToFileURL})=>import(pathToFileURL(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/${file}').href)).catch(()=>{})"`;
-}
-
-const HOOK_SETTINGS = {
-  hooks: {
-    SessionStart: [{ matcher: "", hooks: [{ type: "command", command: hookCommand("session-start.js"), timeout: 5 }] }],
-    PreToolUse: [
-      { matcher: "Read", hooks: [{ type: "command", command: hookCommand("pre-read.js"), timeout: 5 }] },
-      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: hookCommand("pre-write.js"), timeout: 5 }] },
-    ],
-    PostToolUse: [
-      { matcher: "Read", hooks: [{ type: "command", command: hookCommand("post-read.js"), timeout: 5 }] },
-      { matcher: "Write|Edit|MultiEdit", hooks: [{ type: "command", command: hookCommand("post-write.js"), timeout: 10 }] },
-    ],
-    Stop: [{ matcher: "", hooks: [{ type: "command", command: hookCommand("stop.js"), timeout: 10 }] }],
-  },
-};
 
 interface UpdateResult {
   project: RegisteredProject;
@@ -404,11 +387,27 @@ function mergeMissingDefaults(existing: unknown, defaults: unknown): unknown {
   return out;
 }
 
-function mergeConfigDefaults(srcPath: string, destPath: string): void {
+export function mergeConfigDefaults(srcPath: string, destPath: string): void {
   if (!fs.existsSync(srcPath) || !fs.existsSync(destPath)) return;
-  const defaults = readJSON<Record<string, unknown>>(srcPath, {});
-  const existing = readJSON<Record<string, unknown>>(destPath, {});
-  const merged = mergeMissingDefaults(existing, defaults);
+  let defaults: Record<string, unknown>;
+  let existing: Record<string, unknown>;
+  try {
+    defaults = JSON.parse(fs.readFileSync(srcPath, "utf8"));
+  } catch (err) {
+    throw new Error(`OpenWolf update template is malformed or unreadable at ${srcPath}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  try {
+    existing = JSON.parse(fs.readFileSync(destPath, "utf8"));
+  } catch (err) {
+    throw new Error(`Refusing to replace malformed or unreadable project config at ${destPath}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  const merged = mergeMissingDefaults(existing, defaults) as Record<string, any>;
+  const patterns = merged.openwolf?.anatomy?.exclude_patterns;
+  if (Array.isArray(patterns)) {
+    for (const pattern of EXCLUDE_PATTERNS_ADDED) {
+      if (!patterns.includes(pattern)) patterns.push(pattern);
+    }
+  }
   writeJSON(destPath, migrateReviewCompanionConfig(merged));
 }
 
@@ -465,54 +464,26 @@ function copyHookScripts(wolfDir: string): void {
     }
   }
 
-  const hookFiles = [
-    "session-start.js",
-    "pre-read.js",
-    "pre-write.js",
-    "post-read.js",
-    "post-write.js",
-    "stop.js",
-    "shared.js",
-    "complete-review.js",
-  ];
-
   if (sourceDir) {
-    for (const file of hookFiles) {
+    for (const file of HOOK_PAYLOAD_FILES) {
       const src = path.join(sourceDir, file);
-      if (fs.existsSync(src)) {
-        safeCopyFile(src, path.join(hooksDir, file));
-      }
+      if (fs.existsSync(src)) safeCopyFile(src, path.join(hooksDir, file));
     }
 
-    // stop.js imports ./nudges/engine.js and ./nudges/rules/*.js. The flat
-    // hookFiles allowlist cannot express a nested tree, so copy it wholesale.
-    // Without this an updated project gets the importer without its imports
-    // and the Stop hook dies with ERR_MODULE_NOT_FOUND — silently, since the
-    // project hook wrapper swallows import errors.
-    const nudgesSrcDir = path.join(sourceDir, "nudges");
-    if (fs.existsSync(nudgesSrcDir)) {
-      safeCopyDir(nudgesSrcDir, path.join(hooksDir, "nudges"));
-    }
-
-    // Hooks and helper scripts import compiled utilities via ../utils/*.js.
-    // Keep .wolf/utils as a sibling of .wolf/hooks so those relative imports
-    // resolve in projects upgraded with `openwolf update`, not only fresh init.
     const utilsSrcDir = path.resolve(sourceDir, "..", "utils");
-    if (fs.existsSync(utilsSrcDir)) {
-      const utilsDestDir = path.resolve(hooksDir, "..", "utils");
-      ensureDir(utilsDestDir);
-      for (const entry of fs.readdirSync(utilsSrcDir)) {
-        if (entry.endsWith(".js")) {
-          safeCopyFile(path.join(utilsSrcDir, entry), path.join(utilsDestDir, entry));
-        }
-      }
-      fs.writeFileSync(path.join(utilsDestDir, "package.json"), JSON.stringify({ type: "module" }, null, 2) + "\n", "utf-8");
+    const utilsDestDir = path.resolve(hooksDir, "..", "utils");
+    ensureDir(utilsDestDir);
+    for (const file of HOOK_UTILITY_FILES) {
+      const src = path.join(utilsSrcDir, file);
+      if (fs.existsSync(src)) safeCopyFile(src, path.join(utilsDestDir, file));
     }
+    fs.writeFileSync(path.join(utilsDestDir, "package.json"), JSON.stringify(HOOK_PACKAGE_JSON, null, 2) + "\n", "utf-8");
   }
 
   // Always ensure package.json with type:module
   const hooksPkgPath = path.join(hooksDir, "package.json");
-  fs.writeFileSync(hooksPkgPath, JSON.stringify({ type: "module" }, null, 2) + "\n", "utf-8");
+  fs.writeFileSync(hooksPkgPath, JSON.stringify(HOOK_PACKAGE_JSON, null, 2) + "\n", "utf-8");
+  fs.writeFileSync(path.join(hooksDir, HOOK_MANIFEST_FILE), JSON.stringify(HOOK_RUNTIME_MANIFEST, null, 2) + "\n", "utf-8");
 }
 
 function replaceOpenWolfHooks(

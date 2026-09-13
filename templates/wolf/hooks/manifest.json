@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "hooks": [
+    "session-start.js",
+    "pre-read.js",
+    "pre-write.js",
+    "post-read.js",
+    "post-write.js",
+    "stop.js",
+    "complete-review.js",
+    "shared.js",
+    "nudges/engine.js",
+    "nudges/state.js",
+    "nudges/project-scope.js",
+    "nudges/rules/cerebrum.js",
+    "nudges/rules/conclusion.js",
+    "nudges/rules/learning.js",
+    "nudges/rules/review.js"
+  ],
+  "utilities": [
+    "size-discipline.js"
+  ]
+}

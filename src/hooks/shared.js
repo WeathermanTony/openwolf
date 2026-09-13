@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 export function getWolfDir() {
     // Prefer CLAUDE_PROJECT_DIR so hooks work even if CWD changes during a session
     const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -47,6 +48,110 @@ export function writeJSON(filePath, data) {
         }
         catch { }
     }
+}
+export function mutateJSON(filePath, fallback, mutator, lockOptions = {}) {
+    const dir = path.dirname(filePath);
+    try {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+    catch {
+        return false;
+    }
+    const release = acquireFileLock(filePath, lockOptions);
+    if (!release)
+        return false;
+    try {
+        let current;
+        let existed = true;
+        try {
+            current = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        }
+        catch (err) {
+            if (err?.code !== "ENOENT")
+                return false;
+            existed = false;
+            current = structuredClone(fallback);
+        }
+        const next = mutator(current, { existed });
+        return atomicWriteJson(filePath, next === undefined ? current : next);
+    }
+    catch {
+        return false;
+    }
+    finally {
+        release();
+    }
+}
+export function relativeIfInside(root, target) {
+    if (!root || !target)
+        return null;
+    const resolvedRoot = path.resolve(root);
+    const resolvedTarget = path.isAbsolute(target) ? path.resolve(target) : path.resolve(resolvedRoot, target);
+    const relative = path.relative(resolvedRoot, resolvedTarget);
+    if (path.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path.sep}`))
+        return null;
+    return normalizePath(relative);
+}
+export function projectRelativePath(root, target) {
+    const lexical = relativeIfInside(root, target);
+    if (lexical !== null)
+        return lexical;
+    try {
+        return relativeIfInside(fs.realpathSync(root), fs.realpathSync(target));
+    }
+    catch {
+        return null;
+    }
+}
+export function getSessionFilePath(wolfDir, sessionId, preferKeyed = false) {
+    const legacyPath = path.join(wolfDir, "hooks", "_session.json");
+    if (typeof sessionId === "string" && /^[\w.-]{4,128}$/.test(sessionId)) {
+        const keyedPath = path.join(wolfDir, "hooks", "sessions", `${sessionId}.json`);
+        if (preferKeyed || fs.existsSync(keyedPath))
+            return keyedPath;
+        // Compatibility for sessions that began before keyed state was installed,
+        // and for agents that invoke a later lifecycle hook without SessionStart.
+        try {
+            const legacy = JSON.parse(fs.readFileSync(legacyPath, "utf-8"));
+            if (legacy?.session_id === sessionId)
+                return legacyPath;
+        }
+        catch { }
+        return keyedPath;
+    }
+    return legacyPath;
+}
+export const HOOK_HEALTH_FILE = "_health.json";
+export function recordHookHealth(hookName, error) {
+    const healthPath = path.join(getWolfDir(), "hooks", HOOK_HEALTH_FILE);
+    return mutateJSON(healthPath, { version: 1, hooks: {} }, (health) => {
+        health.version = 1;
+        health.hooks ??= {};
+        const prior = health.hooks[hookName] ?? { consecutive_failures: 0 };
+        if (error === undefined) {
+            prior.last_success = new Date().toISOString();
+            prior.consecutive_failures = 0;
+            delete prior.last_error;
+            delete prior.last_error_message;
+        }
+        else {
+            prior.last_error = new Date().toISOString();
+            prior.last_error_message = String(error instanceof Error ? error.stack ?? error.message : error).slice(0, 500);
+            prior.consecutive_failures = (prior.consecutive_failures ?? 0) + 1;
+        }
+        health.hooks[hookName] = prior;
+        return health;
+    });
+}
+export function runHook(hookName, main) {
+    if (process.argv.includes("--selfcheck")) {
+        process.stdout.write(`ok ${hookName}\n`);
+        return;
+    }
+    Promise.resolve()
+        .then(main)
+        .then(() => { recordHookHealth(hookName); })
+        .catch((error) => { recordHookHealth(hookName, error); });
 }
 export function readMarkdown(filePath) {
     try {

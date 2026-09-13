@@ -5,6 +5,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
+import { acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 
 export interface RegisteredProject {
   root: string;
@@ -59,11 +60,36 @@ function isWellFormedEntry(p: unknown): p is RegisteredProject {
 }
 
 export function writeRegistry(registry: Registry): void {
-  const dir = getRegistryDir();
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(getRegistryDir(), { recursive: true });
+  if (!atomicWriteJson(getRegistryPath(), registry)) {
+    throw new Error(`Could not persist OpenWolf registry at ${getRegistryPath()}`);
   }
-  fs.writeFileSync(getRegistryPath(), JSON.stringify(registry, null, 2), "utf-8");
+}
+
+function mutateRegistry(mutator: (registry: Registry) => void): void {
+  fs.mkdirSync(getRegistryDir(), { recursive: true });
+  const registryPath = getRegistryPath();
+  const release = acquireFileLock(registryPath, { timeoutMs: 5_000 });
+  if (!release) throw new Error(`Could not acquire OpenWolf registry lock at ${registryPath}.lock`);
+  try {
+    let registry: Registry;
+    try {
+      const raw = fs.readFileSync(registryPath, "utf-8");
+      const parsed = JSON.parse(raw) as Registry;
+      if (!parsed || !Array.isArray(parsed.projects)) throw new Error("expected a projects array");
+      registry = { ...parsed, projects: parsed.projects.filter(isWellFormedEntry) };
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException)?.code === "ENOENT") {
+        registry = { version: 1, projects: [] };
+      } else {
+        throw new Error(`Refusing to replace malformed or unreadable OpenWolf registry at ${registryPath}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    mutator(registry);
+    writeRegistry(registry);
+  } finally {
+    release();
+  }
 }
 
 /**
@@ -71,36 +97,34 @@ export function writeRegistry(registry: Registry): void {
  * Updates existing entry if the project root matches.
  */
 export function registerProject(projectRoot: string, name: string, version: string): void {
-  const registry = readRegistry();
   const normalized = normalizePath(projectRoot);
   const now = new Date().toISOString();
-
-  const existing = registry.projects.find(p => normalizePath(p.root) === normalized);
-  if (existing) {
-    existing.name = name;
-    existing.last_updated = now;
-    existing.version = version;
-  } else {
-    registry.projects.push({
-      root: projectRoot,
-      name,
-      registered_at: now,
-      last_updated: now,
-      version,
-    });
-  }
-
-  writeRegistry(registry);
+  mutateRegistry((registry) => {
+    const existing = registry.projects.find(p => normalizePath(p.root) === normalized);
+    if (existing) {
+      existing.name = name;
+      existing.last_updated = now;
+      existing.version = version;
+    } else {
+      registry.projects.push({
+        root: projectRoot,
+        name,
+        registered_at: now,
+        last_updated: now,
+        version,
+      });
+    }
+  });
 }
 
 /**
  * Remove a project from the registry (e.g., if the directory no longer exists).
  */
 export function unregisterProject(projectRoot: string): void {
-  const registry = readRegistry();
   const normalized = normalizePath(projectRoot);
-  registry.projects = registry.projects.filter(p => normalizePath(p.root) !== normalized);
-  writeRegistry(registry);
+  mutateRegistry((registry) => {
+    registry.projects = registry.projects.filter(p => normalizePath(p.root) !== normalized);
+  });
 }
 
 /**
@@ -122,10 +146,12 @@ export function getRegisteredProjects(validateExists: boolean = false): Register
     }
   }
 
-  // Clean up stale entries
+  // Clean up against a fresh under-lock snapshot so a concurrent registration
+  // cannot be erased by this earlier read.
   if (removed.length > 0) {
-    registry.projects = valid;
-    writeRegistry(registry);
+    mutateRegistry((current) => {
+      current.projects = current.projects.filter(project => fs.existsSync(path.join(project.root, ".wolf")));
+    });
   }
 
   return valid;

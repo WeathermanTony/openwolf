@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // @ts-nocheck
 import * as path from "node:path";
-import { getWolfDir, readJSON, writeJSON, hashFilesAtRest, HASH_SENTINEL_TOMBSTONE, HASH_SENTINEL_UNREADABLE, normalizeFilePath, getReviewHashes, setReviewCurrentByteReceipt, hashReviewManifest, setReviewReviewedByteReceipt } from "./shared.js";
-import { acquireFileLock } from "../utils/size-discipline.js";
+import { getWolfDir, readJSON, hashFilesAtRest, HASH_SENTINEL_TOMBSTONE, HASH_SENTINEL_UNREADABLE, normalizeFilePath, getReviewHashes, setReviewCurrentByteReceipt, hashReviewManifest, setReviewReviewedByteReceipt } from "./shared.js";
+import { acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 import { bumpLineageRound } from "./nudges/state.js";
 import { lineageIdFor } from "./nudges/rules/review.js";
 function usage() {
@@ -15,6 +15,10 @@ function usage() {
 function parseArgs(argv) {
     const out = { id: "", reviewer: "manual", summary: "", refresh: false, reviewedCurrent: false, reviewedHash: "", check: false };
     const args = [...argv];
+    if (args.includes("--selfcheck")) {
+        process.stdout.write("ok complete-review\n");
+        process.exit(0);
+    }
     if (args.includes("--help") || args.includes("-h")) {
         usage();
         process.exit(0);
@@ -80,14 +84,24 @@ if (!/^review-\d+$/.test(id)) {
 if (!refresh && !check && (!reviewer || reviewer.trim().length === 0)) {
     fail("--reviewer must not be empty", EXIT_USAGE);
 }
-if (refresh && reviewedHash) {
-    fail("--refresh cannot be combined with --reviewed-hash", EXIT_USAGE);
+if (check && (refresh || reviewedCurrent || reviewedHash)) {
+    fail("--check cannot be combined with --refresh, --reviewed-current, or --reviewed-hash", EXIT_USAGE);
+}
+if (refresh && (reviewedCurrent || reviewedHash)) {
+    fail("--refresh cannot be combined with --reviewed-current or --reviewed-hash", EXIT_USAGE);
 }
 if (reviewedHash && !/^[a-f0-9]{64}$/.test(reviewedHash)) {
     fail("--reviewed-hash must be a 64-character sha256 manifest hash", EXIT_USAGE);
 }
 const wolfDir = getWolfDir();
 reviewLogPath = path.join(wolfDir, "reviewlog.json");
+let reviewWriteCount = 0;
+function persistReviewLog(reviewLog) {
+    reviewWriteCount++;
+    if (process.env.NODE_ENV === "test" && process.env.WOLFPACK_TEST_FAIL_REVIEW_WRITE_AT === String(reviewWriteCount))
+        return false;
+    return atomicWriteJson(reviewLogPath, reviewLog);
+}
 function classifyDrift(file, storedHash, currentHash) {
     if (currentHash === HASH_SENTINEL_UNREADABLE)
         return "unreadable";
@@ -172,14 +186,17 @@ try {
     if (!review) {
         fail(`${id} does not exist; refusing to create review entries`, EXIT_REVIEW_STATE);
     }
-    if (review.status !== "pending") {
-        fail(`${id} has status ${JSON.stringify(review.status)}; only pending reviews can be completed`, EXIT_REVIEW_STATE);
+    if (!check && review.status !== "pending") {
+        fail(`${id} has status ${JSON.stringify(review.status)}; only pending reviews can be refreshed or completed`, EXIT_REVIEW_STATE);
     }
     if (!Array.isArray(review.files) || review.files.length === 0 || review.files.some((f) => typeof f !== "string" || f.length === 0)) {
         fail(`${id} has no valid files array`, EXIT_REVIEW_STATE);
     }
     const reviewHashes = getReviewHashes(review);
     if (!refresh && (!reviewHashes || typeof reviewHashes !== "object" || Array.isArray(reviewHashes))) {
+        if (check && review.status !== "pending") {
+            fail(`${id} has no stored content hashes; current-byte drift cannot be determined for this completed legacy receipt`, EXIT_REVIEW_STATE);
+        }
         fail(`${id} has no content_hashes; refresh the pending review first: node .wolf/hooks/complete-review.js ${id} --refresh`, EXIT_REVIEW_STATE);
     }
     const contentHashes = hashFilesAtRest(review.files);
@@ -189,15 +206,23 @@ try {
     if (unreadableFiles.length > 0) {
         fail(`refusing to complete ${id}; unreadable review file(s): ${unreadableFiles.join(", ")}`, EXIT_UNREADABLE);
     }
+    const mismatchedFiles = Object.entries(contentHashes)
+        .filter(([file, hash]) => reviewHashes?.[file] !== hash)
+        .map(([file]) => file);
+    const missingReviewedFiles = Object.keys(reviewHashes || {})
+        .filter((file) => !Object.prototype.hasOwnProperty.call(contentHashes, file));
     if (check) {
         // Read-only drift report: do stored (reviewed/refreshed) hashes match
         // current bytes? Exit 0 = current, EXIT_HASH_DRIFT = stale. No mutation.
         const stored = reviewHashes || {};
-        const rows = review.files.map((file) => {
-            const kind = classifyDrift(file, stored[file], contentHashes[file]);
-            return `  ${kind} ${file} stored=${String(stored[file]).slice(0, 16)} current=${String(contentHashes[file]).slice(0, 16)}`;
-        });
-        const stale = review.files.some((file) => stored[file] !== contentHashes[file]);
+        const rows = [
+            ...review.files.map((file) => {
+                const kind = classifyDrift(file, stored[file], contentHashes[file]);
+                return `  ${kind} ${file} stored=${String(stored[file]).slice(0, 16)} current=${String(contentHashes[file]).slice(0, 16)}`;
+            }),
+            ...missingReviewedFiles.map((file) => `  missing-from-current-file-list ${file} stored=${String(stored[file]).slice(0, 16)} current=<not in review files>`),
+        ];
+        const stale = mismatchedFiles.length > 0 || missingReviewedFiles.length > 0;
         console.log(`OpenWolf ${id}: ${stale ? "STALE — current bytes differ from stored hashes; refresh + re-review before completing" : "CURRENT — stored hashes match current bytes"}.`);
         for (const row of rows)
             console.log(row);
@@ -211,7 +236,8 @@ try {
         review.refresh_count = (typeof review.refresh_count === "number" ? review.refresh_count : 0) + 1;
         review.requires_rereview = true;
         review.requires_rereview_reason = "pending review refreshed; rerun independent review on current bytes";
-        writeJSON(reviewLogPath, reviewLog);
+        if (!persistReviewLog(reviewLog))
+            fail(`could not persist ${reviewLogPath}`, EXIT_REVIEW_STATE);
         const manifestHash = hashReviewManifest(review.files, contentHashes);
         console.log(`OpenWolf refreshed ${id} content_hashes for ${Object.keys(contentHashes).length} file(s).`);
         console.log(`Current Wolfpack manifest hash: ${manifestHash}`);
@@ -220,11 +246,6 @@ try {
         console.log("Do not pass a companion receipt hash to --reviewed-hash; the receipt representations are not compatible.");
     }
     else {
-        const mismatchedFiles = Object.entries(contentHashes)
-            .filter(([file, hash]) => reviewHashes?.[file] !== hash)
-            .map(([file]) => file);
-        const missingReviewedFiles = Object.keys(reviewHashes)
-            .filter((file) => !Object.prototype.hasOwnProperty.call(contentHashes, file));
         if (mismatchedFiles.length > 0 || missingReviewedFiles.length > 0) {
             fail(formatReviewStaleMessage(id, reviewHashes, contentHashes, mismatchedFiles, missingReviewedFiles), EXIT_HASH_DRIFT);
         }
@@ -235,11 +256,30 @@ try {
         if (review.requires_rereview === true && !reviewedCurrent && !reviewedHash) {
             fail(formatReviewStaleMessage(id, reviewHashes, contentHashes, Object.keys(contentHashes), []), EXIT_HASH_DRIFT);
         }
+        const prepared = review.completion_transaction;
+        if (prepared && (typeof prepared !== "object" || prepared.review_id !== id || typeof prepared.lineage_id !== "string" || prepared.lineage_id.length === 0)) {
+            fail(`${id} has an invalid completion transaction`, EXIT_REVIEW_STATE);
+        }
+        const lineageId = prepared?.lineage_id || review.lineage_id || lineageIdFor(path.dirname(wolfDir), review.files);
+        if (!prepared) {
+            review.completion_transaction = {
+                review_id: id,
+                lineage_id: lineageId,
+                prepared_at: new Date().toISOString(),
+            };
+            if (!persistReviewLog(reviewLog))
+                fail(`could not persist ${reviewLogPath}`, EXIT_REVIEW_STATE);
+        }
+        const lineage = bumpLineageRound(wolfDir, lineageId, { completionId: id });
+        if (!lineage.ok) {
+            fail(`${id} could not persist its review lineage round`, EXIT_REVIEW_STATE);
+        }
         review.status = "completed";
         review.completed_at = new Date().toISOString();
         review.reviewer = reviewer.trim();
         review.requires_rereview = false;
         delete review.requires_rereview_reason;
+        delete review.completion_transaction;
         if (summary.trim().length > 0) {
             review.review_summary = summary.trim();
         }
@@ -249,15 +289,11 @@ try {
         else {
             setReviewCurrentByteReceipt(review, review.files, contentHashes);
         }
-        const superseded = markSupersededPendingReviews(reviewLog, review);
-        const lineageId = review.lineage_id || lineageIdFor(path.dirname(wolfDir), review.files);
-        const lineage = bumpLineageRound(wolfDir, lineageId);
-        if (!lineage.ok) {
-            fail(`${id} could not persist its review lineage round`, EXIT_REVIEW_STATE);
-        }
         review.lineage_id = lineageId;
         review.lineage_round = lineage.round;
-        writeJSON(reviewLogPath, reviewLog);
+        const superseded = markSupersededPendingReviews(reviewLog, review);
+        if (!persistReviewLog(reviewLog))
+            fail(`could not persist ${reviewLogPath}`, EXIT_REVIEW_STATE);
         console.log(`OpenWolf completed ${id} and verified content_hashes for ${Object.keys(contentHashes).length} file(s); lineage ${lineageId} round ${lineage.round}.${superseded > 0 ? ` Superseded ${superseded} covered pending review(s).` : ""}`);
     }
 }

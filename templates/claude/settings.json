@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/session-start.js').catch(()=>{})\"",
+            "command": "node -e \"const p=process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/session-start.js';import('node:fs').then(fs=>{if(fs.existsSync(p))return import('node:url').then(({pathToFileURL})=>import(pathToFileURL(p).href))}).catch(e=>console.error('WolfPack hook load failed:',e.message))\"",
             "timeout": 5
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-read.js').catch(()=>{})\"",
+            "command": "node -e \"const p=process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-read.js';import('node:fs').then(fs=>{if(fs.existsSync(p))return import('node:url').then(({pathToFileURL})=>import(pathToFileURL(p).href))}).catch(e=>console.error('WolfPack hook load failed:',e.message))\"",
             "timeout": 5
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-write.js').catch(()=>{})\"",
+            "command": "node -e \"const p=process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/pre-write.js';import('node:fs').then(fs=>{if(fs.existsSync(p))return import('node:url').then(({pathToFileURL})=>import(pathToFileURL(p).href))}).catch(e=>console.error('WolfPack hook load failed:',e.message))\"",
             "timeout": 5
           }
         ]
@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-read.js').catch(()=>{})\"",
+            "command": "node -e \"const p=process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-read.js';import('node:fs').then(fs=>{if(fs.existsSync(p))return import('node:url').then(({pathToFileURL})=>import(pathToFileURL(p).href))}).catch(e=>console.error('WolfPack hook load failed:',e.message))\"",
             "timeout": 5
           }
         ]
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-write.js').catch(()=>{})\"",
+            "command": "node -e \"const p=process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/post-write.js';import('node:fs').then(fs=>{if(fs.existsSync(p))return import('node:url').then(({pathToFileURL})=>import(pathToFileURL(p).href))}).catch(e=>console.error('WolfPack hook load failed:',e.message))\"",
             "timeout": 10
           }
         ]
@@ -62,7 +62,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"import(process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/stop.js').catch(()=>{})\"",
+            "command": "node -e \"const p=process.env.CLAUDE_PROJECT_DIR+'/.wolf/hooks/stop.js';import('node:fs').then(fs=>{if(fs.existsSync(p))return import('node:url').then(({pathToFileURL})=>import(pathToFileURL(p).href))}).catch(e=>console.error('WolfPack hook load failed:',e.message))\"",
             "timeout": 10
           }
         ]

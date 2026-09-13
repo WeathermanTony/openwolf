@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * size-discipline.ts
  *
@@ -754,7 +755,6 @@ function isLockReclaimable(lockPath, staleMs, absoluteStaleMs) {
  * the fast path is actually reachable.
  */
 const DEAD_OWNER_GRACE_MS = 250;
-
 /** Owner pid recorded in a lock file, or null if unreadable/malformed. */
 function readLockPid(lockPath) {
     let nonce;
@@ -767,7 +767,6 @@ function readLockPid(lockPath) {
     const pid = Number(String(nonce).split(":")[0]);
     return Number.isFinite(pid) && pid > 0 ? pid : null;
 }
-
 function isProcessAlive(pid) {
     try {
         process.kill(pid, 0);

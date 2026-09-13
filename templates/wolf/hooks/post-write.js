@@ -2,13 +2,11 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, parseAnatomy, serializeAnatomy, extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath, getSizeDisciplineConfig, getQualityGateConfig, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, parseAnatomy, serializeAnatomy, extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath, getSizeDisciplineConfig, getQualityGateConfig, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex, getSessionFilePath, runHook } from "./shared.js";
 import { rollingWindowJson, acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
-    const hooksDir = path.join(wolfDir, "hooks");
-    const sessionFile = path.join(hooksDir, "_session.json");
     const projectRoot = process.env.CLAUDE_PROJECT_DIR || process.cwd();
     const raw = await readStdin();
     let input;
@@ -16,13 +14,14 @@ async function main() {
         input = JSON.parse(raw);
     }
     catch {
-        process.exit(0);
+        return;
         return;
     }
+    const sessionFile = getSessionFilePath(wolfDir, input.session_id);
     const toolName = input.tool_name ?? "Write";
     const filePath = input.tool_input?.file_path ?? input.tool_input?.path ?? "";
     if (!filePath) {
-        process.exit(0);
+        return;
         return;
     }
     const absolutePath = path.isAbsolute(filePath) ? filePath : path.join(projectRoot, filePath);
@@ -81,13 +80,13 @@ async function main() {
     const isWolfBuglog = relPath === ".wolf/buglog.json";
     const isWolfAllowlisted = isWolfQaReduction || isWolfBuglog;
     if (isInWolfDir && !isWolfAllowlisted) {
-        process.exit(0);
+        return;
         return;
     }
     // Never track .env files in anatomy — they contain secrets
     const baseName = path.basename(absolutePath);
     if (baseName === ".env" || baseName.startsWith(".env.")) {
-        process.exit(0);
+        return;
         return;
     }
     const oldStr = input.tool_input?.old_string ?? "";
@@ -269,7 +268,7 @@ async function main() {
                 const editKey = relPath && !relPath.startsWith("..") ? relPath : normalizedFile;
                 const prevCount = typeof session.edit_counts[editKey] === "number" ? session.edit_counts[editKey] : 0;
                 session.edit_counts[editKey] = prevCount + 1;
-                writeJSON(sessionFile, session);
+                atomicWriteJson(sessionFile, session);
                 // Suppress the multi-edit buglog warning for qa reductions and for
                 // buglog.json itself. Qa reductions are expected to be re-edited
                 // within a session as the user iterates on the falsification test.
@@ -317,7 +316,7 @@ async function main() {
             }
         }
         catch { }
-    process.exit(0);
+    return;
 }
 // ─── Edit Summarizer ─────────────────────────────────────────────
 function summarizeEdit(oldStr, newStr, filename) {
@@ -644,4 +643,5 @@ function extractCSSProps(code) {
     }
     return props;
 }
-main().catch(() => process.exit(0));
+runHook("post-write", main);
+//# sourceMappingURL=post-write.js.map

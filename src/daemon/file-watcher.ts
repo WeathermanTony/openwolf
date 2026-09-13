@@ -14,6 +14,8 @@ export function startFileWatcher(
     ignoreInitial: true,
     ignored: [
       "**/hooks/_session.json",
+      "**/hooks/sessions/**",
+      "**/hooks/_health.json",
       "**/*.tmp",
       "**/*.lock",
       "**/*.pid",

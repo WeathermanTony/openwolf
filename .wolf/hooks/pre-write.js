@@ -2,8 +2,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, readMarkdown, readStdin } from "./shared.js";
-import { acquireFileLock } from "../utils/size-discipline.js";
+import { getWolfDir, ensureWolfDir, readJSON, readMarkdown, readStdin, runHook } from "./shared.js";
+import { acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
@@ -13,7 +13,7 @@ async function main() {
         input = JSON.parse(raw);
     }
     catch {
-        process.exit(0);
+        return;
         return;
     }
     // For Edit tool, the meaningful content is old_string + new_string
@@ -23,7 +23,7 @@ async function main() {
     const filePath = input.tool_input?.file_path ?? input.tool_input?.path ?? "";
     const allContent = [content, oldStr, newStr].join("\n");
     if (!allContent.trim()) {
-        process.exit(0);
+        return;
         return;
     }
     // 1. Cerebrum Do-Not-Repeat check
@@ -34,7 +34,7 @@ async function main() {
     if (filePath && (oldStr || content)) {
         checkBugLog(wolfDir, filePath, oldStr, newStr, content);
     }
-    process.exit(0);
+    return;
 }
 function lessonId(lessonText) {
     // 12-char hash. Stable across hook runs for IDENTICAL text. Wording edits
@@ -115,7 +115,7 @@ function recordLessonHit(wolfDir, id, lessonText) {
                     last_hit: now,
                 };
             }
-            writeJSON(statsPath, stats);
+            atomicWriteJson(statsPath, stats);
         }
         finally {
             release();
@@ -175,5 +175,5 @@ function tokenize(text) {
         .filter(w => w.length > 3 && !STOP_WORDS.has(w.toLowerCase()))
         .map(w => w.toLowerCase()));
 }
-main().catch(() => process.exit(0));
+runHook("pre-write", main);
 //# sourceMappingURL=pre-write.js.map

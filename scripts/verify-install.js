@@ -4,34 +4,21 @@ import { constants } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import {
+  HOOK_MANIFEST_FILE,
+  HOOK_PAYLOAD_FILES,
+  HOOK_SETTINGS,
+  HOOK_UTILITY_FILES,
+  missingHookRegistrations,
+} from '../dist/src/cli/hook-manifest.js';
 
 const root = process.cwd();
 const failures = [];
-
-const hookNames = [
-  'session-start.js',
-  'pre-read.js',
-  'pre-write.js',
-  'post-read.js',
-  'post-write.js',
-  'shared.js',
-  'stop.js',
-  'complete-review.js',
-];
-
-const utilNames = [
-  'fs-safe.js',
-  'logger.js',
-  'paths.js',
-  'platform.js',
-  'port-allocator.js',
-  'size-discipline.js',
-];
+const hookNames = [...HOOK_PAYLOAD_FILES];
+const utilNames = [...HOOK_UTILITY_FILES];
 
 const requiredFiles = [
-  'CLAUDE.md',
   '.claude/settings.json',
-  '.claude/rules/openwolf.md',
   '.claude/skills/quality-reduction/SKILL.md',
   '.wolf/OPENWOLF.md',
   '.wolf/PROTOCOL-UPGRADE-2026-06.md',
@@ -39,6 +26,7 @@ const requiredFiles = [
   '.wolf/anatomy.md',
   '.wolf/memory.md',
   '.wolf/hooks/package.json',
+  `.wolf/hooks/${HOOK_MANIFEST_FILE}`,
   '.wolf/utils/package.json',
   '.wolf/qa/_README.md',
   '.wolf/qa/_template.md',
@@ -54,6 +42,7 @@ const requiredFiles = [
   'templates/wolf/config.json',
   'templates/wolf/identity.md',
   'templates/wolf/hooks/package.json',
+  `templates/wolf/hooks/${HOOK_MANIFEST_FILE}`,
   'templates/wolf/reframe-frameworks.md',
   'templates/wolf/qa/_README.md',
   'templates/wolf/qa/_template.md',
@@ -70,11 +59,13 @@ const jsonFiles = [
   '.claude/settings.json',
   '.wolf/config.json',
   '.wolf/hooks/package.json',
+  `.wolf/hooks/${HOOK_MANIFEST_FILE}`,
   '.wolf/utils/package.json',
   'src/config/default-config.json',
   'templates/claude/settings.json',
   'templates/wolf/config.json',
   'templates/wolf/hooks/package.json',
+  `templates/wolf/hooks/${HOOK_MANIFEST_FILE}`,
 ];
 
 const javascriptFiles = [
@@ -221,7 +212,7 @@ async function checkCleanProjectTemplates() {
   }
 
   const initSource = await readRequiredText('src/cli/init.ts');
-  for (const marker of ['"cerebrum.md"', '"anatomy.md"', 'file === "OPENWOLF.md"', 'Required OpenWolf protocol template missing']) {
+  for (const marker of ['"cerebrum.md"', '"anatomy.md"', 'file === ".gitignore"', 'file === "OPENWOLF.md"', 'Required OpenWolf protocol template missing', 'Required Wolfpack template missing']) {
     if (!initSource.includes(marker)) {
       failures.push(`src/cli/init.ts embedded scaffold fallback missing ${marker}`);
     }
@@ -230,7 +221,9 @@ async function checkCleanProjectTemplates() {
 }
 
 async function checkProtocolUpgradeDocs() {
-  for (const file of ['.wolf/OPENWOLF.md', 'src/templates/OPENWOLF.md', 'templates/wolf/OPENWOLF.md']) {
+  // The source checkout may deliberately use a compact .wolf/OPENWOLF.md
+  // reference. Portable templates and fresh-init output carry the full protocol.
+  for (const file of ['src/templates/OPENWOLF.md', 'templates/wolf/OPENWOLF.md']) {
     const content = await readRequiredText(file);
     for (const heading of ['## Standard Skills', '## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Companion-Owned Review Lifecycle', '## Operational Verification']) {
       if (!content.includes(heading)) {
@@ -366,21 +359,16 @@ function nodeCheck(file) {
 async function checkSettings() {
   try {
     const settings = JSON.parse(await readFile(rel('.claude/settings.json'), 'utf8'));
-    const hooks = settings.hooks || {};
-    for (const name of ['SessionStart', 'PreToolUse', 'PostToolUse', 'Stop']) {
-      if (!Array.isArray(hooks[name])) {
-        failures.push(`.claude/settings.json missing hooks.${name}`);
-      }
+    const missing = missingHookRegistrations(settings);
+    for (const registration of missing) {
+      failures.push(`.claude/settings.json missing or stale OpenWolf hook registration: ${registration}`);
     }
-
-    const serialized = JSON.stringify(settings);
-    for (const hook of ['session-start.js', 'pre-read.js', 'pre-write.js', 'post-read.js', 'post-write.js', 'stop.js']) {
-      if (!serialized.includes(`.wolf/hooks/${hook}`)) {
-        failures.push(`.claude/settings.json does not reference .wolf/hooks/${hook}`);
-      }
+    const template = JSON.parse(await readFile(rel('templates/claude/settings.json'), 'utf8'));
+    if (JSON.stringify(template) !== JSON.stringify(HOOK_SETTINGS)) {
+      failures.push('templates/claude/settings.json must be generated from the canonical hook manifest');
     }
   } catch (error) {
-    failures.push(`unable to inspect .claude/settings.json: ${error.message}`);
+    failures.push(`unable to inspect hook settings: ${error.message}`);
   }
 }
 
@@ -398,6 +386,8 @@ function checkGitIgnored() {
   const ignoredPaths = [
     '.wolf/daemon.log',
     '.wolf/hooks/_session.json',
+    '.wolf/hooks/sessions/example-session.json',
+    '.wolf/hooks/_health.json',
     '.wolf/token-ledger.json',
     '.wolf/cerebrum-stats.json',
     '.wolf/cerebrum/cerebrum-stats.json',
@@ -438,6 +428,7 @@ function checkGitIgnored() {
     '.wolf/memory.md',
     '.wolf/buglog.json',
     '.wolf/hooks/package.json',
+    `.wolf/hooks/${HOOK_MANIFEST_FILE}`,
     '.wolf/qa/_README.md',
     '.wolf/qa/_template.md',
     'src/config/default-config.json',
@@ -454,6 +445,7 @@ function checkGitIgnored() {
     'templates/wolf/config.json',
     'templates/wolf/identity.md',
     'templates/wolf/hooks/package.json',
+  `templates/wolf/hooks/${HOOK_MANIFEST_FILE}`,
     'templates/wolf/reframe-frameworks.md',
     'templates/wolf/qa/_README.md',
     'templates/wolf/qa/_template.md',

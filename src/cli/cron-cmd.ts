@@ -116,11 +116,19 @@ export async function cronRun(id: string): Promise<void> {
   const logger = new Logger(path.join(wolfDir, "daemon.log"), "info");
   const engine = new CronEngine(wolfDir, projectRoot, logger, () => {});
   try {
-    await engine.runTask(id);
-    console.log(`Task ${id} executed successfully.`);
+    const result = await engine.runTask(id);
+    if (result === "completed") {
+      console.log(`Task ${id} executed successfully.`);
+      return;
+    }
+    const reason = result === "not_found"
+      ? "task ID was not found"
+      : `execution ended with status ${result}`;
+    console.error(`Task ${id} was not executed: ${reason}.`);
+    process.exitCode = 1;
   } catch (err) {
     console.error(`Task ${id} failed: ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
+    process.exitCode = 1;
   }
 }
 
