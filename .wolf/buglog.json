@@ -2184,7 +2184,7 @@
       "file": "release commit scope",
       "root_cause": "The first release-only commit excluded modified nudge state and command files that the newly committed production-bound tests and review completion runtime depend on, so the commit was not a closed reproducible unit even though the dirty working tree passed.",
       "fix": "Include the reviewed nudge state runtime/source/template, nudge command, and its production-bound safety test in the release commit closure; rerun the full suite from a fresh detached worktree.",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "release",
         "commit-scope",
@@ -2194,8 +2194,8 @@
       ],
       "related_bugs": [],
       "occurrences": 1,
-      "last_seen": "2026-09-13T22:42:24.390Z",
-      "commit": null,
+      "last_seen": "2026-09-13T22:45:46.689Z",
+      "commit": "0bf15e8",
       "reduction": ".wolf/qa/release-only-commit-closure.md"
     }
   ]

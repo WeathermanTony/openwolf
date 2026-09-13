@@ -94,6 +94,8 @@
 
 ## Do-Not-Repeat
 
+- [2026-09-13] A dirty-tree full-suite pass does not prove a selective release commit is dependency-complete. Build and test the exact commit from a detached clean worktree before rollout; otherwise omitted modified dependencies can be borrowed invisibly from the driving checkout. The `0af856b` canary failed with `currentSessionId is not a function` until the nudge-state source/runtime/template and production test closure landed in `0bf15e8`. Evidence: bug-795, `.wolf/qa/release-only-commit-closure.md`.
+
 - [2026-09-06] Keep an authorized fleet install focused on installation, not Git-only publication or repeated accounting/review loops. The user said trying ChatGPT 6 got the session off track; that is feedback on the observed workflow, not proof of model causality. Check concrete deployment blockers, then finish and verify the fleet. Anatomy additions must carry their own correct directory heading—an appended root-relative QA path under tests/lib produced a real drift warning.
 
 - [2026-08-29] Do not write a full provenance envelope on every repeated diagnostic event. The first nudge-provenance implementation duplicated two SHA-256 digests, source identity, and evidence bounds on every `candidate_created`, producing 351 bytes/event median growth against a <200-byte canary budget. Persist the full envelope once per durable fingerprint, then emit only fingerprint plus schema/config join keys on repeats. Evidence: bug-715, `.wolf/qa/nudge-provenance-canary.md`.
