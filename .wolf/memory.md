@@ -1,5 +1,8 @@
 # Memory
 
+| 23:20 | Reconciled hook-created bug-796 and allocated bug-797/798 with lock-backed mutation; audited ledgers | .wolf/buglog.json | bug/review IDs clean; reductions linked, commits pending | ~2k |
+| 23:24 | Recorded staged canary/fleet evidence and generalized rollout lessons | .wolf/qa/fleet-rollout-1.2.0-custom.26.md, .wolf/cerebrum.md | actual producer paths, exact init root, and cross-worktree exclusion documented | ~3k |
+
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
@@ -671,3 +674,10 @@ bugs unrelated to this session's work.
 | 15:51 | Session end: 212 writes across 44 files (session-start.ts, shared.ts, size-discipline.ts, session-start-concurrency.test.js, pre-read.ts) | 62 reads | ~378427 tok |
 | 15:54 | Session end: 212 writes across 44 files (session-start.ts, shared.ts, size-discipline.ts, session-start-concurrency.test.js, pre-read.ts) | 65 reads | ~385994 tok |
 | 15:54 | Session end: 212 writes across 44 files (session-start.ts, shared.ts, size-discipline.ts, session-start-concurrency.test.js, pre-read.ts) | 65 reads | ~385994 tok |
+| 18:55 | Edited src/cli/update.ts | added error handling | ~266 |
+| 18:56 | Created tests/update-source-exclusion.test.js | — | ~572 |
+| 19:02 | Edited src/cli/index.ts | 4→5 lines | ~82 |
+| 19:02 | Edited src/cli/init.ts | modified initCommand() | ~30 |
+| 19:02 | Edited src/cli/init.ts | added 1 condition(s) | ~109 |
+| 19:03 | Created tests/init-root-scope.test.js | — | ~729 |
+| 19:04 | Edited tests/init-root-scope.test.js | — | ~0 |

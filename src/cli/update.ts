@@ -28,8 +28,28 @@ function normalizedRealPath(value: string): string {
   try { return fs.realpathSync.native(resolved); } catch { return resolved; }
 }
 
+function packageNameAt(root: string): string | null {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf-8"));
+    return typeof parsed?.name === "string" ? parsed.name : null;
+  } catch {
+    return null;
+  }
+}
+
+function hasSourceCheckoutLayout(root: string, sourceRoot: string): boolean {
+  const candidatePackage = packageNameAt(root);
+  const sourcePackage = packageNameAt(sourceRoot);
+  return candidatePackage !== null
+    && candidatePackage === sourcePackage
+    && fs.existsSync(path.join(root, "src", "cli", "update.ts"))
+    && fs.existsSync(path.join(root, "templates", "wolf"));
+}
+
 export function isSourceProject(project: Pick<RegisteredProject, "root" | "name">, sourceRoot = SOURCE_ROOT): boolean {
-  return project.name === "openwolf" || normalizedRealPath(project.root) === normalizedRealPath(sourceRoot);
+  return project.name === "openwolf"
+    || normalizedRealPath(project.root) === normalizedRealPath(sourceRoot)
+    || hasSourceCheckoutLayout(project.root, sourceRoot);
 }
 
 function getVersion(): string {

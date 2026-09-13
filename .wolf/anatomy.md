@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-09-13T22:45:54.889Z
-> Files: 446 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-09-13T23:16:19.942Z
+> Files: 447 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -394,8 +394,8 @@
 - `drift-cmd.ts` — `openwolf foo`, `wolfpack foo bar` — captures the first subcommand token only. (~4067 tok)
 - `experiment-cmd.ts` — @ts-nocheck (~7228 tok)
 - `hook-manifest.ts` — Exports HOOK_REGISTRATIONS, HOOK_ENTRY_FILES, HOOK_HELPER_FILES, HOOK_SUPPORT_FILES + 10 more (~1104 tok)
-- `index.ts` — Exports createProgram (~6130 tok)
-- `init.ts` — Exports initCommand, findTemplatesDir, writeTemplateFile (~10270 tok)
+- `index.ts` — Exports createProgram (~6157 tok)
+- `init.ts` — Exports initCommand, findTemplatesDir, writeTemplateFile (~10350 tok)
 - `ledger-cmd.ts` — Exports LedgerCommandOptions, ledgerAudit, ledgerRepair, ledgerNormalize, ledgerRecover (~1621 tok)
 - `managed-skills.ts` — Exports MANAGED_CLAUDE_SKILL_FILES, installManagedClaudeSkills, backupManagedClaudeSkills, restoreManagedClaudeSkills (~727 tok)
 - `nudge-cmd.ts` — `wolfpack nudge …` — explicit disposition commands. (~3819 tok)
@@ -407,7 +407,7 @@
 - `skillsbench.ts` — Exports SkillsBenchConfig, DEFAULT_SKILLSBENCH_CONFIG, hashDirectory, providerWordingHits, extractDescription (~6503 tok)
 - `status.ts` — Exports statusCommand (~1668 tok)
 - `trace-cmd.ts` — Exports traceCommand (~1271 tok)
-- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~6898 tok)
+- `update.ts` — openwolf update — Update all registered OpenWolf projects. (~7098 tok)
 
 ## src/config/
 
@@ -654,6 +654,7 @@
 - `hook-manifest-health.test.js` — repoRoot: runHealthMutation (~3167 tok)
 - `hook-packaging.test.js` — Hook packaging: every module a hook imports must actually ship. (~1113 tok)
 - `hook-state-safety.test.js` — Exports secret, secret, value, value + 2 more (~1166 tok)
+- `init-root-scope.test.js` — Declares repoRoot (~712 tok)
 - `learning-capture.test.js` — root: fixture, transcript, transcriptEntries (~4041 tok)
 - `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~3671 tok)
 - `ledger-writer-safety.test.js` — repoRoot: fixture, entry (~1595 tok)
@@ -677,7 +678,7 @@
 - `skillsbench.test.js` — root: git, run, fixture + 3 more (~2861 tok)
 - `superpowers-canary.test.js` — Declares root (~576 tok)
 - `trace-cerebrum-cmd.test.js` — Exports target (~852 tok)
-- `update-source-exclusion.test.js` — Declares root (~227 tok)
+- `update-source-exclusion.test.js` — Declares seedSourceCheckout (~572 tok)
 
 ## tests/lib/
 

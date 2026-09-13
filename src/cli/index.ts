@@ -32,6 +32,7 @@ export function createProgram(): Command {
     .command("init")
     .description("Initialize .wolf/ in current project")
     .option("--profile <name>", "Reviewer recommendation profile: gov, open, or budget")
+    .option("--root <path>", "Initialize this exact project root instead of auto-detecting")
     .action(initCommand);
 
   program

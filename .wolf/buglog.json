@@ -2197,6 +2197,72 @@
       "last_seen": "2026-09-13T22:45:46.689Z",
       "commit": "0bf15e8",
       "reduction": ".wolf/qa/release-only-commit-closure.md"
+    },
+    {
+      "id": "bug-796",
+      "timestamp": "2026-09-13T22:55:56.360Z",
+      "error_message": "Fleet update run from a detached release worktree updated the canonical customopenwolf source checkout instead of skipping it.",
+      "file": "src/cli/update.ts",
+      "root_cause": "Source-project exclusion compared each registry root only with the running worktree realpath (or the legacy exact name openwolf), so another checkout of the same source repository was treated as an ordinary managed project.",
+      "fix": "Recognize another source checkout by matching the running package identity plus the source-only src/cli/update.ts and templates/wolf layout markers; retain negative controls for ordinary same-name and different-package projects.",
+      "tags": [
+        "fleet",
+        "source-exclusion",
+        "git-worktree",
+        "rollout"
+      ],
+      "related_bugs": [
+        "bug-706"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-09-13T23:08:27.969Z",
+      "commit": null,
+      "reduction": ".wolf/qa/cross-worktree-source-exclusion.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-797",
+      "timestamp": "2026-09-13T23:08:27.969Z",
+      "error_message": "Initializing markerless mt5_dgm_lite selected and updated the ancestor /mnt/j/projectshome/projects WolfPack root.",
+      "file": "src/cli/init.ts",
+      "root_cause": "init exposed no exact-root option, so findProjectRoot climbed to the ancestor .wolf marker and interpreted a successful parent upgrade as the requested nested initialization.",
+      "fix": "Add openwolf init --root <path>, validate that the exact path is an existing directory before writes, and test a markerless child beneath a parent .wolf sentinel with an isolated registry.",
+      "status": "open",
+      "tags": [
+        "init",
+        "root-scope",
+        "nested-project",
+        "canary"
+      ],
+      "related_bugs": [
+        "bug-706"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-09-13T23:08:27.969Z",
+      "commit": null,
+      "reduction": ".wolf/qa/explicit-init-root-scope.md"
+    },
+    {
+      "id": "bug-798",
+      "timestamp": "2026-09-13T23:08:27.969Z",
+      "error_message": "Initial fleet verifier reported 672 managed-file mismatches after a successful rollout.",
+      "file": ".wolf/qa/fleet-rollout-1.2.0-custom.26.md",
+      "root_cause": "The ad hoc verifier compared installed OPENWOLF.md with templates/wolf and installed hook JavaScript with source-adjacent mirrors, while update actually installs src/templates bytes and freshly built dist/src hook bytes.",
+      "fix": "Bind rollout verification to the producer paths actually used by update.ts; rerun across all non-source targets and require protected hashes, managed hashes, registrations, and versions to match.",
+      "status": "open",
+      "tags": [
+        "verification",
+        "false-positive",
+        "producer-path",
+        "fleet"
+      ],
+      "related_bugs": [
+        "bug-692"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-09-13T23:08:27.969Z",
+      "commit": null,
+      "reduction": ".wolf/qa/fleet-rollout-1.2.0-custom.26.md"
     }
   ]
 }

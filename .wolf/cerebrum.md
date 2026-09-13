@@ -20,6 +20,10 @@
 
 ## Key Learnings
 
+- [2026-09-13] Exact-root initialization is a separate contract from nearest-root discovery. A markerless nested project beneath an ancestor `.wolf` will legitimately resolve to the ancestor under discovery; bootstrap callers that already know the intended boundary must use `openwolf init --root <existing-directory>` and verify the exact registry root plus untouched ancestor bytes. Evidence: `.wolf/qa/explicit-init-root-scope.md` (bug-797).
+- [2026-09-13] Source-project exclusion must survive multiple Git worktrees. Comparing only with the running checkout realpath misses the canonical checkout when a detached release worktree drives rollout; identify another source checkout through matching package identity plus source-only layout markers, with over-match controls for ordinary same-name and different-package projects. Evidence: `.wolf/qa/cross-worktree-source-exclusion.md` (bug-796).
+- [2026-09-13] Verify installed fleet bytes against the producer paths the updater actually reads, not similarly named mirrors. Templates originate in `src/templates`, while hook/runtime JavaScript originates in the fresh build output; binding to `templates/wolf` or source-adjacent JS produced 672 false mismatches over an otherwise consistent fleet. Evidence: `.wolf/qa/fleet-rollout-1.2.0-custom.26.md` (bug-798).
+
 - [2026-09-13] Fail-open hooks need behavior-level tests for their side effects: `@ts-nocheck` and syntax/import self-checks cannot prove that an identifier called inside a swallowed `try/catch` is bound at runtime. Execute the shipped source-adjacent hook and assert the artifact it promises to persist; then disconnect the binding and require the test to fail for that missing artifact. Evidence: `.wolf/qa/pre-write-lesson-hit-persistence.md` (bug-789).
 - [2026-09-13] Embedded fallbacks for governed overwrite files must be explicitly allowlisted and bound to canonical bytes. An unknown-key `?? ""` fallback turns package drift into silent destructive replacement, while a hand-maintained partial copy strips policy despite a “mirrors” comment. Fail before touching installed bytes for unsupported names, and compare generated production fallback bytes with the canonical source in tests. Evidence: `.wolf/qa/template-fallback-safety.md` (bug-793/794).
 - [2026-09-13] Test distributable nested policy in an isolated receiving environment and bind every independent producer. A fresh `git init` is insufficient: parent rules are gone, but `git check-ignore` still consults user-global `core.excludesFile`, which can satisfy the assertions with no shipped policy. Override it with a known-empty file, exercise source-template and embedded-fallback producers separately, assert positive and durable-exception cases, and disconnect each producer as a negative control. Evidence: `.wolf/qa/nested-qa-ignore-policy.md` (bug-790/791/792).
@@ -93,6 +97,8 @@
 
 
 ## Do-Not-Repeat
+
+- [2026-09-13] Before mutating a durable ledger after an ID collision, run `wolfpack ledger audit`, then allocate above the live maximum while holding the canonical lock. This session's first intended insertion collided with hook-created `bug-796`; the corrected mutation preserved that record and allocated bug-797/798, but the audit should have preceded rather than followed the repair.
 
 - [2026-09-13] A dirty-tree full-suite pass does not prove a selective release commit is dependency-complete. Build and test the exact commit from a detached clean worktree before rollout; otherwise omitted modified dependencies can be borrowed invisibly from the driving checkout. The `0af856b` canary failed with `currentSessionId is not a function` until the nudge-state source/runtime/template and production test closure landed in `0bf15e8`. Evidence: bug-795, `.wolf/qa/release-only-commit-closure.md`.
 

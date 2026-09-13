@@ -50,7 +50,7 @@ const CREATE_IF_MISSING = [
   "suggestions.json",
 ];
 
-export async function initCommand(options: { profile?: string } = {}): Promise<void> {
+export async function initCommand(options: { profile?: string; root?: string } = {}): Promise<void> {
   // Check Node.js version
   const nodeVersion = parseInt(process.version.slice(1), 10);
   if (nodeVersion < 20) {
@@ -58,8 +58,11 @@ export async function initCommand(options: { profile?: string } = {}): Promise<v
     process.exit(1);
   }
 
-  // Detect project root
-  const projectRoot = findProjectRoot();
+  // Detect the project root unless the caller explicitly scopes initialization.
+  const projectRoot = options.root ? path.resolve(options.root) : findProjectRoot();
+  if (!fs.existsSync(projectRoot) || !fs.statSync(projectRoot).isDirectory()) {
+    throw new Error(`Project root must be an existing directory: ${projectRoot}`);
+  }
   console.log(`Project root: ${projectRoot}`);
 
   const wolfDir = path.join(projectRoot, ".wolf");
