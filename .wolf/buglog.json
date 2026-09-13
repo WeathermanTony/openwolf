@@ -2176,6 +2176,27 @@
       "last_seen": "2026-09-13T19:21:05.507Z",
       "commit": "be6d0bc",
       "reduction": ".wolf/qa/template-fallback-safety.md"
+    },
+    {
+      "id": "bug-795",
+      "timestamp": "2026-09-13T22:42:24.390Z",
+      "error_message": "Clean release-only commit test failed: currentSessionId is not a function; Cannot read properties of undefined (reading 'review-0001')",
+      "file": "release commit scope",
+      "root_cause": "The first release-only commit excluded modified nudge state and command files that the newly committed production-bound tests and review completion runtime depend on, so the commit was not a closed reproducible unit even though the dirty working tree passed.",
+      "fix": "Include the reviewed nudge state runtime/source/template, nudge command, and its production-bound safety test in the release commit closure; rerun the full suite from a fresh detached worktree.",
+      "status": "open",
+      "tags": [
+        "release",
+        "commit-scope",
+        "clean-worktree",
+        "test-failure",
+        "nudge-state"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-13T22:42:24.390Z",
+      "commit": null,
+      "reduction": ".wolf/qa/release-only-commit-closure.md"
     }
   ]
 }

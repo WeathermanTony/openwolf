@@ -25,11 +25,34 @@ function wolfDir() {
     return path.join(root, ".wolf");
 }
 
+export function currentSessionId(dir) {
+    const fromEnv = process.env.CLAUDE_CODE_SESSION_ID;
+    if (typeof fromEnv === "string" && /^[\w.-]{4,128}$/.test(fromEnv)) return fromEnv;
+
+    const candidates = [path.join(dir, "hooks", "_session.json")];
+    const sessionsDir = path.join(dir, "hooks", "sessions");
+    try {
+        const recent = fs.readdirSync(sessionsDir)
+            .filter(name => name.endsWith(".json"))
+            .map(name => path.join(sessionsDir, name))
+            .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+        candidates.push(...recent);
+    } catch { }
+    for (const file of candidates) {
+        try {
+            const sessionId = JSON.parse(fs.readFileSync(file, "utf-8")).session_id;
+            if (typeof sessionId === "string" && /^[\w.-]{4,128}$/.test(sessionId)) return sessionId;
+        } catch { }
+    }
+    return "";
+}
+
 /**
  * Resolve a user-typed short id (`cerebrum-1a2b3c4d`) to its full fingerprint.
  * Also accepts a full fingerprint or an unambiguous prefix of one.
  */
 export function resolveNudgeFingerprint(dir, nudgeId) {
+    if (typeof nudgeId !== "string" || !nudgeId.trim()) return null;
     const state = readState(dir);
     const pools = [state.emissions || {}, state.dispositions || {}, state.leases || {}];
     const matches = new Set();
@@ -58,6 +81,18 @@ function ruleOf(state, fp) {
 function shortOf(fp, ruleId) {
     const slug = String(ruleId).split(".")[0].replace(/[^a-z0-9]/gi, "").slice(0, 10) || "nudge";
     return `${slug}-${fp.slice(0, 8)}`;
+}
+
+function provenanceOf(emission, disposition) {
+    const value = (emission && emission.provenance) || (disposition && disposition.provenance);
+    return value && typeof value === "object" ? value : null;
+}
+
+function revisionOf(ruleId, provenance) {
+    if (!provenance) return `${ruleId || "unknown"}@unknown`;
+    const schema = provenance.rule_schema_version ?? "unknown";
+    const digest = provenance.config_digest ? String(provenance.config_digest).slice(0, 12) : "unknown";
+    return `${ruleId || "unknown"}@schema-${schema}/config-${digest}`;
 }
 
 export function nudgeList() {
@@ -107,6 +142,16 @@ export function nudgeShow(nudgeId) {
     console.log(`Fingerprint: ${fp}`);
     console.log(`Rule:        ${ruleOf(state, fp)}`);
     console.log(`State:       ${disp ? disp.state : (emission ? NUDGE_STATES.EMITTED : "unknown")}`);
+    const provenance = provenanceOf(emission, disp);
+    console.log(`Revision:    ${revisionOf(ruleOf(state, fp), provenance)}`);
+    if (provenance) {
+        console.log(`Source:      ${provenance.source_module || "unknown"}`);
+        console.log(`Impl hash:   ${provenance.implementation_hash || "unknown"}`);
+        const window = provenance.evidence_window;
+        if (window && (window.from || window.to)) {
+            console.log(`Evidence:    ${window.from || "?"} → ${window.to || "?"}`);
+        }
+    }
     if (emission) {
         console.log(`Project:     ${emission.owner_root || "(unattributed)"}`);
         console.log(`Emitted:     ${emission.emitted_at}`);
@@ -157,6 +202,7 @@ function dispose(nudgeId, stateName, opts = {}) {
         until: opts.until || null,
         sessionId: opts.sessionId || "",
         ruleId: ruleOf(state, fp),
+        provenance: provenanceOf((state.emissions || {})[fp], (state.dispositions || {})[fp]),
     });
     if (!res.ok) {
         // Never claim a disposition was persisted when it was not — that is the
@@ -190,9 +236,7 @@ export function nudgeSnooze(id, opts) {
     }
     // `--until session-end` leaves `until` null: the durable record exists, but
     // eligibility is decided per-session by the engine.
-    const sessionFile = path.join(wolfDir(), "hooks", "_session.json");
-    let sessionId = "";
-    try { sessionId = JSON.parse(fs.readFileSync(sessionFile, "utf-8")).session_id || ""; } catch { }
+    const sessionId = currentSessionId(wolfDir());
     if (!until && !sessionId) {
         console.error("FAILED to snooze until session-end: current session id is unavailable.");
         process.exitCode = 1;
@@ -234,6 +278,11 @@ export function nudgeStats() {
     }
     const state = readState(dir);
     const dispositions = Object.values(state.dispositions || {});
+    const dispositionsByRevision = {};
+    for (const d of dispositions) {
+        const revision = revisionOf(d.rule_id, d.provenance);
+        dispositionsByRevision[revision] = (dispositionsByRevision[revision] || 0) + 1;
+    }
     console.log("Nudge diagnostics");
     console.log(`  candidates created : ${counts.candidate_created || 0}`);
     console.log(`  emitted            : ${emittedCount}`);
@@ -252,6 +301,12 @@ export function nudgeStats() {
         console.log("  emissions by rule:");
         for (const [r, n] of Object.entries(byRule).sort((a, b) => b[1] - a[1])) {
             console.log(`    ${String(r).padEnd(38)} ${n}`);
+        }
+    }
+    if (Object.keys(dispositionsByRevision).length) {
+        console.log("  dispositions by revision:");
+        for (const [r, n] of Object.entries(dispositionsByRevision).sort((a, b) => b[1] - a[1])) {
+            console.log(`    ${String(r).padEnd(56)} ${n}`);
         }
     }
     const lineages = Object.entries(state.lineages || {});
