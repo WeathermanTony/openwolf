@@ -1,5 +1,9 @@
 # Memory
 
+| 23:32 | Validated commit 8bda36b in a detached clean worktree and obtained a bounded current-byte companion review | src/cli/index.ts, src/cli/init.ts, src/cli/update.ts, tests/init-root-scope.test.js, tests/update-source-exclusion.test.js | 278/278, verify PASS, ChatGPT VERDICT CLEAN; GLM transport attempt produced no verdict | ~4k |
+| 23:35 | Canaried 1.2.0-custom.26 on mt5_dgm_lite, then completed the authorized fleet rollout | 96 managed projects plus mt5 canary | canary protected 415/415; fleet updated 96, skipped canonical source checkout, 0 daemon starts | ~4k |
+| 23:38 | Verified final fleet against actual producer bytes and rollout-time protected backups | 96 non-source roots | 1,920 managed, 96 settings/version, 1,056 protected preserved, 0 failures | ~3k |
+
 | 23:20 | Reconciled hook-created bug-796 and allocated bug-797/798 with lock-backed mutation; audited ledgers | .wolf/buglog.json | bug/review IDs clean; reductions linked, commits pending | ~2k |
 | 23:24 | Recorded staged canary/fleet evidence and generalized rollout lessons | .wolf/qa/fleet-rollout-1.2.0-custom.26.md, .wolf/cerebrum.md | actual producer paths, exact init root, and cross-worktree exclusion documented | ~3k |
 
@@ -681,3 +685,9 @@ bugs unrelated to this session's work.
 | 19:02 | Edited src/cli/init.ts | added 1 condition(s) | ~109 |
 | 19:03 | Created tests/init-root-scope.test.js | — | ~729 |
 | 19:04 | Edited tests/init-root-scope.test.js | — | ~0 |
+| 19:26 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~11 |
+| 19:26 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~4 |
+| 19:26 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~12 |
+| 19:27 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~40 |
+| 19:27 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~159 |
+| 19:28 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~92 |

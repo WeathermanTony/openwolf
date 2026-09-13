@@ -97,6 +97,74 @@ git diff --check: PASS
 
 The evidence supports widening only when verification is bound to the actual runtime producer paths. The prior verifier result was a false positive, while the detached-worktree source update was a real exclusion defect now pinned by a mutation control.
 
+## Exact-commit, review, canary, and final propagation
+
+Commit `8bda36b` was installed into a detached clean worktree with `npm ci`, then built and tested without borrowing dirty-tree bytes:
+
+```text
+# tests 278
+# pass 278
+# fail 0
+# skipped 0
+OpenWolf install verification passed.
+git diff --check: PASS
+clean worktree status: empty
+```
+
+A bounded current-byte ChatGPT companion review covered the five changed source/test files and returned:
+
+```text
+VERDICT: CLEAN
+SCOPE: index.ts@a55bf04599f1, init-root-scope.test.js@c0eedbdb978b,
+       init.ts@fd6bbba51477, update-source-exclusion.test.js@f7500fa4b90e,
+       update.ts@53799baa40e2
+```
+
+The first GLM transport attempt produced no verdict (`input is not a regular file: /dev/null`) and was not counted as a review pass.
+
+The mt5 canary was upgraded from the exact detached build:
+
+```text
+mt5_dgm_lite — v1.2.0-custom.25 → v1.2.0-custom.26
+protected_checked=415
+protected_changed=0
+all 10 core files present
+hook runtime payload present: 19 files
+hook registrations: current
+anatomy: up to date
+daemon auto-start: disabled
+daemon runtime: not running
+validator_smoke=PASS
+```
+
+The authorized final fleet update then reported:
+
+```text
+Updated: 96
+Skipped: 1 (customopenwolf — openwolf source repo)
+Daemon removed: 0
+Explicit auto-start preserved: 0
+Not running: 96
+Stale owned entries: 0
+```
+
+Content-bound post-rollout verification against the exact release producers reported:
+
+```text
+targets: 96
+protectedChecked: 1056
+protectedBaselineDrift: 3
+protectedRolloutPreserved: 1056
+managedChecked: 1920
+settingsChecked: 96
+versionChecked: 96
+dashboardEnabledPreserved: 61
+daemonAutoStartEnabled: 0
+failureCount: 0
+```
+
+The three baseline drifts were `rag` memory, anatomy, and buglog bytes that had changed before this rollout. The rollout-time `2026-09-13T2323` backup hashes equal the corresponding live hashes, proving the update preserved those current bytes rather than restoring the older baseline.
+
 ## Limits
 
-This document records the completed 1.2.0-custom.25 rollout and the local 1.2.0-custom.26 corrective validation. The 1.2.0-custom.26 exact-commit clean-worktree test, re-canary, and final fleet propagation must be appended after those actions run; this pre-commit evidence does not substitute for them.
+The protected-file proof is byte-exact for all 1,056 baseline files: 1,053 equal the original pre-1.2.0-custom.25 baseline and the three independently evolved `rag` files equal their rollout-time backups. It does not claim those mutable ledgers should remain equal to an older snapshot indefinitely.

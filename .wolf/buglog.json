@@ -2216,9 +2216,9 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-13T23:08:27.969Z",
-      "commit": null,
+      "commit": "8bda36b",
       "reduction": ".wolf/qa/cross-worktree-source-exclusion.md",
-      "status": "open"
+      "status": "resolved"
     },
     {
       "id": "bug-797",
@@ -2227,7 +2227,7 @@
       "file": "src/cli/init.ts",
       "root_cause": "init exposed no exact-root option, so findProjectRoot climbed to the ancestor .wolf marker and interpreted a successful parent upgrade as the requested nested initialization.",
       "fix": "Add openwolf init --root <path>, validate that the exact path is an existing directory before writes, and test a markerless child beneath a parent .wolf sentinel with an isolated registry.",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "init",
         "root-scope",
@@ -2239,7 +2239,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-13T23:08:27.969Z",
-      "commit": null,
+      "commit": "8bda36b",
       "reduction": ".wolf/qa/explicit-init-root-scope.md"
     },
     {
@@ -2249,7 +2249,7 @@
       "file": ".wolf/qa/fleet-rollout-1.2.0-custom.26.md",
       "root_cause": "The ad hoc verifier compared installed OPENWOLF.md with templates/wolf and installed hook JavaScript with source-adjacent mirrors, while update actually installs src/templates bytes and freshly built dist/src hook bytes.",
       "fix": "Bind rollout verification to the producer paths actually used by update.ts; rerun across all non-source targets and require protected hashes, managed hashes, registrations, and versions to match.",
-      "status": "open",
+      "status": "resolved",
       "tags": [
         "verification",
         "false-positive",
@@ -2261,7 +2261,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-13T23:08:27.969Z",
-      "commit": null,
+      "commit": "8bda36b",
       "reduction": ".wolf/qa/fleet-rollout-1.2.0-custom.26.md"
     }
   ]
