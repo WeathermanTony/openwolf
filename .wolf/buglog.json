@@ -2059,7 +2059,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-13T18:45:07.994Z",
-      "commit": null,
+      "commit": "be6d0bc",
       "reduction": ".wolf/qa/pre-write-lesson-hit-persistence.md"
     },
     {
@@ -2082,7 +2082,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-13T18:45:07.994Z",
-      "commit": null,
+      "commit": "be6d0bc",
       "reduction": ".wolf/qa/nested-qa-ignore-policy.md"
     },
     {
@@ -2104,7 +2104,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-13T18:59:44.424Z",
-      "commit": null,
+      "commit": "be6d0bc",
       "reduction": ".wolf/qa/nested-qa-ignore-policy.md"
     },
     {
@@ -2127,7 +2127,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-13T18:59:44.424Z",
-      "commit": null,
+      "commit": "be6d0bc",
       "reduction": ".wolf/qa/nested-qa-ignore-policy.md"
     },
     {
@@ -2150,7 +2150,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-13T19:21:05.507Z",
-      "commit": null,
+      "commit": "be6d0bc",
       "reduction": ".wolf/qa/template-fallback-safety.md"
     },
     {
@@ -2174,7 +2174,7 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-13T19:21:05.507Z",
-      "commit": null,
+      "commit": "be6d0bc",
       "reduction": ".wolf/qa/template-fallback-safety.md"
     }
   ]
