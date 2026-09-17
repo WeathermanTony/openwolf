@@ -998,7 +998,7 @@ function isPlainObject(v) {
  * - If the named section is absent, this is a no-op.
  */
 export function rotateDatedBulletsInSection(opts) {
-    const result = { trimmed: 0, archived: 0, archivePath: null, trigger: null };
+    const result = { trimmed: 0, archived: 0, archivePath: null, trigger: null, overBudget: null };
     const maxBytes = opts.maxBytes ?? null;
     const hasAge = !(opts.retentionDays === null || opts.retentionDays === undefined || opts.retentionDays <= 0);
     const hasSize = maxBytes !== null && maxBytes > 0;
@@ -1131,6 +1131,18 @@ export function rotateDatedBulletsInSection(opts) {
                         break;
                     keepFlags[i] = false;
                 }
+            }
+            else {
+                // Report the futile sweep rather than silently declining. A file
+                // that is permanently over budget with no eligible content is a
+                // consolidation job for a human, and a silent no-op looks
+                // identical to a broken mechanism from the outside.
+                result.overBudget = {
+                    bytes: byteLen(content),
+                    maxBytes,
+                    floorBytes,
+                    eligibleBytes: byteLen(content) - floorBytes,
+                };
             }
         }
 

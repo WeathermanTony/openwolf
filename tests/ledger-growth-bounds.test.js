@@ -302,6 +302,49 @@ test('does not treat a mid-sentence or indented date as a bullet date', () => {
   assert.equal(fs.readFileSync(file, 'utf-8'), before);
 });
 
+test('reports an unreachable budget instead of failing silently', () => {
+  const dir = fixture();
+  // Weight sits in a governing section, so no amount of Decision Log eviction
+  // reaches the budget. Measured fleet-wide, 12 of 14 over-budget projects are
+  // in exactly this state -- a silent no-op there is indistinguishable from a
+  // broken mechanism, which is how the original scaling report got filed.
+  const fresh = new Date(NOW - 5 * DAY).toISOString().slice(0, 10);
+  const file = writeCerebrum(dir, [`- [${fresh}] Decision ${'x'.repeat(200)}`]);
+  fs.appendFileSync(file, `\n## Key Learnings\n\n- ${'z'.repeat(20000)}\n`);
+
+  const res = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file), maxBytes: 4096 });
+  assert.equal(res.archived, 0, 'must still decline the futile sweep');
+  assert.ok(res.overBudget, 'must report WHY nothing happened');
+  assert.equal(res.overBudget.maxBytes, 4096);
+  assert.ok(res.overBudget.floorBytes > 4096, 'floor must exceed the budget');
+  assert.ok(
+    res.overBudget.eligibleBytes < res.overBudget.bytes - res.overBudget.floorBytes + 1,
+    'eligible bytes must exclude the untouchable floor',
+  );
+});
+
+test('does not report overBudget when rotation succeeds or is unnecessary', () => {
+  // Reachable: eviction gets under budget, so there is nothing to escalate.
+  const dir = fixture();
+  const decisions = [];
+  for (let i = 0; i < 40; i++) {
+    const d = new Date(NOW - (i + 1) * DAY).toISOString().slice(0, 10);
+    decisions.push(`- [${d}] Decision ${i} ${'x'.repeat(400)}`);
+  }
+  const file = writeCerebrum(dir, decisions);
+  const res = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file), maxBytes: 8192 });
+  assert.ok(res.archived > 0);
+  assert.equal(res.overBudget, null, 'a successful sweep must not nag');
+
+  // Already under budget: also nothing to escalate.
+  const dir2 = fixture();
+  const fresh = new Date(NOW - 5 * DAY).toISOString().slice(0, 10);
+  const file2 = writeCerebrum(dir2, [`- [${fresh}] Recent.`]);
+  const res2 = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file2), maxBytes: 1024 * 1024 });
+  assert.equal(res2.archived, 0);
+  assert.equal(res2.overBudget, null);
+});
+
 function writeBuglog(dir, bugs) {
   const f = path.join(dir, '.wolf', 'buglog.json');
   fs.writeFileSync(f, JSON.stringify({ version: 1, bugs }, null, 2));

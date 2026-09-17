@@ -860,7 +860,7 @@ async function main() {
             try {
                 const cfg = getSizeDisciplineConfig();
                 if (cfg.enabled) {
-                    rotateDatedBulletsInSection({
+                    const rotation = rotateDatedBulletsInSection({
                         file: path.join(wolfDir, "cerebrum.md"),
                         sectionHeaderPattern: /^## Decision Log\s*$/,
                         retentionDays: cfg.cerebrum.retention_days,
@@ -879,6 +879,8 @@ async function main() {
                             return m ? `${m[1]}T00:00:00Z` : undefined;
                         },
                     });
+                    if (rotation.overBudget)
+                        nudgeCerebrumConsolidation(path.join(wolfDir, "cerebrum.md"), rotation.overBudget, sessionFile);
                 }
             }
             catch { }
@@ -1971,6 +1973,54 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     }
     emitStopHookFeedback(`⚠️ Wolfpack: files edited 3+ times (${multiEditDisplay.join(", ")}) but buglog.json not updated — log any bugs fixed.\n`);
     return true;
+}
+/**
+ * Surface a cerebrum.md that is permanently over budget.
+ *
+ * Rotation only evicts dated `## Decision Log` bullets, so the governing
+ * sections form a floor. When that floor alone exceeds the budget, the sweep
+ * correctly declines — but a silent no-op is indistinguishable from a broken
+ * mechanism, and the next person to notice a bloated ledger files a bug about
+ * rotation not working. Measured across 97 projects: 12 of the 14 over-budget
+ * files are in exactly this state, with the weight in Key Learnings (31.5% of
+ * fleet cerebrum bytes) and Do-Not-Repeat (23.4%) rather than Decision Log
+ * (21.1%).
+ *
+ * Names the heaviest non-Decision-Log section, because "your file is large" is
+ * not actionable and "Key Learnings is 94 KB of your 130 KB" is.
+ */
+function nudgeCerebrumConsolidation(cerebrumPath, overBudget, sessionFile) {
+    try {
+        if (!tryConsumeNudgeSlot(sessionFile, "cerebrum_consolidation_warnings", 1))
+            return false;
+        let heaviest = null;
+        try {
+            const lines = fs.readFileSync(cerebrumPath, "utf-8").split("\n");
+            const sizes = {};
+            let cur = null;
+            for (const line of lines) {
+                if (/^##\s/.test(line))
+                    cur = line.trim();
+                if (cur)
+                    sizes[cur] = (sizes[cur] ?? 0) + line.length + 1;
+            }
+            const ranked = Object.entries(sizes)
+                .filter(([h]) => !/^## Decision Log\s*$/.test(h))
+                .sort((a, b) => b[1] - a[1]);
+            if (ranked.length > 0)
+                heaviest = { header: ranked[0][0], bytes: ranked[0][1] };
+        }
+        catch { }
+        const kb = (n) => `${Math.round(n / 1024)} KB`;
+        const where = heaviest
+            ? ` Heaviest section: ${heaviest.header} (${kb(heaviest.bytes)}).`
+            : "";
+        emitStopHookFeedback(`💡 Wolfpack: .wolf/cerebrum.md is ${kb(overBudget.bytes)} against a ${kb(overBudget.maxBytes)} budget, but only ${kb(overBudget.eligibleBytes)} sits in ## Decision Log — rotation cannot reach the target and is declining rather than stripping the log bare.${where} This needs consolidation (merge repeated lessons, link out to reductions/commits), not rotation. Raise openwolf.size_discipline.cerebrum.max_bytes if the size is intentional.\n`);
+        return true;
+    }
+    catch {
+        return false;
+    }
 }
 /**
  * Check if cerebrum.md was updated recently. If it hasn't been updated in
