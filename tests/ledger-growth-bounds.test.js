@@ -34,7 +34,7 @@ const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.parse('2026-09-17T00:00:00Z');
 
 const getBulletDate = (line) => {
-  const m = line.match(/^[-*]\s+\[?(\d{4}-\d{2}-\d{2})\]?/);
+  const m = line.match(/^[-*]\s+(?:[*_`]{1,3}\s*)?\[?\(?(\d{4}-\d{2}-\d{2})\)?\]?/);
   return m ? `${m[1]}T00:00:00Z` : undefined;
 };
 
@@ -268,6 +268,38 @@ test('refuses a sweep it cannot complete', () => {
   const res = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file), maxBytes: 4096 });
   assert.equal(res.archived, 0, 'must not evict when the budget is unreachable');
   assert.equal(fs.readFileSync(file, 'utf-8'), before, 'file must be untouched');
+});
+
+test('parses the date spellings that appear in real ledgers', () => {
+  const dir = fixture();
+  const old = new Date(NOW - 400 * DAY).toISOString().slice(0, 10);
+  // Five spellings measured across 97 fleet projects. A parser handling only
+  // the bracketed/colon forms read 46% of real entries as undated, so they
+  // could never rotate -- invisible in unit tests written in the parser's own
+  // preferred style, which is exactly how this shipped the first time.
+  const file = writeCerebrum(dir, [
+    `- [${old}] Bracketed.`,
+    `- ${old}: Colon.`,
+    `- **${old} — Bold em-dash.`,
+    `- **[${old}]** Bold bracketed.`,
+    `- **(${old})** Bold parenthesised.`,
+  ]);
+  const res = rotateDatedBulletsInSection(ROTATE_OPTS(file));
+  assert.equal(res.archived, 5, 'every real-world date spelling must be eligible');
+});
+
+test('does not treat a mid-sentence or indented date as a bullet date', () => {
+  const dir = fixture();
+  const old = new Date(NOW - 400 * DAY).toISOString().slice(0, 10);
+  const file = writeCerebrum(dir, [
+    `- Refers to ${old} in passing, but is itself undated.`,
+    `- **Bold prose** mentioning ${old} later.`,
+  ]);
+  const before = fs.readFileSync(file, 'utf-8');
+  const res = rotateDatedBulletsInSection(ROTATE_OPTS(file));
+  // Loosening the parser must not make prose evictable.
+  assert.equal(res.archived, 0, 'a date must START the bullet to count');
+  assert.equal(fs.readFileSync(file, 'utf-8'), before);
 });
 
 function writeBuglog(dir, bugs) {

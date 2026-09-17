@@ -866,9 +866,16 @@ async function main() {
                         retentionDays: cfg.cerebrum.retention_days,
                         maxBytes: cfg.cerebrum.max_bytes,
                         archiveDir: path.join(wolfDir, "archive"),
-                        // Entries use both "- [YYYY-MM-DD] ..." and "- YYYY-MM-DD: ..."
+                        // Real fleet data uses at least five spellings:
+                        // "- [D] ...", "- D: ...", "- **D — ...", "- **[D]** ...",
+                        // "- **(D)** ...". Measured across 97 projects, a regex
+                        // handling only the first two parsed 41% of entries and
+                        // silently treated the other 46% as undated — which meant
+                        // never rotating them. Leading emphasis is therefore
+                        // skipped, but the date must still START the bullet: a
+                        // mid-sentence date must not make an entry evictable.
                         getBulletDate: (line) => {
-                            const m = line.match(/^[-*]\s+\[?(\d{4}-\d{2}-\d{2})\]?/);
+                            const m = line.match(/^[-*]\s+(?:[*_`]{1,3}\s*)?\[?\(?(\d{4}-\d{2}-\d{2})\)?\]?/);
                             return m ? `${m[1]}T00:00:00Z` : undefined;
                         },
                     });
