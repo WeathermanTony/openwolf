@@ -241,6 +241,17 @@
   test returns early if auto-detection never fires, so "2 passing" was compatible with
   "nothing exercised". Probed the real hook to confirm entries were actually created before
   trusting the green.
+- **2026-09-17 — A correct component proves nothing about a reachable one.** The
+  cerebrum rotation primitive had 16 green unit tests while doing nothing on a real
+  project for an entire session: the call site sat inside `if (writeCount > 0)`,
+  below a zero-activity early return. Unit tests exercise the primitive; the
+  primitive was never the bug. This is the SECOND instance of one failure mode --
+  the date parser earlier missed 46% of real entries because the fixtures were
+  written in the style the parser already handled. Both times the test confirmed
+  the component against my own assumption instead of the outcome the user gets.
+  Rule: for anything whose value depends on being *invoked*, the regression test
+  drives the shipped entry point as a subprocess and asserts the artifact on disk
+  changed. Then neuter the fix and confirm those tests go red.
 
 
 ## Decision Log
