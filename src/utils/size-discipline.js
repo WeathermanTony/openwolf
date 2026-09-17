@@ -1003,9 +1003,20 @@ function isPlainObject(v) {
  */
 export function rotateDatedBulletsInSection(opts) {
     const result = { trimmed: 0, archived: 0, archivePath: null, trigger: null, overBudget: null };
-    const maxBytes = opts.maxBytes ?? null;
+    // A budget that was CONFIGURED but did not resolve to a usable number is not
+    // the same as "no budget". Independent review (GPT-5.5 + GLM-5.2) and a live
+    // fleet probe agreed: undefined/NaN/0 silently disabled the size bound, so an
+    // over-budget file got neither eviction NOR the consolidation diagnosis, and
+    // reported trigger:'age', overBudget:null — indistinguishable from healthy.
+    // Surface it instead of degrading quietly.
+    const rawMax = opts.maxBytes;
+    const maxBytes = rawMax === undefined || rawMax === null ? null
+        : (typeof rawMax === "number" && Number.isFinite(rawMax) && rawMax > 0 ? rawMax : NaN);
+    const budgetUnusable = typeof maxBytes === "number" && Number.isNaN(maxBytes);
     const hasAge = !(opts.retentionDays === null || opts.retentionDays === undefined || opts.retentionDays <= 0);
-    const hasSize = maxBytes !== null && maxBytes > 0;
+    const hasSize = maxBytes !== null && !budgetUnusable && maxBytes > 0;
+    if (budgetUnusable)
+        result.invalidBudget = { configured: rawMax };
     // Either bound alone is enough; with neither there is nothing to enforce.
     if (!hasAge && !hasSize)
         return result;

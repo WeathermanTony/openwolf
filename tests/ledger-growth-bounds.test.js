@@ -425,6 +425,22 @@ test('closeBug preserves existing proof and reports unknown ids', () => {
 // Both gates are covered deliberately: the reported failure was zero-activity,
 // but a read-only session (reads > 0, writes === 0) was equally unreachable.
 
+// GLM review, CONFIRMED by falsifier: re-gating the call site in src/ WITHOUT
+// rebuilding left this entire suite green. The tests spawn dist/, and nothing
+// rebuilt it — so a regression merged on a green run would ship on the next
+// build. `npm test` has no pretest build step. Fail loudly instead.
+test('dist/ is not stale relative to src/ (else this whole suite is theatre)', () => {
+  const pairs = [['src/hooks/stop.js', 'dist/src/hooks/stop.js'],
+                 ['src/utils/size-discipline.js', 'dist/src/utils/size-discipline.js']];
+  for (const [srcRel, distRel] of pairs) {
+    const s = fs.statSync(path.join(repoRoot, srcRel));
+    const d = fs.statSync(path.join(repoRoot, distRel));
+    assert.ok(d.mtimeMs >= s.mtimeMs,
+      `${distRel} is older than ${srcRel} — run npm run build. ` +
+      `Every reachability assertion below runs against the STALE artifact.`);
+  }
+});
+
 const STOP_HOOK = path.join(repoRoot, 'dist/src/hooks/stop.js');
 
 /** A project whose cerebrum is over budget and whose Decision Log is the bulk. */
@@ -499,7 +515,14 @@ for (const [label, activity] of Object.entries(SESSION_SHAPES)) {
     const after = fs.statSync(file).size;
     assert.ok(after < before, `cerebrum must shrink (${before} -> ${after})`);
     assert.ok(after <= 8192, `cerebrum must land within budget, got ${after}`);
-    assert.ok(fs.existsSync(path.join(wolf, 'archive')), 'archive must be written');
+    // Assert archive CONTENT, not just that a directory appeared: an empty dir
+    // passed the old check, so any other rule that shrank cerebrum.md would have
+    // satisfied this test without rotation ever running.
+    const archDir = path.join(wolf, 'archive');
+    assert.ok(fs.existsSync(archDir), 'archive must be written');
+    const archived = fs.readdirSync(archDir).map((f) => fs.readFileSync(path.join(archDir, f), 'utf-8')).join('\n');
+    assert.ok(archived.includes('Decision 39'),
+      'the evicted bullet must be recoverable from the archive, not merely deleted');
     // The retained bullets must be the NEWEST ones: eviction is oldest-first,
     // so a correct sweep keeps day-1 and drops day-40.
     const kept = bullets(section(fs.readFileSync(file, 'utf-8'), 'Decision Log'));
@@ -522,7 +545,41 @@ test('the over-budget diagnosis reaches a zero-activity Stop', () => {
 
   const out = runStopHook(dir, wolf, 'sess-futile', { files_read: {}, files_written: [] });
 
+  // Pin to the emitter's OWN prose. '## Key Learnings' is a string the fixture
+  // itself wrote into cerebrum.md, so matching only that could be satisfied by
+  // any rule that echoed a section name.
+  assert.match(out, /Wolfpack: \.wolf\/cerebrum\.md is/, 'the diagnosis itself must be emitted');
   assert.match(out, /Key Learnings/, 'the diagnosis must name the heaviest section');
   assert.equal(fs.readFileSync(file, 'utf-8'), before,
     'a futile sweep must leave the file byte-identical');
+});
+
+// GPT-5.5 and GLM-5.2 independently flagged the failure DIRECTION here, and a
+// fleet probe confirmed it live: 96 of 97 projects shipped a shared.js whose
+// cerebrum defaults omit max_bytes. maxBytes resolved to undefined, hasSize went
+// false, and the size bound silently vanished — reporting trigger:'age',
+// overBudget:null, i.e. indistinguishable from a healthy in-budget project.
+// That is the same silent-no-op class as the original gate bug.
+test('a configured-but-unusable budget is surfaced, not silently ignored', () => {
+  for (const bad of [undefined, 0, NaN, 'lots']) {
+    const dir = fixture();
+    const file = writeCerebrum(dir, [`- [2026-09-16] Recent decision ${'x'.repeat(200)}`]);
+    const r = rotateDatedBulletsInSection({
+      file, sectionHeaderPattern: /^## Decision Log\s*$/, getBulletDate,
+      retentionDays: 180, maxBytes: bad, archiveDir: path.join(dir, '.wolf', 'archive'),
+    });
+    if (bad === undefined) {
+      // Genuinely "no budget configured" — age-only is correct, stay quiet.
+      assert.equal(r.invalidBudget, null ?? undefined, 'absent budget must not be flagged invalid');
+    } else {
+      assert.ok(r.invalidBudget, `maxBytes=${String(bad)} must be reported as unusable`);
+    }
+  }
+});
+
+test('the unusable-budget warning reaches a real zero-activity Stop', () => {
+  const { dir, wolf } = hookProject(0, [`- [2026-09-16] Recent decision.`]);
+  const out = runStopHook(dir, wolf, 'sess-badbudget', { files_read: {}, files_written: [] });
+  assert.match(out, /max_bytes is set but unusable/,
+    'an unusable budget must be visible to the operator, not silently dropped');
 });

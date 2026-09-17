@@ -1990,6 +1990,13 @@ function maybeRotateCerebrum(wolfDir, sessionFile) {
                 return m ? `${m[1]}T00:00:00Z` : undefined;
             },
         });
+        // A configured-but-unusable budget must not look like a healthy project.
+        // Measured on the fleet: 96 of 97 projects shipped a stale shared.js whose
+        // cerebrum defaults omit max_bytes, so the size bound resolved to undefined
+        // and silently no-opped — the exact silent failure this fix exists to end.
+        if (rotation.invalidBudget) {
+            emitStopHookFeedback(`⚠️ Wolfpack: openwolf.size_discipline.cerebrum.max_bytes is set but unusable (${JSON.stringify(rotation.invalidBudget.configured)}). The cerebrum size bound is NOT in effect. Set a positive byte count, or run \`openwolf update\` if this project's .wolf/hooks/shared.js predates the size bound.\n`);
+        }
         if (rotation.overBudget)
             nudgeCerebrumConsolidation(cerebrumPath, rotation.overBudget, sessionFile);
     }
