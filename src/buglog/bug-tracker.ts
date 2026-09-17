@@ -169,3 +169,62 @@ export function searchBugs(wolfDir: string, term: string): BugEntry[] {
       b.file.toLowerCase().includes(lower)
   );
 }
+
+export interface CloseBugResult {
+  ok: boolean;
+  reason?: "not-found" | "lock-failed" | "write-failed" | "missing-proof";
+  entry?: BugEntry;
+  /** Proof fields that are still null after applying the requested update. */
+  missing?: string[];
+}
+
+/**
+ * Transition a bug to `resolved`, binding it to the evidence that the fix was real.
+ *
+ * OPENWOLF.md's "Link Fixes to Proof" requires `commit` and `reduction` on
+ * resolution, but until now closure meant hand-editing buglog.json — so entries
+ * got logged (the low threshold works) and never transitioned. A fleet project
+ * measured 182 of 187 entries stuck at `open`, with zero resolved entries
+ * carrying both proof fields; "read buglog before fixing errors" then means
+ * scanning a mostly-open list with no way to tell live issues from history.
+ *
+ * Proof is enforced rather than advisory: closing without both fields fails with
+ * `missing-proof` unless `force` is set. A `resolved` entry with no evidence is
+ * exactly the state that made the status field meaningless.
+ */
+export function closeBug(
+  wolfDir: string,
+  id: string,
+  opts: { commit?: string; reduction?: string; force?: boolean } = {},
+): CloseBugResult {
+  const bugLogPath = getBugLogPath(wolfDir);
+  const release = acquireFileLock(bugLogPath);
+  if (!release) return { ok: false, reason: "lock-failed" };
+  try {
+    // Re-read INSIDE the lock: a snapshot taken before acquiring it can be
+    // stale by the time we write, which is how concurrent hooks clobber
+    // each other's edits.
+    const bugLog = readBugLog(wolfDir);
+    const entry = (bugLog.bugs || []).find((b) => b.id === id);
+    if (!entry) return { ok: false, reason: "not-found" };
+
+    const commit = opts.commit ?? entry.commit;
+    const reduction = opts.reduction ?? entry.reduction;
+    const missing: string[] = [];
+    if (!commit) missing.push("commit");
+    if (!reduction) missing.push("reduction");
+    if (missing.length > 0 && !opts.force) {
+      return { ok: false, reason: "missing-proof", entry, missing };
+    }
+
+    entry.commit = commit ?? null;
+    entry.reduction = reduction ?? null;
+    entry.status = "resolved";
+    entry.last_seen = new Date().toISOString();
+
+    if (!atomicWriteJson(bugLogPath, bugLog)) return { ok: false, reason: "write-failed" };
+    return { ok: true, entry, missing: missing.length > 0 ? missing : undefined };
+  } finally {
+    release();
+  }
+}

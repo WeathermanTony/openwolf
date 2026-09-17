@@ -52,7 +52,7 @@
       "timestamp": "2026-08-19T02:08:05.428Z",
       "error_message": "verify-fleet-section.mjs printed RESULT: PASS while performing only heading-presence checks when run from any cwd other than the repo root.",
       "file": "scripts/verify-fleet-section.mjs",
-      "root_cause": "Canonical template resolved with path.join(process.cwd(),\"src/templates/OPENWOLF.md\"). From another cwd the template was not found, canonical stayed null, and the script degraded to the heading-only check bug-692 had just eliminated — then reported PASS. Found by exercising the staged canary rule before fleet propagation.",
+      "root_cause": "Canonical template resolved with path.join(process.cwd(),\"src/templates/OPENWOLF.md\"). From another cwd the template was not found, canonical stayed null, and the script degraded to the heading-only check bug-692 had just eliminated \u2014 then reported PASS. Found by exercising the staged canary rule before fleet propagation.",
       "fix": "Resolve template relative to the script via fileURLToPath(import.meta.url), and fail closed (exit 2) when no canonical section can be bound, with an explicit --allow-unbound override. Falsified: run from /tmp now content-binds and PASSes; a section absent from the template exits 2 instead of reporting coverage.",
       "status": "resolved",
       "tags": [
@@ -123,7 +123,7 @@
       "timestamp": "2026-08-19T00:00:00.000Z",
       "error_message": "Anatomy entries appearing before the first ## heading were dropped without being counted, shrinking the coverage denominator invisibly",
       "file": "src/cli/drift-cmd.ts",
-      "root_cause": "`if (!e || section === null) continue` skipped unresolvable entries BEFORE incrementing extracted, so an entry that could not be checked simply vanished from the count. The vacuity guard (extracted === checked) could not catch it because both stayed consistent — the same defect class the command exists to detect.",
+      "root_cause": "`if (!e || section === null) continue` skipped unresolvable entries BEFORE incrementing extracted, so an entry that could not be checked simply vanished from the count. The vacuity guard (extracted === checked) could not catch it because both stayed consistent \u2014 the same defect class the command exists to detect.",
       "fix": "Count every matched entry before resolving; report a section-less entry as anatomy-missing with an explicit \"(entry precedes any section heading)\" detail. Found by a unit test asserting the denominator, not by inspection.",
       "status": "resolved",
       "tags": [
@@ -192,7 +192,7 @@
     {
       "id": "bug-699",
       "timestamp": "2026-08-19T00:00:00.000Z",
-      "error_message": "driftcheck reported .wolf/qa/.wolf/qa/<file>.md missing — a doubled path prefix for files that exist",
+      "error_message": "driftcheck reported .wolf/qa/.wolf/qa/<file>.md missing \u2014 a doubled path prefix for files that exist",
       "file": "src/cli/drift-cmd.ts",
       "root_cause": "Anatomy entries are inconsistent: some are bare names relative to their heading (\"index.ts\" under \"## src/cli/\"), others already carry the full project-root-relative path (\".wolf/qa/x.md\" under \"## .wolf/qa/\"). Unconditional join(section, name) doubled the prefix for the second form. 150 of 411 mt5automation findings were this class.",
       "fix": "Resolve against the section base OR the project root; only an entry satisfying neither is drift. Guarded by a paired test asserting the fallback still fails on a file absent under both bases, so the extra leniency cannot make the check unfalsifiable.",
@@ -263,8 +263,8 @@
       "timestamp": "2026-08-19T00:00:00.000Z",
       "error_message": "driftcheck reported a deleted file as clean: anatomy entry \"auth.ts\" under \"## src/api/\" resolved against an unrelated auth.ts at the project root",
       "file": "src/cli/drift-cmd.ts",
-      "root_cause": "The root fallback added for bug-699 (entries carrying their own section prefix) was applied UNCONDITIONALLY. Any entry could therefore resolve against a same-named file anywhere the root candidate landed, so a genuinely deleted/moved file was rescued by a basename collision — the exact stale-entry class the command exists to detect. Generic basenames (index.ts, config.ts, README.md) make the collision ordinary rather than exotic. The existing regression test did not cover it: docs/nowhere.md was absent under BOTH candidate paths, so it proved only that the fallback cannot rescue a name absent everywhere — a strictly weaker claim that a single-base implementation would also satisfy.",
-      "fix": "Gate the root fallback on selfPrefixed: the entry must literally begin with its own section path. Verified by negative control — reverting the guard turns the new collision test red (exit=1) and restoring it returns 17/17. bug-699 confirmed still fixed on real mt5automation data (0 doubled-prefix false positives). Surfaced 26 previously-hidden stale entries on that project alone (360 -> 386), 8 of 8 spot-checked as genuinely absent.",
+      "root_cause": "The root fallback added for bug-699 (entries carrying their own section prefix) was applied UNCONDITIONALLY. Any entry could therefore resolve against a same-named file anywhere the root candidate landed, so a genuinely deleted/moved file was rescued by a basename collision \u2014 the exact stale-entry class the command exists to detect. Generic basenames (index.ts, config.ts, README.md) make the collision ordinary rather than exotic. The existing regression test did not cover it: docs/nowhere.md was absent under BOTH candidate paths, so it proved only that the fallback cannot rescue a name absent everywhere \u2014 a strictly weaker claim that a single-base implementation would also satisfy.",
+      "fix": "Gate the root fallback on selfPrefixed: the entry must literally begin with its own section path. Verified by negative control \u2014 reverting the guard turns the new collision test red (exit=1) and restoring it returns 17/17. bug-699 confirmed still fixed on real mt5automation data (0 doubled-prefix false positives). Surfaced 26 previously-hidden stale entries on that project alone (360 -> 386), 8 of 8 spot-checked as genuinely absent.",
       "status": "resolved",
       "tags": [
         "drift",
@@ -558,7 +558,7 @@
       "timestamp": "2026-08-29T15:29:49.380Z",
       "error_message": "Missing error handling in decisionConfigDigest",
       "file": "src/hooks/nudges/engine.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -653,7 +653,7 @@
     {
       "id": "bug-721",
       "timestamp": "2026-09-06T03:18:54.480Z",
-      "error_message": "UserPromptSubmit hook timed out after 30s — output discarded. Raise the hook's \"timeout\" to allow more time.",
+      "error_message": "UserPromptSubmit hook timed out after 30s \u2014 output discarded. Raise the hook's \"timeout\" to allow more time.",
       "file": "security-guidance@claude-plugins-official/2.0.7/hooks/security_reminder_hook.py",
       "root_cause": "Affected peer attributes invocation to security-guidance; source has Git subprocess budgets and blocking lock candidates. Exact timeout mechanism not reproduced.",
       "fix": "No timeout or security-hook change. Keep investigation open.",
@@ -844,7 +844,7 @@
       "timestamp": "2026-09-13T08:18:06.993Z",
       "error_message": "Missing error handling in mutateJSON",
       "file": "src/hooks/shared.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -920,7 +920,7 @@
       "timestamp": "2026-09-13T08:19:57.242Z",
       "error_message": "Missing error handling in unknown",
       "file": "src/hooks/session-start.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -958,7 +958,7 @@
       "timestamp": "2026-09-13T08:25:32.788Z",
       "error_message": "Missing error handling in writeRegistry",
       "file": "src/cli/registry.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -977,7 +977,7 @@
       "timestamp": "2026-09-13T08:26:52.519Z",
       "error_message": "Missing error handling in readCronStateForMutation",
       "file": "src/daemon/cron-engine.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -996,7 +996,7 @@
       "timestamp": "2026-09-13T08:27:08.239Z",
       "error_message": "Missing await",
       "file": "src/daemon/cron-engine.ts",
-      "root_cause": "Async call without await — returned Promise instead of value",
+      "root_cause": "Async call without await \u2014 returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1015,7 +1015,7 @@
       "timestamp": "2026-09-13T08:27:31.090Z",
       "error_message": "Missing error handling in mergeConfigDefaults",
       "file": "src/cli/update.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1173,7 +1173,7 @@
       "timestamp": "2026-09-13T08:41:26.827Z",
       "error_message": "Missing error handling in getSessionFilePath",
       "file": "src/hooks/shared.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1215,7 +1215,7 @@
       "timestamp": "2026-09-13T08:47:52.384Z",
       "error_message": "Missing error handling in unknown",
       "file": "src/hooks/session-start.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1257,7 +1257,7 @@
       "timestamp": "2026-09-13T08:53:38.510Z",
       "error_message": "Missing error handling in wolfDir",
       "file": "src/cli/nudge-cmd.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1299,7 +1299,7 @@
       "timestamp": "2026-09-13T09:05:27.078Z",
       "error_message": "Missing error handling in unknown",
       "file": "src/daemon/cron-engine.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1341,7 +1341,7 @@
       "timestamp": "2026-09-13T09:18:18.658Z",
       "error_message": "Missing error handling in getSessionFilePath",
       "file": "src/hooks/shared.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1599,7 +1599,7 @@
       "timestamp": "2026-09-13T10:00:15.783Z",
       "error_message": "Missing await",
       "file": "tests/review-completion.test.js",
-      "root_cause": "Async call without await — returned Promise instead of value",
+      "root_cause": "Async call without await \u2014 returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -2263,6 +2263,48 @@
       "last_seen": "2026-09-13T23:08:27.969Z",
       "commit": "8bda36b",
       "reduction": ".wolf/qa/fleet-rollout-1.2.0-custom.26.md"
+    },
+    {
+      "id": "bug-799",
+      "timestamp": "2026-09-17T19:43:32.068055Z",
+      "error_message": "size_discipline.cerebrum.retention_days was read by getSizeDisciplineConfig but had no consumer, so cerebrum.md was the only .wolf ledger that grew without bound.",
+      "file": "src/hooks/stop.ts",
+      "root_cause": "Every other size_discipline sub-key (token_ledger, memory, reviewlog, gate log) has a rotation call site in the Stop hook; cerebrum was plumbed through the config reader at shared.ts:1309 and then never used. The existing monthlyRotateMarkdown primitive could not serve it: it rotates whole '##' sections by header date, but cerebrum.md needs the opposite shape -- permanent sections (User Preferences, Do-Not-Repeat) that must never rotate plus one append-only bullet list (Decision Log) that is the actual growth term. A fleet project measured 137 KB of 206 KB (66%) in Decision Log.",
+      "fix": "Added rotateDatedBulletsInSection to size-discipline (bullet-granular rotation inside one named section; undated bullets always kept, continuation lines travel with their bullet) and wired the Stop-hook call site next to the memory.md rotation. Synced to all four on-disk copies (src/.ts, src/.js, .wolf/utils/, templates/wolf/utils/) since the runtime imports .wolf/utils/.",
+      "tags": [
+        "size-discipline",
+        "cerebrum",
+        "dead-config",
+        "rotation"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-17T19:43:32.068055Z",
+      "commit": null,
+      "reduction": ".wolf/qa/ledger-growth-bounds.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-800",
+      "timestamp": "2026-09-17T19:43:32.068055Z",
+      "error_message": "Buglog entries were logged but never transitioned to resolved, because closure required hand-editing buglog.json; a fleet project measured 182 of 187 stuck at open with zero resolved entries carrying both proof fields.",
+      "file": "src/buglog/bug-tracker.ts",
+      "root_cause": "OPENWOLF.md's 'Link Fixes to Proof' requires commit+reduction on resolution, but no command performed the transition, so the status field decayed into noise. 'Read buglog before fixing errors' then means scanning a mostly-open list with no way to distinguish live issues from history -- the ledger's search value degrades as it grows.",
+      "fix": "Added closeBug (re-reads inside the file lock; refuses closure with reason 'missing-proof' unless both commit and reduction are present or --force is passed, and reports what was missing on a forced close) plus the 'openwolf bug close <id>' CLI verb. Documented in the protocol's Link Fixes to Proof section.",
+      "tags": [
+        "buglog",
+        "proof",
+        "cli",
+        "status-hygiene"
+      ],
+      "related_bugs": [
+        "bug-799"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-09-17T19:43:32.068055Z",
+      "commit": null,
+      "reduction": ".wolf/qa/ledger-growth-bounds.md",
+      "status": "open"
     }
   ]
 }

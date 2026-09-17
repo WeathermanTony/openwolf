@@ -568,5 +568,16 @@ export function createProgram(): Command {
       bugSearch(term);
     });
 
+  bug
+    .command("close <id>")
+    .description("Mark a bug resolved and bind it to the evidence the fix was real")
+    .option("--commit <sha>", "Resolving commit SHA")
+    .option("--reduction <path>", "QA reduction, test, or transcript proving the fix")
+    .option("--force", "Close without both proof fields (discouraged)")
+    .action(async (id: string, opts: { commit?: string; reduction?: string; force?: boolean }) => {
+      const { bugClose } = await import("./bug-cmd.js");
+      bugClose(id, opts);
+    });
+
   return program;
 }

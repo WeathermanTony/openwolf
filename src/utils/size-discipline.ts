@@ -970,3 +970,138 @@ function sectionHash(lines) {
 function isPlainObject(v) {
     return typeof v === "object" && v !== null && !Array.isArray(v);
 }
+
+/**
+ * Rotate dated top-level bullets out of ONE named markdown section.
+ *
+ * Why this exists alongside `monthlyRotateMarkdown`: that primitive rotates
+ * whole `##` sections keyed off their header date. `.wolf/cerebrum.md` has the
+ * opposite shape — a handful of permanent sections (`## User Preferences`,
+ * `## Do-Not-Repeat`) that must NEVER rotate, plus `## Decision Log`, an
+ * append-only bullet list that is the file's growth term. Measured on a mature
+ * project: 137 KB of 206 KB (66%) was Decision Log, while the sections an agent
+ * actually needs before generating code were under 12% of the file. Rotating at
+ * section granularity cannot express that; this rotates at bullet granularity
+ * inside a single section.
+ *
+ * `size_discipline.cerebrum.retention_days` was plumbed through the config
+ * reader with every other sub-key but had NO call site — cerebrum.md was the
+ * one ledger that grew without bound. This is the missing consumer.
+ *
+ * Contract:
+ * - Only bullets that START a top-level item (`- ` / `* ` at column 0) are
+ *   rotation candidates. Continuation lines (indented, or blank lines inside an
+ *   item) travel WITH their bullet, so multi-line entries stay intact.
+ * - An undated bullet is KEPT, never archived. Same bias as the sibling
+ *   primitives: if we cannot prove an entry is old, it stays live.
+ * - Every other section, and the preamble, is passed through untouched.
+ * - If the named section is absent, this is a no-op.
+ */
+export function rotateDatedBulletsInSection(opts) {
+    const result = { trimmed: 0, archived: 0, archivePath: null };
+    if (opts.retentionDays === null || opts.retentionDays <= 0)
+        return result;
+    if (!opts.sectionHeaderPattern || !opts.getBulletDate)
+        return result;
+    if (!fs.existsSync(opts.file))
+        return result;
+    const releaseLive = acquireFileLock(opts.file);
+    if (!releaseLive)
+        return result;
+    try {
+        let content;
+        try {
+            content = fs.readFileSync(opts.file, "utf-8");
+        }
+        catch {
+            return result;
+        }
+        // Rebuild without g/y: test() mutates lastIndex on stateful flags and
+        // would silently skip matches. Same hazard documented in
+        // monthlyRotateMarkdown.
+        const headerRe = withoutStatefulFlags(opts.sectionHeaderPattern);
+        const anyHeaderRe = /^##\s/;
+        const lines = content.split("\n");
+        // Locate the target section: its header line, and the next `## ` header
+        // (or EOF) that terminates it.
+        let secStart = -1;
+        for (let i = 0; i < lines.length; i++) {
+            if (headerRe.test(lines[i])) {
+                secStart = i;
+                break;
+            }
+        }
+        if (secStart === -1)
+            return result;
+        let secEnd = lines.length;
+        for (let i = secStart + 1; i < lines.length; i++) {
+            if (anyHeaderRe.test(lines[i])) {
+                secEnd = i;
+                break;
+            }
+        }
+        // Group the section body into items. A new item begins at a top-level
+        // bullet; anything before the first bullet is section lead-in and is
+        // never rotated.
+        const bulletRe = /^[-*]\s+/;
+        const lead = [];
+        const items = [];
+        for (let i = secStart + 1; i < secEnd; i++) {
+            const line = lines[i];
+            if (bulletRe.test(line))
+                items.push([line]);
+            else if (items.length === 0)
+                lead.push(line);
+            else
+                items[items.length - 1].push(line);
+        }
+        if (items.length === 0)
+            return result;
+        const nowMs = opts.now ?? Date.now();
+        const cutoffMs = nowMs - opts.retentionDays * 24 * 60 * 60 * 1000;
+        const getBulletDate = opts.getBulletDate;
+        const keep = [];
+        const archive = [];
+        for (const item of items) {
+            // Caller callback must never crash the hook.
+            const dateStr = safeCall(() => getBulletDate(item[0]), undefined);
+            const t = dateStr ? Date.parse(dateStr) : NaN;
+            const dateMs = Number.isFinite(t) ? t : null;
+            if (dateMs === null || dateMs >= cutoffMs)
+                keep.push(item);
+            else
+                archive.push(item);
+        }
+        if (archive.length === 0)
+            return result;
+        const wolfDir = path.dirname(opts.file);
+        const archiveDir = opts.archiveDir ?? path.join(wolfDir, "archive");
+        const basename = path.basename(opts.file, path.extname(opts.file));
+        const ext = path.extname(opts.file);
+        const monthSlug = monthSlugUtc(nowMs);
+        const archivePath = path.join(archiveDir, `${basename}-decisions-${monthSlug}${ext}`);
+        ensureDir(archiveDir);
+        // Archive file is a flat bullet list under a stable header, so the
+        // dedup-on-append path can treat each bullet as its own "section".
+        const archiveHeader = opts.archiveHeader ?? "## Archived Decision Log";
+        const archiveOk = mergeIntoMarkdownArchive(archivePath, [[archiveHeader], ...archive], /^[-*]\s+|^##\s/);
+        if (!archiveOk)
+            return result;
+        // Reassemble: preamble + header + lead-in + kept items + rest of file.
+        const rebuilt = [
+            ...lines.slice(0, secStart + 1),
+            ...lead,
+            ...keep.flat(),
+            ...lines.slice(secEnd),
+        ];
+        if (!atomicWriteText(opts.file, rebuilt.join("\n")))
+            return result;
+        result.trimmed = archive.length;
+        result.archived = archive.length;
+        result.archivePath = archivePath;
+        return result;
+    }
+    finally {
+        releaseLive();
+    }
+}

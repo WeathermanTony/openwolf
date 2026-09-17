@@ -22,9 +22,17 @@ These are agent-work ownership rules, not hook exemptions: automatic hooks, writ
 
 ## Code Generation
 
-1. Before generating code, read `.wolf/cerebrum.md` and respect every entry.
+1. Before generating code, consult `.wolf/cerebrum.md` and respect every entry.
 2. Check the `## Do-Not-Repeat` section — these are past mistakes that must not recur.
 3. Follow all conventions in `## Key Learnings` and `## User Preferences`.
+
+Read it whole only while it is small. Past roughly 40 KB, read the governing
+sections and grep the rest: `## Do-Not-Repeat`, `## User Preferences`, and
+`## Key Learnings` are what bind code generation, while `## Decision Log` is
+append-only history that is grepped, never read whole. On a mature project the
+Decision Log can be two thirds of the file, so reading it whole spends the
+context window on history and leaves less for the work itself. Aged decisions
+rotate to `.wolf/archive/` automatically; grep there when you need one back.
 
 ## Standard Skills
 
@@ -44,6 +52,14 @@ Before starting non-trivial work, use Wolfpack's local memory in this order:
 2. Check `.wolf/cerebrum.md` for project conventions, user preferences, and do-not-repeat lessons.
 3. Check `.wolf/buglog.json` before fixing errors or repeating a pattern that may already have a known fix.
 4. Prefer applying an existing proven fix over rediscovering one. If the existing memory is stale or wrong, correct it as part of the work.
+
+"Check" means retrieve what bears on the task, not read end to end. These
+ledgers grow without limit on a long-running project; a full read of each can
+cost more context than the work it precedes. Search them by symptom — grep
+buglog.json for the error text or file, grep cerebrum.md for the convention —
+and open whole only what a search says is relevant. This is the same rule as
+`## Token Discipline`, which governs here too: when a step says read and the
+file is large, targeted retrieval satisfies it.
 
 ## Optional Experiment Mode
 
@@ -70,6 +86,24 @@ Wolfpack memory should stay useful, not merely large. When `.wolf/memory.md`, `.
 2. Keep raw chronological detail in the original log only when it is still operationally useful.
 3. Prefer compact summaries that link to proof files, reductions, review IDs, or commits.
 4. Do not delete user data just to reduce size; consolidate only when the retained summary is enough to recover the lesson.
+
+Rotation is automatic, not a chore you perform. The Stop hook sweeps
+`memory.md`, `buglog.json`, review logs, the gate log, and the `## Decision Log`
+section of `cerebrum.md` into `.wolf/archive/` once entries age past the
+retention windows in `openwolf.size_discipline`. Nothing is deleted — archives
+are grep-able, and undated entries are always kept live. Consolidation above is
+for meaning (turning a run of incidents into one durable lesson); rotation
+handles mere volume. If a ledger is large despite this, check that
+`size_discipline.enabled` is true and that its retention window is not
+effectively unlimited.
+
+## Link Fixes to Proof (closing entries)
+
+Close a resolved bug with `openwolf bug close <id> --commit <sha> --reduction <path>`
+rather than hand-editing `buglog.json`. Closure is refused unless both proof
+fields are present, because a `resolved` entry with no evidence makes the status
+field meaningless: a log where nothing is ever closed forces every future reader
+to scan the whole history to find what is actually live.
 
 ## After Actions
 

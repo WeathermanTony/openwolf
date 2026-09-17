@@ -16,6 +16,7 @@ const TMP_PREFIXES = new Set([
   'ow-ledger-test-',
   'ow-dedup-',
   'ow-nudge-',
+  'ow-ledger-growth-',
 ]);
 const STATE_KEY = Symbol.for('openwolf.test-fixture-cleanup');
 
