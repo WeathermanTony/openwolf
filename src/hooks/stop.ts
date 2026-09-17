@@ -710,6 +710,9 @@ async function main() {
             }
         }
         catch { }
+        // Size bookkeeping is a property of the FILE, not of this session's
+        // activity — run it even on a no-op Stop.
+        maybeRotateCerebrum(wolfDir, sessionFile);
         exitWithStopHookResult(nudgeFired);
         return;
     }
@@ -848,45 +851,13 @@ async function main() {
             }
             catch { }
 
-            // Bound cerebrum.md's Decision Log. Size is the primary trigger and
-            // age a secondary sweep: age measures how long an entry has existed,
-            // not what it costs to read, so a busy month can blow the context
-            // budget with entries too new to expire while a quiet project rotates
-            // on the calendar for no benefit. Over budget, the oldest dated
-            // entries are archived until the file fits.
-            // Section-granular rotation is wrong here: User Preferences and
-            // Do-Not-Repeat must never rotate, so only dated Decision Log
-            // bullets are eligible. Undated bullets are always kept.
-            try {
-                const cfg = getSizeDisciplineConfig();
-                if (cfg.enabled) {
-                    const rotation = rotateDatedBulletsInSection({
-                        file: path.join(wolfDir, "cerebrum.md"),
-                        sectionHeaderPattern: /^## Decision Log\s*$/,
-                        retentionDays: cfg.cerebrum.retention_days,
-                        maxBytes: cfg.cerebrum.max_bytes,
-                        archiveDir: path.join(wolfDir, "archive"),
-                        // Real fleet data uses at least five spellings:
-                        // "- [D] ...", "- D: ...", "- **D — ...", "- **[D]** ...",
-                        // "- **(D)** ...". Measured across 97 projects, a regex
-                        // handling only the first two parsed 41% of entries and
-                        // silently treated the other 46% as undated — which meant
-                        // never rotating them. Leading emphasis is therefore
-                        // skipped, but the date must still START the bullet: a
-                        // mid-sentence date must not make an entry evictable.
-                        getBulletDate: (line) => {
-                            const m = line.match(/^[-*]\s+(?:[*_`]{1,3}\s*)?\[?\(?(\d{4}-\d{2}-\d{2})\)?\]?/);
-                            return m ? `${m[1]}T00:00:00Z` : undefined;
-                        },
-                    });
-                    if (rotation.overBudget)
-                        nudgeCerebrumConsolidation(path.join(wolfDir, "cerebrum.md"), rotation.overBudget, sessionFile);
-                }
-            }
-            catch { }
         }
         catch { }
     }
+    // Rotation runs on every Stop that reaches here, including read-only
+    // sessions (reads > 0, writes === 0), which the old placement inside
+    // `if (writeCount > 0)` skipped entirely.
+    maybeRotateCerebrum(wolfDir, sessionFile);
     // Git/version discipline: after writes, nudge for a final git/version status
     // block and version-impact statement when user-visible files changed.
     try {
@@ -1973,6 +1944,56 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     }
     emitStopHookFeedback(`⚠️ Wolfpack: files edited 3+ times (${multiEditDisplay.join(", ")}) but buglog.json not updated — log any bugs fixed.\n`);
     return true;
+}
+/**
+ * Bound cerebrum.md's Decision Log. Size is the primary trigger and age a
+ * secondary sweep: age measures how long an entry has existed, not what it
+ * costs to read, so a busy month can blow the context budget with entries too
+ * new to expire while a quiet project rotates on the calendar for no benefit.
+ * Over budget, the oldest dated entries are archived until the file fits.
+ *
+ * Section-granular rotation is wrong here: User Preferences and Do-Not-Repeat
+ * must never rotate, so only dated Decision Log bullets are eligible. Undated
+ * bullets are always kept.
+ *
+ * DELIBERATELY NOT GATED ON SESSION ACTIVITY. This previously sat inside
+ * `if (writeCount > 0)`, below the zero-activity early return, so a project
+ * could be far over budget and never rotate — measured on a real project that
+ * stayed 108048 bytes over for an entire session because its counters read
+ * files_read:0, files_written:0. Both a zero-activity Stop AND a read-only Stop
+ * (reads > 0, writes === 0) skipped it. A file's size is a property of the
+ * file, not of what this session happened to touch, and the consolidation
+ * diagnosis is exactly what a read-heavy session needs to see. The primitive is
+ * a cheap stat + early return when under budget, and takes its own file lock.
+ */
+function maybeRotateCerebrum(wolfDir, sessionFile) {
+    try {
+        const cfg = getSizeDisciplineConfig();
+        if (!cfg.enabled)
+            return;
+        const cerebrumPath = path.join(wolfDir, "cerebrum.md");
+        const rotation = rotateDatedBulletsInSection({
+            file: cerebrumPath,
+            sectionHeaderPattern: /^## Decision Log\s*$/,
+            retentionDays: cfg.cerebrum.retention_days,
+            maxBytes: cfg.cerebrum.max_bytes,
+            archiveDir: path.join(wolfDir, "archive"),
+            // Real fleet data uses at least five spellings:
+            // "- [D] ...", "- D: ...", "- **D — ...", "- **[D]** ...",
+            // "- **(D)** ...". Measured across 97 projects, a regex handling
+            // only the first two parsed 41% of entries and silently treated the
+            // other 46% as undated — which meant never rotating them. Leading
+            // emphasis is therefore skipped, but the date must still START the
+            // bullet: a mid-sentence date must not make an entry evictable.
+            getBulletDate: (line) => {
+                const m = line.match(/^[-*]\s+(?:[*_`]{1,3}\s*)?\[?\(?(\d{4}-\d{2}-\d{2})\)?\]?/);
+                return m ? `${m[1]}T00:00:00Z` : undefined;
+            },
+        });
+        if (rotation.overBudget)
+            nudgeCerebrumConsolidation(cerebrumPath, rotation.overBudget, sessionFile);
+    }
+    catch { }
 }
 /**
  * Surface a cerebrum.md that is permanently over budget.

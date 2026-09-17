@@ -19,6 +19,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createTmpFixture } from './lib/fixture-cleanup.js';
 
@@ -410,4 +411,118 @@ test('closeBug preserves existing proof and reports unknown ids', () => {
   assert.equal(entry.reduction, 'r.md');
 
   assert.equal(closeBug(wolf, 'bug-404', { commit: 'a', reduction: 'b' }).reason, 'not-found');
+});
+
+// ═══ REACHABILITY, NOT JUST CORRECTNESS ════════════════════════════════════
+// Every test above exercises rotateDatedBulletsInSection directly, and all of
+// them passed while the primitive did NOTHING on a real project for an entire
+// session: the call site sat inside `if (writeCount > 0)`, below a zero-
+// activity early return, so a cerebrum 108048 bytes over budget was never
+// swept. A unit test on the primitive cannot catch a call site that is never
+// reached. These drive the SHIPPED stop.js as a subprocess and assert the file
+// on disk actually changed.
+//
+// Both gates are covered deliberately: the reported failure was zero-activity,
+// but a read-only session (reads > 0, writes === 0) was equally unreachable.
+
+const STOP_HOOK = path.join(repoRoot, 'dist/src/hooks/stop.js');
+
+/** A project whose cerebrum is over budget and whose Decision Log is the bulk. */
+function hookProject(maxBytes, decisionBullets, extraSections = '') {
+  const dir = fixture();
+  const wolf = path.join(dir, '.wolf');
+  fs.mkdirSync(path.join(wolf, 'hooks'), { recursive: true });
+  fs.writeFileSync(path.join(wolf, 'config.json'), JSON.stringify({
+    openwolf: {
+      // Silence every unrelated rule so the fixture is stable and any nudge
+      // text we assert on can only have come from the cerebrum path.
+      review_hook: { enabled: false }, quality_gate: { enabled: false },
+      claim_calibration: { enabled: false }, autonomy_continuation: { enabled: false },
+      git_discipline: { enabled: false }, simplicity: { enabled: false },
+      size_discipline: { enabled: true, cerebrum: { retention_days: 180, max_bytes: maxBytes } },
+    },
+  }, null, 2));
+  const file = writeCerebrum(dir, decisionBullets);
+  if (extraSections) fs.appendFileSync(file, extraSections);
+  return { dir, wolf, file };
+}
+
+function runStopHook(dir, wolf, sessionId, activity) {
+  fs.writeFileSync(path.join(wolf, 'hooks', '_session.json'), JSON.stringify({
+    session_id: sessionId, started: '2026-09-17T10:00:00.000Z',
+    files_read: {}, files_written: [], edit_counts: {},
+    anatomy_hits: 0, anatomy_misses: 0, repeated_reads_warned: 0,
+    cerebrum_warnings: 0, buglog_warnings: 0, stop_count: 0,
+    ...activity,
+  }, null, 2));
+  const transcript = path.join(dir, 't.jsonl');
+  fs.writeFileSync(transcript, JSON.stringify({
+    type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'Done.' }] },
+  }) + '\n');
+  const r = spawnSync(process.execPath, [STOP_HOOK], {
+    cwd: dir, encoding: 'utf8', timeout: 30000,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+    input: JSON.stringify({ session_id: sessionId, transcript_path: transcript }),
+  });
+  assert.equal(r.status, 0, r.stderr);
+  return r.stdout;
+}
+
+// The three session shapes, keyed by the gate each one used to be trapped
+// behind. 'writes' is the control: it passed before the fix, so if it ever
+// fails the fixture itself is broken rather than the gate.
+const SESSION_SHAPES = {
+  'zero-activity': { files_read: {}, files_written: [] },
+  'read-only': {
+    files_read: { '/tmp/x/a.js': { count: 1 } }, files_written: [],
+  },
+  'writes (control)': {
+    files_written: [{ file: '/tmp/x/a.js', action: 'edit', tokens: 10, at: '2026-09-17T10:00:00.000Z' }],
+  },
+};
+
+for (const [label, activity] of Object.entries(SESSION_SHAPES)) {
+  test(`cerebrum rotation runs on a ${label} Stop`, () => {
+    // 40 dated decisions, all inside the age window, so ONLY the size trigger
+    // can rotate them — this cannot pass via the age sweep.
+    const decisions = [];
+    for (let i = 0; i < 40; i++) {
+      const d = new Date(NOW - (i + 1) * DAY).toISOString().slice(0, 10);
+      decisions.push(`- [${d}] Decision ${i} ${'x'.repeat(300)}`);
+    }
+    const { dir, wolf, file } = hookProject(8192, decisions);
+    const before = fs.statSync(file).size;
+    assert.ok(before > 8192, 'fixture precondition: must start over budget');
+
+    runStopHook(dir, wolf, `sess-${label.replace(/\W+/g, '-')}`, activity);
+
+    const after = fs.statSync(file).size;
+    assert.ok(after < before, `cerebrum must shrink (${before} -> ${after})`);
+    assert.ok(after <= 8192, `cerebrum must land within budget, got ${after}`);
+    assert.ok(fs.existsSync(path.join(wolf, 'archive')), 'archive must be written');
+    // The retained bullets must be the NEWEST ones: eviction is oldest-first,
+    // so a correct sweep keeps day-1 and drops day-40.
+    const kept = bullets(section(fs.readFileSync(file, 'utf-8'), 'Decision Log'));
+    assert.ok(kept.some((l) => l.includes('Decision 0')), 'newest decision must survive');
+    assert.ok(!kept.some((l) => l.includes('Decision 39')), 'oldest decision must be evicted');
+  });
+}
+
+test('the over-budget diagnosis reaches a zero-activity Stop', () => {
+  // Futile sweep: a governing section alone busts the budget, so archiving
+  // every decision still cannot reach it. The hook must DIAGNOSE rather than
+  // strip the Decision Log bare every run.
+  const heavy = ['', '## Key Learnings', ''];
+  for (let i = 0; i < 40; i++) heavy.push(`- Learning ${i} ${'z'.repeat(300)}`);
+  const { dir, wolf, file } = hookProject(
+    8192, [`- [2026-09-16] Recent decision.`], heavy.join('\n') + '\n',
+  );
+  const before = fs.readFileSync(file, 'utf-8');
+  assert.ok(Buffer.byteLength(before) > 8192, 'fixture precondition: over budget');
+
+  const out = runStopHook(dir, wolf, 'sess-futile', { files_read: {}, files_written: [] });
+
+  assert.match(out, /Key Learnings/, 'the diagnosis must name the heaviest section');
+  assert.equal(fs.readFileSync(file, 'utf-8'), before,
+    'a futile sweep must leave the file byte-identical');
 });
