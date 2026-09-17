@@ -1002,8 +1002,12 @@ function isPlainObject(v) {
  * - If the named section is absent, this is a no-op.
  */
 export function rotateDatedBulletsInSection(opts) {
-    const result = { trimmed: 0, archived: 0, archivePath: null };
-    if (opts.retentionDays === null || opts.retentionDays <= 0)
+    const result = { trimmed: 0, archived: 0, archivePath: null, trigger: null };
+    const maxBytes = opts.maxBytes ?? null;
+    const hasAge = !(opts.retentionDays === null || opts.retentionDays === undefined || opts.retentionDays <= 0);
+    const hasSize = maxBytes !== null && maxBytes > 0;
+    // Either bound alone is enough; with neither there is nothing to enforce.
+    if (!hasAge && !hasSize)
         return result;
     if (!opts.sectionHeaderPattern || !opts.getBulletDate)
         return result;
@@ -1062,22 +1066,87 @@ export function rotateDatedBulletsInSection(opts) {
         if (items.length === 0)
             return result;
         const nowMs = opts.now ?? Date.now();
-        const cutoffMs = nowMs - opts.retentionDays * 24 * 60 * 60 * 1000;
         const getBulletDate = opts.getBulletDate;
-        const keep = [];
-        const archive = [];
-        for (const item of items) {
+        const dated = items.map((item) => {
             // Caller callback must never crash the hook.
             const dateStr = safeCall(() => getBulletDate(item[0]), undefined);
             const t = dateStr ? Date.parse(dateStr) : NaN;
-            const dateMs = Number.isFinite(t) ? t : null;
-            if (dateMs === null || dateMs >= cutoffMs)
-                keep.push(item);
-            else
-                archive.push(item);
+            return { item, dateMs: Number.isFinite(t) ? t : null };
+        });
+
+        // Pass 1 — age. An entry older than the retention window is eligible
+        // regardless of file size.
+        const keepFlags = new Array(dated.length).fill(true);
+        if (hasAge) {
+            const cutoffMs = nowMs - opts.retentionDays * 24 * 60 * 60 * 1000;
+            for (let i = 0; i < dated.length; i++) {
+                const d = dated[i].dateMs;
+                if (d !== null && d < cutoffMs)
+                    keepFlags[i] = false;
+            }
         }
+
+        // Pass 2 — size. Age alone is the wrong primary bound: it measures how
+        // long an entry has existed, not what it costs to read. A busy month can
+        // blow the budget with entries too new to expire, while a quiet project
+        // sits far under budget and still rotates on the calendar. Measured on
+        // two real projects, the section mix differs enough that no single age
+        // cliff serves both: one had 66% of the file in Decision Log, another
+        // 19%. So when the file is over budget, keep archiving the OLDEST
+        // remaining dated entries until it fits.
+        const byteLen = (s) => Buffer.byteLength(s, "utf8");
+        const sizeIfKept = () => {
+            let n = byteLen(lines.slice(0, secStart + 1).join("\n")) + 1;
+            n += byteLen(lead.join("\n")) + 1;
+            for (let i = 0; i < dated.length; i++)
+                if (keepFlags[i])
+                    n += byteLen(dated[i].item.join("\n")) + 1;
+            n += byteLen(lines.slice(secEnd).join("\n"));
+            return n;
+        };
+        if (hasSize && sizeIfKept() > maxBytes) {
+            // Oldest first. Undated entries are never size-evicted: we cannot
+            // prove they are stale, and they are typically standing conventions.
+            const order = dated
+                .map((d, i) => ({ i, dateMs: d.dateMs }))
+                .filter((d) => d.dateMs !== null && keepFlags[d.i])
+                .sort((a, b) => a.dateMs - b.dateMs);
+
+            // Refuse a futile sweep. The rest of the file — the governing
+            // sections plus any undated entry — is a floor this primitive must
+            // not touch. If evicting EVERY eligible entry still cannot reach the
+            // budget, eviction buys nothing and costs the whole Decision Log, so
+            // leave the file alone and let the age sweep handle it. Measured on a
+            // real project: Decision Log was 19% of the file and Do-Not-Repeat
+            // 45%, making any budget under ~67 KB unreachable by construction.
+            const floorFlags = keepFlags.slice();
+            for (const { i } of order)
+                floorFlags[i] = false;
+            const savedFlags = keepFlags.slice();
+            for (let i = 0; i < keepFlags.length; i++)
+                keepFlags[i] = floorFlags[i];
+            const floorBytes = sizeIfKept();
+            for (let i = 0; i < keepFlags.length; i++)
+                keepFlags[i] = savedFlags[i];
+
+            if (floorBytes <= maxBytes) {
+                for (const { i } of order) {
+                    if (sizeIfKept() <= maxBytes)
+                        break;
+                    keepFlags[i] = false;
+                }
+            }
+        }
+
+        const keep = [];
+        const archive = [];
+        for (let i = 0; i < dated.length; i++)
+            (keepFlags[i] ? keep : archive).push(dated[i].item);
         if (archive.length === 0)
             return result;
+        // Report which bound actually did the evicting: "size" when the file
+        // started over budget, "age" when only the retention window fired.
+        result.trigger = hasSize && byteLen(content) > maxBytes ? "size" : "age";
         const wolfDir = path.dirname(opts.file);
         const archiveDir = opts.archiveDir ?? path.join(wolfDir, "archive");
         const basename = path.basename(opts.file, path.extname(opts.file));

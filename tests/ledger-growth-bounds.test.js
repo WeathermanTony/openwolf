@@ -187,6 +187,89 @@ test('rotation is a no-op when the section is absent or retention disabled', () 
   assert.equal(fs.readFileSync(file2, 'utf-8'), before2);
 });
 
+test('size bound evicts oldest-first when nothing is old enough to expire', () => {
+  const dir = fixture();
+  // 40 decisions, each one day apart -- every one far inside a 180-day window,
+  // so the age bound alone would archive NOTHING while the file is 2x budget.
+  const decisions = [];
+  for (let i = 0; i < 40; i++) {
+    const d = new Date(NOW - (i + 1) * DAY).toISOString().slice(0, 10);
+    decisions.push(`- [${d}] Decision ${i} ${'x'.repeat(400)}`);
+  }
+  const file = writeCerebrum(dir, decisions);
+
+  const ageOnly = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file) });
+  assert.equal(ageOnly.archived, 0, 'precondition: age bound alone must be a no-op here');
+
+  const res = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file), maxBytes: 8192 });
+  assert.ok(res.archived > 0, 'size bound must evict when over budget');
+  assert.equal(res.trigger, 'size');
+  assert.ok(fs.statSync(file).size <= 8192, 'file must end up under budget');
+
+  // Oldest-first: the newest decision survives, the oldest does not.
+  const live = fs.readFileSync(file, 'utf-8');
+  assert.match(live, /Decision 0 /, 'newest entry must be kept');
+  assert.doesNotMatch(live, /Decision 39 /, 'oldest entry must be evicted first');
+});
+
+test('size bound is a no-op under budget, and age still fires over it', () => {
+  const dir = fixture();
+  const fresh = new Date(NOW - 5 * DAY).toISOString().slice(0, 10);
+  const file = writeCerebrum(dir, [`- [${fresh}] Recent.`]);
+  const before = fs.readFileSync(file, 'utf-8');
+  const res = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file), maxBytes: 1024 * 1024 });
+  assert.equal(res.archived, 0);
+  assert.equal(fs.readFileSync(file, 'utf-8'), before);
+
+  // Generous budget must not disable the age sweep.
+  const dir2 = fixture();
+  const old = new Date(NOW - 400 * DAY).toISOString().slice(0, 10);
+  const file2 = writeCerebrum(dir2, [`- [${old}] Ancient.`, `- [${fresh}] Recent.`]);
+  const res2 = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file2), maxBytes: 1024 * 1024 });
+  assert.equal(res2.archived, 1);
+  assert.equal(res2.trigger, 'age');
+});
+
+test('size bound works with no age bound, and never evicts undated entries', () => {
+  const dir = fixture();
+  const decisions = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(NOW - (i + 1) * DAY).toISOString().slice(0, 10);
+    decisions.push(`- [${d}] Decision ${i} ${'x'.repeat(400)}`);
+  }
+  const file = writeCerebrum(dir, decisions);
+  const res = rotateDatedBulletsInSection({
+    file, sectionHeaderPattern: /^## Decision Log\s*$/, getBulletDate,
+    maxBytes: 8192, now: NOW,
+  });
+  assert.ok(res.archived > 0, 'maxBytes alone must be sufficient configuration');
+  assert.ok(fs.statSync(file).size <= 8192);
+
+  // An undated entry cannot be proven stale, so it is never size-evicted even
+  // when that leaves the file over budget.
+  const dir2 = fixture();
+  const file2 = writeCerebrum(dir2, [`- Undated standing convention ${'y'.repeat(9000)}`]);
+  const res2 = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file2), maxBytes: 1024 });
+  assert.equal(res2.archived, 0);
+  assert.match(fs.readFileSync(file2, 'utf-8'), /Undated standing convention/);
+});
+
+test('refuses a sweep it cannot complete', () => {
+  const dir = fixture();
+  // A single huge governing entry puts the file over budget on its own, so no
+  // amount of Decision Log eviction can reach the target. Stripping the log bare
+  // would cost every decision and still miss -- the worst possible trade.
+  const fresh = new Date(NOW - 5 * DAY).toISOString().slice(0, 10);
+  const file = writeCerebrum(dir, [`- [${fresh}] Decision ${'x'.repeat(200)}`]);
+  const bloat = `\n## Key Learnings\n\n- ${'z'.repeat(20000)}\n`;
+  fs.appendFileSync(file, bloat);
+  const before = fs.readFileSync(file, 'utf-8');
+
+  const res = rotateDatedBulletsInSection({ ...ROTATE_OPTS(file), maxBytes: 4096 });
+  assert.equal(res.archived, 0, 'must not evict when the budget is unreachable');
+  assert.equal(fs.readFileSync(file, 'utf-8'), before, 'file must be untouched');
+});
+
 function writeBuglog(dir, bugs) {
   const f = path.join(dir, '.wolf', 'buglog.json');
   fs.writeFileSync(f, JSON.stringify({ version: 1, bugs }, null, 2));

@@ -27,7 +27,9 @@ These are agent-work ownership rules, not hook exemptions: automatic hooks, writ
 3. Follow all conventions in `## Key Learnings` and `## User Preferences`.
 
 Read it whole only while it is small. Past roughly 40 KB, read the governing
-sections and grep the rest: `## Do-Not-Repeat`, `## User Preferences`, and
+sections and grep the rest (this threshold is about your context budget, and is
+deliberately tighter than the rotation budget in `size_discipline.cerebrum`,
+which only bounds unchecked growth): `## Do-Not-Repeat`, `## User Preferences`, and
 `## Key Learnings` are what bind code generation, while `## Decision Log` is
 append-only history that is grepped, never read whole. On a mature project the
 Decision Log can be two thirds of the file, so reading it whole spends the
@@ -89,13 +91,25 @@ Wolfpack memory should stay useful, not merely large. When `.wolf/memory.md`, `.
 
 Rotation is automatic, not a chore you perform. The Stop hook sweeps
 `memory.md`, `buglog.json`, review logs, the gate log, and the `## Decision Log`
-section of `cerebrum.md` into `.wolf/archive/` once entries age past the
-retention windows in `openwolf.size_discipline`. Nothing is deleted — archives
-are grep-able, and undated entries are always kept live. Consolidation above is
-for meaning (turning a run of incidents into one durable lesson); rotation
-handles mere volume. If a ledger is large despite this, check that
-`size_discipline.enabled` is true and that its retention window is not
-effectively unlimited.
+section of `cerebrum.md` into `.wolf/archive/`. Nothing is deleted — archives are
+grep-able, and undated entries are always kept live. Consolidation above is for
+meaning (turning a run of incidents into one durable lesson); rotation handles
+mere volume.
+
+For `cerebrum.md`, size is the primary bound and age only a secondary sweep
+(`size_discipline.cerebrum.max_bytes`, then `retention_days`). Age measures how
+long an entry has existed, not what it costs to read: a busy month can blow the
+context budget with entries too new to expire, while a quiet project rotates on
+the calendar for no benefit. Over budget, the oldest dated decisions are archived
+until the file fits.
+
+Only `## Decision Log` is eligible, so the governing sections form a floor no
+budget can cross — if evicting every decision still would not reach the target,
+rotation declines to run rather than strip the log bare for nothing. A
+`cerebrum.md` that stays large despite this is telling you the weight is in
+`## Key Learnings` or `## Do-Not-Repeat`, and that is a consolidation job for a
+human, not a rotation job. Check `size_discipline.enabled` before assuming a
+mechanism failed.
 
 ## Link Fixes to Proof (closing entries)
 

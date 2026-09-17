@@ -108,7 +108,8 @@
         "max_inline_sessions": 60
       },
       "cerebrum": {
-        "retention_days": 180
+        "retention_days": 180,
+        "max_bytes": 98304
       },
       "daemon_log": {
         "max_bytes": 5242880,

@@ -848,10 +848,12 @@ async function main() {
             }
             catch { }
 
-            // Rotate aged Decision Log bullets out of cerebrum.md. This consumes
-            // size_discipline.cerebrum.retention_days, which was plumbed through
-            // getSizeDisciplineConfig alongside every other sub-key but had no
-            // caller — cerebrum.md was the only ledger growing without bound.
+            // Bound cerebrum.md's Decision Log. Size is the primary trigger and
+            // age a secondary sweep: age measures how long an entry has existed,
+            // not what it costs to read, so a busy month can blow the context
+            // budget with entries too new to expire while a quiet project rotates
+            // on the calendar for no benefit. Over budget, the oldest dated
+            // entries are archived until the file fits.
             // Section-granular rotation is wrong here: User Preferences and
             // Do-Not-Repeat must never rotate, so only dated Decision Log
             // bullets are eligible. Undated bullets are always kept.
@@ -862,6 +864,7 @@ async function main() {
                         file: path.join(wolfDir, "cerebrum.md"),
                         sectionHeaderPattern: /^## Decision Log\s*$/,
                         retentionDays: cfg.cerebrum.retention_days,
+                        maxBytes: cfg.cerebrum.max_bytes,
                         archiveDir: path.join(wolfDir, "archive"),
                         // Entries use both "- [YYYY-MM-DD] ..." and "- YYYY-MM-DD: ..."
                         getBulletDate: (line) => {
