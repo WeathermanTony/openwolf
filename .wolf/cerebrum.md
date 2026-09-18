@@ -263,6 +263,17 @@
   the mechanism works, and make the no-op and failure results textually distinct.
   Corollary: a health record written on the success path can erase an error recorded
   earlier in the same run -- failures need their own key.
+- **2026-09-17 — Fleet rollout of the cerebrum size bound: 97/97, zero content changed.**
+  Shipped the size-primary rotation, the unusable-budget warning, and the sweep-failure
+  reporting to every registered project via `openwolf update`. Verified rather than
+  assumed: 0 non-zero exits, 97/97 carry both fixes, and a sha256 baseline/after
+  comparison showed 0 cerebrum files altered by the update itself (the 2 that differed
+  had grown from live sessions writing new entries). Sandboxed Stop-hook probes on all
+  14 over-budget projects: 13 DIAGNOSED with zero bytes changed, 1 ROTATED. The 13 are
+  futile sweeps -- their bulk is in governing sections, so rotation correctly declines
+  rather than stripping the Decision Log bare. Lesson: before a fleet action, capture a
+  content-hash baseline and predict the per-project outcome; the prediction ("modifies
+  exactly one file") is what makes an unexpected diff detectable afterwards.
 
 
 ## Decision Log
