@@ -583,3 +583,87 @@ test('the unusable-budget warning reaches a real zero-activity Stop', () => {
   assert.match(out, /max_bytes is set but unusable/,
     'an unusable budget must be visible to the operator, not silently dropped');
 });
+
+// GPT-5.5 review: maybeRotateCerebrum swallowed ALL exceptions, so a throwing
+// config read or a failed archive write left the Stop looking healthy while
+// cerebrum.md grew forever -- the same silent-no-op class as the gate bug.
+//
+// Fault injection, not a mock: make the archive directory unwritable so the
+// REAL archive write throws inside the real hook. The test asserts the
+// injection actually took effect, because a bypassed injection would produce a
+// green test that proves nothing.
+test('a rotation failure is surfaced, not swallowed', { skip: process.getuid?.() === 0 && 'root ignores chmod' }, () => {
+  const decisions = [];
+  for (let i = 0; i < 40; i++) {
+    const d = new Date(NOW - (i + 1) * DAY).toISOString().slice(0, 10);
+    decisions.push(`- [${d}] Decision ${i} ${'x'.repeat(300)}`);
+  }
+  const { dir, wolf, file } = hookProject(8192, decisions);
+  const archive = path.join(wolf, 'archive');
+  fs.mkdirSync(archive, { recursive: true });
+  fs.chmodSync(archive, 0o500); // readable+executable, NOT writable
+
+  const before = fs.readFileSync(file, 'utf-8');
+  let out;
+  try {
+    out = runStopHook(dir, wolf, 'sess-rotfail', { files_read: {}, files_written: [] });
+  } finally {
+    fs.chmodSync(archive, 0o700);
+  }
+
+  // Injection actually fired: rotation could not complete, so the file stands.
+  assert.equal(fs.readFileSync(file, 'utf-8'), before,
+    'precondition: the injected fault must have blocked rotation, else this is vacuous');
+  // The primitive returns {trimmed:0} on a failed archive write -- byte-
+  // identical to a healthy no-op -- so the message must come from the explicit
+  // .failed check, not from an exception.
+  assert.match(out, /rotation could not complete|cerebrum rotation failed/,
+    'the failure must reach the operator rather than being swallowed');
+  assert.match(out, /NOT being size-bounded/,
+    'the operator must be told the consequence, not just that something failed');
+
+  // And it must survive the unconditional success record on the way out.
+  const health = JSON.parse(fs.readFileSync(path.join(wolf, 'hooks', '_health.json'), 'utf-8'));
+  const entry = health.hooks?.['stop:cerebrum-rotation'];
+  assert.ok(entry?.last_error, 'the error must persist under its own health key');
+  assert.ok(health.hooks?.stop?.last_success,
+    'the generic stop success is still recorded -- proving the distinct key was necessary');
+});
+
+// The cerebrum fault-injection test above covers ONE call site. The same
+// silent-return-after-failed-write existed in rollingWindowJson,
+// cappedSessionsJson and monthlyRotateMarkdown, and all five sibling call
+// sites in stop.js ignored the return value inside a bare catch. A ledger that
+// stopped rotating was indistinguishable from one that needed no rotation.
+// This drives the REAL hook against a memory.md sweep with an unwritable
+// archive dir, so it covers a different primitive and a different call site.
+test('a sibling ledger sweep failure is surfaced too', { skip: process.getuid?.() === 0 && 'root ignores chmod' }, () => {
+  const { dir, wolf } = hookProject(98304, [`- [2026-09-16] Recent decision.`]);
+  // memory.md with sessions old enough to rotate under the 30-day default.
+  const old = new Date(NOW - 400 * DAY).toISOString().slice(0, 10);
+  fs.writeFileSync(path.join(wolf, 'memory.md'),
+    `# Memory\n\n## Session: ${old} 10:00\n\n- did a thing\n\n## Session: ${old} 11:00\n\n- did another\n`);
+  const cfg = JSON.parse(fs.readFileSync(path.join(wolf, 'config.json'), 'utf-8'));
+  cfg.openwolf.size_discipline.memory = { retention_days: 30 };
+  fs.writeFileSync(path.join(wolf, 'config.json'), JSON.stringify(cfg, null, 2));
+
+  const archive = path.join(wolf, 'archive');
+  fs.mkdirSync(archive, { recursive: true });
+  fs.chmodSync(archive, 0o500);
+
+  let out;
+  try {
+    // A write-bearing session, because the memory sweep only runs after an append.
+    out = runStopHook(dir, wolf, 'sess-memfail', {
+      files_written: [{ file: path.join(dir, 'a.js'), action: 'edit', tokens: 10, at: '2026-09-17T10:00:00.000Z' }],
+    });
+  } finally {
+    fs.chmodSync(archive, 0o700);
+  }
+
+  assert.match(out, /memory rotation could not complete/,
+    'a failed sibling sweep must name the ledger that is no longer bounded');
+  const health = JSON.parse(fs.readFileSync(path.join(wolf, 'hooks', '_health.json'), 'utf-8'));
+  assert.ok(health.hooks?.['stop:memory']?.last_error,
+    'the sibling failure must persist under its own health key');
+});

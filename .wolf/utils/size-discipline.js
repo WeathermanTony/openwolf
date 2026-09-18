@@ -98,8 +98,10 @@ export function rollingWindowJson(opts) {
         // CRITICAL: archive must commit before we trim the live file.
         // If the archive write fails, leave the live file untouched.
         const archiveOk = mergeIntoArchive(archivePath, opts.arrayKey, archive, doc, opts.getId);
-        if (!archiveOk)
+        if (!archiveOk) {
+            result.failed = { stage: "archive-write", path: archivePath, pending: archive.length };
             return result;
+        }
         doc[opts.arrayKey] = keep;
         if (!atomicWriteJson(opts.file, doc)) {
             // Live trim failed after archive succeeded. With getId, the
@@ -159,11 +161,15 @@ export function cappedSessionsJson(opts) {
         const archivePath = path.join(archiveDir, `${basename}-${monthSlug}${ext}`);
         ensureDir(archiveDir);
         const archiveOk = mergeIntoArchive(archivePath, opts.arrayKey, archive, doc, opts.getId);
-        if (!archiveOk)
+        if (!archiveOk) {
+            result.failed = { stage: "archive-write", path: archivePath, pending: archive.length };
             return result;
+        }
         doc[opts.arrayKey] = keep;
-        if (!atomicWriteJson(opts.file, doc))
+        if (!atomicWriteJson(opts.file, doc)) {
+            result.failed = { stage: "live-write", path: opts.file, pending: archive.length };
             return result;
+        }
         result.trimmed = archive.length;
         result.archived = archive.length;
         result.archivePath = archivePath;
@@ -246,13 +252,17 @@ export function monthlyRotateMarkdown(opts) {
         // archive discipline). Dedup key = first-line section header (the
         // header line including its date is stable per section).
         const archiveOk = mergeIntoMarkdownArchive(archivePath, archiveSections.map((s) => s.lines), headerRe);
-        if (!archiveOk)
+        if (!archiveOk) {
+            result.failed = { stage: "archive-write", path: archivePath, pending: archiveSections.length };
             return result;
+        }
         const liveText = preamble + (keepSections.length > 0
             ? "\n" + keepSections.map((s) => s.lines.join("\n")).join("\n")
             : "\n");
-        if (!atomicWriteText(opts.file, liveText))
+        if (!atomicWriteText(opts.file, liveText)) {
+            result.failed = { stage: "live-write", path: opts.file, pending: archiveSections.length };
             return result;
+        }
         result.trimmed = archiveSections.length;
         result.archived = archiveSections.length;
         result.archivePath = archivePath;
@@ -1180,9 +1190,15 @@ export function rotateDatedBulletsInSection(opts) {
         // Archive file is a flat bullet list under a stable header, so the
         // dedup-on-append path can treat each bullet as its own "section".
         const archiveHeader = opts.archiveHeader ?? "## Archived Decision Log";
+        // A failed archive write must NOT look like "nothing to do". Returning a
+        // bare result here reports {trimmed:0, archived:0} -- byte-identical to a
+        // healthy no-op -- so the caller cannot tell that eviction was abandoned
+        // and the file is still unbounded. Report the failure explicitly.
         const archiveOk = mergeIntoMarkdownArchive(archivePath, [[archiveHeader], ...archive], /^[-*]\s+|^##\s/);
-        if (!archiveOk)
+        if (!archiveOk) {
+            result.failed = { stage: "archive-write", path: archivePath, pending: archive.length };
             return result;
+        }
         // Reassemble: preamble + header + lead-in + kept items + rest of file.
         const rebuilt = [
             ...lines.slice(0, secStart + 1),
@@ -1190,8 +1206,13 @@ export function rotateDatedBulletsInSection(opts) {
             ...keep.flat(),
             ...lines.slice(secEnd),
         ];
-        if (!atomicWriteText(opts.file, rebuilt.join("\n")))
+        // Same reasoning as the archive-write failure above: content is already
+        // in the archive at this point, so a silent return would also hide a
+        // real duplication risk on the next run.
+        if (!atomicWriteText(opts.file, rebuilt.join("\n"))) {
+            result.failed = { stage: "live-write", path: opts.file, pending: archive.length };
             return result;
+        }
         result.trimmed = archive.length;
         result.archived = archive.length;
         result.archivePath = archivePath;
