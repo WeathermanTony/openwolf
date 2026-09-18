@@ -252,6 +252,17 @@
   Rule: for anything whose value depends on being *invoked*, the regression test
   drives the shipped entry point as a subprocess and asserts the artifact on disk
   changed. Then neuter the fix and confirm those tests go red.
+- **2026-09-17 — "Returns a result object" is not the same as "reports failure".** Four
+  size-discipline primitives returned `{trimmed:0, archived:0}` on a failed archive
+  or live write -- byte-identical to a healthy "nothing to do" -- and all five call
+  sites wrapped them in a bare `catch {}` and ignored the return. A ledger that had
+  STOPPED rotating looked exactly like one that needed no rotation. Found by pulling
+  the thread on a single bare catch flagged in review, then grepping the siblings:
+  the same defect sat in 7 places per file across 4 synced copies. Rule: when a
+  function signals failure by return value, grep every call site before believing
+  the mechanism works, and make the no-op and failure results textually distinct.
+  Corollary: a health record written on the success path can erase an error recorded
+  earlier in the same run -- failures need their own key.
 
 
 ## Decision Log
