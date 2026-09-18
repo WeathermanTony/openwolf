@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, parseAnatomy, serializeAnatomy, extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath, getSizeDisciplineConfig, getQualityGateConfig, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex, getSessionFilePath, runHook } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, parseAnatomy, serializeAnatomy, extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath, getSizeDisciplineConfig, getQualityGateConfig, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex, getSessionFilePath, runHook, recordHookHealth} from "./shared.js";
 import { rollingWindowJson, acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 async function main() {
     ensureWolfDir();
@@ -192,7 +192,16 @@ async function main() {
             const memLock = acquireFileLock(memoryPath);
             if (memLock) {
                 try {
-                    appendMarkdown(memoryPath, `| ${timeShort()} | ${action} ${relFile} | ${outcome} | ~${writeTokens} |\n`);
+                    // appendMarkdown reports rather than throwing. An unwritable
+                    // memory.md silently dropped EVERY edit record here -- this
+                    // hook runs on every write, so the ledger could go empty
+                    // while the project looked healthy.
+                    if (!appendMarkdown(memoryPath, `| ${timeShort()} | ${action} ${relFile} | ${outcome} | ~${writeTokens} |\n`)) {
+                        try {
+                            recordHookHealth("post-write:memory-append", new Error(`append to ${memoryPath} failed`));
+                        }
+                        catch { }
+                    }
                 }
                 finally {
                     memLock();

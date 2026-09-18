@@ -28,8 +28,7 @@ import * as crypto from "node:crypto";
 import { makeCandidate } from "../engine.js";
 import { groupByOwner } from "../project-scope.js";
 export const RULE_ID = "conclusion.unreduced";
-// 3: fingerprint payload canonicalizes path-like evidence and type-tags target
-// hashes; the digest changes, so v2 dispositions no longer apply.
+// 3: see cerebrum.ts — fingerprint payload canonicalization/type-tagging bump.
 const SCHEMA_VERSION = 3;
 /** Read a reduction's frontmatter (capped) and pull every target-hash it declares. */
 export function reductionTargetHashes(qaFile) {
@@ -140,6 +139,14 @@ export function collect({ text = "", patterns = [], minHits = 2, minTextChars = 
             severity: "warn",
             confidence: 0.85,
             schemaVersion: SCHEMA_VERSION,
+            sourceModule: "nudges/rules/conclusion",
+            implementationUrl: import.meta.url,
+            decisionConfig: {
+                patterns: [...patterns].sort(),
+                min_hits: minHits,
+                min_text_chars: minTextChars,
+                min_assumptions: minAssumptions,
+            },
             title: "Conclusion without current reduction",
             reason: `Owner: ${owner.root}. Inspected: ${qaDir}. ${uncovered.length} edited file(s) lack a current reduction: ${shown.join(", ")}${more}. Add ≥${minAssumptions} assumptions + the riskiest falsifier's actual output before finalizing.`,
             action: { command: null, label: "Write a reduction" },
@@ -161,3 +168,4 @@ export function collect({ text = "", patterns = [], minHits = 2, minTextChars = 
     }
     return { candidates, matched, unattributed };
 }
+//# sourceMappingURL=conclusion.js.map

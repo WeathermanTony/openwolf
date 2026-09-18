@@ -24,7 +24,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { canonicalPath } from "./state.js";
-
 /**
  * Walk from a file toward the filesystem root, returning the nearest project
  * root that carries a WolfPack marker.
@@ -40,11 +39,13 @@ import { canonicalPath } from "./state.js";
  * Returns null when no marker is found — callers must handle that, not guess.
  */
 export function resolveOwningProject(filePath, { maxDepth = 64 } = {}) {
-    if (!filePath) return null;
+    if (!filePath)
+        return null;
     let dir;
     try {
         dir = path.dirname(path.resolve(filePath));
-    } catch {
+    }
+    catch {
         return null;
     }
     let best = null;
@@ -60,14 +61,15 @@ export function resolveOwningProject(filePath, { maxDepth = 64 } = {}) {
                 best = { root: canonicalPath(dir), wolfDir: canonicalPath(wolf), strong };
                 break;
             }
-        } catch { }
+        }
+        catch { }
         const parent = path.dirname(dir);
-        if (parent === dir) break;
+        if (parent === dir)
+            break;
         dir = parent;
     }
     return best;
 }
-
 /**
  * Group a list of file paths by owning project.
  *
@@ -99,7 +101,6 @@ export function groupByOwner(files, { resolver = resolveOwningProject } = {}) {
     }
     return { owners, unattributed };
 }
-
 /**
  * Does `filePath` live inside `root`? Used to decide whether a session write is
  * project-local without re-walking the tree.
@@ -109,3 +110,4 @@ export function isUnderRoot(filePath, root) {
     const r = canonicalPath(root);
     return f === r || f.startsWith(r.endsWith("/") ? r : r + "/");
 }
+//# sourceMappingURL=project-scope.js.map

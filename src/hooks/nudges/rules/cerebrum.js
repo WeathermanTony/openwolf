@@ -25,8 +25,9 @@ import * as crypto from "node:crypto";
 import { makeCandidate } from "../engine.js";
 import { groupByOwner } from "../project-scope.js";
 export const RULE_ID = "cerebrum.stale";
-// 3: fingerprint payload canonicalizes path-like evidence and type-tags target
-// hashes; the digest changes, so v2 dispositions no longer apply.
+// 3: fingerprint payload now canonicalizes path-like evidence and type-tags
+// target hashes. The digest changes, so v2 dispositions no longer apply — the
+// bump makes that invalidation explicit instead of a silent mass re-arm.
 const SCHEMA_VERSION = 3;
 function hashFile(p) {
     try {
@@ -77,6 +78,10 @@ export function collect({ writes = [], baselines = {}, minWrites = 3, staleHours
             severity: "info",
             confidence: baseline ? 0.9 : 0.7, // hash-backed evidence is stronger
             schemaVersion: SCHEMA_VERSION,
+            sourceModule: "nudges/rules/cerebrum",
+            implementationUrl: import.meta.url,
+            decisionConfig: { min_writes: minWrites, stale_hours: staleHours },
+            evidenceTimestamps: [new Date(stat.mtimeMs).toISOString()],
             title: "Cerebrum not updated",
             reason: `${path.basename(owner.root)}: ${rel} unchanged for ${Math.floor(hoursSince)}h across ${owner.files.length} write(s) — record anything learned.`,
             action: { command: null, label: "Update cerebrum.md" },
@@ -95,3 +100,4 @@ export function collect({ writes = [], baselines = {}, minWrites = 3, staleHours
     }
     return { candidates, unattributed };
 }
+//# sourceMappingURL=cerebrum.js.map

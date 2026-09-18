@@ -667,3 +667,33 @@ test('a sibling ledger sweep failure is surfaced too', { skip: process.getuid?.(
   assert.ok(health.hooks?.['stop:memory']?.last_error,
     'the sibling failure must persist under its own health key');
 });
+
+// I claimed the remaining bare catch{} blocks were harmless because they guard
+// reads. That was wrong: 8 wrapped writes. Four (mkdirSync) are benign since the
+// following write fails visibly anyway, and two guard the lifecycle log itself
+// (reporting its failure through itself would recurse). Two silently discarded
+// state, and this covers the one that loses the PROJECT'S ACTIVITY LEDGER.
+test('an unwritable memory.md is reported, not silently dropped', { skip: process.getuid?.() === 0 && 'root ignores chmod' }, () => {
+  const { dir, wolf } = hookProject(98304, [`- [2026-09-16] Recent decision.`]);
+  const memoryPath = path.join(wolf, 'memory.md');
+  fs.writeFileSync(memoryPath, '# Memory\n\n');
+  fs.chmodSync(memoryPath, 0o400); // read-only: the append must fail
+
+  let out;
+  try {
+    out = runStopHook(dir, wolf, 'sess-memro', {
+      files_written: [{ file: path.join(dir, 'a.js'), action: 'edit', tokens: 10, at: '2026-09-17T10:00:00.000Z' }],
+    });
+  } finally {
+    fs.chmodSync(memoryPath, 0o600);
+  }
+
+  // Injection actually fired: nothing was appended.
+  assert.equal(fs.readFileSync(memoryPath, 'utf-8'), '# Memory\n\n',
+    'precondition: the append must have failed, else this test is vacuous');
+  assert.match(out, /could not append the session summary/,
+    'a lost session record must be reported to the operator');
+  const health = JSON.parse(fs.readFileSync(path.join(wolf, 'hooks', '_health.json'), 'utf-8'));
+  assert.ok(health.hooks?.['stop:memory-append']?.last_error,
+    'the failure must persist under its own health key');
+});

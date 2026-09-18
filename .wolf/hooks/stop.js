@@ -4,7 +4,7 @@ import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, readRecentUserTurns, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex, getSessionFilePath, recordHookHealth, mutateJSON } from "./shared.js";
-import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
+import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, rotateDatedBulletsInSection, acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 import { evaluate as evaluateNudges, getNudgeConfig } from "./nudges/engine.js";
 import * as cerebrumRule from "./nudges/rules/cerebrum.js";
 import * as conclusionRule from "./nudges/rules/conclusion.js";
@@ -729,6 +729,9 @@ async function main() {
             }
         }
         catch { }
+        // Size bookkeeping is a property of the FILE, not of this session's
+        // activity — run it even on a no-op Stop.
+        maybeRotateCerebrum(wolfDir, sessionFile);
         exitWithStopHookResult(nudgeFired);
         return;
     }
@@ -818,12 +821,12 @@ async function main() {
     try {
         const cfg = getSizeDisciplineConfig();
         if (cfg.enabled) {
-            cappedSessionsJson({
+            reportSweepFailure("token-ledger", cappedSessionsJson({
                 file: ledgerPath,
                 arrayKey: "sessions",
                 maxInline: cfg.token_ledger.max_inline_sessions,
                 getId: (e) => e.id,
-            });
+            }));
         }
     }
     catch { }
@@ -839,7 +842,19 @@ async function main() {
             const releaseMem = acquireFileLock(memoryPath);
             if (releaseMem) {
                 try {
-                    appendMarkdown(memoryPath, `| ${timeShort()} | Session end: ${writeCount} writes across ${uniqueFiles.size} files (${fileList}) | ${readCount} reads | ~${inputTokens + outputTokens} tok |\n`);
+                    // appendMarkdown never throws; it REPORTS. Checking the
+                    // return is the only way to notice a read-only ledger.
+                    if (!appendMarkdown(memoryPath, `| ${timeShort()} | Session end: ${writeCount} writes across ${uniqueFiles.size} files (${fileList}) | ${readCount} reads | ~${inputTokens + outputTokens} tok |\n`))
+                        throw new Error(`append to ${memoryPath} failed`);
+                }
+                catch (error) {
+                    // This is the project's activity ledger. Propagating to the
+                    // outer bare catch dropped session records with no signal.
+                    try {
+                        recordHookHealth("stop:memory-append", error);
+                    }
+                    catch { }
+                    emitStopHookFeedback(`⚠️ Wolfpack: could not append the session summary to .wolf/memory.md (${String(error instanceof Error ? error.message : error).slice(0, 120)}); this session's activity is unrecorded.\n`);
                 }
                 finally {
                     releaseMem();
@@ -851,7 +866,7 @@ async function main() {
             try {
                 const cfg = getSizeDisciplineConfig();
                 if (cfg.enabled) {
-                    monthlyRotateMarkdown({
+                    reportSweepFailure("memory", monthlyRotateMarkdown({
                         file: memoryPath,
                         retentionDays: cfg.memory.retention_days,
                         sectionHeaderPattern: /^## Session: /,
@@ -862,13 +877,18 @@ async function main() {
                                 return undefined;
                             return m[2] ? `${m[1]}T${m[2]}:00Z` : `${m[1]}T00:00:00Z`;
                         },
-                    });
+                    }));
                 }
             }
             catch { }
+
         }
         catch { }
     }
+    // Rotation runs on every Stop that reaches here, including read-only
+    // sessions (reads > 0, writes === 0), which the old placement inside
+    // `if (writeCount > 0)` skipped entirely.
+    maybeRotateCerebrum(wolfDir, sessionFile);
     // Git/version discipline: after writes, nudge for a final git/version status
     // block and version-impact statement when user-visible files changed.
     try {
@@ -1715,13 +1735,13 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     try {
         const sizeCfg = getSizeDisciplineConfig();
         if (sizeCfg.enabled) {
-            rollingWindowJson({
+            reportSweepFailure("reviewlog", rollingWindowJson({
                 file: reviewLogPath,
                 arrayKey: "reviews",
                 getDate: (e) => e.ended,
                 getId: (e) => e.id,
                 retentionDays: sizeCfg.reviewlog.retention_days,
-            });
+            }));
         }
     }
     catch { }
@@ -1942,9 +1962,19 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
                     at: new Date().toISOString(),
                     files: multiEditDisplay,
                 };
-                atomicWriteJson(sessionFile, onDisk);
+                if (!atomicWriteJson(sessionFile, onDisk)) {
+                    // Losing this silently re-raises a nudge the user already
+                    // dismissed, discarding their decision with no signal.
+                    emitStopHookFeedback("⚠️ Wolfpack: could not persist your buglog false-positive acknowledgement; this nudge may reappear next Stop.\n");
+                }
             }
-            catch { }
+            catch (error) {
+                try {
+                    recordHookHealth("stop:buglog-ack", error);
+                }
+                catch { }
+                emitStopHookFeedback("⚠️ Wolfpack: could not persist your buglog false-positive acknowledgement; this nudge may reappear next Stop.\n");
+            }
             finally {
                 release();
             }
@@ -1959,6 +1989,166 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
     }
     emitStopHookFeedback(`⚠️ Wolfpack: files edited 3+ times (${multiEditDisplay.join(", ")}) but buglog.json not updated — log any bugs fixed.\n`);
     return true;
+}
+/**
+ * Bound cerebrum.md's Decision Log. Size is the primary trigger and age a
+ * secondary sweep: age measures how long an entry has existed, not what it
+ * costs to read, so a busy month can blow the context budget with entries too
+ * new to expire while a quiet project rotates on the calendar for no benefit.
+ * Over budget, the oldest dated entries are archived until the file fits.
+ *
+ * Section-granular rotation is wrong here: User Preferences and Do-Not-Repeat
+ * must never rotate, so only dated Decision Log bullets are eligible. Undated
+ * bullets are always kept.
+ *
+ * DELIBERATELY NOT GATED ON SESSION ACTIVITY. This previously sat inside
+ * `if (writeCount > 0)`, below the zero-activity early return, so a project
+ * could be far over budget and never rotate — measured on a real project that
+ * stayed 108048 bytes over for an entire session because its counters read
+ * files_read:0, files_written:0. Both a zero-activity Stop AND a read-only Stop
+ * (reads > 0, writes === 0) skipped it. A file's size is a property of the
+ * file, not of what this session happened to touch, and the consolidation
+ * diagnosis is exactly what a read-heavy session needs to see. The primitive is
+ * a cheap stat + early return when under budget, and takes its own file lock.
+ */
+/**
+ * Report a size-discipline sweep that FAILED MID-WRITE.
+ *
+ * These primitives return {trimmed:0, archived:0} on a failed archive or live
+ * write -- byte-identical to a healthy "nothing to do". Every sibling call site
+ * wrapped them in a bare `catch {}` and ignored the result, so a ledger that
+ * stopped rotating looked exactly like a ledger that needed no rotation. That
+ * is the same silent-no-op class as the cerebrum gate bug.
+ *
+ * Recorded under a per-ledger health key because exitWithStopHookResult()
+ * records an unconditional "stop" SUCCESS on the way out, which would reset
+ * consecutive_failures and delete last_error in the same run.
+ */
+function reportSweepFailure(label, res) {
+    if (!res || !res.failed)
+        return false;
+    try {
+        recordHookHealth(`stop:${label}`, new Error(`${res.failed.stage} failed at ${res.failed.path}`));
+    }
+    catch { }
+    try {
+        emitStopHookFeedback(`⚠️ Wolfpack: ${label} rotation could not complete (${res.failed.stage} at ${res.failed.path}); ${res.failed.pending} entries were not archived and this ledger is NOT being size-bounded. Check permissions and free space.\n`);
+    }
+    catch { }
+    return true;
+}
+function maybeRotateCerebrum(wolfDir, sessionFile) {
+    try {
+        const cfg = getSizeDisciplineConfig();
+        if (!cfg.enabled)
+            return;
+        const cerebrumPath = path.join(wolfDir, "cerebrum.md");
+        const rotation = rotateDatedBulletsInSection({
+            file: cerebrumPath,
+            sectionHeaderPattern: /^## Decision Log\s*$/,
+            retentionDays: cfg.cerebrum.retention_days,
+            maxBytes: cfg.cerebrum.max_bytes,
+            archiveDir: path.join(wolfDir, "archive"),
+            // Real fleet data uses at least five spellings:
+            // "- [D] ...", "- D: ...", "- **D — ...", "- **[D]** ...",
+            // "- **(D)** ...". Measured across 97 projects, a regex handling
+            // only the first two parsed 41% of entries and silently treated the
+            // other 46% as undated — which meant never rotating them. Leading
+            // emphasis is therefore skipped, but the date must still START the
+            // bullet: a mid-sentence date must not make an entry evictable.
+            getBulletDate: (line) => {
+                const m = line.match(/^[-*]\s+(?:[*_`]{1,3}\s*)?\[?\(?(\d{4}-\d{2}-\d{2})\)?\]?/);
+                return m ? `${m[1]}T00:00:00Z` : undefined;
+            },
+        });
+        // A configured-but-unusable budget must not look like a healthy project.
+        // Measured on the fleet: 96 of 97 projects shipped a stale shared.js whose
+        // cerebrum defaults omit max_bytes, so the size bound resolved to undefined
+        // and silently no-opped — the exact silent failure this fix exists to end.
+        if (rotation.invalidBudget) {
+            emitStopHookFeedback(`⚠️ Wolfpack: openwolf.size_discipline.cerebrum.max_bytes is set but unusable (${JSON.stringify(rotation.invalidBudget.configured)}). The cerebrum size bound is NOT in effect. Set a positive byte count, or run \`openwolf update\` if this project's .wolf/hooks/shared.js predates the size bound.\n`);
+        }
+        // A write that failed mid-rotation reports trimmed:0 -- indistinguishable
+        // from a healthy no-op unless we check .failed explicitly.
+        if (rotation.failed) {
+            try {
+                recordHookHealth("stop:cerebrum-rotation", new Error(`${rotation.failed.stage} failed at ${rotation.failed.path}`));
+            }
+            catch { }
+            emitStopHookFeedback(`⚠️ Wolfpack: cerebrum rotation could not complete (${rotation.failed.stage} at ${rotation.failed.path}); ${rotation.failed.pending} entries were not archived and .wolf/cerebrum.md is NOT being size-bounded. Check permissions and free space.\n`);
+        }
+        if (rotation.overBudget)
+            nudgeCerebrumConsolidation(cerebrumPath, rotation.overBudget, sessionFile);
+    }
+    catch (error) {
+        // NOT a bare catch. Review (GPT-5.5) flagged that swallowing everything
+        // here makes a throwing config read or a failed archive write invisible:
+        // the Stop looks healthy while cerebrum.md grows forever. That is the
+        // same silent-no-op class as the gate bug this function exists to fix.
+        //
+        // recordHookHealth alone is NOT sufficient: exitWithStopHookResult()
+        // records an unconditional "stop" SUCCESS on the way out, which resets
+        // consecutive_failures and deletes last_error in the same run. So record
+        // under a DISTINCT key that the success path never touches, and tell the
+        // operator directly.
+        try {
+            recordHookHealth("stop:cerebrum-rotation", error);
+        }
+        catch { }
+        try {
+            const msg = String(error instanceof Error ? error.message : error).slice(0, 200);
+            emitStopHookFeedback(`⚠️ Wolfpack: cerebrum rotation failed (${msg}). .wolf/cerebrum.md is NOT being size-bounded. See .wolf/hooks/_health.json → "stop:cerebrum-rotation".\n`);
+        }
+        catch { }
+    }
+}
+/**
+ * Surface a cerebrum.md that is permanently over budget.
+ *
+ * Rotation only evicts dated `## Decision Log` bullets, so the governing
+ * sections form a floor. When that floor alone exceeds the budget, the sweep
+ * correctly declines — but a silent no-op is indistinguishable from a broken
+ * mechanism, and the next person to notice a bloated ledger files a bug about
+ * rotation not working. Measured across 97 projects: 12 of the 14 over-budget
+ * files are in exactly this state, with the weight in Key Learnings (31.5% of
+ * fleet cerebrum bytes) and Do-Not-Repeat (23.4%) rather than Decision Log
+ * (21.1%).
+ *
+ * Names the heaviest non-Decision-Log section, because "your file is large" is
+ * not actionable and "Key Learnings is 94 KB of your 130 KB" is.
+ */
+function nudgeCerebrumConsolidation(cerebrumPath, overBudget, sessionFile) {
+    try {
+        if (!tryConsumeNudgeSlot(sessionFile, "cerebrum_consolidation_warnings", 1))
+            return false;
+        let heaviest = null;
+        try {
+            const lines = fs.readFileSync(cerebrumPath, "utf-8").split("\n");
+            const sizes = {};
+            let cur = null;
+            for (const line of lines) {
+                if (/^##\s/.test(line))
+                    cur = line.trim();
+                if (cur)
+                    sizes[cur] = (sizes[cur] ?? 0) + line.length + 1;
+            }
+            const ranked = Object.entries(sizes)
+                .filter(([h]) => !/^## Decision Log\s*$/.test(h))
+                .sort((a, b) => b[1] - a[1]);
+            if (ranked.length > 0)
+                heaviest = { header: ranked[0][0], bytes: ranked[0][1] };
+        }
+        catch { }
+        const kb = (n) => `${Math.round(n / 1024)} KB`;
+        const where = heaviest
+            ? ` Heaviest section: ${heaviest.header} (${kb(heaviest.bytes)}).`
+            : "";
+        emitStopHookFeedback(`💡 Wolfpack: .wolf/cerebrum.md is ${kb(overBudget.bytes)} against a ${kb(overBudget.maxBytes)} budget, but only ${kb(overBudget.eligibleBytes)} sits in ## Decision Log — rotation cannot reach the target and is declining rather than stripping the log bare.${where} This needs consolidation (merge repeated lessons, link out to reductions/commits), not rotation. Raise openwolf.size_discipline.cerebrum.max_bytes if the size is intentional.\n`);
+        return true;
+    }
+    catch {
+        return false;
+    }
 }
 /**
  * Check if cerebrum.md was updated recently. If it hasn't been updated in
@@ -2254,14 +2444,14 @@ function maybeNudgeQualityGate(wolfDir, session, sessionEntry) {
     try {
         const sizeCfg = getSizeDisciplineConfig();
         if (sizeCfg.enabled) {
-            rollingWindowJson({
+            reportSweepFailure("gate-log", rollingWindowJson({
                 file: gateLogPath,
                 arrayKey: "entries",
                 getDate: (e) => e.ended,
                 getId: (e) => e.id,
                 retentionDays: cfg.retention_days,
                 archiveDir: path.join(wolfDir, "archive"),
-            });
+            }));
         }
     }
     catch { }
@@ -2550,14 +2740,14 @@ function maybeNudgeClaimCalibration(wolfDir, session, sessionEntry, transcriptPa
     if (alreadyNudged || sessionCapReached)
         return false;
     try {
-        rollingWindowJson({
+        reportSweepFailure("gate-log", rollingWindowJson({
             file: gateLogPath,
             arrayKey: "entries",
             getDate: (e) => e.ended,
             getId: (e) => e.id,
             retentionDays: cfg.retention_days,
             archiveDir: path.join(wolfDir, "archive"),
-        });
+        }));
     }
     catch { }
     emitStopHookFeedback(claimCalibrationNudgeMessage(nextId, categories));

@@ -13,6 +13,8 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
 import {
     NUDGE_STATES,
     SUPPRESS_REASONS,
@@ -42,6 +44,40 @@ export const NUDGE_DEFAULTS = Object.freeze({
 });
 
 const SEVERITY_RANK = { block: 3, warn: 2, info: 1 };
+const PROVENANCE_VERSION = 1;
+
+function stableJson(value) {
+    if (value === null || typeof value !== "object") {
+        const encoded = JSON.stringify(value);
+        return encoded === undefined ? "null" : encoded;
+    }
+    if (Array.isArray(value)) return "[" + value.map(stableJson).join(",") + "]";
+    return "{" + Object.keys(value).sort()
+        .filter(k => value[k] !== undefined)
+        .map(k => JSON.stringify(k) + ":" + stableJson(value[k])).join(",") + "}";
+}
+
+export function decisionConfigDigest(config = {}) {
+    return crypto.createHash("sha256").update(stableJson(config)).digest("hex");
+}
+
+export function implementationHash(moduleUrl) {
+    try {
+        const file = moduleUrl ? fileURLToPath(moduleUrl) : fileURLToPath(import.meta.url);
+        return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+    } catch {
+        return "unreadable";
+    }
+}
+
+export function boundedEvidenceWindow(timestamps = []) {
+    const valid = [...new Set((timestamps || [])
+        .map(t => Date.parse(String(t)))
+        .filter(Number.isFinite))]
+        .sort((a, b) => a - b)
+        .map(t => new Date(t).toISOString());
+    return valid.length ? { from: valid[0], to: valid[valid.length - 1] } : null;
+}
 
 export function getNudgeConfig(cfg) {
     const user = (cfg && cfg.openwolf && cfg.openwolf.nudges) || {};
@@ -80,13 +116,26 @@ export function makeCandidate({
     targetHashes = {},
     eventSequence = null,
     schemaVersion = 1,
+    sourceModule = null,
+    implementationUrl = null,
+    decisionConfig = {},
+    evidenceTimestamps = [],
     lineageId = null,
     blocking = false,
     detail = null,
     clock = null,
 }) {
+    const configDigest = decisionConfigDigest(decisionConfig);
+    const provenance = {
+        version: PROVENANCE_VERSION,
+        rule_schema_version: schemaVersion,
+        source_module: sourceModule || String(ruleId),
+        config_digest: configDigest,
+        implementation_hash: implementationHash(implementationUrl),
+        evidence_window: boundedEvidenceWindow(evidenceTimestamps),
+    };
     const fingerprint = computeFingerprint({
-        ruleId, ownerRoot, targetHashes, eventSequence, evidence, schemaVersion,
+        ruleId, ownerRoot, targetHashes, eventSequence, evidence, schemaVersion, configDigest,
     });
     return {
         rule_id: ruleId,
@@ -101,6 +150,7 @@ export function makeCandidate({
         action: { command: action.command || null, label: action.label || "" },
         evidence,
         detail,
+        provenance,
         blocking,
         created_at: new Date(clock && clock.now ? clock.now() : Date.now()).toISOString(),
     };
@@ -184,6 +234,15 @@ export function evaluate({
     const cfg = nudgeCfg || NUDGE_DEFAULTS;
     const logFile = diagPath(wolfDir, cfg);
     const diag = (event) => logDiagnostic(wolfDir, { ...event, _logPath: logFile });
+    const candidateDiag = (c, { full = false } = {}) => ({
+        rule_id: c.rule_id,
+        nudge_id: c.nudge_id,
+        fingerprint: c.fingerprint,
+        provenance: full ? (c.provenance || null) : (c.provenance ? {
+            rule_schema_version: c.provenance.rule_schema_version,
+            config_digest: c.provenance.config_digest,
+        } : null),
+    });
 
     const result = { messages: [], emitted: [], suppressed: [], queued: [], degraded: null };
     if (!cfg.enabled) return result;
@@ -203,19 +262,26 @@ export function evaluate({
     const eligible = [];
 
     for (const c of candidates || []) {
-        diag({ event: "candidate_created", rule_id: c.rule_id, nudge_id: c.nudge_id, fingerprint: c.fingerprint, owner_root: c.owner_root, severity: c.severity });
+        // Persist the full provenance envelope once per durable fingerprint. Later
+        // repeats keep only the join keys, which preserves attribution without
+        // making diagnostics grow by the full envelope on every Stop.
+        const hasDurableRecord = Boolean(
+            (state.emissions && state.emissions[c.fingerprint])
+            || (state.dispositions && state.dispositions[c.fingerprint])
+        );
+        diag({ event: "candidate_created", ...candidateDiag(c, { full: !hasDurableRecord }), owner_root: c.owner_root, severity: c.severity });
 
         // Unattributed low-severity candidates are dropped per policy.
         if (!c.owner_root && cfg.suppress_unattributed_low_severity && c.severity === "info") {
             result.suppressed.push({ candidate: c, reason: SUPPRESS_REASONS.UNKNOWN_OWNER });
-            diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: SUPPRESS_REASONS.UNKNOWN_OWNER });
+            diag({ event: "candidate_suppressed", ...candidateDiag(c), reason: SUPPRESS_REASONS.UNKNOWN_OWNER });
             continue;
         }
 
         const disp = dispositionSuppression(state, c.fingerprint, { clock, sessionId });
         if (disp) {
             result.suppressed.push({ candidate: c, reason: disp });
-            diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: disp });
+            diag({ event: "candidate_suppressed", ...candidateDiag(c), reason: disp });
             continue;
         }
 
@@ -223,7 +289,7 @@ export function evaluate({
         const emission = state.emissions ? state.emissions[c.fingerprint] : null;
         if (emission) {
             result.suppressed.push({ candidate: c, reason: SUPPRESS_REASONS.ALREADY_EMITTED });
-            diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: SUPPRESS_REASONS.ALREADY_EMITTED });
+            diag({ event: "candidate_suppressed", ...candidateDiag(c), reason: SUPPRESS_REASONS.ALREADY_EMITTED });
             continue;
         }
 
@@ -237,7 +303,7 @@ export function evaluate({
             ).length;
             if (priorForRule >= cfg.max_emissions_per_rule_per_session) {
                 result.queued.push({ candidate: c, reason: SUPPRESS_REASONS.OVER_BUDGET });
-                diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: SUPPRESS_REASONS.OVER_BUDGET });
+                diag({ event: "candidate_suppressed", ...candidateDiag(c), reason: SUPPRESS_REASONS.OVER_BUDGET });
                 continue;
             }
         }
@@ -251,7 +317,7 @@ export function evaluate({
     for (const c of ranked) {
         if (result.emitted.length >= budget) {
             result.queued.push({ candidate: c, reason: SUPPRESS_REASONS.OVER_BUDGET });
-            diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: SUPPRESS_REASONS.OVER_BUDGET });
+            diag({ event: "candidate_suppressed", ...candidateDiag(c), reason: SUPPRESS_REASONS.OVER_BUDGET });
             continue;
         }
 
@@ -273,10 +339,10 @@ export function evaluate({
                 // the user's turn hostage.
                 if (!result.degraded) {
                     result.degraded = claim.error || claim.reason;
-                    diag({ event: "state_error", nudge_id: c.nudge_id, error: result.degraded });
+                    diag({ event: "state_error", ...candidateDiag(c), error: result.degraded });
                 }
             } else {
-                diag({ event: "candidate_suppressed", nudge_id: c.nudge_id, reason: claim.reason });
+                diag({ event: "candidate_suppressed", ...candidateDiag(c), reason: claim.reason });
             }
             // A ceiling refusal is deferred work, not a disposition: keep it in
             // `queued` so it stays listable rather than looking dispositioned.
@@ -298,6 +364,7 @@ export function evaluate({
             ruleId: c.rule_id,
             ownerRoot: c.owner_root,
             detail: c.detail,
+            provenance: c.provenance,
             clock,
         });
         if (!marked.ok && marked.degraded && !result.degraded) {
@@ -308,7 +375,7 @@ export function evaluate({
             const escalated = markLineageEscalated(wolfDir, c.lineage_id, { clock });
             if (!escalated && !result.degraded) result.degraded = "review escalation state not persisted";
         }
-        diag({ event: "candidate_emitted", nudge_id: c.nudge_id, rule_id: c.rule_id, owner_root: c.owner_root, chars: message.length });
+        diag({ event: "candidate_emitted", ...candidateDiag(c), owner_root: c.owner_root, chars: message.length });
     }
 
     if (result.degraded) {

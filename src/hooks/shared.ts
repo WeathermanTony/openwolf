@@ -162,15 +162,21 @@ export function readMarkdown(filePath) {
     }
 }
 export function appendMarkdown(filePath, line) {
-    // Silent no-op on any error per the hook contract — callers should not
-    // need defensive try/catch around this helper.
+    // Never throws, per the hook contract: callers should not need defensive
+    // try/catch. But it now RETURNS whether the append landed. Returning
+    // undefined on failure made a read-only ledger indistinguishable from a
+    // successful append, so callers that care (e.g. the memory.md session
+    // summary) silently lost records with no signal.
     try {
         const dir = path.dirname(filePath);
         if (!fs.existsSync(dir))
             fs.mkdirSync(dir, { recursive: true });
         fs.appendFileSync(filePath, line, "utf-8");
+        return true;
     }
-    catch { }
+    catch {
+        return false;
+    }
 }
 export function parseAnatomy(content) {
     const sections = new Map();

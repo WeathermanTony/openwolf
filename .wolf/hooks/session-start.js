@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getWolfDir, ensureWolfDir, readJSON, mutateJSON, appendMarkdown, timestamp, timeShort, readStdin, getSessionFilePath, runHook } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, mutateJSON, appendMarkdown, timestamp, timeShort, readStdin, getSessionFilePath, runHook, recordHookHealth} from "./shared.js";
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
@@ -96,8 +96,15 @@ async function main() {
     // Append session header to memory.md only for a genuinely new session.
     const memoryPath = path.join(wolfDir, "memory.md");
     const header = `\n## Session: ${now.toISOString().slice(0, 10)} ${timeShort()}\n\n| Time | Action | File(s) | Outcome | ~Tokens |\n|------|--------|---------|---------|--------|\n`;
-    if (newSession)
-        appendMarkdown(memoryPath, header);
+    // Worst case of the three memory.md appends: if the HEADER is lost, every
+    // later row lands under no session header, corrupting the structure that
+    // monthlyRotateMarkdown parses to decide what to archive.
+    if (newSession && !appendMarkdown(memoryPath, header)) {
+        try {
+            recordHookHealth("session-start:memory-header", new Error(`append to ${memoryPath} failed`));
+        }
+        catch { }
+    }
     // Check cerebrum freshness — remind Claude to learn
     try {
         const cerebrumPath = path.join(wolfDir, "cerebrum.md");

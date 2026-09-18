@@ -78,6 +78,10 @@ export function collect({ writes = [], baselines = {}, minWrites = 3, staleHours
             severity: "info",
             confidence: baseline ? 0.9 : 0.7, // hash-backed evidence is stronger
             schemaVersion: SCHEMA_VERSION,
+            sourceModule: "nudges/rules/cerebrum",
+            implementationUrl: import.meta.url,
+            decisionConfig: { min_writes: minWrites, stale_hours: staleHours },
+            evidenceTimestamps: [new Date(stat.mtimeMs).toISOString()],
             title: "Cerebrum not updated",
             reason: `${path.basename(owner.root)}: ${rel} unchanged for ${Math.floor(hoursSince)}h across ${owner.files.length} write(s) — record anything learned.`,
             action: { command: null, label: "Update cerebrum.md" },

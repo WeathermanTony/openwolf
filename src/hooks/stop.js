@@ -842,7 +842,19 @@ async function main() {
             const releaseMem = acquireFileLock(memoryPath);
             if (releaseMem) {
                 try {
-                    appendMarkdown(memoryPath, `| ${timeShort()} | Session end: ${writeCount} writes across ${uniqueFiles.size} files (${fileList}) | ${readCount} reads | ~${inputTokens + outputTokens} tok |\n`);
+                    // appendMarkdown never throws; it REPORTS. Checking the
+                    // return is the only way to notice a read-only ledger.
+                    if (!appendMarkdown(memoryPath, `| ${timeShort()} | Session end: ${writeCount} writes across ${uniqueFiles.size} files (${fileList}) | ${readCount} reads | ~${inputTokens + outputTokens} tok |\n`))
+                        throw new Error(`append to ${memoryPath} failed`);
+                }
+                catch (error) {
+                    // This is the project's activity ledger. Propagating to the
+                    // outer bare catch dropped session records with no signal.
+                    try {
+                        recordHookHealth("stop:memory-append", error);
+                    }
+                    catch { }
+                    emitStopHookFeedback(`⚠️ Wolfpack: could not append the session summary to .wolf/memory.md (${String(error instanceof Error ? error.message : error).slice(0, 120)}); this session's activity is unrecorded.\n`);
                 }
                 finally {
                     releaseMem();
@@ -1950,9 +1962,19 @@ function checkForMissingBugLogs(wolfDir, session, sessionFile, transcriptPath) {
                     at: new Date().toISOString(),
                     files: multiEditDisplay,
                 };
-                atomicWriteJson(sessionFile, onDisk);
+                if (!atomicWriteJson(sessionFile, onDisk)) {
+                    // Losing this silently re-raises a nudge the user already
+                    // dismissed, discarding their decision with no signal.
+                    emitStopHookFeedback("⚠️ Wolfpack: could not persist your buglog false-positive acknowledgement; this nudge may reappear next Stop.\n");
+                }
             }
-            catch { }
+            catch (error) {
+                try {
+                    recordHookHealth("stop:buglog-ack", error);
+                }
+                catch { }
+                emitStopHookFeedback("⚠️ Wolfpack: could not persist your buglog false-positive acknowledgement; this nudge may reappear next Stop.\n");
+            }
             finally {
                 release();
             }

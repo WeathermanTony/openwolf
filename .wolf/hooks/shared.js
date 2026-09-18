@@ -162,15 +162,21 @@ export function readMarkdown(filePath) {
     }
 }
 export function appendMarkdown(filePath, line) {
-    // Silent no-op on any error per the hook contract — callers should not
-    // need defensive try/catch around this helper.
+    // Never throws, per the hook contract: callers should not need defensive
+    // try/catch. But it now RETURNS whether the append landed. Returning
+    // undefined on failure made a read-only ledger indistinguishable from a
+    // successful append, so callers that care (e.g. the memory.md session
+    // summary) silently lost records with no signal.
     try {
         const dir = path.dirname(filePath);
         if (!fs.existsSync(dir))
             fs.mkdirSync(dir, { recursive: true });
         fs.appendFileSync(filePath, line, "utf-8");
+        return true;
     }
-    catch { }
+    catch {
+        return false;
+    }
 }
 export function parseAnatomy(content) {
     const sections = new Map();
@@ -729,7 +735,14 @@ const SIZE_DISCIPLINE_DEFAULTS = {
     reviewlog: { retention_days: 30 },
     memory: { retention_days: 30 },
     token_ledger: { max_inline_sessions: 60 },
-    cerebrum: { retention_days: 180 },
+    // Size is the primary bound; age is a secondary sweep. 96 KB is roughly
+    // 24k tokens. Deliberately not tighter: only the Decision Log is eligible
+    // for eviction, so the governing sections form a floor a budget cannot cross
+    // — measured at ~67 KB on this repo. A budget below that floor would strip
+    // the Decision Log bare every run and still miss, which is why the primitive
+    // refuses a sweep it cannot complete. Tighten per-project once a project's
+    // own floor is known.
+    cerebrum: { retention_days: 180, max_bytes: 98304 },
     daemon_log: { max_bytes: 5_242_880, keep: 3 },
 };
 /**
@@ -1300,7 +1313,10 @@ export function getSizeDisciplineConfig() {
         reviewlog: { retention_days: cfg.reviewlog?.retention_days ?? SIZE_DISCIPLINE_DEFAULTS.reviewlog.retention_days },
         memory: { retention_days: cfg.memory?.retention_days ?? SIZE_DISCIPLINE_DEFAULTS.memory.retention_days },
         token_ledger: { max_inline_sessions: cfg.token_ledger?.max_inline_sessions ?? SIZE_DISCIPLINE_DEFAULTS.token_ledger.max_inline_sessions },
-        cerebrum: { retention_days: cfg.cerebrum?.retention_days ?? SIZE_DISCIPLINE_DEFAULTS.cerebrum.retention_days },
+        cerebrum: {
+            retention_days: cfg.cerebrum?.retention_days ?? SIZE_DISCIPLINE_DEFAULTS.cerebrum.retention_days,
+            max_bytes: cfg.cerebrum?.max_bytes ?? SIZE_DISCIPLINE_DEFAULTS.cerebrum.max_bytes,
+        },
         daemon_log: {
             max_bytes: cfg.daemon_log?.max_bytes ?? SIZE_DISCIPLINE_DEFAULTS.daemon_log.max_bytes,
             keep: cfg.daemon_log?.keep ?? SIZE_DISCIPLINE_DEFAULTS.daemon_log.keep,
