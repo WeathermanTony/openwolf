@@ -720,10 +720,13 @@ export function readStdin() {
     return new Promise((resolve) => {
         const chunks = [];
         process.stdin.on("data", (chunk) => chunks.push(chunk));
-        process.stdin.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+        process.stdin.on("end", () => {
+            clearTimeout(timer);
+            resolve(Buffer.concat(chunks).toString("utf-8"));
+        });
         // If no stdin data after 4s, resolve with whatever we have so far.
         // On Windows, stdin delivery from Claude Code hooks can be slow.
-        setTimeout(() => resolve(chunks.length ? Buffer.concat(chunks).toString("utf-8") : "{}"), 4000);
+        const timer = setTimeout(() => resolve(chunks.length ? Buffer.concat(chunks).toString("utf-8") : "{}"), 4000);
     });
 }
 export function normalizePath(p) {

@@ -22,10 +22,7 @@ async function main() {
     const newStr = input.tool_input?.new_string ?? "";
     const filePath = input.tool_input?.file_path ?? input.tool_input?.path ?? "";
     const allContent = [content, oldStr, newStr].join("\n");
-    if (!allContent.trim()) {
-        return;
-        return;
-    }
+    if (!allContent.trim()) return;
     // 1. Cerebrum Do-Not-Repeat check
     checkCerebrum(wolfDir, allContent);
     // 2. Bug log: search for similar past bugs when editing code
@@ -140,11 +137,13 @@ function checkBugLog(wolfDir, filePath, oldStr, newStr, content) {
     if (bugLog.bugs.length === 0)
         return;
     const basename = path.basename(filePath);
+    const projectRoot = path.dirname(wolfDir);
+    const targetPath = path.resolve(projectRoot, filePath);
     // ONLY surface bugs that match the SAME file being edited.
     // Cross-file matching is too noisy and risks misdirecting Claude.
     const fileMatches = bugLog.bugs.filter(b => {
-        const bugBasename = path.basename(b.file);
-        return bugBasename === basename;
+        return typeof b.file === "string" && b.file.trim().length > 0
+            && path.resolve(projectRoot, b.file) === targetPath;
     });
     if (fileMatches.length === 0)
         return;
