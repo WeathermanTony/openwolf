@@ -2,12 +2,13 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, parseAnatomy, serializeAnatomy, extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath, getSizeDisciplineConfig, getQualityGateConfig, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex, getSessionFilePath, runHook, recordHookHealth} from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, parseAnatomy, serializeAnatomy, extractDescription, estimateTokens, appendMarkdown, timeShort, readStdin, normalizePath, getSizeDisciplineConfig, getQualityGateConfig, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex, getSessionFilePath, runHook, recordHookHealth, getBehaviorConfig } from "./shared.js";
 import { rollingWindowJson, acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
     const projectRoot = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const quiet = getBehaviorConfig().mode === "quiet";
     const raw = await readStdin();
     let input;
     try {
@@ -95,7 +96,7 @@ async function main() {
     // concurrent post-write hooks from clobbering each other's anatomy entries.
     // Skip for .wolf/qa/ reductions AND .wolf/buglog.json: they're closed
     // feedback loops with the gates, not part of the project's file map.
-    if (!isWolfAllowlisted)
+    if (!quiet && !isWolfAllowlisted)
         try {
             const anatomyPath = path.join(wolfDir, "anatomy.md");
             const anatomyLock = acquireFileLock(anatomyPath);
@@ -171,7 +172,7 @@ async function main() {
     // .wolf/buglog.json — the stop hook already appends session-end summary
     // lines, and per-write memory entries for the gates' own outputs would
     // just amplify noise.
-    if (!isWolfAllowlisted)
+    if (!quiet && !isWolfAllowlisted)
         try {
             const action = toolName === "Write" ? "Created" : toolName === "MultiEdit" ? "Multi-edited" : "Edited";
             const relFile = normalizePath(path.relative(projectRoot, absolutePath));
@@ -231,8 +232,7 @@ async function main() {
             // Retry up to 10x ~50ms each = ~500ms total. Beyond that, a stuck lock
             // is a separate bug (lockfile leak) that should fail loudly via stderr.
             for (let i = 0; i < 10 && !sessionLock; i++) {
-                const target = Date.now() + 50;
-                while (Date.now() < target) { /* spin: no Atomics.wait in this runtime */ }
+                Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
                 sessionLock = acquireFileLock(sessionFile);
             }
             if (!sessionLock) {
@@ -268,12 +268,17 @@ async function main() {
                 const action = toolName === "Write" ? "create" : "edit";
                 const fileContent = input.tool_input?.content ?? "";
                 const tokens = estimateTokens(fileContent || newStr, "code");
-                session.files_written.push({
+                const writeEntry = {
                     file: normalizedFile,
                     action,
-                    tokens,
+                    tokens: quiet ? 0 : tokens,
                     at: new Date().toISOString(),
-                });
+                };
+                const priorWrite = quiet ? session.files_written.findIndex((entry) => entry?.file === normalizedFile) : -1;
+                if (priorWrite >= 0)
+                    session.files_written[priorWrite] = writeEntry;
+                else
+                    session.files_written.push(writeEntry);
                 const editKey = relPath && !relPath.startsWith("..") ? relPath : normalizedFile;
                 const prevCount = typeof session.edit_counts[editKey] === "number" ? session.edit_counts[editKey] : 0;
                 session.edit_counts[editKey] = prevCount + 1;
@@ -318,7 +323,7 @@ async function main() {
     // .wolf/buglog.json itself (running fix-pattern detection on the diff
     // between two buglog states would produce a recursive auto-entry every
     // time the assistant logs a real bug).
-    if (!isWolfAllowlisted)
+    if (!quiet && !isWolfAllowlisted)
         try {
             if (oldStr && newStr) {
                 autoDetectBugFix(wolfDir, absolutePath, projectRoot, oldStr, newStr);

@@ -2,10 +2,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
-import { getWolfDir, ensureWolfDir, readJSON, readMarkdown, readStdin, runHook } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, readMarkdown, readStdin, runHook, getBehaviorConfig } from "./shared.js";
 import { acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 async function main() {
     ensureWolfDir();
+    if (getBehaviorConfig().mode === "quiet")
+        return;
     const wolfDir = getWolfDir();
     const raw = await readStdin();
     let input;
@@ -22,10 +24,8 @@ async function main() {
     const newStr = input.tool_input?.new_string ?? "";
     const filePath = input.tool_input?.file_path ?? input.tool_input?.path ?? "";
     const allContent = [content, oldStr, newStr].join("\n");
-    if (!allContent.trim()) {
+    if (!allContent.trim())
         return;
-        return;
-    }
     // 1. Cerebrum Do-Not-Repeat check
     checkCerebrum(wolfDir, allContent);
     // 2. Bug log: search for similar past bugs when editing code
@@ -140,11 +140,13 @@ function checkBugLog(wolfDir, filePath, oldStr, newStr, content) {
     if (bugLog.bugs.length === 0)
         return;
     const basename = path.basename(filePath);
+    const projectRoot = path.dirname(wolfDir);
+    const targetPath = path.resolve(projectRoot, filePath);
     // ONLY surface bugs that match the SAME file being edited.
     // Cross-file matching is too noisy and risks misdirecting Claude.
     const fileMatches = bugLog.bugs.filter(b => {
-        const bugBasename = path.basename(b.file);
-        return bugBasename === basename;
+        return typeof b.file === "string" && b.file.trim().length > 0
+            && path.resolve(projectRoot, b.file) === targetPath;
     });
     if (fileMatches.length === 0)
         return;

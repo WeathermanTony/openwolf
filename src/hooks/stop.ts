@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, readRecentUserTurns, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex, getSessionFilePath, recordHookHealth, mutateJSON } from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, writeJSON, appendMarkdown, timeShort, getSizeDisciplineConfig, getReviewHookConfig, getQualityGateConfig, getAutonomyContinuationConfig, getGitDisciplineConfig, getSimplicityConfig, getClaimCalibrationConfig, getHookMessageConfig, getQueueDropWatchConfig, getBehaviorConfig, detectDroppedQueueMessages, detectMidturnInjections, readStdin, readLastAssistantText, readRecentUserTurns, normalizeFilePath, hashFilesAtRest, HASH_SENTINEL_UNREADABLE, setReviewCurrentByteReceipt, detectObligationExtensions, listProjectFiles, carriesBugfixObligation, globToRegex, getSessionFilePath, recordHookHealth, mutateJSON } from "./shared.js";
 import { cappedSessionsJson, monthlyRotateMarkdown, rollingWindowJson, rotateDatedBulletsInSection, acquireFileLock, atomicWriteJson } from "../utils/size-discipline.js";
 import { evaluate as evaluateNudges, getNudgeConfig } from "./nudges/engine.js";
 import * as cerebrumRule from "./nudges/rules/cerebrum.js";
@@ -273,7 +273,7 @@ function maybeNudgeMidturnInjections(wolfDir, session, transcriptPath) {
     const shown = fresh.slice(0, cfg.max_warn_per_stop);
     const previews = shown.map(d => `"${d.preview}" (${d.timestamp ? d.timestamp.slice(11, 19) + "Z" : "time unknown"})`).join("; ");
     const more = fresh.length > shown.length ? ` +${fresh.length - shown.length} more in log` : "";
-    emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} user message(s) arrived mid-turn: ${previews}${more}. If you already addressed each, say so in one line; otherwise address the unaddressed one(s) now — do not ask the user to re-send. Log: ${logPath}\n`);
+    emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} user message(s) arrived mid-turn: ${previews}${more}. If you already addressed each, say so in one line; otherwise address the unaddressed one(s) now — do not ask the user to re-send. Log: ${logPath}. Then resume your prior task and keep working — do not end your turn at the accounting line.\n`);
     return true;
 }
 
@@ -660,6 +660,16 @@ async function main() {
         session.session_id = hookPayload.session_id;
     if (typeof session.started !== "string")
         session.started = "";
+    if (getBehaviorConfig().mode === "quiet") {
+        let integrityWarning = false;
+        try {
+            if (maybeWarnQueueDrops(wolfDir, session, hookPayload.transcript_path)) integrityWarning = true;
+            if (maybeNudgeMidturnInjections(wolfDir, session, hookPayload.transcript_path)) integrityWarning = true;
+        }
+        catch { }
+        exitWithStopHookResult(integrityWarning);
+        return;
+    }
     // Only write to ledger if there's been activity
     const readCount = Object.keys(session.files_read).length;
     const writeCount = session.files_written.length;

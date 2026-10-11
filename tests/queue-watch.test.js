@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const shared = await import(path.join(repoRoot, 'src/hooks/shared.js'));
 const { detectDroppedQueueMessages, detectMidturnInjections } = shared;
+const stopHook = path.join(repoRoot, 'src/hooks/stop.js');
 
 const T0 = '2026-07-19T05:00:00.000Z';
 const T1 = '2026-07-19T05:00:05.000Z';
@@ -30,6 +32,26 @@ async function transcriptFixture(entries) {
   const file = path.join(dir, 'transcript.jsonl');
   await writeFile(file, entries.map((e) => JSON.stringify(e)).join('\n') + '\n');
   return { dir, file };
+}
+
+async function stopFixture(mode, entries) {
+  const result = await transcriptFixture(entries);
+  await writeFile(path.join(result.dir, 'package.json'), '{"type":"module"}\n');
+  const wolfDir = path.join(result.dir, '.wolf');
+  const hooksDir = path.join(wolfDir, 'hooks');
+  await mkdir(hooksDir, { recursive: true });
+  await writeFile(path.join(wolfDir, 'config.json'), JSON.stringify({ openwolf: { behavior: { mode }, queue_drop_watch: { enabled: true, injection_reminder: true } } }));
+  await writeFile(path.join(hooksDir, '_session.json'), JSON.stringify({ session_id: 'queue-test', files_read: [], files_written: [], start_time: new Date().toISOString() }));
+  return result;
+}
+
+function runStop(dir, transcript) {
+  return spawnSync(process.execPath, [stopHook], {
+    cwd: dir,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+    input: JSON.stringify({ session_id: 'queue-test', transcript_path: transcript }),
+    encoding: 'utf8',
+  });
 }
 
 test('drop detector flags a bare remove with no delivery evidence', async () => {
@@ -159,5 +181,44 @@ test('two identical injections hash distinctly so each reminds once', async () =
     const found = detectMidturnInjections(file);
     assert.equal(found.length, 2);
     assert.notEqual(found[0].hash, found[1].hash);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+for (const mode of ['quiet', 'standard']) {
+  test(`Stop hook in ${mode} mode requires resuming work after injection accounting`, async () => {
+    const { dir, file } = await stopFixture(mode, [injection('please also verify the parser', T1)]);
+    try {
+      const result = runStop(dir, file);
+      assert.equal(result.status, 0, result.stderr);
+      const output = JSON.parse(result.stdout);
+      assert.equal(output.decision, 'block');
+      const feedback = output.hookSpecificOutput.additionalContext;
+      assert.match(feedback, /please also verify the parser/);
+      assert.match(feedback, /do not ask the user to re-send/i);
+      assert.match(feedback, /Then resume your prior task and keep working/i);
+      assert.match(feedback, /do not end your turn at the accounting line\.$/i);
+      assert.ok(feedback.indexOf('Log:') < feedback.indexOf('Then resume'), 'resume instruction must follow log metadata');
+
+      const repeated = runStop(dir, file);
+      assert.equal(repeated.status, 0, repeated.stderr);
+      if (repeated.stdout.trim()) {
+        const repeatedOutput = JSON.parse(repeated.stdout);
+        assert.notEqual(repeatedOutput.decision, 'block', 'same injection must remind only once');
+      }
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+}
+
+test('true queue loss retains the distinct resend warning', async () => {
+  const { dir, file } = await stopFixture('quiet', [removeOp('message that never arrived', T0)]);
+  try {
+    const result = runStop(dir, file);
+    assert.equal(result.status, 0, result.stderr);
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.decision, 'block');
+    const feedback = output.hookSpecificOutput.additionalContext;
+    assert.match(feedback, /never reached the model/);
+    assert.match(feedback, /ask them to re-send/);
+    assert.doesNotMatch(feedback, /Then resume your prior task/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

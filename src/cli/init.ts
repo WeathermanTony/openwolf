@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as os from "node:os";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 import { findProjectRoot } from "../scanner/project-root.js";
@@ -12,6 +13,7 @@ import { allocateProjectPorts, isPortFree } from "../utils/port-allocator.js";
 import { cleanupOpenWolfPm2, ensurePm2Daemon, hasOpenWolfPm2Daemon } from "./daemon-cmd.js";
 import { installManagedClaudeSkills } from "./managed-skills.js";
 import { HOOK_MANIFEST_FILE, HOOK_PACKAGE_JSON, HOOK_PAYLOAD_FILES, HOOK_RUNTIME_MANIFEST, HOOK_SETTINGS, HOOK_UTILITY_FILES } from "./hook-manifest.js";
+import { CREATE_IF_MISSING_FILES, MANAGED_TEMPLATE_FILES } from "./managed-payload.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,30 +29,8 @@ function getVersion(): string {
   }
 }
 
-// Files that are safe to overwrite on upgrade (config/protocol, not user data)
-const ALWAYS_OVERWRITE = [
-  "OPENWOLF.md",
-  "PROTOCOL-UPGRADE-2026-06.md",
-  "reframe-frameworks.md",
-  ".gitignore",
-];
 
-// Files that contain user/session data — only create if missing, never overwrite
-const CREATE_IF_MISSING = [
-  "identity.md",
-  "cerebrum.md",
-  "memory.md",
-  "anatomy.md",
-  "token-ledger.json",
-  "buglog.json",
-  "reviewlog.json",
-  "cron-manifest.json",
-  "cron-state.json",
-  "designqc-report.json",
-  "suggestions.json",
-];
-
-export async function initCommand(options: { profile?: string; root?: string } = {}): Promise<void> {
+export async function initCommand(options: { profile?: string; root?: string; behavior?: string } = {}): Promise<void> {
   // Check Node.js version
   const nodeVersion = parseInt(process.version.slice(1), 10);
   if (nodeVersion < 20) {
@@ -67,6 +47,7 @@ export async function initCommand(options: { profile?: string; root?: string } =
 
   const wolfDir = path.join(projectRoot, ".wolf");
   const isUpgrade = fs.existsSync(wolfDir);
+  const hadConfigBeforeInit = fs.existsSync(path.join(wolfDir, "config.json"));
 
   const version = getVersion();
 
@@ -85,7 +66,7 @@ export async function initCommand(options: { profile?: string; root?: string } =
   let createdCount = 0;
   let skippedCount = 0;
 
-  for (const file of ALWAYS_OVERWRITE) {
+  for (const file of MANAGED_TEMPLATE_FILES) {
     writeTemplateFile(actualTemplatesDir, wolfDir, file);
     createdCount++;
   }
@@ -95,7 +76,7 @@ export async function initCommand(options: { profile?: string; root?: string } =
     createdCount++;
   }
 
-  for (const file of CREATE_IF_MISSING) {
+  for (const file of CREATE_IF_MISSING_FILES) {
     const destPath = path.join(wolfDir, file);
     if (fs.existsSync(destPath)) {
       skippedCount++;
@@ -139,6 +120,11 @@ export async function initCommand(options: { profile?: string; root?: string } =
   }
 
   migrateReviewCompanionConfigFile(configPath);
+  const effectiveBehavior = applyBehaviorMode(
+    configPath,
+    options.behavior ?? (isUpgrade && !hadConfigBeforeInit ? "standard" : undefined),
+    isUpgrade ? "existing" : "fresh"
+  );
   applyReviewerProfile(configPath, options.profile);
 
   // --- Token ledger: set created_at only if empty ---
@@ -168,32 +154,32 @@ export async function initCommand(options: { profile?: string; root?: string } =
   // --- Managed Claude skills: always update exact Wolfpack-owned files ---
   installManagedClaudeSkills(actualTemplatesDir, projectRoot);
 
-  // --- Claude rules: always update ---
-  const rulesDir = path.join(claudeDir, "rules");
-  ensureDir(rulesDir);
-  const rulesContent = readTemplateContent("claude-rules-openwolf.md", actualTemplatesDir);
-  writeText(path.join(rulesDir, "openwolf.md"), rulesContent);
-
-  // --- CLAUDE.md: add snippet if missing ---
+  // --- Shared instructions: global contract only; remove recognized legacy duplication ---
+  const { planClaudeMd, mergeGlobalContract, isOwnedOpenWolfRule } = await import("./instruction-consolidation.js");
   const claudeMdPath = path.join(projectRoot, "CLAUDE.md");
-  const snippetContent = readTemplateContent("claude-md-snippet.md", actualTemplatesDir);
   if (fs.existsSync(claudeMdPath)) {
-    const existing = readText(claudeMdPath);
-    const oldSnippetPattern = /# OpenWolf\n\n@\.wolf\/OPENWOLF\.md\n\nThis project uses OpenWolf for context management\. Read and follow \.wolf\/OPENWOLF\.md every session\. Check \.wolf\/cerebrum\.md before generating code\. Check \.wolf\/anatomy\.md before reading files\.?\n*/;
-    if (existing.includes("# Wolfpack") || existing.includes("This project uses Wolfpack")) {
-      // Already carries the current Wolfpack-facing bootstrap.
-    } else if (oldSnippetPattern.test(existing)) {
-      writeText(claudeMdPath, existing.replace(oldSnippetPattern, snippetContent + "\n\n"));
-    } else if (!existing.includes("OpenWolf")) {
-      writeText(claudeMdPath, snippetContent + "\n\n" + existing);
-    }
-  } else {
-    writeText(claudeMdPath, snippetContent);
+    const plan = planClaudeMd(readText(claudeMdPath));
+    if (plan.action === "delete") fs.unlinkSync(claudeMdPath);
+    else if (plan.action === "remove-bootstrap" && plan.output !== undefined) writeText(claudeMdPath, plan.output);
+  }
+  const rulePath = path.join(claudeDir, "rules", "openwolf.md");
+  if (fs.existsSync(rulePath)) {
+    const knownRule = readTemplateContent("claude-rules-openwolf.md", actualTemplatesDir);
+    if (isOwnedOpenWolfRule(readText(rulePath), knownRule)) fs.unlinkSync(rulePath);
+  }
+  if (process.env.OPENWOLF_VERIFY_INSTALL !== "1") {
+    const globalPath = process.env.OPENWOLF_GLOBAL_CLAUDE_PATH ?? path.join(os.homedir(), ".claude", "CLAUDE.md");
+    const contract = readTemplateContent("global-claude-wolfpack.md", actualTemplatesDir);
+    writeText(globalPath, mergeGlobalContract(readText(globalPath), contract));
   }
 
-  // --- Anatomy scan: only on fresh init ---
+  // --- Anatomy scan: only on fresh init when explicitly enabled ---
   let fileCount = 0;
-  if (!isUpgrade) {
+  const scanConfig = readJSON<any>(configPath, {});
+  const autoScanOnInit = scanConfig?.openwolf?.anatomy?.auto_scan_on_init !== false;
+  // Quiet mode does not consume anatomy hints, so scanning a fresh project's
+  // potentially large tree would create cost without affecting hook behavior.
+  if (!isUpgrade && autoScanOnInit && effectiveBehavior === "standard") {
     try {
       fileCount = scanProject(wolfDir, projectRoot);
     } catch {
@@ -266,9 +252,12 @@ export async function initCommand(options: { profile?: string; root?: string } =
     console.log(`  ✓ Wolfpack v${version} initialized`);
     console.log(`  ✓ .wolf/ runtime created with ${createdCount} files`);
     console.log(`  ✓ Claude Code hooks registered (6 hooks)`);
-    console.log(`  ✓ CLAUDE.md updated`);
-    console.log(`  ✓ .claude/rules/openwolf.md created`);
-    console.log(`  ✓ Anatomy scan: ${fileCount} files indexed`);
+    console.log(verifyInstallMode
+      ? "  ✓ Project instruction duplication omitted"
+      : "  ✓ Global WolfPack contract ensured; project instruction duplication omitted");
+    console.log(effectiveBehavior === "quiet"
+      ? "  ✓ Anatomy scan skipped in quiet mode"
+      : `  ✓ Anatomy scan: ${fileCount} files indexed`);
   }
   if (options.profile) {
     const reviewerProfile = normalizeReviewerProfile(options.profile);
@@ -353,6 +342,36 @@ function embeddedQaTemplate(name: string): string {
     return "---\ntarget: <relative path>\ntarget-hash: <sha256 of the target file>\ncreated: YYYY-MM-DD\n---\n\n# <title>\n\n## What the code claims to do\n\n## Assumptions (≥3)\n\n1. **<name>** — concrete statement.\n2. **<name>** — …\n3. **<name>** — …\n\n## Riskiest assumption\n\n## Falsification test\n\n```bash\n# command\n```\n\n## Run output\n\n```\n<actual output>\n```\n\n## Verdict\n\n- [ ] Survived.\n- [ ] Falsified — link the fix.\n";
   }
   return "";
+}
+
+export type BehaviorMode = "quiet" | "standard";
+
+export function normalizeBehaviorMode(mode?: string): BehaviorMode | undefined {
+  if (!mode) return undefined;
+  const normalized = mode.trim().toLowerCase();
+  if (normalized === "quiet" || normalized === "standard") return normalized;
+  throw new Error(`Unknown Wolfpack behavior "${mode}". Use "quiet" or "standard".`);
+}
+
+export function applyBehaviorMode(
+  configPath: string,
+  requested?: string,
+  installationKind: "fresh" | "existing" = "existing"
+): BehaviorMode {
+  const parsed = readJSON<Record<string, any>>(configPath, {});
+  const cfg = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  cfg.openwolf = cfg.openwolf && typeof cfg.openwolf === "object" && !Array.isArray(cfg.openwolf) ? cfg.openwolf : {};
+  const explicit = normalizeBehaviorMode(requested);
+  const configured = cfg.openwolf.behavior && typeof cfg.openwolf.behavior === "object" && !Array.isArray(cfg.openwolf.behavior)
+    ? cfg.openwolf.behavior.mode
+    : undefined;
+  const configuredMode = typeof configured === "string" && ["quiet", "standard"].includes(configured.trim().toLowerCase())
+    ? configured.trim().toLowerCase() as BehaviorMode
+    : undefined;
+  const mode = explicit ?? configuredMode ?? (installationKind === "fresh" ? "quiet" : "standard");
+  cfg.openwolf.behavior = { ...(cfg.openwolf.behavior ?? {}), mode };
+  writeJSON(configPath, cfg);
+  return mode;
 }
 
 export function normalizeReviewerProfile(profile?: string): "us-only" | "open" | "budget" | undefined {
@@ -443,7 +462,7 @@ function readTemplateContent(filename: string, templatesDir: string): string {
 
 function getEmbeddedTemplate(filename: string): string {
   const templates: Record<string, string> = {
-    "claude-md-snippet.md": `# Wolfpack\n\n@.wolf/OPENWOLF.md\n\nThis project uses Wolfpack, a heavily customized Claude Code workflow harness built on the OpenWolf runtime namespace. Read and follow .wolf/OPENWOLF.md every session. Check .wolf/cerebrum.md before generating code. Check .wolf/anatomy.md before reading files.`,
+    "global-claude-wolfpack.md": `<!-- wolfpack:global:start -->\n## WolfPack-managed projects\n\nA project containing \`.wolf/\` uses WolfPack. Respect its configured behavior and reviewer policy. Let hooks maintain routine bookkeeping, use supported review/QA completion helpers, and bind claims to current bytes. In quiet mode, avoid unsolicited WolfPack coaching. Detailed guidance is available on demand in \`.wolf/OPENWOLF.md\`.\n<!-- wolfpack:global:end -->`,
     "claude-rules-openwolf.md": `---\ndescription: Wolfpack protocol enforcement — active on all files\nglobs: **/*\n---\n\n- Check .wolf/anatomy.md before reading any project file\n- Check .wolf/cerebrum.md Do-Not-Repeat list before generating code\n- After writing or editing files, update .wolf/anatomy.md and append to .wolf/memory.md\n- After receiving a user correction, update .wolf/cerebrum.md immediately (Preferences, Learnings, or Do-Not-Repeat)\n- LEARN from every interaction: if you discover a convention, user preference, or project pattern, add it to .wolf/cerebrum.md. Low threshold — when in doubt, log it.\n- BEFORE fixing any bug or error: read .wolf/buglog.json for known fixes\n- AFTER fixing any bug, error, failed test, failed build, or user-reported problem: ALWAYS log to .wolf/buglog.json with error_message, root_cause, fix, and tags\n- If you edit a file more than twice in a session, that likely indicates a bug — log it to .wolf/buglog.json\n- When the user asks to check/evaluate UI design: run \`openwolf designqc\` to capture screenshots, then read them from .wolf/designqc-captures/\n- When the user asks to change/pick/migrate UI framework: read .wolf/reframe-frameworks.md, ask decision questions, recommend a framework, then execute with the framework's prompt`,
   };
   return templates[filename] ?? "";
@@ -451,7 +470,7 @@ function getEmbeddedTemplate(filename: string): string {
 
 export function generateTemplate(destPath: string, file: string): void {
   const templates: Record<string, string> = {
-    "OPENWOLF.md": `# Wolfpack Operating Protocol\n\nYou are working in a Wolfpack-managed project. Wolfpack is the customized workflow harness; .wolf/ and openwolf.* remain the compatibility/runtime namespace. These rules apply every turn.\n\n## File Navigation\n\n1. Check \`.wolf/anatomy.md\` BEFORE reading any file.\n2. If the description is sufficient, do NOT read the full file.\n3. If a file is not in anatomy.md, search with Grep/Glob.\n\n## Code Generation\n\n1. Read \`.wolf/cerebrum.md\` and respect every entry.\n2. Check \`## Do-Not-Repeat\` section.\n\n## Standard Skills\n\nBefore recreating common workflows, check available standard skills and invoke the exact listed skill name when applicable. Skill instructions load on demand.\n\n## Recall Before Acting\n\nBefore starting non-trivial work, use Wolfpack's local memory in this order:\n\n1. Check \`.wolf/anatomy.md\` to locate only the files needed.\n2. Check \`.wolf/cerebrum.md\` for project conventions, user preferences, and do-not-repeat lessons.\n3. Check \`.wolf/buglog.json\` before fixing errors or repeating a pattern that may already have a known fix.\n4. Prefer applying an existing proven fix over rediscovering one. If the existing memory is stale or wrong, correct it as part of the work.\n\n## Link Fixes to Proof\n\nEvery buglog entry should connect the reported problem to the evidence that the fix was real:\n\n- \`commit\`: the resolving commit SHA when known, otherwise \`null\` until committed.\n- \`reduction\`: the QA reduction, test file, command, or transcript that proves the fix, otherwise \`null\` until evidence exists.\n\nWhen adding or updating a buglog entry, include both fields. If a bug is fixed before commit, fill \`reduction\` immediately and backfill \`commit\` after the fix is committed.\n\n## Consolidate When Noisy\n\nWolfpack memory should stay useful, not merely large. When \`.wolf/memory.md\`, \`.wolf/buglog.json\`, review logs, or QA logs become noisy:\n\n1. Preserve durable facts, current decisions, and recurring gotchas in \`.wolf/cerebrum.md\`.\n2. Keep raw chronological detail in the original log only when it is still operationally useful.\n3. Prefer compact summaries that link to proof files, reductions, review IDs, or commits.\n4. Do not delete user data just to reduce size; consolidate only when the retained summary is enough to recover the lesson.\n\n## After Actions\n\n1. Append to \`.wolf/memory.md\`.\n2. After file changes: update \`.wolf/anatomy.md\`.\n\n## Token Discipline\n\n- Never re-read a file already read this session.\n- Prefer anatomy.md descriptions over full reads.\n`,
+    "OPENWOLF.md": `# WolfPack Reference\n\nWolfPack is a Claude Code quality harness using the .wolf compatibility namespace. This is an on-demand reference, not a per-session instruction file. Respect configured behavior and reviewer policy, let hooks own routine bookkeeping, use completion helpers for review and QA, and bind claims to current bytes. Use openwolf --help for detailed commands.\n`,
     "identity.md": `# Identity\n\n- **Name:** Wolf\n- **Role:** AI development assistant for this project\n- **Tone:** Direct, concise, technically precise\n`,
     "cerebrum.md": `# Cerebrum\n\n> Wolfpack's learning memory. Updated automatically as the AI learns from interactions.\n> Do not edit manually unless correcting an error.\n> Last updated: —\n\n## User Preferences\n\n<!-- How the user likes things done. Code style, tools, patterns, communication. -->\n\n## Key Learnings\n\n<!-- Project-specific conventions discovered during development. -->\n\n## Do-Not-Repeat\n\n<!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->\n<!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->\n\n## Decision Log\n\n<!-- Significant technical decisions with rationale. Why X was chosen over Y. -->\n`,
     "memory.md": `# Memory\n\n> Chronological action log. Hooks and AI append to this file automatically.\n> Old sessions are consolidated by the daemon weekly.\n\n## Session: bootstrap\n\n| Time | Action | File(s) | Outcome | ~Tokens |\n|------|--------|---------|---------|--------|\n`,
@@ -460,6 +479,8 @@ export function generateTemplate(destPath: string, file: string): void {
       version: 1,
       openwolf: {
         enabled: true,
+        behavior: { mode: "quiet" },
+        backups: { retention_days: 30, keep_last: 3, protect_pending_reviews: true },
         anatomy: { auto_scan_on_init: true, rescan_interval_hours: 6, max_description_length: 100, max_files: 500, exclude_patterns: ["node_modules", ".git", "dist", "build", ".wolf", ".next", ".nuxt", "coverage", "__pycache__", ".cache", "target", ".vscode", ".idea", ".turbo", ".vercel", ".netlify", ".output", "*.min.js", "*.min.css"] },
         token_audit: { enabled: true, report_frequency: "weekly", waste_threshold_percent: 15, chars_per_token_code: 3.5, chars_per_token_prose: 4.0 },
         cron: { enabled: true, max_retry_attempts: 3, dead_letter_enabled: true, heartbeat_interval_minutes: 30, use_claude_p: true, api_key_env: null },

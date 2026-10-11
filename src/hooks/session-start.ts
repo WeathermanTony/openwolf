@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getWolfDir, ensureWolfDir, readJSON, mutateJSON, appendMarkdown, timestamp, timeShort, readStdin, getSessionFilePath, runHook, recordHookHealth} from "./shared.js";
+import { getWolfDir, ensureWolfDir, readJSON, mutateJSON, appendMarkdown, timestamp, timeShort, readStdin, getSessionFilePath, runHook, recordHookHealth, getBehaviorConfig } from "./shared.js";
 async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
@@ -92,6 +92,9 @@ async function main() {
         return session;
     });
     if (!sessionReady)
+        return;
+    // Quiet mode keeps session bookkeeping but skips the memory.md header.
+    if (getBehaviorConfig().mode === "quiet")
         return;
     // Append session header to memory.md only for a genuinely new session.
     const memoryPath = path.join(wolfDir, "memory.md");

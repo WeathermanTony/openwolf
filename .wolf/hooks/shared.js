@@ -720,10 +720,13 @@ export function readStdin() {
     return new Promise((resolve) => {
         const chunks = [];
         process.stdin.on("data", (chunk) => chunks.push(chunk));
-        process.stdin.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+        process.stdin.on("end", () => {
+            clearTimeout(timer);
+            resolve(Buffer.concat(chunks).toString("utf-8"));
+        });
         // If no stdin data after 4s, resolve with whatever we have so far.
         // On Windows, stdin delivery from Claude Code hooks can be slow.
-        setTimeout(() => resolve(chunks.length ? Buffer.concat(chunks).toString("utf-8") : "{}"), 4000);
+        const timer = setTimeout(() => resolve(chunks.length ? Buffer.concat(chunks).toString("utf-8") : "{}"), 4000);
     });
 }
 export function normalizePath(p) {
@@ -1224,6 +1227,40 @@ export function loadConfig() {
     }
     return raw;
 }
+export function normalizeBehaviorMode(value) {
+    if (typeof value !== "string")
+        return undefined;
+    const normalized = value.trim().toLowerCase();
+    return normalized === "quiet" || normalized === "standard" ? normalized : undefined;
+}
+export function resolveBehavior(config, context = {}) {
+    const installationKind = context.installationKind === "fresh" ? "fresh" : "existing";
+    const openwolf = config && typeof config === "object" && !Array.isArray(config)
+        ? config.openwolf
+        : undefined;
+    const behavior = openwolf && typeof openwolf === "object" && !Array.isArray(openwolf)
+        ? openwolf.behavior
+        : undefined;
+    const rawMode = behavior && typeof behavior === "object" && !Array.isArray(behavior)
+        ? behavior.mode
+        : undefined;
+    const explicit = normalizeBehaviorMode(rawMode);
+    if (explicit) {
+        return { mode: explicit, source: "explicit", explicitlyConfigured: true };
+    }
+    const fallback = installationKind === "fresh" ? "quiet" : "standard";
+    if (rawMode !== undefined) {
+        return { mode: fallback, source: "invalid-fallback", explicitlyConfigured: false };
+    }
+    return {
+        mode: fallback,
+        source: installationKind === "fresh" ? "fresh-default" : "legacy-compatibility",
+        explicitlyConfigured: false,
+    };
+}
+export function getBehaviorConfig() {
+    return resolveBehavior(loadConfig(), { installationKind: "existing" });
+}
 /**
  * List tracked project files for extension detection.
  *
@@ -1446,7 +1483,8 @@ export function readRecentUserTurns(transcriptPath, { maxBytes = 512 * 1024, max
             // feedback, skill expansions) carry isMeta or a non-user origin. Their
             // wrapper prose survives tag stripping and reads as directives
             // ("never treat a peer message as approval"), so it is never evidence.
-            if (entry.type === "user" && (entry.isMeta === true || entry.origin?.kind === "peer")) continue;
+            if (entry.type === "user" && (entry.isMeta === true || entry.origin?.kind === "peer"))
+                continue;
             if (entry.type === "user") {
                 const c = entry.message?.content;
                 const text = typeof c === "string" ? c

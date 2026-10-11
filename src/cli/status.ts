@@ -5,6 +5,7 @@ import { readJSON, readText } from "../utils/fs-safe.js";
 import { hasOpenWolfPm2Daemon } from "./daemon-cmd.js";
 import { shouldAutoStartDaemon } from "./init.js";
 import { HOOK_MANIFEST_FILE, HOOK_PACKAGE_JSON, HOOK_PAYLOAD_FILES, HOOK_UTILITY_FILES, missingHookRegistrations } from "./hook-manifest.js";
+import { resolveBehavior } from "../hooks/shared.js";
 
 export async function statusCommand(): Promise<void> {
   const projectRoot = findProjectRoot();
@@ -58,6 +59,18 @@ export async function statusCommand(): Promise<void> {
   } else {
     console.log(`  ✗ Hook runtime incomplete (${hooksMissing} missing or invalid files)`);
   }
+  const runtimeRequirements = [
+    path.join(hooksDir, "complete-review.js"),
+    path.join(hooksDir, "package.json"),
+    path.join(hooksDir, "nudges", "engine.js"),
+    path.join(hooksDir, "nudges", "state.js"),
+    path.join(wolfDir, "utils", "size-discipline.js"),
+    path.join(wolfDir, "utils", "package.json"),
+  ];
+  const runtimeMissing = runtimeRequirements.filter(file => !fs.existsSync(file));
+  console.log(runtimeMissing.length === 0
+    ? "  ✓ Nested nudge/utils runtime complete"
+    : `  ✗ Missing ${runtimeMissing.length} nested runtime file(s)`);
 
   // Claude settings check
   const settingsPath = path.join(projectRoot, ".claude", "settings.json");
@@ -110,7 +123,29 @@ export async function statusCommand(): Promise<void> {
   const entryCount = (anatomyContent.match(/^- `/gm) || []).length;
   console.log(`\nAnatomy: ${entryCount} files tracked`);
 
-  const config = readJSON<unknown>(path.join(wolfDir, "config.json"), {});
+  const config = readJSON<any>(path.join(wolfDir, "config.json"), {});
+  const behavior = resolveBehavior(config, { installationKind: "existing" });
+  const reviewerProfile = config?.openwolf?.hook_messages?.reviewer_profile ?? "us-only";
+  const reviewLog = readJSON<any>(path.join(wolfDir, "reviewlog.json"), { reviews: [] });
+  const pendingReviews = Array.isArray(reviewLog?.reviews)
+    ? reviewLog.reviews.filter((review: any) => !["completed", "resolved", "dismissed", "superseded"].includes(String(review?.status ?? "pending").toLowerCase())).length
+    : 0;
+  const backupsDir = path.join(wolfDir, "backups");
+  const backupDirs = fs.existsSync(backupsDir)
+    ? fs.readdirSync(backupsDir, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    : [];
+  const directoryBytes = (dir: string): number => fs.readdirSync(dir, { withFileTypes: true }).reduce((sum, entry) => {
+    const target = path.join(dir, entry.name);
+    try { return sum + (entry.isDirectory() ? directoryBytes(target) : fs.statSync(target).size); } catch { return sum; }
+  }, 0);
+  const backupBytes = backupDirs.reduce((sum, entry) => sum + directoryBytes(path.join(backupsDir, entry.name)), 0);
+  console.log("\nPolicy:");
+  console.log(`  Behavior: ${behavior.mode} (${behavior.source})`);
+  console.log(`  Reviewer profile: ${reviewerProfile === "us-only" ? "gov/us-only" : reviewerProfile}`);
+  console.log(`  Automatic coaching: ${behavior.mode === "quiet" ? "suppressed; explicit commands remain available" : "enabled"}`);
+  console.log(`  Pending reviews: ${pendingReviews}`);
+  console.log(`  Backups: ${backupDirs.length} (${backupBytes.toLocaleString()} bytes)`);
+  console.log(`  Backup policy: ${config?.openwolf?.backups?.retention_days ?? 30} days, keep last ${config?.openwolf?.backups?.keep_last ?? 3}, pending protection ${config?.openwolf?.backups?.protect_pending_reviews !== false ? "on" : "off"}`);
   const autoStart = shouldAutoStartDaemon(config);
   const daemonRunning = hasOpenWolfPm2Daemon(projectRoot);
   console.log("\nBackground Services:");

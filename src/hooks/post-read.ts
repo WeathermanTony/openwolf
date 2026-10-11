@@ -1,8 +1,10 @@
 // @ts-nocheck
 import * as path from "node:path";
-import { getWolfDir, ensureWolfDir, mutateJSON, readMarkdown, parseAnatomy, estimateTokens, readStdin, normalizePath, projectRelativePath, getSessionFilePath, runHook } from "./shared.js";
+import { getWolfDir, ensureWolfDir, mutateJSON, readMarkdown, parseAnatomy, estimateTokens, readStdin, normalizePath, projectRelativePath, getSessionFilePath, runHook, getBehaviorConfig } from "./shared.js";
 async function main() {
     ensureWolfDir();
+    if (getBehaviorConfig().mode === "quiet")
+        return;
     const wolfDir = getWolfDir();
     const raw = await readStdin();
     let input;

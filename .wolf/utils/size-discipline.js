@@ -984,7 +984,6 @@ function sectionHash(lines) {
 function isPlainObject(v) {
     return typeof v === "object" && v !== null && !Array.isArray(v);
 }
-
 /**
  * Rotate dated top-level bullets out of ONE named markdown section.
  *
@@ -1094,7 +1093,6 @@ export function rotateDatedBulletsInSection(opts) {
             const t = dateStr ? Date.parse(dateStr) : NaN;
             return { item, dateMs: Number.isFinite(t) ? t : null };
         });
-
         // Pass 1 — age. An entry older than the retention window is eligible
         // regardless of file size.
         const keepFlags = new Array(dated.length).fill(true);
@@ -1106,7 +1104,6 @@ export function rotateDatedBulletsInSection(opts) {
                     keepFlags[i] = false;
             }
         }
-
         // Pass 2 — size. Age alone is the wrong primary bound: it measures how
         // long an entry has existed, not what it costs to read. A busy month can
         // blow the budget with entries too new to expire, while a quiet project
@@ -1132,7 +1129,6 @@ export function rotateDatedBulletsInSection(opts) {
                 .map((d, i) => ({ i, dateMs: d.dateMs }))
                 .filter((d) => d.dateMs !== null && keepFlags[d.i])
                 .sort((a, b) => a.dateMs - b.dateMs);
-
             // Refuse a futile sweep. The rest of the file — the governing
             // sections plus any undated entry — is a floor this primitive must
             // not touch. If evicting EVERY eligible entry still cannot reach the
@@ -1149,7 +1145,6 @@ export function rotateDatedBulletsInSection(opts) {
             const floorBytes = sizeIfKept();
             for (let i = 0; i < keepFlags.length; i++)
                 keepFlags[i] = savedFlags[i];
-
             if (floorBytes <= maxBytes) {
                 for (const { i } of order) {
                     if (sizeIfKept() <= maxBytes)
@@ -1170,7 +1165,6 @@ export function rotateDatedBulletsInSection(opts) {
                 };
             }
         }
-
         const keep = [];
         const archive = [];
         for (let i = 0; i < dated.length; i++)

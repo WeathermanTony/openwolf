@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { constants, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -11,17 +11,18 @@ import {
   HOOK_UTILITY_FILES,
   missingHookRegistrations,
 } from '../dist/src/cli/hook-manifest.js';
+import { OBSOLETE_PAYLOAD } from '../dist/src/cli/managed-payload.js';
 
 const root = process.cwd();
 const failures = [];
 const hookNames = [...HOOK_PAYLOAD_FILES];
 const utilNames = [...HOOK_UTILITY_FILES];
+const obsoleteInstalledPaths = OBSOLETE_PAYLOAD.map((entry) => entry.destination);
 
 const requiredFiles = [
   '.claude/settings.json',
   '.claude/skills/quality-reduction/SKILL.md',
   '.wolf/OPENWOLF.md',
-  '.wolf/PROTOCOL-UPGRADE-2026-06.md',
   '.wolf/config.json',
   '.wolf/anatomy.md',
   '.wolf/memory.md',
@@ -221,32 +222,28 @@ async function checkCleanProjectTemplates() {
 }
 
 async function checkProtocolUpgradeDocs() {
-  // The source checkout may deliberately use a compact .wolf/OPENWOLF.md
-  // reference. Portable templates and fresh-init output carry the full protocol.
-  for (const file of ['src/templates/OPENWOLF.md', 'templates/wolf/OPENWOLF.md']) {
-    const content = await readRequiredText(file);
-    for (const heading of ['## Standard Skills', '## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Companion-Owned Review Lifecycle', '## Operational Verification']) {
-      if (!content.includes(heading)) {
-        failures.push(`${file} missing protocol section ${heading}`);
-      }
-    }
-    for (const marker of ['/ops:live-debug', '/ops:deploy-verify', 'health and functional probes', 'not an OS/filesystem sandbox', 'receipt hashes currently use a different representation']) {
-      if (!content.includes(marker)) failures.push(`${file} missing review/ops protocol marker: ${marker}`);
-    }
-    for (const field of ['"commit": null', '"reduction":']) {
-      if (!content.includes(field)) {
-        failures.push(`${file} buglog schema example missing ${field}`);
-      }
-    }
+  const canonical = await readRequiredText('src/templates/OPENWOLF.md');
+  const portable = await readRequiredText('templates/wolf/OPENWOLF.md');
+  const installed = await readRequiredText('.wolf/OPENWOLF.md');
+  if (Buffer.byteLength(canonical) > 2048) failures.push(`src/templates/OPENWOLF.md exceeds 2048-byte budget`);
+  if (portable !== canonical) failures.push('templates/wolf/OPENWOLF.md must equal src/templates/OPENWOLF.md');
+  if (installed !== canonical) failures.push('.wolf/OPENWOLF.md must equal src/templates/OPENWOLF.md');
+  for (const marker of ['# WolfPack Reference', 'current bytes', 'openwolf --help', 'openwolf bug close']) {
+    if (!canonical.includes(marker)) failures.push(`compact OPENWOLF.md missing ${marker}`);
   }
+  const globalContract = await readRequiredText('src/templates/global-claude-wolfpack.md');
+  if (Buffer.byteLength(globalContract.trim()) > 1500) failures.push('global WolfPack contract exceeds 1500-byte budget');
+  if ((globalContract.match(/wolfpack:global:start/g) || []).length !== 1 || (globalContract.match(/wolfpack:global:end/g) || []).length !== 1) {
+    failures.push('global WolfPack contract must contain exactly one marker pair');
+  }
+  const initSource = await readRequiredText('src/cli/init.ts');
+  if (initSource.includes('@.wolf/OPENWOLF.md')) failures.push('src/cli/init.ts must not recreate the unconditional OPENWOLF import');
 
-  for (const file of ['.wolf/PROTOCOL-UPGRADE-2026-06.md', 'src/templates/PROTOCOL-UPGRADE-2026-06.md', 'templates/wolf/PROTOCOL-UPGRADE-2026-06.md']) {
-    const content = await readRequiredText(file);
-    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Buglog schema bump']) {
-      if (!content.includes(heading)) {
-        failures.push(`${file} missing portable protocol section ${heading}`);
-      }
-    }
+  for (const file of obsoleteInstalledPaths) {
+    if (existsSync(rel(file))) failures.push(`obsolete installed payload must be absent: ${file}`);
+  }
+  if (existsSync(rel('src/templates/PROTOCOL-UPGRADE-2026-06.md'))) {
+    failures.push('obsolete protocol template must not be packaged from src/templates');
   }
 }
 
@@ -294,7 +291,6 @@ async function checkFreshInitScaffoldOutput() {
     const anatomy = await readFile(path.join(dir, '.wolf', 'anatomy.md'), 'utf8');
     const gateLog = JSON.parse(await readFile(path.join(dir, '.wolf', 'qa', '_gate-log.json'), 'utf8'));
     const config = JSON.parse(await readFile(path.join(dir, '.wolf', 'config.json'), 'utf8'));
-    const protocolUpgrade = await readFile(path.join(dir, '.wolf', 'PROTOCOL-UPGRADE-2026-06.md'), 'utf8');
     const openwolfProtocol = await readFile(path.join(dir, '.wolf', 'OPENWOLF.md'), 'utf8');
     const managedSkill = await readFile(path.join(dir, '.claude', 'skills', 'quality-reduction', 'SKILL.md'), 'utf8');
     const sourceSkill = await readFile(rel('src/templates/claude/skills/quality-reduction/SKILL.md'), 'utf8');
@@ -311,14 +307,14 @@ async function checkFreshInitScaffoldOutput() {
     if (!result.stdout.includes('Wolfpack quality hooks are active')) {
       failures.push('fresh init output must distinguish active quality hooks from optional background services');
     }
-    for (const heading of ['## Recall Before Acting', '## Link Fixes to Proof', '## Consolidate When Noisy', '## Buglog schema bump']) {
-      if (!protocolUpgrade.includes(heading)) {
-        failures.push(`fresh init .wolf/PROTOCOL-UPGRADE-2026-06.md missing ${heading}`);
-      }
+    for (const file of obsoleteInstalledPaths) {
+      if (existsSync(path.join(dir, file))) failures.push(`fresh init installed obsolete payload: ${file}`);
     }
-    if (!openwolfProtocol.includes('## Standard Skills') || !openwolfProtocol.includes('Skill instructions load on demand.')) {
-      failures.push('fresh init .wolf/OPENWOLF.md missing compact standard-skills discovery guidance');
+    if (!openwolfProtocol.includes('# WolfPack Reference') || Buffer.byteLength(openwolfProtocol) > 2048) {
+      failures.push('fresh init .wolf/OPENWOLF.md must be the compact on-demand reference');
     }
+    if (existsSync(path.join(dir, 'CLAUDE.md'))) failures.push('fresh init must not create a project CLAUDE.md bootstrap');
+    if (existsSync(path.join(dir, '.claude', 'rules', 'openwolf.md'))) failures.push('fresh init must not create the duplicate openwolf all-file rule');
     if (!cerebrum.includes('- **Project:** fresh-verify-app')) {
       failures.push('fresh init .wolf/cerebrum.md did not seed the fresh project name');
     }
@@ -422,7 +418,6 @@ function checkGitIgnored() {
     '.claude/rules/openwolf.md',
     '.claude/skills/quality-reduction/SKILL.md',
     '.wolf/OPENWOLF.md',
-    '.wolf/PROTOCOL-UPGRADE-2026-06.md',
     '.wolf/config.json',
     '.wolf/anatomy.md',
     '.wolf/memory.md',
