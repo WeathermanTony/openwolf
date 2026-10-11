@@ -2326,6 +2326,26 @@
       ],
       "commit": null,
       "status": "fixed"
+    },
+    {
+      "error_message": "tests/cron-result-truth.test.js times out: `openwolf cron run <missing>` takes ~11s when no daemon is listening",
+      "root_cause": "cronRun probes the daemon with fetch() and no timeout. On this WSL host a connect to a closed 127.0.0.1 port is silently dropped instead of refused, so undici waits out its ~10s connect timeout before the direct-execution fallback runs; the test spawn timeout is 10s.",
+      "fix": "Before fetching, probe the port with net.connect bounded to 1.5s. Only the connect is bounded: the daemon answers /api/cron/run after the task finishes, so capping the request could trigger a duplicate direct run. Verified: missing task exits 1 in ~2.7s; a live daemon taking 3s still answers with no fallback; full suite 305/305 on an isolated worktree.",
+      "file": "src/cli/cron-cmd.ts",
+      "tags": [
+        "cron",
+        "cli",
+        "wsl",
+        "timeout",
+        "test-failure"
+      ],
+      "id": "bug-853",
+      "timestamp": "2026-10-11T16:04:24.045Z",
+      "last_seen": "2026-10-11T16:04:24.045Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "status": "open"
     }
   ]
 }

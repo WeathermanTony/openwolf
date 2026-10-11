@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as net from "node:net";
 import * as path from "node:path";
 import { findProjectRoot } from "../scanner/project-root.js";
 import { readJSON, writeJSON } from "../utils/fs-safe.js";
@@ -69,6 +70,21 @@ export function cronList(): void {
   }
 }
 
+// Some hosts (WSL among them) silently drop connections to a closed local port
+// instead of refusing them, so fetch() waits out its ~10s connect timeout. The
+// daemon answers /api/cron/run only after the task finishes, so the request
+// itself cannot be capped without risking a duplicate direct run; bound only
+// the connect.
+function daemonListening(port: number, timeoutMs = 1500): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = net.connect({ host: "127.0.0.1", port });
+    const done = (ok: boolean) => { socket.destroy(); resolve(ok); };
+    socket.setTimeout(timeoutMs, () => done(false));
+    socket.once("connect", () => done(true));
+    socket.once("error", () => done(false));
+  });
+}
+
 export async function cronRun(id: string): Promise<void> {
   const projectRoot = findProjectRoot();
   const wolfDir = path.join(projectRoot, ".wolf");
@@ -88,6 +104,7 @@ export async function cronRun(id: string): Promise<void> {
 
   // Try calling the daemon's HTTP endpoint first
   try {
+    if (!await daemonListening(port)) throw new Error("daemon not listening");
     const res = await fetch(`http://127.0.0.1:${port}/api/cron/run/${encodeURIComponent(id)}`, {
       method: "POST",
       headers: {
