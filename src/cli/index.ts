@@ -579,5 +579,21 @@ export function createProgram(): Command {
       bugClose(id, opts);
     });
 
+  bug
+    .command("recurrence")
+    .description("Read-only distinct failure evidence before and after recorded fixes")
+    .option("--transcripts <directory>", "Claude Code top-level JSONL source directory")
+    .option("--bug <id>", "Select one bug, including an unverified or open entry")
+    .option("--match <literal>", "Override the selected bug's exact error signature (at least eight characters)")
+    .option("--max-files <count>", "Maximum transcript files (default: 200)")
+    .option("--max-file-bytes <bytes>", "Maximum tail bytes per file (default: 8388608)")
+    .option("--max-total-bytes <bytes>", "Maximum total bytes (default: 67108864)")
+    .option("--exclude-session <id>", "Exclude one session's records")
+    .option("--json", "Output the evidence report as JSON")
+    .action(async (opts: import("./bug-recurrence-cmd.js").BugRecurrenceOptions) => {
+      const { bugRecurrence } = await import("./bug-recurrence-cmd.js");
+      bugRecurrence(opts);
+    });
+
   return program;
 }
