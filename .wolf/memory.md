@@ -578,3 +578,4 @@
 | 12:24 | Session end: 2 writes across 2 files (learning-nudge-peer-messages.md, cron-run-daemon-connect.md) | 0 reads | ~1849 tok |
 | 12:27 | Session end: 2 writes across 2 files (learning-nudge-peer-messages.md, cron-run-daemon-connect.md) | 0 reads | ~1849 tok |
 - 2026-10-11T16:30:39Z Merged feature/quiet-mode-modernization (WolfPack Lite) into autonomy-continuation as 8eecb28 (custom.30; 380/380 tests, verify passed). Relinked global openwolf to the main checkout, removed the Lite worktree and branch. Earlier: committed the pending recurrence/pre-write/provenance work and fixed the cron run daemon stall (bug-853).
+- 2026-10-11T16:50:04Z Fleet updated to custom.30 (105 projects, reviewed cleanup removed 91 obsolete files, exit 0). Retired the parent-dir rules file, the stale origin branches feat/size-discipline-and-review-hook and fix/copyfile-efs-wsl2, and local master. Backups are in ~/.openwolf/retired/2026-10-11/.
