@@ -2319,13 +2319,14 @@
       ],
       "id": "bug-852",
       "timestamp": "2026-10-11T15:54:19.672Z",
-      "last_seen": "2026-10-11T15:54:19.672Z",
+      "last_seen": "2026-10-11T16:07:00.336Z",
       "occurrences": 1,
       "related_bugs": [
         "bug-694"
       ],
-      "commit": null,
-      "status": "fixed"
+      "commit": "1ad53e6",
+      "status": "resolved",
+      "reduction": ".wolf/qa/learning-nudge-peer-messages.md"
     },
     {
       "error_message": "tests/cron-result-truth.test.js times out: `openwolf cron run <missing>` takes ~11s when no daemon is listening",
@@ -2341,11 +2342,12 @@
       ],
       "id": "bug-853",
       "timestamp": "2026-10-11T16:04:24.045Z",
-      "last_seen": "2026-10-11T16:04:24.045Z",
+      "last_seen": "2026-10-11T16:07:01.243Z",
       "occurrences": 1,
       "related_bugs": [],
-      "commit": null,
-      "status": "open"
+      "commit": "4285327",
+      "status": "resolved",
+      "reduction": ".wolf/qa/cron-run-daemon-connect.md"
     }
   ]
 }
