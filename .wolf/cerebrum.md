@@ -115,6 +115,15 @@
   user's request, so provider-specific wording there silently prevents the skill from ever
   firing for equivalent generic phrasing. Skill *bodies* may name providers freely. Linted
   at install in `validateSkill` (bug-705).
+- **2026-10-11 — The global CLI is an `npm link` to a checkout.** `openwolf`/`wolfpack`
+  resolve through `$(npm root -g)/customopenwolf`, which is a symlink to whichever checkout
+  last ran `npm link`. Check `readlink -f $(which openwolf)` before deleting any worktree or
+  branch, or the CLI breaks in every project. Since 2026-10-11 it points at the main checkout.
+- **2026-10-11 — The source checkout's `.wolf/` is hand-synced.** `update` excludes the
+  source repo, so after changing hooks, copy `dist/src/hooks/<HOOK_PAYLOAD_FILES>` into
+  `src/hooks/`, `templates/wolf/hooks/` and `.wolf/hooks/`, then run `npm run verify`.
+  Hook sources are `@ts-nocheck`, so tsc won't catch a missing import; run each hook's
+  `--selfcheck`. Inside `runHook`, return instead of `process.exit` so hook health is recorded.
 
 
 ## Do-Not-Repeat

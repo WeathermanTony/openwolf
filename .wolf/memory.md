@@ -575,3 +575,6 @@
 |------|--------|---------|---------|--------|
 - 2026-10-11T15:54:19Z Fixed learning-nudge false positive on peer messages: readRecentUserTurns skips isMeta / origin.kind=peer entries (shared.ts/js, template, .wolf copy) + test. Replied to skills-catalog: nudge belongs in a user-level UserPromptSubmit hook, not WolfPack.
 | 12:07 | Session end: 2 writes across 2 files (learning-nudge-peer-messages.md, cron-run-daemon-connect.md) | 0 reads | ~1849 tok |
+| 12:24 | Session end: 2 writes across 2 files (learning-nudge-peer-messages.md, cron-run-daemon-connect.md) | 0 reads | ~1849 tok |
+| 12:27 | Session end: 2 writes across 2 files (learning-nudge-peer-messages.md, cron-run-daemon-connect.md) | 0 reads | ~1849 tok |
+- 2026-10-11T16:30:39Z Merged feature/quiet-mode-modernization (WolfPack Lite) into autonomy-continuation as 8eecb28 (custom.30; 380/380 tests, verify passed). Relinked global openwolf to the main checkout, removed the Lite worktree and branch. Earlier: committed the pending recurrence/pre-write/provenance work and fixed the cron run daemon stall (bug-853).
