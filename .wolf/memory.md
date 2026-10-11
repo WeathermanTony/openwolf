@@ -10,348 +10,6 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
-## Session: 2026-08-17 11:29
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-
-## Session: 2026-08-19 21:19
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 21:30 | Reviewed parked-questions proposal (fresh Claude companion + own verification) | .wolf/handoff-parked-questions.md (skillsbench) | adopt-with-changes: vacuous pin test, no open-state enumerator, broken rollout check, non-portable // marker | ~9k |
-| 21:33 | Added `## Parked Questions` (15 lines) with STATUS field, behavioural pin test, portable marker, BLOCKER required field | src/templates/OPENWOLF.md, .wolf/OPENWOLF.md | inserted before Claim Calibration; template==live byte-identical | ~3k |
-| 21:34 | Wrote registry-based fleet coverage verifier replacing vacuous `grep -L` glob | scripts/verify-fleet-section.mjs | FAIL(missing=84) pre-update → PASS(missing=0) post-update; 3 negative controls fail closed | ~4k |
-| 21:35 | Propagated to fleet via `openwolf update` | 84 registered projects | all 85 carry section; user data (cerebrum/buglog/memory) untouched, backups taken | ~2k |
-| 21:48 | Corrected own vacuous-zero error: registry root check extracted 0 paths (entries use `root`, not `path`/`dir`); 2 of 85 ARE outside main root | scripts/verify-fleet-section.mjs, .wolf/cerebrum.md | bug-691 logged; fail-closed guard added (extracted != entries -> exit 2) | ~5k |
-| 21:52 | Reviewed handoff #2 (Proposals A + B) via fresh Claude companion | .wolf/handoff-confirmation-and-blast-radius.md (skillsbench) | A: adopt-with-changes (permissive-only, closed set, settings precedence); B: relocate to contributor docs + 2-line pointer | ~11k |
-| 21:56 | Falsified reviewer Finding 8 both ways on a real fleet project | scripts/verify-fleet-section.mjs | heading-removal DID fail (reviewer wrong); body-revert PASSED vacuously (reviewer right) -> added canonical section-hash binding, bug-692 | ~6k |
-| 22:00 | Staged canary rule in customopenwolf only (template untouched), exercised it | .wolf/OPENWOLF.md | canary caught bug-693 before fleet push — cwd-relative template made verifier PASS on heading-only from any other cwd | ~6k |
-| 22:04 | Hardened verifier: script-relative template + fail-closed on unbindable section (--allow-unbound override) | scripts/verify-fleet-section.mjs | /tmp run now content-binds; absent section exits 2 | ~4k |
-| 22:06 | Promoted canary; added Proposal A (11 lines) and Proposal B pointer; full checklist to contributor docs | src/templates/OPENWOLF.md, .wolf/OPENWOLF.md, docs/blast-radius.md | all three sections content-bound PASS across 85 projects | ~7k |
-| 22:20 | Reviewed other session's revert advice on post-write.js — declined: all 5 sibling hooks carry the same sourceMappingURL in HEAD, so the change removes an outlier | .wolf/hooks/post-write.js | kept; parses + runs clean; left out of feature commit as unrelated | ~3k |
-| 22:24 | Committed protocol work (9d846f3) + backfilled bug commit SHAs (f4f0062) | src/templates/OPENWOLF.md, docs/, scripts/ | .wolf/qa/ is gitignored — respected, not force-added | ~3k |
-| 22:35 | Root-caused learning.explicit double misfire: directive tokens vs intent, not role filtering | src/hooks/nudges/rules/learning.ts | RELAY guard added, 190/190 tests, deployed hooks synced fleet-wide + behaviourally verified (bug-694) | ~9k |
-| 12:30 | Verified other session's refutation of my P1 demo: both measurements correct, different files (customopenwolf 231/10 vs skillsbench 47/0) | .wolf/anatomy.md (both projects) | mislabeled, not phantom; P0 re-homing confirmed at src/cli/skillsbench.ts:70 | ~5k |
-| 12:42 | skillsbench session removed stale /tmp section (10 deleted scratch scripts) found by drift check; anatomy now 221/0 | .wolf/anatomy.md | clean |
-| 12:45 | Created src/cli/drift-cmd.ts | — | ~2420 |
-
-## Session: 2026-08-19 12:48
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 13:05 | P1 drift check: fixed root-relative base, denominator drop, prose headings, brace expansion | src/cli/drift-cmd.ts, tests/drift-cmd.test.js | 200/200 tests; 4/4 false positives cleared | ~28k |
-| 13:55 | Definitive fleet drift scan: 85/85 checked, 2096/14800 stale entries across 37 projects | .wolf/qa/drift-check-command.md | verified; top result spot-checked as real | ~6k |
-| 14:20 | P2: Challenge Gate section added to review lifecycle (pre-writeup finding filter, 2 fresh-subagent rounds, not a review round) | src/templates/OPENWOLF.md, .wolf/OPENWOLF.md | staged locally; exercised on a real finding | ~12k |
-| 14:50 | Challenge gate first run reversed round 1: found+fixed real false negative (bug-702) in drift check | src/cli/drift-cmd.ts, tests/drift-cmd.test.js | 207/207; negative control verified | ~14k |
-
-## Session: 2026-08-19 16:14
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 16:20 | P0 skill description lint: validateSkill rejects missing descriptions, warns on provider wording | src/cli/skillsbench.ts, tests/skill-description-lint.test.js | 10/10 pass; negative control 5 fail when extraction disconnected | ~9k |
-| 16:35 | Canary upgrade on skillsbench — found bare `openwolf update` is fleet-wide, wrote 84 projects | src/cli/update.ts (read) | bug-706 logged; rule now names --project | ~7k |
-| 16:45 | Added --only <root> to verify-fleet-section for canary-scoped verification | scripts/verify-fleet-section.mjs | 3 negative controls all exit=2 (fail closed) | ~5k |
-| 16:55 | Correct canary redeploy via --project skillsbench | .wolf/OPENWOLF.md, src/templates/OPENWOLF.md | canary PASS, fleet 83 DRIFTED (correct mid-canary signature) | ~4k |
-| 17:00 | driftcheck exercised in canary + negative control | .wolf/qa/canary-rollout-scope.md | 47/47 clean; injected entry detected 48/48 findings=1 | ~4k |
-| 17:30 | Fleet rollout authorized by user; `openwolf update` → 84 updated, 1 skipped (source repo), 0 errors | all registered projects | 85/85 byte-identical on OPENWOLF.md and qa/_template.md | ~12k |
-| 17:55 | Content-bound verification of all 3 sections fleet-wide | scripts/verify-fleet-section.mjs | 85/85 PASS each, drifted=0, unreadable=0 | ~3k |
-| 18:00 | Negative control: corrupted one body, heading left intact | .wolf/qa/fleet-rollout-2026-08-19.md | exit=1, named mr.he2; heading check would have passed | ~3k |
-| 18:05 | driftcheck exercised in non-canary project mr.he | — | 65/65 checked, 19 real stale entries found | ~2k |
-| 18:20 | Backfilled commit SHAs for bug-703..706 (c7f668d, 0edcf8a) | .wolf/buglog.json | all 4 now link problem→fix→proof | ~3k |
-| 18:30 | Found 2 bugs citing reduction files that did not exist; bug-703 had no proof at all | .wolf/qa/experiment-metric-parse.md | wrote missing reduction with real run: acc= errors, acc=0.91 stores 0.91 | ~6k |
-| 18:40 | Swept all 130 reduction paths in buglog for dangling links | .wolf/buglog.json | 0 genuinely dangling (first sweep mis-flagged 8 compound strings) | ~2k |
-
-## Session summary — 2026-08-19
-
-Completed the remaining P-items from the handoff brief, canaried on skillsbench, then
-rolled out fleet-wide on user authorization and pushed.
-
-**Shipped:** P0 (skill `description:` provider-wording lint — bug-705), P3 (QA template
-evidence fields), P4 (experiment journal as a projection; empty-metric rejection —
-bug-703), P5 (receipt-hash interop proposal + UQ-1 behavioural seam), P6 (cerebrum
-conventions). P1/P2 landed earlier in the session.
-
-**Canary found a defect in my own rule (bug-706):** the Staged Rollout section mandated
-canary-first deployment but named no command achieving it. `openwolf update` is fleet-wide
-by default and cwd does NOT scope it — running it from inside skillsbench wrote 84
-projects. Section now names `openwolf update --project <name>`; verify-fleet-section
-gained `--only <root>` (fails closed on unregistered targets).
-
-**Fleet rollout:** 84 updated, 1 skipped (source repo), 0 errors. All three protocol
-sections 85/85 content-hash bound, drifted=0; OPENWOLF.md and qa/_template.md 85/85
-byte-identical. Negative control: corrupting one body while leaving its heading intact
-drove the check to exit=1 and named the project — a heading check would have passed it.
-
-**Pushed:** 7 commits (153631a..6d46bca) to origin/feature/autonomy-continuation, verified
-against a fresh fetch. master untouched, no PR opened.
-
-**Ledger hygiene:** backfilled commit SHAs for bug-703..706; found and fixed 2 dangling
-reduction links (one bug had no proof file at all — written now); swept all 130 reduction
-paths, 0 dangling.
-
-**Open:** UQ-1 (companion receipt-hash interop, externally blocked). 9 pre-existing open
-bugs unrelated to this session's work.
-| 19:10 | Found pending review-0092 (8 files, 7 days stale); ran GLM companion review | src/hooks/post-write.ts, bug-tracker.ts, conclusion.ts/.js | 5 findings, no CRITICAL | ~11k |
-| 19:25 | Challenge Gate both rounds on the triggering findings | .wolf/qa/post-write-dedup-path.md | 2 REJECTED, 2 DOWNGRADED, 1 CONFIRMED | ~9k |
-| 19:40 | Fixed bug-707 (basename vs relFile) in all 4 post-write copies + regression test | src+.wolf+templates post-write, tests/post-write-dedup-path.test.js | 227/227; negative control reproduces occ=3 and '| Also:' contamination | ~10k |
-| 19:50 | Kimi K3 arbitration CLEAN on current bytes; review-0092 completed via CLI | .wolf/reviewlog.json | lineage lin-7176af379826f888 round 1 | ~4k |
-
-## Session: 2026-08-27 06:24
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 06:29 | Restored this repository's global Wolfpack CLI aliases in WSL2 and Windows PowerShell; replaced conflicting legacy Windows openwolf package and verified fresh-shell resolution/version | package.json, .wolf/qa/wolfpack-cli-global-links.md, .wolf/buglog.json, .wolf/cerebrum.md, .wolf/anatomy.md | `wolfpack` and `openwolf` resolve in both environments at 1.2.0-custom.23 | ~5k |
-| 06:31 | Session end: 2 writes across 2 files (wolfpack-cli-global-links.md, buglog.json) | 3 reads | ~3054 tok |
-
-## Session: 2026-08-29 10:13
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 10:15 | Created ../../../../../tmp/sparkresearch-run-2yBaMI/read-log.md | — | ~423 |
-| 10:15 | Created ../../../../../tmp/sparkresearch-run-2yBaMI/candidate-1-abstract.md | — | ~336 |
-| 10:15 | Created ../../../../../tmp/sparkresearch-run-2yBaMI/candidate-2-abstract.md | — | ~305 |
-| 10:15 | Created ../../../../../tmp/sparkresearch-run-2yBaMI/candidate-3-abstract.md | — | ~308 |
-| 10:15 | Created ../../../../../tmp/sparkresearch-run-2yBaMI/candidate-4-abstract.md | — | ~310 |
-| 10:15 | Created ../../../../../tmp/sparkresearch-run-2yBaMI/candidate-5-abstract.md | — | ~294 |
-| 10:15 | Created ../../../../../tmp/sparkresearch-run-2yBaMI/candidate-6-abstract.md | — | ~282 |
-| 10:15 | Created ../../../../../tmp/sparkresearch-run-2yBaMI/candidate-7-abstract.md | — | ~302 |
-| 10:21 | Created ../../../../../tmp/sparkresearch-run-2yBaMI/verdicts.md | — | ~561 |
-| 10:22 | Session end: 9 writes across 9 files (read-log.md, candidate-1-abstract.md, candidate-2-abstract.md, candidate-3-abstract.md, candidate-4-abstract.md) | 16 reads | ~3344 tok |
-| 10:22 | Session end: 9 writes across 9 files (read-log.md, candidate-1-abstract.md, candidate-2-abstract.md, candidate-3-abstract.md, candidate-4-abstract.md) | 16 reads | ~3344 tok |
-| 10:27 | Session end: 9 writes across 9 files (read-log.md, candidate-1-abstract.md, candidate-2-abstract.md, candidate-3-abstract.md, candidate-4-abstract.md) | 16 reads | ~3344 tok |
-| 10:29 | Session end: 9 writes across 9 files (read-log.md, candidate-1-abstract.md, candidate-2-abstract.md, candidate-3-abstract.md, candidate-4-abstract.md) | 16 reads | ~3344 tok |
-| 10:32 | Session end: 9 writes across 9 files (read-log.md, candidate-1-abstract.md, candidate-2-abstract.md, candidate-3-abstract.md, candidate-4-abstract.md) | 34 reads | ~121468 tok |
-| 10:32 | Session end: 9 writes across 9 files (read-log.md, candidate-1-abstract.md, candidate-2-abstract.md, candidate-3-abstract.md, candidate-4-abstract.md) | 34 reads | ~121468 tok |
-| 10:33 | Session end: 9 writes across 9 files (read-log.md, candidate-1-abstract.md, candidate-2-abstract.md, candidate-3-abstract.md, candidate-4-abstract.md) | 34 reads | ~121468 tok |
-| 10:43 | Created ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | — | ~3086 |
-| 11:05 | Recorded evidence-first preference for research-derived Wolfpack changes | .wolf/cerebrum.md | durable preference added | ~120 |
-| 11:06 | Session end: 10 writes across 10 files (read-log.md, candidate-1-abstract.md, candidate-2-abstract.md, candidate-3-abstract.md, candidate-4-abstract.md) | 40 reads | ~127413 tok |
-| 11:07 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | 3→4 lines | ~158 |
-| 11:08 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | reduced (-6 lines) | ~120 |
-| 11:08 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | only() → reads() | ~128 |
-| 11:08 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | inline fix | ~15 |
-| 11:08 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | 2→2 lines | ~131 |
-| 11:08 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | 2→2 lines | ~11 |
-| 11:08 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | 5→5 lines | ~227 |
-| 11:14 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | 2→2 lines | ~120 |
-| 11:14 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | evidence() → file() | ~418 |
-| 11:14 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | 2→2 lines | ~92 |
-| 11:14 | Edited ../../../../../home/tony/.claude/plans/reflective-sauteeing-pie.md | 2→2 lines | ~73 |
-| 11:15 | Session end: 21 writes across 10 files (read-log.md, candidate-1-abstract.md, candidate-2-abstract.md, candidate-3-abstract.md, candidate-4-abstract.md) | 46 reads | ~129011 tok |
-
-## Session: 2026-08-29 11:21
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 11:24 | Audited newer Wolfpack mechanism use across four active roots plus one historical control | .wolf/audits/newer-mechanisms-usage-audit-2026-08-29.md | Read-only evidence; provenance and balanced traces CANARY ONLY; other research mechanisms deferred/rejected | ~18000 |
-| 11:24 | Recorded audit disposition and indexed the new audit report | .wolf/cerebrum.md; .wolf/anatomy.md | Durable decision and navigation entry added | ~250 |
-| 11:25 | Corrected stale audit aggregates and repeated root-label typo; logged prevention lesson | .wolf/audits/newer-mechanisms-usage-audit-2026-08-29.md; .wolf/buglog.json; .wolf/cerebrum.md | bug-709 open pending commit; final retained-root totals reconciled | ~700 |
-| 11:26 | Repaired stale temporary research entries found by driftcheck | .wolf/anatomy.md; .wolf/buglog.json | bug-710 logged; driftcheck PASS (226/226 anatomy, 15/31 commands, 2/2 parked) | ~350 |
-| 11:28 | Edited src/hooks/nudges/state.ts | 3 → 4 | ~11 |
-| 11:29 | Edited src/hooks/nudges/state.ts | 3→4 lines | ~20 |
-| 11:29 | Edited src/hooks/nudges/state.ts | 3→7 lines | ~98 |
-| 11:29 | Edited src/hooks/nudges/state.ts | inline fix | ~45 |
-| 11:29 | Edited src/hooks/nudges/state.ts | 3→4 lines | ~53 |
-| 11:29 | Edited src/hooks/nudges/state.ts | inline fix | ~47 |
-| 11:29 | Edited src/hooks/nudges/state.ts | 3→4 lines | ~50 |
-| 11:29 | Edited src/hooks/nudges/engine.ts | added 2 import(s) | ~42 |
-| 11:29 | Edited src/hooks/nudges/engine.ts | added error handling | ~288 |
-| 11:29 | Edited src/hooks/nudges/engine.ts | 3→6 lines | ~36 |
-| 11:30 | Edited src/hooks/nudges/engine.ts | expanded (+9 lines) | ~158 |
-| 11:30 | Edited src/hooks/nudges/engine.ts | 3→4 lines | ~16 |
-| 11:30 | Edited src/hooks/nudges/engine.ts | expanded (+6 lines) | ~101 |
-| 11:30 | Edited src/hooks/nudges/engine.ts | inline fix | ~33 |
-| 11:30 | Edited src/hooks/nudges/engine.ts | inline fix | ~19 |
-| 11:30 | Edited src/hooks/nudges/engine.ts | 3→4 lines | ~25 |
-
-## Session: 2026-08-29 11:33
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 11:33 | Edited src/hooks/nudges/engine.ts | inline fix | ~28 |
-| 11:33 | Edited src/hooks/nudges/engine.ts | inline fix | ~33 |
-| 11:33 | Edited src/hooks/nudges/rules/learning.ts | 2→5 lines | ~77 |
-| 11:33 | Edited src/hooks/nudges/rules/cerebrum.ts | 2→5 lines | ~83 |
-| 11:33 | Edited src/hooks/nudges/rules/conclusion.ts | expanded (+7 lines) | ~108 |
-| 11:33 | Edited src/hooks/nudges/rules/review.ts | 3→6 lines | ~84 |
-| 11:34 | Edited src/hooks/nudges/rules/review.ts | 3→5 lines | ~62 |
-| 11:34 | Edited src/hooks/nudges/rules/review.ts | expanded (+6 lines) | ~93 |
-| 11:34 | Edited src/cli/nudge-cmd.ts | added nullish coalescing | ~208 |
-| 11:34 | Edited src/cli/nudge-cmd.ts | added 2 condition(s) | ~183 |
-| 11:34 | Edited src/cli/nudge-cmd.ts | 3→4 lines | ~51 |
-| 11:34 | Edited src/cli/nudge-cmd.ts | modified for() | ~106 |
-| 11:35 | Edited src/cli/nudge-cmd.ts | added 1 condition(s) | ~167 |
-| 11:36 | Edited src/hooks/nudges/engine.ts | 6→9 lines | ~106 |
-| 11:36 | Edited src/hooks/nudges/engine.ts | inline fix | ~38 |
-| 11:36 | Edited tests/nudge-engine.test.js | 1→2 lines | ~53 |
-
-## Session: 2026-08-29 11:50
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 11:52 | Edited src/hooks/nudges/engine.ts | modified stableJson() | ~357 |
-| 11:52 | Edited src/hooks/nudges/engine.ts | 3→4 lines | ~31 |
-| 11:52 | Edited src/hooks/nudges/engine.ts | 3→3 lines | ~46 |
-| 11:52 | Edited src/hooks/nudges/rules/cerebrum.ts | 2→3 lines | ~29 |
-| 11:52 | Edited src/hooks/nudges/rules/conclusion.ts | 2→3 lines | ~29 |
-| 11:52 | Edited src/hooks/nudges/rules/learning.ts | 2→3 lines | ~29 |
-| 11:52 | Edited src/hooks/nudges/rules/review.ts | 2→3 lines | ~28 |
-| 11:52 | Edited tests/nudge-engine.test.js | inline fix | ~16 |
-| 11:52 | Edited tests/nudge-engine.test.js | inline fix | ~30 |
-| 11:53 | Edited tests/nudge-engine.test.js | modified for() | ~1841 |
-| 11:54 | Edited src/hooks/nudges/engine.ts | modified for() | ~174 |
-| 11:56 | Session end: 11 writes across 6 files (engine.ts, cerebrum.ts, conclusion.ts, learning.ts, review.ts) | 6 reads | ~23028 tok |
-| 11:57 | Edited tests/nudge-engine.test.js | expanded (+44 lines) | ~815 |
-| 12:02 | Session end: 13 writes across 7 files (engine.ts, cerebrum.ts, conclusion.ts, learning.ts, review.ts) | 8 reads | ~27186 tok |
-| 12:09 | Completed the evidence-backed nudge provenance canary across source/runtime/template mirrors; fixed the 351-byte diagnostic-growth falsifier, added CLI/migration/semantic-rearm tests, current QA evidence, and clean current-byte review-0094 | src/cli/nudge-cmd.ts, src/hooks/nudges/, .wolf/hooks/nudges/, templates/wolf/hooks/nudges/, tests/nudge-engine.test.js, .wolf/qa/nudge-provenance-canary.md | build passed; focused 6/6; nudge 45/45; full 233/233; install verify passed; driftcheck clean | ~12000 |
-| 12:05 | Session end: 13 writes across 7 files (engine.ts, cerebrum.ts, conclusion.ts, learning.ts, review.ts) | 9 reads | ~27186 tok |
-
-## Session: 2026-08-29 12:19
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-
-## Session: 2026-09-04 13:05
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 13:24 | Created ../../../../../home/tony/.claude/plans/serialized-greeting-wall.md | — | ~1677 |
-| 15:14 | Created tests/lib/fixture-cleanup.js | — | ~782 |
-| 15:15 | Created tests/fixture-cleanup.test.js | — | ~1422 |
-| 15:15 | Edited tests/fixture-cleanup.test.js | 3→4 lines | ~56 |
-| 15:15 | Edited tests/review-completion.test.js | added 1 import(s) | ~50 |
-| 15:15 | Edited tests/review-completion.test.js | modified stopHookReviewFixture() | ~35 |
-| 15:15 | Edited tests/review-completion.test.js | inline fix | ~16 |
-| 15:15 | Edited tests/review-completion.test.js | inline fix | ~16 |
-| 15:16 | Edited tests/review-completion.test.js | inline fix | ~6 |
-| 15:16 | Edited tests/review-completion.test.js | inline fix | ~15 |
-| 15:16 | Edited tests/review-completion.test.js | inline fix | ~23 |
-| 15:16 | Edited tests/review-completion.test.js | inline fix | ~30 |
-| 15:16 | Edited tests/review-completion.test.js | 3→3 lines | ~46 |
-| 15:16 | Edited tests/registry.test.js | 3→3 lines | ~28 |
-| 15:16 | Edited tests/registry.test.js | 2→2 lines | ~27 |
-| 15:17 | Edited tests/registry.test.js | rmSync() → cleanupFixture() | ~46 |
-| 15:17 | Edited tests/ledger-integrity.test.js | 4→4 lines | ~35 |
-| 15:17 | Edited tests/ledger-integrity.test.js | inline fix | ~15 |
-| 15:17 | Edited tests/ledger-integrity.test.js | inline fix | ~15 |
-| 15:17 | Edited tests/ledger-integrity.test.js | added 1 condition(s) | ~52 |
-| 15:17 | Edited tests/post-write-dedup-path.test.js | 3→3 lines | ~41 |
-| 15:17 | Edited tests/post-write-dedup-path.test.js | inline fix | ~13 |
-| 15:18 | Edited tests/nudge-engine.test.js | added 1 import(s) | ~38 |
-| 15:18 | Edited tests/nudge-engine.test.js | modified tmp() | ~45 |
-| 15:18 | Edited src/cli/daemon-cmd.ts | added 1 import(s) | ~28 |
-| 15:18 | Edited src/cli/daemon-cmd.ts | added optional chaining | ~319 |
-| 15:18 | Edited tests/daemon-cmd.test.js | added 2 import(s) | ~99 |
-| 15:19 | Edited tests/daemon-cmd.test.js | added nullish coalescing | ~760 |
-| 15:19 | Edited tests/daemon-cmd.test.js | added nullish coalescing | ~401 |
-| 15:21 | Session end: 29 writes across 10 files (serialized-greeting-wall.md, fixture-cleanup.js, fixture-cleanup.test.js, review-completion.test.js, registry.test.js) | 20 reads | ~89818 tok |
-
-## Session: 2026-09-04 15:23
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 15:24 | Edited tests/ledger-integrity.test.js | 4→8 lines | ~78 |
-| 15:25 | Verified full project suite | `npm test` | 242/242 passed | ~54K output |
-| 15:26 | Removed sibling symlink leak and reran focused lifecycle suites | tests/ledger-integrity.test.js, tests/fixture-cleanup.test.js | 16/16 passed; home/tmp allowlisted roots absent | ~3K |
-| 15:27 | Added adversarial reductions and replaced auto-detected bug stubs with verified records | .wolf/qa/test-fixture-lifecycle-cleanup.md, .wolf/qa/pm2-readonly-list-guard.md, .wolf/buglog.json | bug-716/717 linked to positive and negative-control evidence; bogus bug-718 removed | ~3K |
-| 15:28 | Recorded durable lifecycle and PM2 side-effect lessons | .wolf/cerebrum.md | fixture signal/stale-sweep and PM2 PID-guard conventions captured | ~1K |
-| 15:25 | Created ../../../../../home/tony/.claude/scratchpad/update-leak-bugs.mjs | — | ~638 |
-| 15:35 | Edited tests/lib/fixture-cleanup.js | 2→3 lines | ~36 |
-| 15:36 | Edited tests/lib/fixture-cleanup.js | added error handling | ~150 |
-| 15:36 | Edited tests/lib/fixture-cleanup.js | 3→3 lines | ~66 |
-| 15:36 | Edited tests/lib/fixture-cleanup.js | 3→4 lines | ~57 |
-| 15:36 | Edited tests/fixture-cleanup.test.js | 3→4 lines | ~57 |
-| 15:36 | Edited tests/fixture-cleanup.test.js | modified for() | ~190 |
-| 15:37 | Edited tests/fixture-cleanup.test.js | 3→4 lines | ~119 |
-| 15:38 | Created ../../../../../tmp/log-pm2-review-findings.mjs | — | ~559 |
-| 15:38 | Created ../../../../../tmp/log-pm2-review-findings.mjs | — | ~751 |
-| 15:39 | Session end: 18 writes across 7 files (ledger-integrity.test.js, test-fixture-lifecycle-cleanup.md, pm2-readonly-list-guard.md, update-leak-bugs.mjs, fixture-cleanup.js) | 8 reads | ~19068 tok |
-| 15:41 | Created ../../../../../tmp/resolve-leak-bugs.mjs | — | ~111 |
-| 15:42 | Challenged review findings and fixed confirmed stale-sweep race | tests/lib/fixture-cleanup.js, tests/fixture-cleanup.test.js, .wolf/qa/test-fixture-lifecycle-cleanup.md | live PID owner marker added; real-home sweep finding rejected as required behavior; unrelated PM2 findings recorded bug-718..720 | ~8K |
-| 15:43 | Completed clean current-byte arbitration | review-0095 | Claude discovery then ChatGPT clean arbitration on hashes 69ebee30e312/d42245310306 | ~4K |
-| 15:44 | Re-ran full suite and committed both fixes | fd32fe4, 98de37f | 242/242 passed; bug-716/717 resolved with reduction and commit evidence | ~55K output |
-| 15:42 | Created ../../../../../tmp/build-leak-metadata-stage.mjs | — | ~1004 |
-| 15:46 | Session end: 20 writes across 9 files (ledger-integrity.test.js, test-fixture-lifecycle-cleanup.md, pm2-readonly-list-guard.md, update-leak-bugs.mjs, fixture-cleanup.js) | 9 reads | ~20262 tok |
-
-## Session: 2026-09-04 15:48
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-
-## Session: 2026-09-05 16:58
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 17:00 | Session assessment: compared supplied model-prompt advice with existing Wolfpack policy | .wolf/OPENWOLF.md, src/templates/OPENWOLF.md, templates/wolf/OPENWOLF.md, .wolf/cerebrum.md | Recommend intent/preparation clarification and attributable skill pauses; no prompt edits or deployment; scaffold lacks two related sections present in source/runtime; attribution unverified | ~3K |
-| 17:01 | Ran documentation reference baseline | openwolf driftcheck | Anatomy 233 checked; commands 31 extracted/15 checked; parked 2 checked; no findings reported | ~100 |
-| 17:05 | Edited src/templates/OPENWOLF.md | 1→3 lines | ~119 |
-| 17:06 | Edited src/templates/OPENWOLF.md | expanded (+6 lines) | ~163 |
-
-| 17:07 | Session completion: applied approved initiative, pause-source attribution, and concise response style | src/templates/OPENWOLF.md, .wolf/OPENWOLF.md; anatomy/cerebrum | Exactly three additions per protocol; original instructions preserved; source/canary bytes equal; diff whitespace and driftcheck passed. No fleet update or commit; fresh real-session behavioral canary remains the rollout prerequisite. Init/update read src/templates directly, not templates/wolf. | ~2K |
-| 17:08 | Session end: 2 writes across 1 files (OPENWOLF.md) | 7 reads | ~33274 tok |
-
-## Session: 2026-09-06 22:57
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-
-## Session: 2026-09-06 23:07
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 23:09 | Created ../../../../../home/tony/.claude/plans/witty-nibbling-wilkes.md | — | ~547 |
-| 23:14 | Created ../../../../../home/tony/.claude/plans/witty-nibbling-wilkes.md | — | ~1435 |
-| 23:16 | Edited src/templates/OPENWOLF.md | expanded (+12 lines) | ~613 |
-| 23:16 | Edited src/templates/OPENWOLF.md | inline fix | ~60 |
-| 23:17 | Edited src/templates/OPENWOLF.md | 2→2 lines | ~383 |
-
-| 03:18 | Parent-owned accounting protocol canary; child validation preserved; clean initial/fix-verification review ends review, one shared three-pass ceiling | src/templates/OPENWOLF.md, .wolf/OPENWOLF.md, .wolf/cerebrum.md | 8 static policy clauses PASS; source/local parity PASS; earlier prompt additions retained; diff whitespace PASS; real-session canary pending; hooks unchanged | ~1800 |
-| 03:18 | Recorded timeout, rejected collector invocation, and fork accounting report as open; peer identified security-guidance separately from bookkeeping | .wolf/buglog.json | No timeout mechanism or runtime improvement claimed; no peer edits/fleet rollout | ~500 |
-| 03:19 | Protocol-only commit 37dbc0b created; user authorized push, but branch includes three earlier unpushed commits | src/templates/OPENWOLF.md, .wolf/OPENWOLF.md | No push yet; awaiting scope choice; live canary pending. Driftcheck anatomy 234/234, commands 15/31, parked 2/2, zero findings | ~200 |
-| 03:26 | User selected push all four commits; pushed feature/autonomy-continuation | origin, 37dbc0b | Remote tip verified 37dbc0bd4f579de7f98afcd6360a08c69abdb046; uncommitted hook/ledger work excluded; no fleet rollout | ~150 |
-| 23:27 | Session end: 5 writes across 2 files (witty-nibbling-wilkes.md, OPENWOLF.md) | 15 reads | ~88030 tok |
-| 23:27 | Session end: 5 writes across 2 files (witty-nibbling-wilkes.md, OPENWOLF.md) | 15 reads | ~88030 tok |
-| 03:36 | review-0096: one current-byte Claude companion pass; five reported findings challenged in two fresh read-only passes, all rejected against contract/evidence | .wolf/qa/parent-accounting-review.md | Source helper stale/refresh tests 2/2 PASS; static removal negative control PASS; no protocol changes; companion budget 1/3 consumed; real canary pending | ~1700 |
-| 23:36 | Session end: 6 writes across 3 files (witty-nibbling-wilkes.md, OPENWOLF.md, parent-accounting-review.md) | 17 reads | ~111949 tok |
-| 23:37 | Session end: 6 writes across 3 files (witty-nibbling-wilkes.md, OPENWOLF.md, parent-accounting-review.md) | 17 reads | ~111949 tok |
-| 23:39 | Session end: 6 writes across 3 files (witty-nibbling-wilkes.md, OPENWOLF.md, parent-accounting-review.md) | 17 reads | ~111949 tok |
-| 23:45 | Session end: 6 writes across 3 files (witty-nibbling-wilkes.md, OPENWOLF.md, parent-accounting-review.md) | 19 reads | ~129046 tok |
-| 23:54 | Session end: 6 writes across 3 files (witty-nibbling-wilkes.md, OPENWOLF.md, parent-accounting-review.md) | 23 reads | ~139558 tok |
-| 23:56 | Edited tests/nudge-engine.test.js | 2→7 lines | ~126 |
-| 23:56 | Edited src/hooks/nudges/rules/review.ts | 2→3 lines | ~33 |
-| 00:00 | Session end: 8 writes across 5 files (witty-nibbling-wilkes.md, OPENWOLF.md, parent-accounting-review.md, nudge-engine.test.js, review.ts) | 24 reads | ~139717 tok |
-
-## Session: 2026-09-06 00:08
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-
-| 04:15 | Fleet rollout resumed under explicit user authorization; local protocol checks pass; refreshed registry now 97 projects (was 96), all protocols present, zero malformed config/settings. Scoped reviewer findings being challenged before install. | /tmp/wolfpack-fleet-preflight-current.json; .wolf/qa/review-provenance-fleet.md | In progress; no fleet installation claimed | ~120 |
-| 13:26 | Created tests/nudge-state-safety.test.js | — | ~1053 |
-| 13:27 | Edited tests/nudge-state-safety.test.js | "ow-state-safety-" → "ow-nudge-" | ~9 |
-| 13:27 | Edited src/hooks/nudges/state.ts | added 1 condition(s) | ~163 |
-| 13:27 | Edited src/cli/nudge-cmd.ts | added 1 condition(s) | ~46 |
-| 13:29 | Session end: 4 writes across 3 files (nudge-state-safety.test.js, state.ts, nudge-cmd.ts) | 7 reads | ~37142 tok |
-
-| 17:32 | State safety: real EACCES loss and empty-ID dismissal confirmed by opposing challenges; narrow fixes, real installed-hook permission canary preserved bytes, rebuilt installer verification and 249/249 tests passed. Scoped companion fix-verification is pass2; fleet install follows receipt. | .wolf/qa/nudge-state-safety.md | Current tested payload | ~120 |
-
-## Session: 2026-09-06 13:43
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-
-| 13:45 | Completed authorized fleet installation and content/backup verification | .wolf/qa/review-provenance-fleet.md; .wolf/qa/nudge-state-safety.md | 97 updated + source current; protocol98/98; hooks1455/1455; utilities582/582; backups97; settings/config preserved; four concurrent append-only ledger changes accounted for; tests249/249; no pending reviews | ~700 |
-
-## Session: 2026-09-10 12:53
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 02:51 | Edited ../../../../../home/tony/.claude/settings.json | 2→3 lines | ~20 |
-| 02:54 | Created ../../../../../tmp/rtk-failing.test.js | — | ~57 |
-| 02:54 | Session end: 2 writes across 2 files (settings.json, rtk-failing.test.js) | 9 reads | ~46360 tok |
-| 02:55 | Session end: 2 writes across 2 files (settings.json, rtk-failing.test.js) | 9 reads | ~46360 tok |
-
 ## Session: 2026-09-13 02:55
 
 | Time | Action | File(s) | Outcome | ~Tokens |
@@ -691,4 +349,229 @@ bugs unrelated to this session's work.
 | 19:27 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~40 |
 | 19:27 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~159 |
 | 19:28 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~92 |
+| 19:31 | Session end: 232 writes across 53 files (session-start.ts, shared.ts, size-discipline.ts, session-start-concurrency.test.js, pre-read.ts) | 69 reads | ~395320 tok |
+| 20:45 | Session end: 232 writes across 53 files (session-start.ts, shared.ts, size-discipline.ts, session-start-concurrency.test.js, pre-read.ts) | 69 reads | ~395320 tok |
+
+## Session: 2026-09-17 15:31
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-10-03 11:47
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+### ECC nudge-system assessment
+
+- Compared pinned ECC source (`ef648e01899ba3e8dc6371642deaaf64b4477775`) against current Wolfpack implementation; read-only source exploration, no ECC execution or installation.
+- Report: `.wolf/audits/ecc-nudge-assessment-2026-10-03.md`. Ranked candidates: bounded approved-lesson disclosure, early outcome-aware no-progress feedback, optional batched read-only validation. Wholesale integration rejected; benefit remains unmeasured.
+- Recorded disposition in Cerebrum and indexed the report in Anatomy. No runtime/source changes, tests, commit, publication, or fleet rollout.
+| 12:18 | Created src/hooks/lesson-recall.ts | — | ~1256 |
+| 12:20 | Edited src/hooks/pre-write.ts | added 3 import(s) | ~90 |
+| 12:20 | Edited src/hooks/pre-write.ts | added optional chaining | ~397 |
+| 12:21 | Edited src/hooks/pre-write.ts | added error handling | ~720 |
+| 12:22 | Edited src/cli/hook-manifest.ts | 2→3 lines | ~17 |
+| 12:22 | Edited src/config/default-config.json | 4→9 lines | ~57 |
+| 12:22 | Edited src/templates/config.json | 4→9 lines | ~57 |
+| 12:22 | Edited templates/wolf/config.json | 4→9 lines | ~57 |
+| 12:24 | Edited src/hooks/lesson-recall.ts | 2→3 lines | ~20 |
+| 12:24 | Edited src/hooks/lesson-recall.ts | added 4 condition(s) | ~149 |
+| 12:24 | Edited src/hooks/lesson-recall.ts | modified for() | ~30 |
+| 12:25 | Edited src/hooks/lesson-recall.ts | inline fix | ~34 |
+| 12:26 | Edited src/hooks/lesson-recall.ts | 1→5 lines | ~105 |
+| 12:27 | Edited src/hooks/lesson-recall.ts | added nullish coalescing | ~200 |
+| 12:27 | Edited src/hooks/pre-write.ts | inline fix | ~34 |
+| 12:30 | Created tests/lesson-recall.test.js | — | ~3850 |
+| 12:36 | Edited src/hooks/lesson-recall.ts | 1→2 lines | ~62 |
+| 12:36 | Edited src/hooks/lesson-recall.ts | 3→6 lines | ~106 |
+| 12:37 | Edited src/hooks/lesson-recall.ts | 1→2 lines | ~51 |
+| 12:39 | Created scripts/lesson-recall-canary.mjs | — | ~2378 |
+| 12:43 | Edited package.json | inline fix | ~8 |
+| 12:43 | Edited package-lock.json | inline fix | ~8 |
+| 12:43 | Edited VERSION | inline fix | ~4 |
+| 12:43 | Created docs/relevant-lessons.md | — | ~1107 |
+| 12:51 | Edited src/hooks/lesson-recall.ts | inline fix | ~21 |
+| 12:51 | Edited src/hooks/lesson-recall.ts | added 1 condition(s) | ~70 |
+| 12:51 | Edited src/hooks/lesson-recall.ts | 2→2 lines | ~42 |
+| 12:52 | Edited src/hooks/lesson-recall.ts | 1→4 lines | ~114 |
+| 12:52 | Edited src/hooks/lesson-recall.ts | inline fix | ~44 |
+| 12:52 | Edited src/hooks/lesson-recall.ts | 1→2 lines | ~57 |
+| 12:52 | Edited src/hooks/pre-write.ts | added optional chaining | ~18 |
+| 12:53 | Edited src/hooks/pre-write.ts | added 1 condition(s) | ~89 |
+| 12:53 | Edited src/hooks/lesson-recall.ts | "Relevant lesson excerpts;" → "Cerebrum excerpts (contex" | ~25 |
+| 12:54 | Edited src/hooks/lesson-recall.ts | 4→5 lines | ~96 |
+| 12:54 | Edited src/hooks/shared.ts | modified toString() | ~119 |
+| 12:56 | Edited scripts/lesson-recall-canary.mjs | modified replay() | ~43 |
+| 12:57 | Edited scripts/lesson-recall-canary.mjs | added 1 condition(s) | ~25 |
+| 12:57 | Edited scripts/lesson-recall-canary.mjs | added 1 condition(s) | ~321 |
+| 12:58 | Edited tests/lesson-recall.test.js | added optional chaining | ~792 |
+| 13:00 | Edited src/hooks/lesson-recall.ts | 2→2 lines | ~37 |
+| 13:14 | Edited docs/relevant-lessons.md | expanded (+6 lines) | ~309 |
+
+### Relevant-lesson local canary closeout — 2026-10-03
+
+- Implemented and enabled only this checkout; canonical default/scaffold configs stay off. Local lexical matching supplements governing reads, with owner scope, bounded section-labeled excerpts/source pointers and existing nudge lifecycle. No ECC installation, memory promotion, fleet rollout, commit or publication.
+- Changed code: src/hooks/lesson-recall.ts/js, pre-write.ts/js, shared.ts/js; src/cli/hook-manifest.ts; config/scaffold defaults and local opt-in; corresponding portable/installed helper/runtime/manifest copies. Added tests/lesson-recall.test.js, scripts/lesson-recall-canary.mjs and docs/relevant-lessons.md. Package/package-lock/VERSION now 1.2.0-custom.27. Unrelated dirty changes preserved.
+- Validation: build PASS; 333/333 tests PASS; install verification PASS. Two actual runtime-negative controls exit 1 for intended missing injection and EOF liveness defects; temporary probes removed and originals hash-verified unchanged. Final source-byte independent review CLEAN after reproduced fixes; rejected intermediate Git-SHA-1 receipt and verified final kept-stage SHA-256 receipt. Three review executions total; no further review required.
+- Historical evidence is a pre-closeout corpus snapshot: 158 lessons, 18 transcript files (2 tail-limited), 22 eligible edits, sample 9 edits/3 sessions. Three isolated injections versus two under default shared-session state; single paired excerpt 643→421 bytes, aggregate isolated treatment 1400 bytes versus baseline 643. Different stderr/context channels are not token costs; no improved task outcomes or fleet-general precision demonstrated.
+- Parent-owned consolidation: bug-812 through bug-823 bind concrete defects/evaluation/accounting errors to .wolf/qa/lesson-recall.md; auto bug-801 through bug-811 retain original heuristic claims with explicit assessments/proof links rather than being silently deleted or counted as reproduced fixes. All remain open with commit null because no commit was requested. Canonical lock/max-ID/atomic writer used; 25 baseline-only entries verified retained in archives, no ledger repair needed.
+- Durable evidence: .wolf/qa/lesson-recall.md, lesson-recall-canary.json, lesson-recall-controls.json, lesson-recall-review.json. Review list had no pending entries. Governing memory records measured local-only decision and receipt-domain lesson. Trust boundary remains repository-controlled Cerebrum: no authorship authentication; recalled commands never execute automatically.
+- Final closeout checks: all 24 evidence hashes still match; compiled helper/pre-write twins and three EOF runtime seams pass; config/version alignment and git diff --check pass; bug/review identities clean, no pending review IDs. Preserved actual full-suite summary and install-verification output in review evidence. Historical global QA status is not clean (39 current, 131 stale, 4 orphan, 22 broken); those older records were not refreshed or represented as passing. This canary reduction is CURRENT.
+| 13:48 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 34 reads | ~267936 tok |
+- Stop created review-0100 after the completion response. All 12 obligation hashes matched saved evidence; supporting config/version/docs changes inspected without another companion pass. Completed through canonical complete-review.js with honest composite reviewer and reviewed-current fallback; full-set hash was not falsely attributed to the companion. Receipt preserved in lesson-recall-review.json. No additional review executions; source bytes unchanged.
+| 13:50 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 34 reads | ~267936 tok |
+| 13:51 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 34 reads | ~267936 tok |
+| 17:16 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 34 reads | ~267936 tok |
+| 17:17 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 34 reads | ~267936 tok |
+| 17:17 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 34 reads | ~267936 tok |
+- User clarified the perceived double Stop with two successive “Ran 3 stop hooks” passes. Investigation found Wolfpack plus security-guidance/ralph-loop Stop types, and identical Wolfpack registration declarations at project/parent levels; duplicate execution not proven. Actual markerPresent substring check rejected “Version is …” as version-impact evidence, causing the second corrective reply. No hook registrations, configuration or runtime code changed; learning recorded.
+| 17:24 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 34 reads | ~267936 tok |
+| 17:24 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 34 reads | ~267936 tok |
+| 17:30 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 34 reads | ~267936 tok |
+
+### agent-improvement-loop source assessment — 2026-10-03
+
+- Pinned c4c34708a6fb8cfe5557f7ea17107dbf817d481c; inspected substantive miner/store source, selected tests and design/skill docs. Ten downloaded files Git-blob verified. Third-party tests were inspected, not run; no install, scheduler, external publication or functional changes.
+- Parent accepted source-supported candidates only: distinct-incident/post-fix recurrence reporting; exact local transcript locators; parser-coverage diagnostics. Wolfpack already covers conservative capture/promotion, dispositions, protected experiments, review hashes and bounded lesson recall. No measured local/fleet value yet; no implementation authorized.
+- Rejected wholesale integration/new store/background promotion/review chain/public-content pipeline. Silent-empty detector and skill/correction temporal association need stronger local evidence; scanner runs cannot stand for independent incidents. Assessment: .wolf/audits/agent-improvement-loop-assessment-2026-10-03.md.
+- Resolved research pin assertion/domain error is bug-824 with proof linked; canonical lock/max-ID/atomic writer used. Current source/runtime/version files untouched. Version impact: none for this assessment; prior 1.2.0-custom.27 canary unchanged. Nothing staged, committed, pushed or fleet-deployed.
+| 17:41 | Session end: 42 writes across 13 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 44 reads | ~301642 tok |
+| 17:50 | Created tests/bug-recurrence.test.js | — | ~4734 |
+| 17:50 | Edited tests/bug-recurrence.test.js | 2→3 lines | ~66 |
+| 17:50 | Edited tests/bug-recurrence.test.js | 2→4 lines | ~74 |
+| 17:52 | Edited tests/bug-recurrence.test.js | inline fix | ~32 |
+| 17:55 | Created src/buglog/recurrence-report.ts | — | ~5772 |
+| 17:56 | Created src/cli/bug-recurrence-cmd.ts | — | ~924 |
+| 17:56 | Edited src/cli/index.ts | expanded (+16 lines) | ~287 |
+| 17:57 | Edited src/buglog/recurrence-report.ts | inline fix | ~45 |
+| 18:00 | Edited src/buglog/recurrence-report.ts | added nullish coalescing | ~286 |
+| 18:01 | Edited src/buglog/recurrence-report.ts | 2→3 lines | ~66 |
+| 18:01 | Edited tests/bug-recurrence.test.js | modified for() | ~789 |
+| 18:01 | Edited src/buglog/recurrence-report.ts | added 1 condition(s) | ~121 |
+| 18:01 | Edited package.json | inline fix | ~8 |
+| 18:01 | Edited package-lock.json | inline fix | ~8 |
+| 18:01 | Edited VERSION | inline fix | ~4 |
+| 18:03 | Created docs/bug-recurrence.md | — | ~1514 |
+| 18:07 | Edited package.json | inline fix | ~19 |
+| 18:10 | Edited tests/bug-recurrence.test.js | 3→7 lines | ~120 |
+| 18:10 | Created scripts/recurrence-controls.mjs | — | ~1323 |
+| 18:10 | Edited scripts/recurrence-controls.mjs | 2→4 lines | ~99 |
+| 18:10 | Edited tests/bug-recurrence.test.js | modified for() | ~1485 |
+
+| 2026-10-03 | Implemented read-only recurrence CLI; real corpus exposed archive overlap, fixed conservative coalescing and diagnostic exclusions; bounded npm test file concurrency after a CLI fixture timeout | src/buglog/recurrence-report.ts, src/cli/bug-recurrence-cmd.ts, src/cli/index.ts, tests/bug-recurrence.test.js, scripts/recurrence-controls.mjs, docs/bug-recurrence.md, package metadata | 16 focused controls and earlier344-test full run pass; final review/QA pending; no commit, publish, hook or fleet changes | ~8k |
+| 18:24 | Edited src/buglog/recurrence-report.ts | added 1 condition(s) | ~123 |
+| 18:24 | Edited src/buglog/recurrence-report.ts | 3→2 lines | ~46 |
+| 18:24 | Edited tests/bug-recurrence.test.js | expanded (+70 lines) | ~1198 |
+| 18:24 | Edited src/buglog/recurrence-report.ts | modified for() | ~12 |
+| 18:25 | Edited scripts/recurrence-controls.mjs | added 1 import(s) | ~26 |
+| 18:25 | Edited scripts/recurrence-controls.mjs | added 1 condition(s) | ~443 |
+| 18:25 | Edited scripts/recurrence-controls.mjs | inline fix | ~35 |
+| 18:29 | Edited scripts/recurrence-controls.mjs | added 1 condition(s) | ~124 |
+| 18:30 | Edited scripts/recurrence-controls.mjs | modified for() | ~394 |
+| 18:30 | Edited scripts/recurrence-controls.mjs | added nullish coalescing | ~253 |
+
+| 22:55 | Completed read-only recurrence report and current-byte evidence closeout | src/buglog/recurrence-report.ts, src/cli/bug-recurrence-cmd.ts, src/cli/index.ts, tests/bug-recurrence.test.js, scripts/recurrence-controls.mjs, docs/bug-recurrence.md, package metadata, .wolf/qa/bug-recurrence* | 19 focused / 352 full tests; build/install PASS; freshness rejected stale runtime; five expected-negative controls verified; four review findings fixed, final scoped CLEAN receipt preserved with unavailable-stage limits; local real-history exit2/54 failures/no default matches, not no-regression proof; bug-831 assessed and bug-837..841 recorded; custom.28 source only, uncommitted/unpublished/no rollout | ~4k |
+| 18:56 | Session end: 77 writes across 19 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 57 reads | ~362148 tok |
+| 18:57 | Session end: 77 writes across 19 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 57 reads | ~362148 tok |
+| 19:13 | Session end: 77 writes across 19 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 57 reads | ~362148 tok |
+| 09:40 | Created ../../../../../tmp/wolfpack-latest-recall-evaluation.mjs | — | ~2170 |
+| 09:40 | Created ../../../../../tmp/latest-additions-recurrence-probe.mjs | — | ~2531 |
+| 09:41 | Edited ../../../../../tmp/wolfpack-latest-recall-evaluation.mjs | "globstar is off" → "Fleet-coverage checks mus" | ~15 |
+| 09:43 | Edited ../../../../../tmp/latest-additions-recurrence-probe.mjs | 1→4 lines | ~245 |
+| 09:43 | Edited ../../../../../tmp/wolfpack-latest-recall-evaluation.mjs | 1→4 lines | ~164 |
+| 09:43 | Edited ../../../../../tmp/latest-additions-recurrence-probe.mjs | inline fix | ~31 |
+| 09:43 | Edited ../../../../../tmp/wolfpack-latest-recall-evaluation.mjs | inline fix | ~18 |
+
+| 13:46 | Started authorized practical evaluation of relevant-lesson recall and recurrence reporting | .wolf/audits/latest-additions-evaluation-2026-10-04.md | Predeclared gates frozen; isolated real-hook tests: 2/6 risk recalls, 0/5 irrelevant injections, caps and owner isolation pass; warm skillsbench subject baseline 9/9 correct, second pass unchanged; real recurrence utility investigation pending; no production configuration change or rollout | ~3k |
+
+| 13:57 | Completed practical qualification and rollout decisions for both latest additions | .wolf/qa/latest-additions-evaluation.md, .wolf/qa/latest-additions-evaluation.json, .wolf/audits/latest-additions-evaluation-2026-10-04.md | No blanket rollout: recall opt-in only (2/6 risk recall, 0/5 noise, ~240ms paired local overhead); warm subject 9/9 before and after, no corrected decisions; recurrence optional occasional CLI only (zero matches both roots, no defensible sampled bug link, 24s/2.5s runs); 42 focused tests and five negative controls pass; 24 original byte locators independently checked; corrections bug-842..846 retained; no production/config/permission changes, deployment or publication | ~4k |
+| 09:58 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 60 reads | ~375292 tok |
+| 09:59 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 60 reads | ~375292 tok |
+
+| 14:10 | Recorded user decision to skip rollout/promotion of both latest additions | .wolf/cerebrum.md | No deployment/configuration change or source deletion; experimental work remains uncommitted | ~0.3k |
+| 10:10 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 60 reads | ~375292 tok |
+
+| 17:39 | Answered peer quiet-hook provenance alert | src/hooks/pre-write.ts, src/hooks/stop.ts, src/hooks/shared.ts | Current canonical source has no quiet-mode early exit; Stop unchanged; latest opt-in recall/recurrence work was not rolled out. Requested exact peer root/flagged hashes; no bypass verdict or target mutation inferred. Repeated guessed test-path lookup tracked under bug-841 | ~0.5k |
+| 13:39 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 60 reads | ~375292 tok |
+| 13:40 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 60 reads | ~375292 tok |
+| 13:49 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 66 reads | ~454893 tok |
+| 13:50 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 66 reads | ~454893 tok |
+| 13:56 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 66 reads | ~454893 tok |
+| 10:41 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 66 reads | ~454893 tok |
+| 10:42 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 66 reads | ~454893 tok |
+| 10:42 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 66 reads | ~454893 tok |
+| 11:34 | Session end: 85 writes across 22 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 66 reads | ~454893 tok |
+| 13:50 | Created ../rag/.wolf/canaries/nudge-qualification-2026-10-05/cases.json | — | ~1376 |
+| 13:53 | Created ../rag/.wolf/canaries/nudge-qualification-2026-10-05/canary.mjs | — | ~3760 |
+| 13:53 | Edited ../rag/.wolf/canaries/nudge-qualification-2026-10-05/canary.mjs | inline fix | ~44 |
+| 13:55 | Created ../rag/.wolf/canaries/nudge-qualification-2026-10-05/protocol.md | — | ~1896 |
+| 13:55 | Created ../rag/.wolf/canaries/nudge-qualification-2026-10-05/manifest.json | — | ~285 |
+| 13:58 | Created ../rag/.wolf/canaries/nudge-qualification-2026-10-05/preflight.json | — | ~462 |
+| 14:00 | Created ../rag/.wolf/qa/nudge-qualification-canary.md | — | ~1396 |
+| 14:03 | Session end: 92 writes across 28 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 66 reads | ~464618 tok |
+
+## Session: 2026-10-05 offline qualification coordination
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 18:07 | RRSI-inspired RAG qualification setup | External RAG canary/QA; local cerebrum/anatomy | 13 embedded + five supplementary receiving checks pass; live trials 0. RAG coordinator reports a candidate fresh-context executor, not executed proof. review-0102 pending: 17 files still covered by review-0101; five new canary files in one scoped companion review. | not measured |
+| 14:19 | Created ../rag/.wolf/canaries/nudge-qualification-2026-10-05-v2/canary.mjs | — | ~5279 |
+
+| 18:26 | Verified and repaired offline qualification checker | External RAG v2; owner QA/buglog; local metadata | Original review defects reproduced. v2 syntax, 24 embedded, 14 receiving groups and six guard-disconnection controls pass; original frozen bytes preserved. Scoped fix review pending; zero model trials, hooks/config unchanged. | not measured |
+| 14:29 | Created ../rag/.wolf/qa/nudge-qualification-canary.md | — | ~2147 |
+| 14:32 | Edited ../rag/.wolf/qa/nudge-qualification-canary.md | "claude-companion.mjs revi" → "claude-companion" | ~177 |
+
+| 18:34 | Qualification setup closeout | .wolf/reviewlog.json review-0102 via canonical helper; external RAG review receipts | v2 five-file CLEAN hashes current; 24 embedded + 14 receiving groups + six disconnections pass. Two companion passes, later metadata retrieval not another pass. Coordinator records v2 as sole execution candidate and keeps trials unlaunched pending explicit go-ahead. | not measured |
+| 14:35 | Session end: 95 writes across 28 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 67 reads | ~472763 tok |
+
+| 18:36 | Stop review-0103 reconciled canonically | .wolf/reviewlog.json; external RAG v2 receipt | 22 current paths covered by review-0102 plus one current v2 path already in CLEAN fix scope; no extra companion pass. Current-byte check passed. Zero live trials. | not measured |
+| 14:36 | Session end: 95 writes across 28 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 67 reads | ~472763 tok |
+| 11:37 | Session end: 95 writes across 28 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 67 reads | ~472763 tok |
+| 11:48 | Session end: 95 writes across 28 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 67 reads | ~472763 tok |
+
+| 15:50 | Authorized first live RAG v2 canary per user Proceed | External RAG coordinator; frozen manifest 68a0d7ecd36102f479626fc1b3f53248d1c880ba15a5cffccb9f2091b6a5a0ec | Authorization sent; awaiting acknowledgment/results. Ceiling 44 fresh contexts, 20 minutes, 60s/request, <=2 concurrent. No execution or benefit claimed yet. | not measured |
+| 11:57 | Created ../../../../../tmp/wolf-nudge-live-20261006.mjs | — | ~1892 |
+
+- [2026-10-06] Actual user authorized Proceed in the customopenwolf parent session. RAG peer declined relayed approval; parent respected that boundary and launched directly here. Frozen v2 preflight passed; executor is CLI 2.1.291, requested model gpt-6.1-sol, effort high, fresh UUID per invocation, bare/tool-free/nonpersistent. Limits 44 invocations, 20 minutes, 60 seconds each, two concurrent; first observation gates further execution on actual init isolation/model/session telemetry. Results pending, not benefit/adoption. Run: `/mnt/j/projectshome/projects/rag/.wolf/canaries/nudge-qualification-2026-10-05-v2/runs/live-20261006-n8NlEh/`.
+| 11:58 | Created ../../../../../tmp/wolf-nudge-verify-20261006.mjs | — | ~962 |
+
+- [2026-10-06] First authorized live v2 canary completed: 44/44 fresh tool-free contexts, all rationale/choice checks accepted, held-out 18/18 baseline and treatment, zero protected failures/regressions; receiving checker exit 0, signal reject (no benefit). Run 109738 ms, peak concurrency 2, longest request 7447 ms. Raw evidence and manual disposition: `/mnt/j/projectshome/projects/rag/.wolf/canaries/nudge-qualification-2026-10-05-v2/runs/live-20261006-n8NlEh`. CLI-reported economics remain unattested; no rollout, extra rounds, runtime/config changes, commit or publication.
+| 12:02 | Session end: 97 writes across 30 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 67 reads | ~475820 tok |
+| 12:02 | Session end: 97 writes across 30 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 67 reads | ~475820 tok |
+| 12:02 | Session end: 97 writes across 30 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 67 reads | ~475820 tok |
+
+- [2026-10-06] User accepted keeping current Wolfpack behavior after the completed no-benefit canary: “Sounds like what e have is optimal for now!” No further additions, trials, or rollout pursued.
+| 14:01 | Session end: 97 writes across 30 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 67 reads | ~475820 tok |
+| 11:14 | Session end: 97 writes across 30 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 68 reads | ~493013 tok |
+| 11:16 | Session end: 97 writes across 30 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 68 reads | ~493013 tok |
+| 11:18 | Session end: 97 writes across 30 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 68 reads | ~493013 tok |
+| 13:44 | Session end: 97 writes across 30 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 68 reads | ~493013 tok |
+| 13:56 | Edited src/hooks/pre-write.ts | — | ~0 |
+| 13:57 | Edited src/hooks/pre-write.ts | removed 71 lines | ~136 |
+| 13:58 | Edited package.json | inline fix | ~8 |
+| 13:58 | Edited package-lock.json | inline fix | ~8 |
+| 13:58 | Edited VERSION | inline fix | ~4 |
+| 14:02 | Created tests/pre-write-retirement.test.js | — | ~2362 |
+
+- [2026-10-07] Lesson-recall retirement authorized and implemented: private verified backup `/home/tony/.claude/backups/wolfpack-recall-retirement-20261007-OoHfB8` (48 files + dirty-tree patch); removed opt-in config, selector/runtime/template helper, call sites, manifests, canary/script/docs and experiment suite. Restored legacy driving-project checks, kept independent fixes and recurrence. New `tests/pre-write-retirement.test.js` preserves stdin regression and tests legacy behavior/cross-project non-access; build passed, further validation pending. Version 1.2.0-custom.29.
+| 14:04 | Edited tests/pre-write-retirement.test.js | inline fix | ~7 |
+
+- [2026-10-07] Retirement validation: final full suite passed 342/342; three supplementary receiving controls reproduce old foreign-state effects, show their absence after retirement, and prove EOF cancellation via expected ETIMEDOUT. Corrected initial mutation-fixture import closure and wrong state-file assertion; bugs bug-847, bug-848, bug-849. Independent review’s initial Git-staging refusal is invalid current-file evidence; corrected companion-owned current-file review pending.
+| 14:16 | Edited src/hooks/pre-write.ts | 7→9 lines | ~138 |
+| 14:17 | Edited tests/pre-write-retirement.test.js | modified for() | ~572 |
+
+- [2026-10-07] Lesson recall retired and final bytes validated: build passed, 350/350 full tests, 30/30 focused tests, install verification passed, four bound supplementary controls passed. Current three-file companion fix review CLEAN with full verified SHA-256. Review accounting: one unusable agent report, two direct companion passes; metadata continuation adds no valid review. Reproduced/fixed same-basename advice mismatch; additional bugs bug-850, bug-851. Source/runtime/template copies synchronized; 11 protected files and other config fields unchanged; version .29. No fleet update/commit/publication. QA `.wolf/qa/lesson-recall-retirement.md`.
+| 14:29 | Session end: 107 writes across 32 files (lesson-recall.ts, pre-write.ts, hook-manifest.ts, default-config.json, config.json) | 71 reads | ~510034 tok |
+
+## Session: 2026-10-10 12:35
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-10-11 11:44
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
 - 2026-10-11T15:54:19Z Fixed learning-nudge false positive on peer messages: readRecentUserTurns skips isMeta / origin.kind=peer entries (shared.ts/js, template, .wolf copy) + test. Replied to skills-catalog: nudge belongs in a user-level UserPromptSubmit hook, not WolfPack.
+| 12:07 | Session end: 2 writes across 2 files (learning-nudge-peer-messages.md, cron-run-daemon-connect.md) | 0 reads | ~1849 tok |

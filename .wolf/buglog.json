@@ -2,394 +2,6 @@
   "version": 1,
   "bugs": [
     {
-      "id": "bug-691",
-      "timestamp": "2026-08-19T01:44:18.238Z",
-      "error_message": "Registry root-distribution check reported \"outside /mnt/j/projectshome: 0\" when the true answer is 2; extraction had silently yielded 0 paths.",
-      "file": "scripts/verify-fleet-section.mjs",
-      "root_cause": "Ad-hoc verification one-liner extracted registry paths with `x.path || x.dir`, but registry entries use the `root` key. Zero paths extracted meant zero survived the filter, and an empty filter result was read as a substantive negative finding. Same vacuous-zero class as bug-066 (grep -L on a non-matching glob), reproduced in the check written to replace it.",
-      "fix": "Reordered extraction to prefer `root`, and added a fail-closed guard: if extracted path count != registry entry count, exit 2 refusing to report coverage. Falsified with a schema-drift registry ({location:...} entries) which now exits 2 instead of passing.",
-      "status": "resolved",
-      "tags": [
-        "verification",
-        "vacuous-zero",
-        "registry",
-        "fleet",
-        "schema-drift"
-      ],
-      "related_bugs": [
-        "bug-066"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T01:44:18.238Z",
-      "commit": "9d846f3059d42aba993ab8768e96cee09a3351e3",
-      "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
-    },
-    {
-      "id": "bug-692",
-      "timestamp": "2026-08-19T01:47:48.887Z",
-      "error_message": "Fleet coverage verifier passed on a project whose section heading was intact but whose BODY had been reverted to a superseded rule.",
-      "file": "scripts/verify-fleet-section.mjs",
-      "root_cause": "Coverage was asserted with body.includes(<heading>). Heading presence is a propagation signal, not a content signal, so stale/partial/reverted section bodies verified as covered. Raised by an external reviewer (Finding 8); the reviewer predicted heading REMOVAL would also pass, which was false (measured: MISSING named the project), but the content case was real.",
-      "fix": "Extract the canonical section from src/templates/OPENWOLF.md, normalize (CRLF, trailing WS) and sha256 it, compare per project, report drifted=<n> naming each, and fail unless drifted==0. Falsified by corrupting one real fleet project body: heading-only check PASS -> content-bound check FAIL naming the project; restored byte-identical after.",
-      "status": "resolved",
-      "tags": [
-        "verification",
-        "fleet",
-        "content-drift",
-        "vacuous-pass"
-      ],
-      "related_bugs": [
-        "bug-066",
-        "bug-691"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T01:47:48.887Z",
-      "commit": "9d846f3059d42aba993ab8768e96cee09a3351e3",
-      "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
-    },
-    {
-      "id": "bug-693",
-      "timestamp": "2026-08-19T02:08:05.428Z",
-      "error_message": "verify-fleet-section.mjs printed RESULT: PASS while performing only heading-presence checks when run from any cwd other than the repo root.",
-      "file": "scripts/verify-fleet-section.mjs",
-      "root_cause": "Canonical template resolved with path.join(process.cwd(),\"src/templates/OPENWOLF.md\"). From another cwd the template was not found, canonical stayed null, and the script degraded to the heading-only check bug-692 had just eliminated — then reported PASS. Found by exercising the staged canary rule before fleet propagation.",
-      "fix": "Resolve template relative to the script via fileURLToPath(import.meta.url), and fail closed (exit 2) when no canonical section can be bound, with an explicit --allow-unbound override. Falsified: run from /tmp now content-binds and PASSes; a section absent from the template exits 2 instead of reporting coverage.",
-      "status": "resolved",
-      "tags": [
-        "verification",
-        "fleet",
-        "cwd-dependence",
-        "silent-degrade",
-        "vacuous-pass"
-      ],
-      "related_bugs": [
-        "bug-066",
-        "bug-691",
-        "bug-692"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T02:08:05.428Z",
-      "commit": "9d846f3059d42aba993ab8768e96cee09a3351e3",
-      "reduction": ".wolf/qa/fleet-section-coverage-verifier.md"
-    },
-    {
-      "id": "bug-694",
-      "timestamp": "2026-08-19T02:25:40.213Z",
-      "error_message": "learning.explicit nudge misfired twice (learning-c2405746, learning-f7b7ade9) on turns that relay a third-party review or announce a handoff document, classifying them as user corrections for ## Do-Not-Repeat.",
-      "file": "src/hooks/nudges/rules/learning.ts",
-      "root_cause": "The correction pattern matches bare never/always/don't anywhere in the turn. Role filtering was NOT the problem (readRecentUserTurns already restricts to entry.type===user); the problem is that a user turn quoting an assistant ship report or reviewer verdict is user bytes carrying directive tokens. The existing quotation guard was ^-anchored on here's/quoted/example only, so attribution prefixes and document-report openers were uncovered. Review-pipeline prose is maximally dense in these tokens.",
-      "fix": "Added a ^-anchored RELAY guard covering attribution prefixes and document-report openers. Both misfire texts now classify null; all true positives preserved, including a genuine correction that mentions a handoff document. Regression test added; 190/190 pass. Deployed hook copies synced fleet-wide and verified behaviourally.",
-      "status": "resolved",
-      "tags": [
-        "nudge",
-        "classifier",
-        "false-positive",
-        "learning",
-        "relay"
-      ],
-      "related_bugs": [],
-      "occurrences": 2,
-      "last_seen": "2026-08-19T02:25:40.213Z",
-      "commit": "5837e6bac4b2006e7f1eaf98a0950b02be95df27",
-      "reduction": ".wolf/qa/learning-relay-guard.md"
-    },
-    {
-      "id": "bug-695",
-      "timestamp": "2026-08-19T00:00:00.000Z",
-      "error_message": "openwolf driftcheck reported 221 of 222 anatomy entries missing, including files that demonstrably exist (src/cli/index.ts)",
-      "file": "src/cli/drift-cmd.ts",
-      "root_cause": "Anatomy section headings are project-root-relative (\"## src/cli/\"), but entries were resolved with path.resolve(wolfDir, rel), producing <root>/.wolf/src/cli/index.ts. Every real file therefore reported missing.",
-      "fix": "Resolve anatomy entries against the project root: path.resolve(root, rel). Regression test \"anatomy entries resolve against the project root, not .wolf/\" fails if the base regresses.",
-      "status": "resolved",
-      "tags": [
-        "drift",
-        "anatomy",
-        "path-resolution",
-        "false-positive"
-      ],
-      "related_bugs": [
-        "bug-066",
-        "bug-691",
-        "bug-692",
-        "bug-693"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T00:00:00.000Z",
-      "commit": "985c90d",
-      "reduction": ".wolf/qa/drift-check-command.md"
-    },
-    {
-      "id": "bug-696",
-      "timestamp": "2026-08-19T00:00:00.000Z",
-      "error_message": "Anatomy entries appearing before the first ## heading were dropped without being counted, shrinking the coverage denominator invisibly",
-      "file": "src/cli/drift-cmd.ts",
-      "root_cause": "`if (!e || section === null) continue` skipped unresolvable entries BEFORE incrementing extracted, so an entry that could not be checked simply vanished from the count. The vacuity guard (extracted === checked) could not catch it because both stayed consistent — the same defect class the command exists to detect.",
-      "fix": "Count every matched entry before resolving; report a section-less entry as anatomy-missing with an explicit \"(entry precedes any section heading)\" detail. Found by a unit test asserting the denominator, not by inspection.",
-      "status": "resolved",
-      "tags": [
-        "drift",
-        "vacuity",
-        "denominator",
-        "anatomy"
-      ],
-      "related_bugs": [
-        "bug-691",
-        "bug-695"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T00:00:00.000Z",
-      "commit": "985c90d",
-      "reduction": ".wolf/qa/drift-check-command.md"
-    },
-    {
-      "id": "bug-697",
-      "timestamp": "2026-08-19T00:00:00.000Z",
-      "error_message": "Negative-control harness printed exit=0 for controls that had correctly failed",
-      "file": ".wolf/qa/drift-check-command.md",
-      "root_cause": "Controls were run as `node ... driftcheck --check 2>&1 | grep -E ...; echo exit=$?`. In a pipeline $? is the LAST command's status, so every control reported grep's exit code (0) instead of the checker's. The controls looked like they proved the check cannot fail.",
-      "fix": "Measure exit status directly with output redirected to a file, never through a pipe. Verified: drift=1, vacuous=1, clean=0.",
-      "status": "resolved",
-      "tags": [
-        "testing",
-        "shell",
-        "exit-code",
-        "vacuity",
-        "negative-control"
-      ],
-      "related_bugs": [
-        "bug-691",
-        "bug-696"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T00:00:00.000Z",
-      "commit": "985c90d",
-      "reduction": ".wolf/qa/drift-check-command.md"
-    },
-    {
-      "id": "bug-698",
-      "timestamp": "2026-08-19T00:00:00.000Z",
-      "error_message": "driftcheck reported 4/4 false positives on a hand-written anatomy: existing README.md/CLAUDE.md flagged missing, and brace-notation filenames never matched",
-      "file": "src/cli/drift-cmd.ts",
-      "root_cause": "Two assumptions failed on hand-written indexes: (1) section headings are always directory paths, but prose headings like \"## Top level\" were joined as directories; (2) entries are always literal filenames, but \"koch_1904_{wikipedia,mactutor}.txt\" is brace notation for two files. Also the entry regex only matched backtick format, so a bold-format anatomy extracted 0 entries and tripped the vacuity guard.",
-      "fix": "sectionDir() resolves whitespace-bearing (prose) headings to the project root; expandBraces() expands sibling notation and requires every variant to exist; ANATOMY_ENTRY accepts both `name` and **name**. The vacuity guard is what surfaced the format blindness rather than a false clean pass.",
-      "status": "resolved",
-      "tags": [
-        "drift",
-        "anatomy",
-        "false-positive",
-        "regex",
-        "hand-written"
-      ],
-      "related_bugs": [
-        "bug-695",
-        "bug-696"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T00:00:00.000Z",
-      "commit": "985c90d",
-      "reduction": ".wolf/qa/drift-check-command.md"
-    },
-    {
-      "id": "bug-699",
-      "timestamp": "2026-08-19T00:00:00.000Z",
-      "error_message": "driftcheck reported .wolf/qa/.wolf/qa/<file>.md missing — a doubled path prefix for files that exist",
-      "file": "src/cli/drift-cmd.ts",
-      "root_cause": "Anatomy entries are inconsistent: some are bare names relative to their heading (\"index.ts\" under \"## src/cli/\"), others already carry the full project-root-relative path (\".wolf/qa/x.md\" under \"## .wolf/qa/\"). Unconditional join(section, name) doubled the prefix for the second form. 150 of 411 mt5automation findings were this class.",
-      "fix": "Resolve against the section base OR the project root; only an entry satisfying neither is drift. Guarded by a paired test asserting the fallback still fails on a file absent under both bases, so the extra leniency cannot make the check unfalsifiable.",
-      "status": "resolved",
-      "tags": [
-        "drift",
-        "anatomy",
-        "path-resolution",
-        "false-positive"
-      ],
-      "related_bugs": [
-        "bug-695",
-        "bug-698"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T00:00:00.000Z",
-      "commit": "985c90d",
-      "reduction": ".wolf/qa/drift-check-command.md"
-    },
-    {
-      "id": "bug-700",
-      "timestamp": "2026-08-19T00:00:00.000Z",
-      "error_message": "driftcheck hung past 30s on dependency-heavy projects; 43 of 85 fleet projects returned no parseable output",
-      "file": "src/cli/drift-cmd.ts",
-      "root_cause": "The parked-question check walked every source file to depth 8 unconditionally, even in the overwhelmingly common case where no parked-questions ledger exists and the walk result is discarded. 39s on one project. A session-end check that hangs is a check that does not get run.",
-      "fix": "Skip the walk when no ledger exists and say so explicitly in the SKIP text (\"code not scanned for orphan TODO(UQ-n) markers\") rather than emitting a bare \"no parked questions\" that implies a scan. Walk is additionally capped at 20000 files, reporting VACUOUS on truncation instead of silently returning partial coverage. 39s -> 3.7s.",
-      "status": "resolved",
-      "tags": [
-        "drift",
-        "performance",
-        "timeout",
-        "honest-skip"
-      ],
-      "related_bugs": [
-        "bug-695"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T00:00:00.000Z",
-      "commit": "985c90d",
-      "reduction": ".wolf/qa/drift-check-command.md"
-    },
-    {
-      "id": "bug-701",
-      "timestamp": "2026-08-19T00:00:00.000Z",
-      "error_message": "Fleet drift scan reported \"455 stale across 10 projects\" while 43 of 85 projects had silently failed to produce output",
-      "file": "/tmp/fleet-drift2.cjs",
-      "root_cause": "Per-project results were aggregated without asserting that the number of projects successfully checked equalled the registry count. Projects that timed out contributed nothing and were invisible in the totals, so a half-fleet sample read as a fleet result.",
-      "fix": "Assert checked === roots.length and emit an explicit WARN naming the shortfall and parse-error count. The guard is what exposed the timeout defect (bug-700); without it the partial numbers would have been reported as fleet-wide truth.",
-      "status": "resolved",
-      "tags": [
-        "vacuity",
-        "denominator",
-        "fleet",
-        "aggregation"
-      ],
-      "related_bugs": [
-        "bug-066",
-        "bug-691",
-        "bug-700"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T00:00:00.000Z",
-      "commit": "985c90d",
-      "reduction": ".wolf/qa/drift-check-command.md"
-    },
-    {
-      "id": "bug-702",
-      "timestamp": "2026-08-19T00:00:00.000Z",
-      "error_message": "driftcheck reported a deleted file as clean: anatomy entry \"auth.ts\" under \"## src/api/\" resolved against an unrelated auth.ts at the project root",
-      "file": "src/cli/drift-cmd.ts",
-      "root_cause": "The root fallback added for bug-699 (entries carrying their own section prefix) was applied UNCONDITIONALLY. Any entry could therefore resolve against a same-named file anywhere the root candidate landed, so a genuinely deleted/moved file was rescued by a basename collision — the exact stale-entry class the command exists to detect. Generic basenames (index.ts, config.ts, README.md) make the collision ordinary rather than exotic. The existing regression test did not cover it: docs/nowhere.md was absent under BOTH candidate paths, so it proved only that the fallback cannot rescue a name absent everywhere — a strictly weaker claim that a single-base implementation would also satisfy.",
-      "fix": "Gate the root fallback on selfPrefixed: the entry must literally begin with its own section path. Verified by negative control — reverting the guard turns the new collision test red (exit=1) and restoring it returns 17/17. bug-699 confirmed still fixed on real mt5automation data (0 doubled-prefix false positives). Surfaced 26 previously-hidden stale entries on that project alone (360 -> 386), 8 of 8 spot-checked as genuinely absent.",
-      "status": "resolved",
-      "tags": [
-        "drift",
-        "anatomy",
-        "false-negative",
-        "path-resolution",
-        "challenge-gate"
-      ],
-      "related_bugs": [
-        "bug-695",
-        "bug-699"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T00:00:00.000Z",
-      "commit": "e9dd132",
-      "reduction": ".wolf/qa/challenge-gate.md"
-    },
-    {
-      "id": "bug-703",
-      "timestamp": "2026-08-19T20:17:10.997Z",
-      "error_message": "`openwolf experiment evidence --metric acc=` silently recorded a metric value of 0",
-      "file": "src/cli/experiment-cmd.ts",
-      "root_cause": "Number(\"\") returns 0 in JS, so an empty metric value parsed as a real-looking zero reading instead of erroring. A missing measurement became a data point.",
-      "fix": "parseMetric() rejects an empty value before calling Number(), so a missing metric is an error rather than a silent 0.",
-      "status": "resolved",
-      "tags": [
-        "experiment",
-        "parsing",
-        "silent-default",
-        "javascript-coercion"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T20:17:10.997Z",
-      "commit": "c7f668d",
-      "reduction": ".wolf/qa/experiment-metric-parse.md"
-    },
-    {
-      "id": "bug-704",
-      "timestamp": "2026-08-19T20:17:10.997Z",
-      "error_message": "driftcheck reported phantom orphan TODO(UQ-7) markers that did not exist in real source",
-      "file": "src/cli/drift-cmd.ts",
-      "root_cause": "The source walker read test fixture strings containing TODO(UQ-n) literals as if they were real markers in production code.",
-      "fix": "listCodeFiles excludes test dirs and *.test.*/*.spec.* files, mirroring the quality gate's own scope definition.",
-      "status": "resolved",
-      "tags": [
-        "driftcheck",
-        "false-positive",
-        "test-fixtures",
-        "scope"
-      ],
-      "related_bugs": [
-        "bug-698"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T20:17:10.997Z",
-      "commit": "c7f668d",
-      "reduction": ".wolf/qa/drift-check-command.md"
-    },
-    {
-      "id": "bug-705",
-      "timestamp": "2026-08-19T20:17:10.997Z",
-      "error_message": "Skill installs accepted SKILL.md frontmatter whose description named a specific vendor, silently narrowing the skill's trigger surface",
-      "file": "src/cli/skillsbench.ts",
-      "root_cause": "validateSkill only checked the frontmatter `name:`. The `description:` is the routing surface Claude matches against user requests; provider-specific wording means the skill never fires for equivalent generic phrasing, with no error emitted.",
-      "fix": "validateSkill extracts description (quoted/unquoted/block-scalar forms), rejects missing or empty ones, and warns on provider-specific wording via providerWordingHits().",
-      "status": "resolved",
-      "tags": [
-        "skills",
-        "install",
-        "lint",
-        "silent-failure",
-        "routing"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T20:17:10.997Z",
-      "commit": "c7f668d",
-      "reduction": ".wolf/qa/skill-description-lint.md"
-    },
-    {
-      "id": "bug-706",
-      "timestamp": "2026-08-19T20:22:33.065Z",
-      "error_message": "Bare `openwolf update` deployed template changes to all 84 registered projects when a single-project canary was intended",
-      "file": "src/cli/update.ts",
-      "root_cause": "`openwolf update` is fleet-wide by DEFAULT (src/cli/update.ts:2, `let selected = allProjects` at line 102). Scope narrows only when --project is passed; there is no bare-vs---all distinction. Running it from inside a project directory does NOT scope it to that project -- cwd is irrelevant to targeting. The Staged Rollout section mandates canary-first deployment but names no command that actually achieves it, so following the rule literally still produces a fleet write.",
-      "fix": "Use `openwolf update --project <name>` for canary deployment. Documented the scoping flag in the Staged Rollout section of the protocol template so the rule names the mechanism that satisfies it. verify-fleet-section.mjs gained --only <root> to verify a single canary project without fleet staleness masking the result; --only fails closed when the target is unregistered rather than reporting PASS over zero projects.",
-      "status": "resolved",
-      "tags": [
-        "staged-rollout",
-        "blast-radius",
-        "fleet",
-        "update",
-        "cli-defaults",
-        "canary"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T20:22:33.065Z",
-      "commit": "0edcf8a",
-      "reduction": ".wolf/qa/canary-rollout-scope.md"
-    },
-    {
-      "id": "bug-707",
-      "timestamp": "2026-08-19T22:50:23.603Z",
-      "error_message": "Buglog auto-detect merged two DIFFERENT files' fixes into one entry when they shared a basename",
-      "file": "src/hooks/post-write.ts",
-      "root_cause": "autoDetectBugFix's duplicate-suppression predicate compared path.basename(b.file) against the edited file's basename, while the comment above it stated 'same file + same category'. relFile -- the value actually stored as b.file -- was computed 7 lines earlier and left unused. This repo has 21 basenames shared by 2+ tracked files (TS/JS/template triads), so the collision is the dominant editing pattern, not an edge case.",
-      "fix": "Compare the full project-relative path (b.file !== relFile) in all four copies: src/hooks/post-write.ts, src/hooks/post-write.js, .wolf/hooks/post-write.js, templates/wolf/hooks/post-write.js. Added tests/post-write-dedup-path.test.js pinning both directions (distinct files separate, same file still dedupes).",
-      "status": "resolved",
-      "tags": [
-        "buglog",
-        "dedup",
-        "post-write",
-        "path-handling",
-        "companion-review",
-        "challenge-gate"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-19T22:50:23.603Z",
-      "commit": "09affd4",
-      "reduction": ".wolf/qa/post-write-dedup-path.md"
-    },
-    {
       "id": "bug-716",
       "timestamp": "2026-09-04T19:18:12.384Z",
       "error_message": "Interrupted or killed Node test runs leave allowlisted OpenWolf fixture directories behind",
@@ -490,165 +102,6 @@
       "last_seen": "2026-09-04T19:38:59.934Z",
       "commit": null,
       "reduction": null
-    },
-    {
-      "id": "bug-708",
-      "timestamp": "2026-08-27T10:29:52.771Z",
-      "error_message": "Wolfpack CLI was not accessible by command name in WSL2 or PowerShell",
-      "file": "package.json",
-      "root_cause": "The current WSL NVM Node version had no global customopenwolf installation, while Windows retained a conflicting legacy openwolf@2.5.0 global package that provided only openwolf and blocked creation of this project's shims with EEXIST.",
-      "fix": "Installed this repository globally into the WSL npm prefix; uninstalled the legacy Windows openwolf package and installed this repository globally into the Windows npm prefix, creating and verifying both wolfpack and openwolf aliases.",
-      "status": "resolved",
-      "tags": [
-        "cli",
-        "path",
-        "npm-global",
-        "wsl2",
-        "powershell"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-27T10:29:52.771Z",
-      "commit": "5db1a6c92733a8725a334241159d15f9240db66d",
-      "reduction": ".wolf/qa/wolfpack-cli-global-links.md"
-    },
-    {
-      "id": "bug-709",
-      "timestamp": "2026-08-29T15:24:56.120016Z",
-      "error_message": "Audit report retained stale aggregate values after replacing an invalidated sample root and required repeated typo correction",
-      "file": ".wolf/audits/newer-mechanisms-usage-audit-2026-08-29.md",
-      "root_cause": "The report was edited incrementally after excluding metatrader-indicators; several derived totals and one root label were not regenerated from a single final aggregate, and repeated manual label edits introduced additional typos.",
-      "fix": "Recomputed the retained-root totals from parsed metrics, corrected all stale counts and denominators, replaced the ambiguous root label with a stable descriptive label, and ran explicit stale-string plus retained-root manifest checks.",
-      "status": "open",
-      "tags": [
-        "audit",
-        "report-consistency",
-        "aggregate",
-        "typo"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-29T15:24:56.120016Z",
-      "commit": null,
-      "reduction": ".wolf/audits/newer-mechanisms-usage-audit-2026-08-29.md"
-    },
-    {
-      "id": "bug-710",
-      "timestamp": "2026-08-29T15:25:59.615048Z",
-      "error_message": "openwolf driftcheck failed because anatomy retained entries for deleted temporary sparkresearch files",
-      "file": ".wolf/anatomy.md",
-      "root_cause": "The anatomy index captured a transient /tmp research workspace whose files were removed when the background workflow cleaned up, leaving seven stale entries.",
-      "fix": "Removed the obsolete temporary-workspace section and reran driftcheck against the remaining 226 extracted anatomy entries.",
-      "status": "open",
-      "tags": [
-        "driftcheck",
-        "anatomy",
-        "temporary-files"
-      ],
-      "related_bugs": [
-        "bug-709"
-      ],
-      "occurrences": 1,
-      "last_seen": "2026-08-29T15:25:59.615048Z",
-      "commit": null,
-      "reduction": "openwolf driftcheck --check --json"
-    },
-    {
-      "id": "bug-711",
-      "timestamp": "2026-08-29T15:29:49.380Z",
-      "error_message": "Missing error handling in decisionConfigDigest",
-      "file": "src/hooks/nudges/engine.ts",
-      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
-      "fix": "Added try/catch block",
-      "tags": [
-        "auto-detected",
-        "error-handling",
-        "ts"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-29T15:29:49.381Z",
-      "commit": null,
-      "reduction": null,
-      "status": "open"
-    },
-    {
-      "id": "bug-712",
-      "timestamp": "2026-08-29T15:34:21.072Z",
-      "error_message": "Null/undefined access in nudge-cmd.ts",
-      "file": "src/cli/nudge-cmd.ts",
-      "root_cause": "Property access on potentially null/undefined value",
-      "fix": "Added null safety (optional chaining or null check)",
-      "tags": [
-        "auto-detected",
-        "null-safety",
-        "ts"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-29T15:34:21.072Z",
-      "commit": null,
-      "reduction": null,
-      "status": "open"
-    },
-    {
-      "id": "bug-713",
-      "timestamp": "2026-08-29T15:34:34.919Z",
-      "error_message": "Wrong condition in logic",
-      "file": "src/cli/nudge-cmd.ts",
-      "root_cause": "Condition was: if (emission)",
-      "fix": "Changed to: if (provenance)",
-      "tags": [
-        "auto-detected",
-        "logic-fix",
-        "ts"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-29T15:34:34.919Z",
-      "commit": null,
-      "reduction": null,
-      "status": "open"
-    },
-    {
-      "id": "bug-714",
-      "timestamp": "2026-08-29T15:52:08.482Z",
-      "error_message": "Null/undefined access in engine.ts",
-      "file": "src/hooks/nudges/engine.ts",
-      "root_cause": "Property access on potentially null/undefined value",
-      "fix": "Added null safety (optional chaining or null check)",
-      "tags": [
-        "auto-detected",
-        "null-safety",
-        "ts"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-29T15:52:08.482Z",
-      "commit": null,
-      "reduction": null,
-      "status": "open"
-    },
-    {
-      "id": "bug-715",
-      "timestamp": "2026-08-29T15:59:58.782Z",
-      "error_message": "Nudge provenance diagnostic growth test failed: median diagnostic growth 351 exceeded the predeclared 200-byte/event canary budget.",
-      "file": "src/hooks/nudges/engine.ts",
-      "root_cause": "The engine wrote the full provenance envelope on every candidate_created event, so repeated identical Stops duplicated source, implementation hash, config digest, and evidence-window metadata.",
-      "fix": "Write the full envelope only before a durable emission/disposition exists; repeated candidate_created, emitted, and suppressed events retain fingerprint plus schema/config join keys. The negative-control fixture now measures 137-byte median growth and passes.",
-      "tags": [
-        "nudge",
-        "provenance",
-        "diagnostics",
-        "size-budget",
-        "negative-control"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-08-29T15:59:58.782Z",
-      "commit": null,
-      "reduction": ".wolf/qa/nudge-provenance-canary.md",
-      "status": "open"
     },
     {
       "id": "bug-721",
@@ -2304,6 +1757,1040 @@
       "last_seen": "2026-09-17T19:44:16.651Z",
       "commit": "5f91073d3f3061a485ce702a4e430bd608cd5c66",
       "reduction": ".wolf/qa/ledger-growth-bounds.md",
+      "status": "resolved"
+    },
+    {
+      "id": "bug-801",
+      "timestamp": "2026-10-03T16:20:39.215Z",
+      "error_message": "Null/undefined access in pre-write.ts",
+      "file": "src/hooks/pre-write.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:20:39.215Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic edit classification retained; no independently reproduced defect supports its generic error/root-cause claim. Reduction covers current guards/runtime behavior; not counted as a confirmed fix."
+    },
+    {
+      "id": "bug-802",
+      "timestamp": "2026-10-03T16:21:13.199Z",
+      "error_message": "Missing error handling in recallLessons",
+      "file": "src/hooks/pre-write.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:21:13.199Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic edit classification retained; no independently reproduced defect supports its generic error/root-cause claim. Reduction covers current guards/runtime behavior; not counted as a confirmed fix."
+    },
+    {
+      "id": "bug-803",
+      "timestamp": "2026-10-03T16:24:32.169Z",
+      "error_message": "Type error",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [
+        "bug-812"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:24:32.169Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic label retained, not accepted as reproduced mechanism. Confirmed precise defect/evaluation evidence is bug-812; see reduction."
+    },
+    {
+      "id": "bug-804",
+      "timestamp": "2026-10-03T16:25:01.698Z",
+      "error_message": "Wrong return value",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Was returning: { selected: ranked.slice(0, limit), matchedCount: ",
+      "fix": "Now returns: { selected: ranked.slice(0, limit), matches: ranke",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [
+        "bug-819"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:25:01.698Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic label retained, not accepted as reproduced mechanism. Confirmed precise defect/evaluation evidence is bug-819; see reduction."
+    },
+    {
+      "id": "bug-805",
+      "timestamp": "2026-10-03T16:27:18.926Z",
+      "error_message": "Null/undefined access in lesson-recall.ts",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [
+        "bug-812"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:27:18.926Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic label retained, not accepted as reproduced mechanism. Confirmed precise defect/evaluation evidence is bug-812; see reduction."
+    },
+    {
+      "id": "bug-806",
+      "timestamp": "2026-10-03T16:36:45.910Z",
+      "error_message": "Missing guard clause",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "No early return/throw for edge case: !codeShape && !phrase && value.length < 10",
+      "fix": "Added guard clause: if (!codeShape && !phrase && value.length < )",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [
+        "bug-812"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:36:45.910Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic label retained, not accepted as reproduced mechanism. Confirmed precise defect/evaluation evidence is bug-812; see reduction."
+    },
+    {
+      "id": "bug-807",
+      "timestamp": "2026-10-03T16:51:24.110Z",
+      "error_message": "Type error",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation | Also: // Keep the prefix: \"Rule:\" can be quoted as the very thing ; // forbids. Cutting to it can turn a prohibition into an ins",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [
+        "bug-813"
+      ],
+      "occurrences": 2,
+      "last_seen": "2026-10-03T16:51:41.392Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic label retained, not accepted as reproduced mechanism. Confirmed precise defect/evaluation evidence is bug-813; see reduction."
+    },
+    {
+      "id": "bug-808",
+      "timestamp": "2026-10-03T16:52:22.377Z",
+      "error_message": "Wrong return value",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Was returning: { selected: ranked.slice(0, limit), matches: ranke",
+      "fix": "Now returns: { selected: ranked.slice(0, limit), matches: ranke",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [
+        "bug-814"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:52:22.377Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic label retained, not accepted as reproduced mechanism. Confirmed precise defect/evaluation evidence is bug-814; see reduction."
+    },
+    {
+      "id": "bug-809",
+      "timestamp": "2026-10-03T16:52:56.408Z",
+      "error_message": "Null/undefined access in pre-write.ts",
+      "file": "src/hooks/pre-write.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:52:56.408Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic edit classification retained; no independently reproduced defect supports its generic error/root-cause claim. Reduction covers current guards/runtime behavior; not counted as a confirmed fix."
+    },
+    {
+      "id": "bug-810",
+      "timestamp": "2026-10-03T16:57:32.259Z",
+      "error_message": "Missing await",
+      "file": "scripts/lesson-recall-canary.mjs",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "mjs"
+      ],
+      "related_bugs": [
+        "bug-820"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:57:32.259Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic label retained, not accepted as reproduced mechanism. Confirmed precise defect/evaluation evidence is bug-820; see reduction."
+    },
+    {
+      "id": "bug-811",
+      "timestamp": "2026-10-03T16:58:51.000Z",
+      "error_message": "Null/undefined access in lesson-recall.test.js",
+      "file": "tests/lesson-recall.test.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T16:58:51.000Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open",
+      "assessment": "Heuristic edit classification retained; no independently reproduced defect supports its generic error/root-cause claim. Reduction covers current guards/runtime behavior; not counted as a confirmed fix."
+    },
+    {
+      "id": "bug-812",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "Real corpus selected incidental anchors such as a/from/before and generic APIs instead of specific lessons",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Minimum-length quoted-span regex could start at a closing backtick; generic words and API anchors were insufficiently excluded",
+      "fix": "Pair all quoted spans before filtering; reject generic anchors and rank specific code/path hits; real corpus rerun and quote/generic regressions pass",
+      "tags": [
+        "recall",
+        "parsing",
+        "precision",
+        "lesson-recall-quote-mispair"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-813",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "Never add skipVerify with the comment Rule: skip verification in CI was rendered as positive skip verification guidance",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Extracting text after Rule: discarded the prohibition before that literal marker",
+      "fix": "Preserve original prefix and label source section; negation regression reproduced and now green",
+      "tags": [
+        "recall",
+        "rendering",
+        "security",
+        "lesson-recall-excerpt-negation"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-814",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "An unclosed code fence absorbed later Decision Log history into a recalled governing lesson",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Unterminated fence left current entry extent ambiguous while parser returned a normal scan",
+      "fix": "Discard ambiguous entry; mark incomplete; production hook emits no excerpts and records hook-health failure",
+      "tags": [
+        "recall",
+        "parsing",
+        "security",
+        "lesson-recall-unclosed-fence"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-815",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "A root star bullet merged into the preceding dash lesson and inherited the wrong source line",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Entry start detection supported dash/date forms but omitted star bullets",
+      "fix": "Parse both root dash and star entries; assert separate exact source pointer",
+      "tags": [
+        "recall",
+        "parsing",
+        "source-location",
+        "lesson-recall-star-bullet"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-816",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "src/index.ts matched inside packages/legacy/src/index.ts as an owning-relative exact path",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Ordinary word boundaries allowed matching a path suffix after a slash",
+      "fix": "Use separator-aware exact relative-path boundaries; monorepo suffix regression green",
+      "tags": [
+        "recall",
+        "ownership",
+        "path",
+        "lesson-recall-monorepo-path"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-817",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "Focused regression failed 1 !== 0: fs.existsSync recalled unrelated QA guidance",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Lookup lowercased anchors but the generic set retained camel-case API keys",
+      "fix": "Normalize generic set to lowercase; actual generic API exclusion test now green",
+      "tags": [
+        "recall",
+        "precision",
+        "failed-test",
+        "lesson-recall-generic-case"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-818",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "Full suite failed 327/328: enabled hook subprocess timed out (null !== 0); negative control ETIMEDOUT at 3000ms",
+      "file": "src/hooks/shared.ts",
+      "root_cause": "Completed stdin retained the referenced 4000ms fallback timer after EOF",
+      "fix": "Clear timer on EOF in TS and three runtime layers; preserve fallback for slow delivery; production subprocess passes and deliberate cancellation removal goes red",
+      "tags": [
+        "hooks",
+        "stdin",
+        "liveness",
+        "failed-test",
+        "lesson-recall-stdin-timer"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-819",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "Changing an undisplayed matching lesson could leave recall fingerprint unchanged",
+      "file": "src/hooks/lesson-recall.ts",
+      "root_cause": "Early selection shape exposed only display-capped matches to the evidence builder",
+      "fix": "Return all ranked matches separately and fingerprint every matching lesson/location; undisplayed-match rearm and arbitrary-edit convergence tests pass",
+      "tags": [
+        "recall",
+        "nudges",
+        "fingerprint",
+        "lesson-recall-full-evidence"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-820",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "Isolated-event replay activations did not measure shipped per-session emission suppression",
+      "file": "scripts/lesson-recall-canary.mjs",
+      "root_cause": "Each event used fresh state although shipped default permits one rule emission per session",
+      "fix": "Keep isolated metrics explicitly labeled; add ordered shared-state default-ceiling simulations (2 emissions vs 3 isolated); no task-quality inference",
+      "tags": [
+        "recall",
+        "evaluation",
+        "session-state",
+        "lesson-recall-session-replay"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-821",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "Scoped CLEAN receipt returned Git blob SHA-1 rather than companion stage SHA-256; stage was already deleted",
+      "file": ".wolf/qa/lesson-recall-review.json",
+      "root_cause": "Reviewer used the wrong hash domain and the verification run did not preserve staging provenance",
+      "fix": "Reject receipt, confirm Git domain without rereview, run one final kept-stage scoped verification; full returned SHA-256 equals preserved and current source bytes",
+      "tags": [
+        "review",
+        "provenance",
+        "sha256",
+        "lesson-recall-receipt-domain"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-822",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "Recall call-site mutation did not bind",
+      "file": ".wolf/qa/lesson-recall-controls.json",
+      "root_cause": "Probe assumed one-line compiled if statement; compiler emitted a newline",
+      "fix": "Use a unique whitespace-tolerant matcher and assert one bound seam; actual controls exit 1 and original hashes remain unchanged",
+      "tags": [
+        "qa",
+        "negative-control",
+        "binding",
+        "lesson-recall-control-binding"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-823",
+      "timestamp": "2026-10-03T17:36:28.567Z",
+      "error_message": "Bookkeeping reads hit ENOENT for inferred source/test/build paths; initial QA narrative said four unmatched cases instead of six",
+      "file": ".wolf/qa/lesson-recall.md",
+      "root_cause": "Guessed mirror/test paths instead of checking actual inventory; hand-written narrative count disagreed with 9 total and 3 matches",
+      "fix": "Use actual hook-manifest-health test, canonical TS/compiled dist/src layout, and installed .wolf/utils lock helper; nonexistent changelog not created; correct unmatched count to 6",
+      "tags": [
+        "workflow",
+        "navigation",
+        "accounting",
+        "lesson-recall-navigation"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T17:36:28.567Z",
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-824",
+      "timestamp": "2026-10-03T21:40:56.459Z",
+      "error_message": "Research assertion reported Branch changed between metadata requests although the pinned commit was unchanged",
+      "file": ".wolf/audits/agent-improvement-loop-assessment-2026-10-03.md",
+      "root_cause": "Compared the Git Trees endpoint response sha directly with commit.tree.sha, assuming equivalent identity domains; the assertion failed but the compound download command continued",
+      "fix": "Use an explicit immutable commit for inventory/downloads, verify each downloaded file against its pinned Git blob identity, and use fail-fast shell commands. All ten inspected source/docs/test files matched; no upstream source change claimed.",
+      "tags": [
+        "assessment",
+        "provenance",
+        "hash-domain",
+        "agent-loop-assessment-pin"
+      ],
+      "related_bugs": [
+        "bug-821"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T21:40:56.459Z",
+      "commit": null,
+      "reduction": ".wolf/audits/agent-improvement-loop-assessment-2026-10-03.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-825",
+      "timestamp": "2026-10-03T21:56:45.492Z",
+      "error_message": "Missing await",
+      "file": "src/cli/index.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T21:56:45.492Z",
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open",
+      "assessment": {
+        "verdict": "not-reproduced",
+        "summary": "Not reproduced: async registration awaits the dynamic import, then invokes a synchronous void handler; no missing await repair was required. Real CLI tests and349-test suite pass.",
+        "evidence": ".wolf/qa/bug-recurrence.md",
+        "assessed_at": "2026-10-03T22:20:18.109Z"
+      }
+    },
+    {
+      "id": "bug-826",
+      "timestamp": "2026-10-03T22:00:53.923Z",
+      "error_message": "Null/undefined access in recurrence-report.ts",
+      "file": "src/buglog/recurrence-report.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T22:00:53.923Z",
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open",
+      "assessment": {
+        "verdict": "not-reproduced",
+        "summary": "Not reproduced: readLedger validates non-null object/ID shape before grouping or property access; nullish decision fields are data defaults, not evidence of a previously observed dereference. Unsupported/invalid ledger cases and349-test suite pass.",
+        "evidence": ".wolf/qa/bug-recurrence.md",
+        "assessed_at": "2026-10-03T22:20:18.110Z"
+      }
+    },
+    {
+      "error_message": "TypeScript build rejects inferred ledger spread entries with TS2339 id/status/error_message",
+      "root_cause": "Spreading an index-signature JSON type inferred only the explicit ledger_path field; accessing validated record fields then failed compilation.",
+      "fix": "Bound the collected ledger explicitly as Json[]; rebuilt successfully.",
+      "tags": [
+        "recurrence",
+        "typescript",
+        "build"
+      ],
+      "file": "src/buglog/recurrence-report.ts",
+      "id": "bug-827",
+      "timestamp": "2026-10-03T22:12:00.140Z",
+      "last_seen": "2026-10-03T22:12:00.141Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "error_message": "First real recurrence scan rejects the entire history because bug IDs overlap across live and monthly archives",
+      "root_cause": "Global duplicate-ID rejection treated retained archive copies and a few conflicting legacy IDs identically, preventing reports over the actual 915-record ledger corpus.",
+      "fix": "Coalesce identical decision tuples, diagnose/exclude conflicting IDs, and fail closed only when an ambiguous ID is explicitly selected; real CLI now emits an honest incomplete report.",
+      "tags": [
+        "recurrence",
+        "archives",
+        "identity",
+        "real-corpus"
+      ],
+      "file": "src/buglog/recurrence-report.ts",
+      "id": "bug-828",
+      "timestamp": "2026-10-03T22:12:00.141Z",
+      "last_seen": "2026-10-03T22:12:00.141Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "error_message": "Full Node suite cron CLI assertion failed null !== 1 after its 10000ms subprocess deadline",
+      "root_cause": "Default test-file fan-out let CLI fixture startup exceed its fixed deadline in the full concurrent run; isolated recurrence and the bounded full suite passed.",
+      "fix": "Bound npm test file concurrency to four without changing CLI assertions or subprocess deadlines; full suite344/344 and install verification pass.",
+      "tags": [
+        "tests",
+        "concurrency",
+        "timeout",
+        "recurrence"
+      ],
+      "file": "package.json",
+      "id": "bug-829",
+      "timestamp": "2026-10-03T22:12:00.141Z",
+      "last_seen": "2026-10-03T22:12:00.141Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "error_message": "Recurrence source edited more than twice while fixing build inference and real archive compatibility",
+      "root_cause": "Initial implementation needed a typed ledger binding, real-corpus duplicate policy and observable unsupported tool-content handling; all changed bytes invalidate the initial review.",
+      "fix": "Added explicit ledger coverage, conservative conflict handling and parser-shape diagnostics; current-byte scoped review and QA bind final source.",
+      "tags": [
+        "recurrence",
+        "iteration",
+        "review-provenance"
+      ],
+      "file": "src/buglog/recurrence-report.ts",
+      "id": "bug-830",
+      "timestamp": "2026-10-03T22:12:00.141Z",
+      "last_seen": "2026-10-03T22:12:00.141Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-831",
+      "timestamp": "2026-10-03T22:30:28.928Z",
+      "error_message": "Null/undefined access in recurrence-controls.mjs",
+      "file": "scripts/recurrence-controls.mjs",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "mjs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-03T22:30:28.928Z",
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open",
+      "assessment": {
+        "verdict": "not-reproduced",
+        "assessed_at": "2026-10-03T22:54:41.392Z",
+        "evidence": "Current-source compilation, parent 19 focused/352 full tests and production baseline/five expected-negative controls; no concrete null-access reproduction supplied by hook.",
+        "note": "Original generic detector fields retained; open status and null commit unchanged. Expected mutant assertions are not production null-access failures."
+      }
+    },
+    {
+      "id": "bug-832",
+      "timestamp": "2026-10-03T22:34:34.738Z",
+      "last_seen": "2026-10-03T22:34:34.738Z",
+      "error_message": "Decision-tuple tests passed even when commit/status/file/reduction conflict fields were omitted",
+      "root_cause": "Initial archive tests only varied error text or copied the exact record, so omission of other decision fields was not falsified.",
+      "fix": "Add same-ID one-field conflict cases for every decision field, benign observation-metadata coalescing and a uniquely bound omitted-field runtime mutant; all focused tests pass and mutant fails its intended assertion.",
+      "file": "tests/bug-recurrence.test.js",
+      "tags": [
+        "recurrence",
+        "test-vacuity",
+        "ledger-identity"
+      ],
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-833",
+      "timestamp": "2026-10-03T22:34:34.738Z",
+      "last_seen": "2026-10-03T22:34:34.738Z",
+      "error_message": "Unsupported-content/message diagnostics could be disconnected while initial parser tests stayed green",
+      "root_cause": "The initial unsupported parser case reached only tool-result content handling and did not exercise containers, role mismatch, null/untagged blocks or unsupported tool block types.",
+      "fix": "Add current-owner malformed shape cases and independently bound silent-message/block runtime mutants; diagnostics are asserted and both mutants exit1 for their intended parser coverage assertion.",
+      "file": "tests/bug-recurrence.test.js",
+      "tags": [
+        "recurrence",
+        "test-vacuity",
+        "parser-coverage"
+      ],
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-834",
+      "timestamp": "2026-10-03T22:34:34.738Z",
+      "last_seen": "2026-10-03T22:34:34.738Z",
+      "error_message": "Foreign unsupported tool records make local recurrence coverage incomplete",
+      "root_cause": "Message/block diagnostics ran before checking the nearest .wolf owner. Parent reproduction gave complete:false, foreign_records:0 for a foreign server_tool_use.",
+      "fix": "Move owner exclusion before parser shape diagnostics; foreign malformed/server-tool receiving CLI test now passes with complete:true and foreign_records>=3.",
+      "file": "src/buglog/recurrence-report.ts",
+      "tags": [
+        "recurrence",
+        "project-scope",
+        "parser-coverage"
+      ],
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-835",
+      "timestamp": "2026-10-03T22:34:34.738Z",
+      "last_seen": "2026-10-03T22:34:34.739Z",
+      "error_message": "Recurrence negative controls could exercise stale dist instead of reviewed TypeScript",
+      "root_cause": "Initial controls mutated and hashed compiled JavaScript without proving it was emitted from current source/configuration.",
+      "fix": "Compile the selected TypeScript module in memory with actual tsconfig, require byte-identical dist before any probe, and record source/config/compiler/runtime hashes. Stale runtime rejected exit1; rebuilt controls pass.",
+      "file": "scripts/recurrence-controls.mjs",
+      "tags": [
+        "recurrence",
+        "build-freshness",
+        "negative-controls"
+      ],
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-836",
+      "timestamp": "2026-10-03T22:34:34.739Z",
+      "last_seen": "2026-10-03T22:34:34.739Z",
+      "error_message": "Recurrence control script edited more than twice while strengthening falsifiers",
+      "root_cause": "Review required source-to-runtime freshness and independently falsifiable decision-field/parser guards; script iteration exceeded the tracking threshold.",
+      "fix": "Consolidated compiler freshness provenance plus five uniquely bound runtime mutants; baseline and all expected-negative receiving assertions validated.",
+      "file": "scripts/recurrence-controls.mjs",
+      "tags": [
+        "recurrence",
+        "iteration",
+        "qa"
+      ],
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-837",
+      "timestamp": "2026-10-03T22:54:41.392Z",
+      "last_seen": "2026-10-03T22:54:41.392Z",
+      "error_message": "Final companion manifest pathname was deleted before parent provenance verification",
+      "root_cause": "Review staging is ephemeral; a returned pathname and backend-reported checksum did not preserve later stage bytes. A follow-up provenance ask spent another invocation but did not recover them.",
+      "fix": "Recovered the three existing review tool receipts, bound final full hashes to current source and preserved them durably. Mark final-stage mechanical verification/runtime checks unavailable; count one extra ask, not a fourth review.",
+      "file": ".wolf/qa/bug-recurrence-evidence.json",
+      "tags": [
+        "recurrence",
+        "review-provenance",
+        "operational"
+      ],
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-838",
+      "timestamp": "2026-10-03T22:54:41.392Z",
+      "last_seen": "2026-10-03T22:54:41.392Z",
+      "error_message": "Receipt extraction helper failed: Expected closing brace, got end of input",
+      "root_cause": "The first bounded Node extraction snippet missed a closing brace.",
+      "fix": "Corrected structured braces, extracted only existing scoped review results and preserved actual receipts without dumping agent history.",
+      "file": ".wolf/qa/bug-recurrence-evidence.json",
+      "tags": [
+        "recurrence",
+        "receipt-extraction",
+        "operational"
+      ],
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-839",
+      "timestamp": "2026-10-03T22:54:41.392Z",
+      "last_seen": "2026-10-03T22:54:41.392Z",
+      "error_message": "Live-byte audit attributed a changed input to receiving CLI without changed-path evidence",
+      "root_cause": "A failed equality assertion in concurrently writable history/state was worded as proven CLI mutation; the first attempt did not save which path changed.",
+      "fix": "Withdrew writer attribution; reran with explicit changed-input reporting. All five project files/twenty non-current transcript files were unchanged and repeated summaries identical. Keep initial failed audit visible.",
+      "file": ".wolf/qa/bug-recurrence-evidence.json",
+      "tags": [
+        "recurrence",
+        "evidence-attribution",
+        "operational"
+      ],
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-840",
+      "timestamp": "2026-10-03T22:54:41.392Z",
+      "last_seen": "2026-10-03T22:54:41.392Z",
+      "error_message": "Recurrence QA reduction edited more than twice during final hash and narrative updates",
+      "root_cause": "Review repairs changed code/test/control hashes after earlier QA draft; individual header updates preceded consolidated final evidence.",
+      "fix": "Regenerated the complete final narrative once, preserved actual 19/352 tests and five mutants plus provenance limits, and verified all nine artifact bindings.",
+      "file": ".wolf/qa/bug-recurrence.md",
+      "tags": [
+        "recurrence",
+        "iteration",
+        "qa"
+      ],
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open"
+    },
+    {
+      "id": "bug-841",
+      "timestamp": "2026-10-03T22:54:41.392Z",
+      "last_seen": "2026-10-04T17:39:39.125Z",
+      "error_message": "Closeout source lookup failed: file-lock.ts and atomic-write.ts do not exist",
+      "root_cause": "Guessed utility module names instead of reading the canonical writer imports.",
+      "fix": "Read bug-tracker/shared imports and size-discipline definitions; used actual acquireFileLock/atomicWriteJson/atomicWriteText APIs with checked results.",
+      "file": ".wolf/qa/bug-recurrence-evidence.json",
+      "tags": [
+        "recurrence",
+        "source-navigation",
+        "operational"
+      ],
+      "occurrences": 2,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/bug-recurrence.md",
+      "status": "open",
+      "operational_followup": "2026-10-04 quiet-hook provenance query guessed nonexistent tests/quiet-mode.test.js; reran using the actual tests directory and verified source diffs. No quiet behavior change made."
+    },
+    {
+      "error_message": "Rollout evaluation stopped on nonempty ground truth w-grep-leadingdash",
+      "root_cause": "The evaluation harness searched the real lesson with a case-sensitive lowercase fragment although the source used uppercase OFF. This was a ground-truth locator error, not a production selector defect.",
+      "fix": "Use the verified stable source phrase Fleet-coverage checks must iterate; leave prospective inputs and scoring thresholds unchanged. Rerun completed all 12 cases and source/hook ownership assertions.",
+      "file": "/tmp/wolfpack-latest-recall-evaluation.mjs",
+      "tags": [
+        "evaluation",
+        "fixture-ground-truth",
+        "iteration"
+      ],
+      "id": "bug-842",
+      "timestamp": "2026-10-04T13:48:18.851Z",
+      "last_seen": "2026-10-04T13:48:18.851Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/latest-additions-evaluation.md",
+      "status": "open"
+    },
+    {
+      "error_message": "Subject handoff print recall context was approximate rather than byte-exact",
+      "root_cause": "Parent hand-transcribed a hook context with an explicitly illustrative fingerprint and a different truncation point. Subject processed it before the exact receipt correction.",
+      "fix": "Read the actual stored subprocess JSON, send exact observed context and preserve subject acknowledgment. Treat second-pass behavior only as a warm reported-context probe; actual subprocess JSON establishes production bytes. No causal correction or byte-exact live hook delivery claimed.",
+      "file": ".wolf/audits/latest-additions-evaluation-2026-10-04.md",
+      "tags": [
+        "evaluation",
+        "receipt-provenance",
+        "cross-session"
+      ],
+      "id": "bug-843",
+      "timestamp": "2026-10-04T13:48:18.851Z",
+      "last_seen": "2026-10-04T13:48:18.851Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/latest-additions-evaluation.md",
+      "status": "open"
+    },
+    {
+      "error_message": "Field evaluation rejected stable semantics because excluded active-history record totals changed",
+      "root_cause": "The first inspection-versus-production comparison required total records/excluded-session rows to remain equal while the active excluded transcript was still growing.",
+      "fix": "Compare identical report summaries and semantic tool/failure counters; retain total/excluded-row deltas explicitly and do not attribute a writer.",
+      "tags": [
+        "evaluation",
+        "concurrent-history",
+        "evidence"
+      ],
+      "id": "bug-844",
+      "file": ".wolf/qa/latest-additions-evaluation.json",
+      "timestamp": "2026-10-04T13:57:59.543Z",
+      "last_seen": "2026-10-04T13:57:59.543Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/latest-additions-evaluation.md",
+      "status": "open"
+    },
+    {
+      "error_message": "Temporary recurrence field probe edited more than twice during receiving-evidence strengthening",
+      "root_cause": "Initial generation and repeated edits corrected concurrent-history comparisons and sampled-result-body measurements.",
+      "fix": "Final sanitized receipt records the failed assertion and repairs; compare copied-runtime semantics with original production and independently verify all 24 original byte locators.",
+      "tags": [
+        "evaluation",
+        "iteration",
+        "qa"
+      ],
+      "id": "bug-845",
+      "file": ".wolf/qa/latest-additions-evaluation.json",
+      "timestamp": "2026-10-04T13:57:59.543Z",
+      "last_seen": "2026-10-04T13:57:59.543Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/latest-additions-evaluation.md",
+      "status": "open"
+    },
+    {
+      "error_message": "Evaluation shared records edited repeatedly while preserving protocol, corrections and final disposition",
+      "root_cause": "User-required iteration accounting: audit/QA/ledger/memory records received multiple legitimate updates during tests and evidence closeout; no production runtime defect is asserted.",
+      "fix": "Consolidate final dispositions and receipts, preserve frozen protocol/source hashes and operational errors, index files under correct anatomy headings and use canonical locked atomic writers.",
+      "tags": [
+        "evaluation",
+        "iteration",
+        "bookkeeping"
+      ],
+      "id": "bug-846",
+      "file": ".wolf/qa/latest-additions-evaluation.json",
+      "timestamp": "2026-10-04T13:57:59.543Z",
+      "last_seen": "2026-10-04T13:57:59.543Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/latest-additions-evaluation.md",
+      "status": "open"
+    },
+    {
+      "file": "src/hooks/pre-write.ts",
+      "error_message": "Opted-in pre-write recall emits a foreign project lesson and writes foreign lesson/nudge state before any target write completes",
+      "root_cause": "Recall resolved the proposed tool path owner and used its Cerebrum and mutable state without restricting that operation to the driving project.",
+      "fix": "Retired authorized lesson-recall integration and helper across source/build/runtime/templates; isolated old-hook reproduction emits/writes foreign state, current hook emits nothing and preserves foreign bytes.",
+      "tags": [
+        "lesson-recall",
+        "retirement",
+        "project-ownership",
+        "security"
+      ],
+      "status": "resolved",
+      "id": "bug-847",
+      "timestamp": "2026-10-07T18:14:13.317Z",
+      "last_seen": "2026-10-07T18:14:13.317Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall-retirement.md"
+    },
+    {
+      "file": "tests/pre-write-retirement.test.js",
+      "error_message": "First retirement-test draft checked .wolf/nudges.json rather than the real .wolf/nudge-state.json",
+      "root_cause": "Guessed a durable state filename instead of binding the assertion to state.ts state-path implementation.",
+      "fix": "Read the production state-path function, correct both assertions to nudge-state.json, rerun final full suite: 342/342 pass.",
+      "tags": [
+        "test-vacuity",
+        "state-path",
+        "retirement"
+      ],
+      "status": "resolved",
+      "id": "bug-848",
+      "timestamp": "2026-10-07T18:14:13.317Z",
+      "last_seen": "2026-10-07T18:14:13.317Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall-retirement.md"
+    },
+    {
+      "file": ".wolf/qa/lesson-recall-retirement-controls.json",
+      "error_message": "Initial stdin timer disconnection control failed 1 !== null: ERR_MODULE_NOT_FOUND rather than expected ETIMEDOUT",
+      "root_cause": "Staged mutated shared.js without its ../utils/size-discipline.js dependency, so the child failed module loading before executing readStdin.",
+      "fix": "Reproduce exact missing import; stage the mutant inside complete current portable payload; observed completed stdout plus ETIMEDOUT proves the EOF timer cancellation remains load-bearing.",
+      "tags": [
+        "negative-control",
+        "import-closure",
+        "stdin",
+        "fixture"
+      ],
+      "status": "resolved",
+      "id": "bug-849",
+      "timestamp": "2026-10-07T18:14:13.317Z",
+      "last_seen": "2026-10-07T18:14:13.317Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall-retirement.md"
+    },
+    {
+      "file": ".wolf/qa/lesson-recall-retirement-review.json",
+      "error_message": "Initial review report demanded Git index staging and returned no valid current-file scope",
+      "root_cause": "The reviewer conflated Git cached-diff staging with the explicit current-file companion review stage.",
+      "fix": "Reject that report, use direct standardized review --file current-file staging, preserve actual raw receipts and full SHA-256. Two actual direct passes find/fix a concrete mismatch and finish CLEAN; no Git index changes.",
+      "tags": [
+        "review-scope",
+        "provenance",
+        "staging"
+      ],
+      "id": "bug-850",
+      "timestamp": "2026-10-07T18:27:59.257Z",
+      "last_seen": "2026-10-07T18:27:59.257Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall-retirement.md",
+      "status": "resolved"
+    },
+    {
+      "file": "src/hooks/pre-write.ts",
+      "error_message": "Buglog advice for legacy/writer.ts appeared while editing src/writer.ts with matching race text",
+      "root_cause": "Buglog filtering compared only basenames, allowing unrelated sibling/project paths to share advice.",
+      "fix": "Resolve target and nonblank ledger paths against driving root and compare full normalized paths. Added normalized positive, sibling/foreign/ambiguous negative tests across four runtime copies; basename disconnection reproduces stale advice. Source/test repeated edits were driven by this reproduced fix, not hidden tuning.",
+      "tags": [
+        "buglog",
+        "path-matching",
+        "wrong-file-advice",
+        "repeated-edits"
+      ],
+      "id": "bug-851",
+      "timestamp": "2026-10-07T18:27:59.257Z",
+      "last_seen": "2026-10-07T18:27:59.257Z",
+      "occurrences": 1,
+      "related_bugs": [],
+      "commit": null,
+      "reduction": ".wolf/qa/lesson-recall-retirement.md",
       "status": "resolved"
     },
     {

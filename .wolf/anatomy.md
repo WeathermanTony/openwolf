@@ -1,14 +1,37 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-09-13T23:29:30.686Z
-> Files: 447 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-10-07T18:17:22.330Z
+> Files: 468 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../../tmp/
+
+- `latest-additions-recurrence-probe.mjs` — repository: digestInputs, latestSession, categorize (~2731 tok)
+- `wolf-nudge-live-20261006.mjs` — root: local, execute, worker (~1892 tok)
+- `wolf-nudge-verify-20261006.mjs` — Declares root (~962 tok)
+- `wolfpack-latest-recall-evaluation.mjs` — /.wolf/OPENWOLF.md";'}, (~2321 tok)
+
+## ../rag/.wolf/canaries/nudge-qualification-2026-10-05-v2/
+
+- `canary.mjs` — API routes: GET (1 endpoints) (~5279 tok)
+
+## ../rag/.wolf/canaries/nudge-qualification-2026-10-05/
+
+- `canary.mjs` — API routes: GET (1 endpoints) (~3756 tok)
+- `cases.json` — Declares normalization (~1376 tok)
+- `manifest.json` (~285 tok)
+- `preflight.json` (~462 tok)
+- `protocol.md` — Wolfpack offline qualification canary — RAG (~1777 tok)
+
+## ../rag/.wolf/qa/
+
+- `nudge-qualification-canary.md` — Offline optional-advisory qualification: repaired v2 setup (~2099 tok)
 
 ## ./
 
 - `.editorconfig` — Editor configuration (~51 tok)
 - `.gitignore` — Git ignore rules (~315 tok)
-- `package-lock.json` — npm lock file (~69276 tok)
-- `package.json` — Node.js package manifest (~578 tok)
+- `package-lock.json` (~69276 tok)
+- `package.json` — Node.js package manifest (~584 tok)
 - `README.md` — Project documentation (~752 tok)
 - `tsconfig.json` — TypeScript configuration (~140 tok)
 - `VERSION` (~5 tok)
@@ -362,6 +385,33 @@
 
 - `fixture-cleanup.js` — Exports createHomeFixture, createTmpFixture, cleanupFixture, cleanupAllFixtures (~934 tok)
 
+## .wolf/audits/
+
+
+## .wolf/hooks/
+
+
+## .wolf/qa/
+
+
+## External RAG qualification review evidence
+
+
+## External canary execution authorization
+
+
+## External canary repair: /mnt/j/projectshome/projects/rag/
+
+
+## External canary: /mnt/j/projectshome/projects/rag/
+
+
+## Lesson recall retirement — 2026-10-07
+
+
+## Review closeout: external RAG canary
+
+
 ## bin/
 
 - `openwolf.ts` — Declares major (~97 tok)
@@ -369,10 +419,14 @@
 ## docs/
 
 - `blast-radius.md` — Blast-Radius Checklist (defense-layer changes) (~826 tok)
+- `bug-recurrence.md` — Recurrence-after-fix evidence report (~1420 tok)
 - `receipt-hash-interop.md` — Proposal: receipt-hash interop for cross-provider review verification (~1399 tok)
+- `relevant-lessons.md` — Relevant lesson recall (~1294 tok)
 
 ## scripts/
 
+- `lesson-recall-canary.mjs` — Local, read-only transcript replay. Never execute an observed edit or project command. (~2690 tok)
+- `recurrence-controls.mjs` — Declares repository (~2410 tok)
 - `skill-usage.py` — /*.jsonl for `Skill` tool_use records and prints (~1574 tok)
 - `verify-fleet-section.mjs` — /.wolf/OPENWOLF.md`, which reports success (~1514 tok)
 - `verify-install.js` — root: rel, fileExists, parseJson + 10 more (~5606 tok)
@@ -381,10 +435,12 @@
 
 - `bug-matcher.ts` — Re-export from bug-tracker for convenience (~32 tok)
 - `bug-tracker.ts` — Exports getBugLogPath, readBugLog, logBug, findSimilarBugs, searchBugs (~1532 tok)
+- `recurrence-report.ts` — Exports RecurrenceOptions, buildRecurrenceReport (~6115 tok)
 
 ## src/cli/
 
 - `bug-cmd.ts` — Exports bugSearch (~310 tok)
+- `bug-recurrence-cmd.ts` — Exports BugRecurrenceOptions, bugRecurrence (~924 tok)
 - `cerebrum-cmd.ts` — Exports lintCerebrum, cerebrumLint (~723 tok)
 - `cerebrum-record.ts` — @ts-nocheck (~1629 tok)
 - `cron-cmd.ts` — Exports cronList, cronRun, cronRetry (~1530 tok)
@@ -393,8 +449,8 @@
 - `designqc-cmd.ts` — Exports designqcCommand (~478 tok)
 - `drift-cmd.ts` — `openwolf foo`, `wolfpack foo bar` — captures the first subcommand token only. (~4067 tok)
 - `experiment-cmd.ts` — @ts-nocheck (~7228 tok)
-- `hook-manifest.ts` — Exports HOOK_REGISTRATIONS, HOOK_ENTRY_FILES, HOOK_HELPER_FILES, HOOK_SUPPORT_FILES + 10 more (~1104 tok)
-- `index.ts` — Exports createProgram (~6157 tok)
+- `hook-manifest.ts` — Exports HOOK_REGISTRATIONS, HOOK_ENTRY_FILES, HOOK_HELPER_FILES, HOOK_SUPPORT_FILES + 10 more (~1111 tok)
+- `index.ts` — Exports createProgram (~6588 tok)
 - `init.ts` — Exports initCommand, findTemplatesDir, writeTemplateFile (~10350 tok)
 - `ledger-cmd.ts` — Exports LedgerCommandOptions, ledgerAudit, ledgerRepair, ledgerNormalize, ledgerRecover (~1621 tok)
 - `managed-skills.ts` — Exports MANAGED_CLAUDE_SKILL_FILES, installManagedClaudeSkills, backupManagedClaudeSkills, restoreManagedClaudeSkills (~727 tok)
@@ -411,7 +467,7 @@
 
 ## src/config/
 
-- `default-config.json` (~2176 tok)
+- `default-config.json` (~2207 tok)
 
 ## src/daemon/
 
@@ -480,6 +536,7 @@
 
 - `complete-review.js` — @ts-nocheck (~4593 tok)
 - `complete-review.ts` — @ts-nocheck (~4529 tok)
+- `lesson-recall.ts` — Preserve multiline entries and exact source locations; never rewrite Cerebrum. (~1892 tok)
 - `post-read.js` — @ts-nocheck (~777 tok)
 - `post-read.ts` — @ts-nocheck (~766 tok)
 - `post-write.js` — @ts-nocheck (~9410 tok)
@@ -487,11 +544,11 @@
 - `pre-read.js` — @ts-nocheck (~887 tok)
 - `pre-read.ts` — @ts-nocheck (~876 tok)
 - `pre-write.js` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2251 tok)
-- `pre-write.ts` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2244 tok)
+- `pre-write.ts` — Increment hit counter for a lesson in cerebrum-stats.json sidecar. (~2277 tok)
 - `session-start.js` — @ts-nocheck (~2051 tok)
 - `session-start.ts` — @ts-nocheck (~2039 tok)
 - `shared.js` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~30466 tok)
-- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~30394 tok)
+- `shared.ts` — Bail out silently if .wolf/ directory doesn't exist in the current project. (~30677 tok)
 - `stop.js` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37651 tok)
 - `stop.ts` — Legacy nudges (git-discipline, review, quality, buglog, simplicity, …) still (~37573 tok)
 
@@ -534,7 +591,7 @@
 - `cerebrum.md` — Cerebrum (~184 tok)
 - `claude-md-snippet.md` — Wolfpack (~74 tok)
 - `claude-rules-openwolf.md` (~371 tok)
-- `config.json` (~2176 tok)
+- `config.json` (~2215 tok)
 - `cron-manifest.json` (~10 tok)
 - `cron-state.json` (~38 tok)
 - `designqc-report.json` (~26 tok)
@@ -591,7 +648,7 @@
 - `.gitignore` — Git ignore rules (~288 tok)
 - `anatomy.md` — anatomy.md (~54 tok)
 - `cerebrum.md` — Cerebrum (~184 tok)
-- `config.json` (~2176 tok)
+- `config.json` (~2215 tok)
 - `identity.md` — Identity (~84 tok)
 - `memory.md` — Memory (~65 tok)
 - `OPENWOLF.md` — Wolfpack Operating Protocol (~5375 tok)
@@ -642,6 +699,7 @@
 
 ## tests/
 
+- `bug-recurrence.test.js` — Exports fixed (~7759 tok)
 - `buglog-baseline-integrity.test.js` — Declares repoRoot (~394 tok)
 - `config-merge-safety.test.js` — Declares tempFiles (~638 tok)
 - `cron-result-truth.test.js` — repoRoot: makeProject (~509 tok)
@@ -658,11 +716,13 @@
 - `learning-capture.test.js` — root: fixture, transcript, transcriptEntries (~4041 tok)
 - `ledger-integrity.test.js` — LEDGER: project, write, hash, fresh (~3671 tok)
 - `ledger-writer-safety.test.js` — repoRoot: fixture, entry (~1595 tok)
+- `lesson-recall.test.js` — repo: fixture, payload, run, context, stats (~4614 tok)
 - `mem0-canary.test.js` — root: score, clone (~1914 tok)
 - `nudge-engine.test.js` — Regression suite for the evidence-addressed nudge engine. (~17193 tok)
 - `nudge-state-safety.test.js` — root: fixture (~1051 tok)
 - `parked-uq1-seam.test.js` — Behavioural pin for UQ-1 (see .wolf/parked-questions.md). (~947 tok)
 - `post-write-dedup-path.test.js` — HOOK: runHook, setup, f, f (~1074 tok)
+- `pre-write-retirement.test.js` — repo: fixture, payload, run (~2907 tok)
 - `qa-cmd.test.js` — sha256: fixture (~656 tok)
 - `queue-watch.test.js` — repoRoot: removeOp, userTurn, injection, transcriptFixture (~2012 tok)
 - `registry-concurrency.test.js` — registryModule: runRegister (~674 tok)
@@ -683,3 +743,10 @@
 ## tests/lib/
 
 - `fixture-cleanup.js` — Exports createHomeFixture, createTmpFixture, cleanupFixture, cleanupAllFixtures (~934 tok)
+
+## .wolf/qa/ — lesson recall retirement evidence
+
+- `lesson-recall-retirement.md` — final hash-bound build/test/install/control and scoped-review reduction.
+- `lesson-recall-retirement-review.json`, `lesson-recall-retirement-review-initial.txt`, `lesson-recall-retirement-review-fix.txt` — current scope, pass accounting and raw receipts.
+- `lesson-recall-retirement-tests.log`, `lesson-recall-retirement-focused.log`, `lesson-recall-retirement-install.log` — actual final validation output.
+- `lesson-recall-retirement-basename-before.json` and `lesson-recall-retirement-controls.json` — receiving-process red/green and guard-disconnection evidence.

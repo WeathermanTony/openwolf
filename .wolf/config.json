@@ -26,7 +26,21 @@
         ".netlify",
         ".output",
         "*.min.js",
-        "*.min.css"
+        "*.min.css",
+        ".venv",
+        "venv",
+        "site-packages",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".tox",
+        "*.pyc",
+        ".gradle",
+        ".m2",
+        ".cargo",
+        ".DS_Store",
+        "Thumbs.db",
+        "*.map"
       ]
     },
     "token_audit": {
@@ -94,7 +108,8 @@
         "max_inline_sessions": 60
       },
       "cerebrum": {
-        "retention_days": 180
+        "retention_days": 180,
+        "max_bytes": 98304
       },
       "daemon_log": {
         "max_bytes": 5242880,
@@ -285,6 +300,9 @@
       "max_evidence_entries": 50,
       "max_output_chars": 16384,
       "max_protected_file_bytes": 8388608
+    },
+    "behavior": {
+      "mode": "standard"
     }
   }
 }
