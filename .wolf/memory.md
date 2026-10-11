@@ -691,3 +691,4 @@ bugs unrelated to this session's work.
 | 19:27 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~40 |
 | 19:27 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~159 |
 | 19:28 | Edited ../../../../../tmp/corrected-fleet-verifier.sh | inline fix | ~92 |
+- 2026-10-11T15:54:19Z Fixed learning-nudge false positive on peer messages: readRecentUserTurns skips isMeta / origin.kind=peer entries (shared.ts/js, template, .wolf copy) + test. Replied to skills-catalog: nudge belongs in a user-level UserPromptSubmit hook, not WolfPack.

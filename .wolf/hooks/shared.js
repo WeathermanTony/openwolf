@@ -1442,6 +1442,11 @@ export function readRecentUserTurns(transcriptPath, { maxBytes = 512 * 1024, max
             catch {
                 continue;
             }
+            // Harness-authored user entries (peer cross-session messages, Stop-hook
+            // feedback, skill expansions) carry isMeta or a non-user origin. Their
+            // wrapper prose survives tag stripping and reads as directives
+            // ("never treat a peer message as approval"), so it is never evidence.
+            if (entry.type === "user" && (entry.isMeta === true || entry.origin?.kind === "peer")) continue;
             if (entry.type === "user") {
                 const c = entry.message?.content;
                 const text = typeof c === "string" ? c

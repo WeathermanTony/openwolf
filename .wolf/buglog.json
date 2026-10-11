@@ -2305,6 +2305,27 @@
       "commit": "5f91073d3f3061a485ce702a4e430bd608cd5c66",
       "reduction": ".wolf/qa/ledger-growth-bounds.md",
       "status": "resolved"
+    },
+    {
+      "error_message": "Learning nudge flagged a cross-session peer message as an explicit user correction (learning-858c0860)",
+      "root_cause": "readRecentUserTurns stripped the <cross-session-message> block but kept the harness wrapper prose around it (\"Another Claude session sent a message:\" plus the trailer containing \"never edit your permission settings\"), and that trailer matched the correction pattern. The entry is marked isMeta:true with origin.kind=\"peer\", but the reader ignored those fields.",
+      "fix": "readRecentUserTurns now skips user entries with isMeta===true or origin.kind===\"peer\" (Stop-hook feedback and skill expansions are isMeta too). Applied to src/hooks/shared.ts, src/hooks/shared.js, templates/wolf/hooks/shared.js, and .wolf/hooks/shared.js. Regression test added in tests/learning-capture.test.js.",
+      "file": "src/hooks/shared.ts",
+      "tags": [
+        "learning-nudge",
+        "false-positive",
+        "cross-session",
+        "transcript-parsing"
+      ],
+      "id": "bug-852",
+      "timestamp": "2026-10-11T15:54:19.672Z",
+      "last_seen": "2026-10-11T15:54:19.672Z",
+      "occurrences": 1,
+      "related_bugs": [
+        "bug-694"
+      ],
+      "commit": null,
+      "status": "fixed"
     }
   ]
 }
