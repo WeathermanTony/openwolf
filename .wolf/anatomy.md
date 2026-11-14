@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-10-07T18:17:22.330Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-11-01T15:43:39.133Z
 > Files: 468 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../tmp/
@@ -394,6 +394,9 @@
 ## .wolf/qa/
 
 
+## .wolf/qa/ — lesson recall retirement evidence
+
+
 ## External RAG qualification review evidence
 
 
@@ -743,10 +746,3 @@
 ## tests/lib/
 
 - `fixture-cleanup.js` — Exports createHomeFixture, createTmpFixture, cleanupFixture, cleanupAllFixtures (~934 tok)
-
-## .wolf/qa/ — lesson recall retirement evidence
-
-- `lesson-recall-retirement.md` — final hash-bound build/test/install/control and scoped-review reduction.
-- `lesson-recall-retirement-review.json`, `lesson-recall-retirement-review-initial.txt`, `lesson-recall-retirement-review-fix.txt` — current scope, pass accounting and raw receipts.
-- `lesson-recall-retirement-tests.log`, `lesson-recall-retirement-focused.log`, `lesson-recall-retirement-install.log` — actual final validation output.
-- `lesson-recall-retirement-basename-before.json` and `lesson-recall-retirement-controls.json` — receiving-process red/green and guard-disconnection evidence.
