@@ -248,15 +248,20 @@ function maybeNudgeMidturnInjections(wolfDir, session, transcriptPath) {
         if (!Array.isArray(log.seen))
             log.seen = log.injections.map(d => d.hash).filter(Boolean);
         const seenSet = new Set(log.seen);
-        fresh = injections.filter(d => !seenSet.has(d.hash));
-        if (fresh.length === 0)
+        const unseen = injections.filter(d => !seenSet.has(d.hash));
+        if (unseen.length === 0)
             return false;
-        for (const d of fresh) {
+        // An injection the model has already answered in prose is recorded
+        // and marked seen without a reminder, so a later Stop cannot revive it.
+        fresh = cfg.injection_skip_if_replied ? unseen.filter(d => !d.replied) : unseen;
+        const now = new Date().toISOString();
+        for (const d of unseen) {
+            const reminded = fresh.includes(d);
             log.injections.push({
                 ...d,
                 transcript: path.basename(transcriptPath),
                 session_id: session.session_id || "",
-                warned_at: new Date().toISOString(),
+                ...(reminded ? { warned_at: now } : { suppressed: "assistant_replied", suppressed_at: now }),
             });
             log.seen.push(d.hash);
         }
@@ -270,10 +275,14 @@ function maybeNudgeMidturnInjections(wolfDir, session, transcriptPath) {
     finally {
         release();
     }
+    if (fresh.length === 0)
+        return false;
     const shown = fresh.slice(0, cfg.max_warn_per_stop);
-    const previews = shown.map(d => `"${d.preview}" (${d.timestamp ? d.timestamp.slice(11, 19) + "Z" : "time unknown"})`).join("; ");
+    const previews = shown.map(d => `${d.sender && d.sender !== "user" ? `[${d.sender}] ` : ""}"${d.preview}" (${d.timestamp ? d.timestamp.slice(11, 19) + "Z" : "time unknown"})`).join("; ");
     const more = fresh.length > shown.length ? ` +${fresh.length - shown.length} more in log` : "";
-    emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} user message(s) arrived mid-turn: ${previews}${more}. If you already addressed each, say so in one line; otherwise address the unaddressed one(s) now — do not ask the user to re-send. Log: ${logPath}. Then resume your prior task and keep working — do not end your turn at the accounting line.\n`);
+    const senders = new Set(fresh.map(d => d.sender || "user"));
+    const noun = senders.size === 1 && senders.has("user") ? "user message(s)" : "message(s)";
+    emitStopHookFeedback(`📬 Wolfpack queue-watch: ${fresh.length} ${noun} arrived mid-turn with no reply from you since: ${previews}${more}. If you already addressed each, say so in one line; otherwise address the unaddressed one(s) now — do not ask the user to re-send. Log: ${logPath}. Then resume your prior task and keep working — do not end your turn at the accounting line.\n`);
     return true;
 }
 

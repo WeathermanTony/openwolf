@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +25,12 @@ function userTurn(text, timestamp) {
 function injection(prompt, timestamp) {
   return { type: 'attachment', timestamp, attachment: { type: 'queued_command', prompt } };
 }
+function assistantText(text, timestamp) {
+  return { type: 'assistant', timestamp, message: { role: 'assistant', content: [{ type: 'text', text }] } };
+}
+function assistantTool(timestamp) {
+  return { type: 'assistant', timestamp, message: { role: 'assistant', content: [{ type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'ls' } }] } };
+}
 const INTERRUPT = '[Request interrupted by user]';
 
 async function transcriptFixture(entries) {
@@ -34,13 +40,13 @@ async function transcriptFixture(entries) {
   return { dir, file };
 }
 
-async function stopFixture(mode, entries) {
+async function stopFixture(mode, entries, watch = {}) {
   const result = await transcriptFixture(entries);
   await writeFile(path.join(result.dir, 'package.json'), '{"type":"module"}\n');
   const wolfDir = path.join(result.dir, '.wolf');
   const hooksDir = path.join(wolfDir, 'hooks');
   await mkdir(hooksDir, { recursive: true });
-  await writeFile(path.join(wolfDir, 'config.json'), JSON.stringify({ openwolf: { behavior: { mode }, queue_drop_watch: { enabled: true, injection_reminder: true } } }));
+  await writeFile(path.join(wolfDir, 'config.json'), JSON.stringify({ openwolf: { behavior: { mode }, queue_drop_watch: { enabled: true, injection_reminder: true, ...watch } } }));
   await writeFile(path.join(hooksDir, '_session.json'), JSON.stringify({ session_id: 'queue-test', files_read: [], files_written: [], start_time: new Date().toISOString() }));
   return result;
 }
@@ -221,4 +227,89 @@ test('true queue loss retains the distinct resend warning', async () => {
     assert.match(feedback, /ask them to re-send/);
     assert.doesNotMatch(feedback, /Then resume your prior task/);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+const REPLY = 'Done: the parser now rejects empty input, and its test passes locally.';
+
+test('injection detector marks an injection replied only after substantive assistant text', async () => {
+  const { dir, file } = await transcriptFixture([
+    assistantText(REPLY, T0),
+    injection('first ask', T1),
+    assistantTool(T2),
+    assistantText('ok', T2),
+    injection('second ask', T3),
+  ]);
+  try {
+    const found = detectMidturnInjections(file);
+    assert.equal(found.length, 2);
+    assert.equal(found[0].replied, false, 'tool calls and a two-letter reply are not a prose reply');
+    assert.equal(found[1].replied, false, 'text BEFORE an injection must not count as replying to it');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('injection detector labels peer-session and subagent senders', async () => {
+  const { dir, file } = await transcriptFixture([
+    injection('<cross-session-message from="uds:/x.sock" from-name="lead">pause</cross-session-message>', T0),
+    injection('<agent-message from="abc">found it</agent-message>', T1),
+    injection('plain user text', T2),
+  ]);
+  try {
+    assert.deepEqual(detectMidturnInjections(file).map((d) => d.sender), ['peer session', 'subagent', 'user']);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('Stop hook skips an injection the model already answered, and records it as suppressed', async () => {
+  const { dir, file } = await stopFixture('quiet', [injection('please also verify the parser', T1), assistantText(REPLY, T2)]);
+  try {
+    const result = runStop(dir, file);
+    assert.equal(result.status, 0, result.stderr);
+    if (result.stdout.trim()) assert.notEqual(JSON.parse(result.stdout).decision, 'block');
+    const log = JSON.parse(await readFile(path.join(dir, '.wolf', 'queue-injections.json'), 'utf8'));
+    assert.equal(log.injections.length, 1);
+    assert.equal(log.injections[0].suppressed, 'assistant_replied');
+    assert.equal(log.injections[0].warned_at, undefined);
+    assert.equal(log.seen.length, 1, 'a suppressed injection is marked seen so it never reminds later');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('Stop hook still reminds when only tool calls followed the injection', async () => {
+  const { dir, file } = await stopFixture('quiet', [assistantText(REPLY, T0), injection('please also verify the parser', T1), assistantTool(T2)]);
+  try {
+    const result = runStop(dir, file);
+    assert.equal(result.status, 0, result.stderr);
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.decision, 'block');
+    assert.match(output.hookSpecificOutput.additionalContext, /1 user message\(s\) arrived mid-turn with no reply from you since/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('Stop hook labels non-user senders instead of calling them user messages', async () => {
+  const { dir, file } = await stopFixture('quiet', [injection('<agent-message from="abc">found the schema</agent-message>', T1)]);
+  try {
+    const feedback = JSON.parse(runStop(dir, file).stdout).hookSpecificOutput.additionalContext;
+    assert.match(feedback, /1 message\(s\) arrived mid-turn/);
+    assert.doesNotMatch(feedback, /user message/);
+    assert.match(feedback, /\[subagent\] "<agent-message/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('injection_skip_if_replied=false restores the remind-every-injection behavior', async () => {
+  const { dir, file } = await stopFixture('quiet', [injection('please also verify the parser', T1), assistantText(REPLY, T2)], { injection_skip_if_replied: false });
+  try {
+    assert.equal(JSON.parse(runStop(dir, file).stdout).decision, 'block');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('the reply threshold counts all text in one assistant message, not single blocks', async () => {
+  const split = { type: 'assistant', timestamp: T2, message: { role: 'assistant', content: [{ type: 'text', text: 'a'.repeat(20) }, { type: 'text', text: 'b'.repeat(20) }] } };
+  const short = { type: 'assistant', timestamp: T2, message: { role: 'assistant', content: [{ type: 'text', text: 'a'.repeat(19) }, { type: 'text', text: 'b'.repeat(20) }] } };
+  const a = await transcriptFixture([injection('verify parser', T1), split]);
+  const b = await transcriptFixture([injection('verify parser', T1), short]);
+  try {
+    assert.equal(detectMidturnInjections(a.file)[0].replied, true, '20+20 chars in one message is a 40-char reply');
+    assert.equal(detectMidturnInjections(b.file)[0].replied, false, '39 chars total stays below the threshold');
+  } finally {
+    await rm(a.dir, { recursive: true, force: true });
+    await rm(b.dir, { recursive: true, force: true });
+  }
 });

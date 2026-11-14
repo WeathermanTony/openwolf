@@ -1590,6 +1590,11 @@ export function readLastAssistantText(transcriptPath, maxBytes = 256 * 1024) {
 const QUEUE_DROP_WATCH_DEFAULTS = {
     enabled: true,
     injection_reminder: true,
+    // Remind only about injections the model has not yet answered in prose.
+    // Fleet audit 2026-11-14: 180 of 207 reminders (87%) drew "already
+    // addressed"; the 2 firings with no assistant text after the injection
+    // were both genuinely unaddressed.
+    injection_skip_if_replied: true,
     max_warn_per_stop: 3,
     preview_chars: 120,
     tail_bytes: 512 * 1024,
@@ -1602,6 +1607,7 @@ export function getQueueDropWatchConfig() {
     return {
         enabled: cfg.enabled ?? QUEUE_DROP_WATCH_DEFAULTS.enabled,
         injection_reminder: cfg.injection_reminder ?? QUEUE_DROP_WATCH_DEFAULTS.injection_reminder,
+        injection_skip_if_replied: cfg.injection_skip_if_replied ?? QUEUE_DROP_WATCH_DEFAULTS.injection_skip_if_replied,
         max_warn_per_stop: finiteNumber(cfg.max_warn_per_stop, QUEUE_DROP_WATCH_DEFAULTS.max_warn_per_stop, { min: 1, max: 20 }),
         preview_chars: finiteNumber(cfg.preview_chars, QUEUE_DROP_WATCH_DEFAULTS.preview_chars, { min: 20, max: 500 }),
         tail_bytes: finiteNumber(cfg.tail_bytes, QUEUE_DROP_WATCH_DEFAULTS.tail_bytes, { min: 64 * 1024, max: 8 * 1024 * 1024 }),
@@ -1787,10 +1793,24 @@ export function detectDroppedQueueMessages(transcriptPath, tailBytes = QUEUE_DRO
  * Scans the transcript tail and returns injections: queued_command attachment
  * prompts that are not harness-internal (`<task-notification>` traffic is
  * routine and already surfaced by the harness itself). Returns
- * [{timestamp, preview, hash}] oldest-first; hash keys on content+timestamp
- * (dedup only needs to warn once per distinct injection). Silent no-op ([])
- * on any read/parse error.
+ * [{timestamp, preview, hash, sender, replied}] oldest-first; hash keys on
+ * content+timestamp (dedup only needs to warn once per distinct injection).
+ * `sender` is "user", "peer session" (<cross-session-message>) or "subagent"
+ * (<agent-message>). `replied` is true once an assistant message whose text
+ * blocks total at least MIDTURN_REPLY_MIN_CHARS (after trimming) follows the
+ * injection — the model has spoken since seeing it, which is the signal that
+ * attention is not the gap. The threshold is per message, not per block:
+ * block boundaries are a serialization detail, not a measure of substance.
+ * Silent no-op ([]) on any read/parse error.
  */
+const MIDTURN_REPLY_MIN_CHARS = 40;
+function injectionSender(full) {
+    if (full.startsWith("<cross-session-message"))
+        return "peer session";
+    if (full.startsWith("<agent-message"))
+        return "subagent";
+    return "user";
+}
 export function detectMidturnInjections(transcriptPath, tailBytes = QUEUE_DROP_WATCH_DEFAULTS.tail_bytes, previewChars = QUEUE_DROP_WATCH_DEFAULTS.preview_chars) {
     try {
         const st = fs.statSync(transcriptPath);
@@ -1818,13 +1838,28 @@ export function detectMidturnInjections(transcriptPath, tailBytes = QUEUE_DROP_W
         // review MEDIUM). Pure function of file order, stable across tail slides.
         const pairCounts = new Map();
         for (const line of text.split("\n")) {
-            if (!line.includes("queued_command"))
+            const maybeQueued = line.includes("queued_command");
+            const maybeAssistant = injections.length > 0 && line.includes('"assistant"');
+            if (!maybeQueued && !maybeAssistant)
                 continue;
             let entry;
             try {
                 entry = JSON.parse(line);
             }
             catch {
+                continue;
+            }
+            if (entry.type === "assistant") {
+                const content = Array.isArray(entry.message?.content) ? entry.message.content : [];
+                const spoken = content
+                    .filter(c => c && c.type === "text" && typeof c.text === "string")
+                    .map(c => c.text)
+                    .join("")
+                    .trim();
+                if (spoken.length >= MIDTURN_REPLY_MIN_CHARS) {
+                    for (const inj of injections)
+                        inj.replied = true;
+                }
                 continue;
             }
             if (entry.type !== "attachment" || entry.attachment?.type !== "queued_command")
@@ -1841,6 +1876,8 @@ export function detectMidturnInjections(transcriptPath, tailBytes = QUEUE_DROP_W
                 timestamp: ts,
                 preview: full.slice(0, previewChars),
                 hash: crypto.createHash("sha256").update(`${pairKey}#${occurrence}`).digest("hex").slice(0, 16),
+                sender: injectionSender(full),
+                replied: false,
             });
         }
         return injections;
