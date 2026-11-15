@@ -74,8 +74,21 @@ test('quiet_reviews asks for a US-only review after a large write in quiet mode'
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
-test('plain quiet mode still asks for no review and records zero sizes', () => {
+test('plain quiet mode asks for a review by default', () => {
   const root = fixture({ mode: 'quiet' });
+  try {
+    runHook('session-start', root, { session_id: 'quiet-review-session' });
+    write(root, 'src/big.ts', codeLines(80));
+    assert.ok(sessionWrites(root)[0].tokens > 0, 'sizes are tracked by default');
+    const result = stop(root);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout + result.stderr, /Wolfpack review \[/);
+    assert.equal(reviews(root).length, 1);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('quiet_reviews: false opts out: no review and zero sizes', () => {
+  const root = fixture({ mode: 'quiet', quiet_reviews: false });
   try {
     runHook('session-start', root, { session_id: 'quiet-review-session' });
     write(root, 'src/big.ts', codeLines(80));

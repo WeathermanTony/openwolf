@@ -32,9 +32,9 @@ Runtime files such as logs, ledgers, session state, design captures, and generat
 
 ## Quiet mode with reviews
 
-Quiet mode (`openwolf.behavior.mode: "quiet"`) skips most reminders, including the review reminder. Two opt-in keys under `openwolf.behavior` change that for projects that need a second opinion on every substantial change:
+Quiet mode (`openwolf.behavior.mode: "quiet"`) skips most coaching and bookkeeping reminders, but it still asks for an independent review from another AI model when a change crosses the `review_hook` size or path thresholds. Two keys under `openwolf.behavior` adjust this:
 
-- `quiet_reviews: true` keeps quiet mode but still asks for an independent review when a change crosses the `review_hook` size or path thresholds. The reviewer list follows `openwolf.hook_messages.reviewer_profile` (`us-only` limits it to Claude, Fable, ChatGPT, Astra, and Grok).
+- `quiet_reviews` is on by default. Set it to `false` to turn off review reminders in quiet mode. The reviewer list follows `openwolf.hook_messages.reviewer_profile` (`us-only` limits it to Claude, Fable, ChatGPT, Astra, and Grok).
 - `cover_subfolders: true` lets a session started in a subfolder that has no `.wolf/` of its own use this project's hooks. Claude Code reads hook settings only from the folder a session starts in, so this needs `scripts/ancestor-hook.mjs` registered at user scope:
 
 ```bash

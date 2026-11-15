@@ -1265,10 +1265,10 @@ export function getBehaviorConfig() {
     const flags = behavior && typeof behavior === "object" && !Array.isArray(behavior) ? behavior : {};
     return {
         ...resolved,
-        // Quiet mode normally skips review reminders. `quiet_reviews: true`
-        // keeps quiet mode's silence but still asks for an independent review
-        // when a change crosses review_hook thresholds (work/gov projects).
-        quietReviews: flags.quiet_reviews === true,
+        // Quiet mode skips coaching, but substantial changes still get an
+        // independent-review reminder when they cross review_hook thresholds.
+        // On by default since custom.34; `quiet_reviews: false` opts out.
+        quietReviews: flags.quiet_reviews !== false,
         // Sessions started in a subfolder with no .wolf/ of its own run this
         // project's hooks via the user-scope ancestor loader only when true.
         coverSubfolders: flags.cover_subfolders === true,

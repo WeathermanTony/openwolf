@@ -101,7 +101,8 @@ test('quiet hooks retain session/write correctness state without bookkeeping pro
   const session = JSON.parse(fs.readFileSync(sessionFile, 'utf8'));
   assert.equal(session.files_written.length, 1);
   assert.equal(session.files_written[0].file.replaceAll('\\', '/'), target.replaceAll('\\', '/'));
-  assert.equal(session.files_written[0].tokens, 0);
+  // Write sizes feed the default quiet review check (quiet_reviews: false records 0).
+  assert.ok(session.files_written[0].tokens > 0);
   assert.equal(runHook('pre-read', root, { session_id, tool_input: { file_path: target } }).stderr, '');
   assert.equal(Object.keys(JSON.parse(fs.readFileSync(sessionFile, 'utf8')).files_read).length, 0);
   fs.rmSync(root, { recursive: true, force: true });
