@@ -26,7 +26,7 @@ function payload(root, content = "atomicWriteJson(value); acquireFileLock(target
 
 function run(root, input, entry, extra = {}) {
     const result = spawnSync(process.execPath, [...(extra.args ?? []), entry], {
-        input: JSON.stringify(input), encoding: "utf8", timeout: 5000,
+        input: JSON.stringify(input), encoding: "utf8", timeout: 60_000, // generous: the full suite runs many processes in parallel
         env: { ...process.env, CLAUDE_PROJECT_DIR: root, ...(extra.env ?? {}) },
     });
     assert.equal(result.status, 0, result.error?.message || result.stderr);

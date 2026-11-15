@@ -113,7 +113,18 @@ export async function updateCommand(options: { dryRun?: boolean; force?: boolean
   } else if (options.cleanupManifestHash) {
     throw new Error("--cleanup-manifest-hash requires --cleanup");
   }
-  for (const item of excluded) console.log(`  ○ Excluded ${item.project.root}: ${item.reason}`);
+  for (const item of excluded) {
+    console.log(`  ○ Excluded ${item.project.root}: ${item.reason}`);
+    if (item.reason !== "source-checkout" || dryRun) continue;
+    // Its hooks are synced by hand, so record the version only when they match.
+    const drift = hookPayloadDrift(path.join(item.project.root, ".wolf"));
+    if (drift.length === 0) {
+      registerProject(item.project.root, item.project.name, version);
+      console.log(`    Hooks match this build; recorded v${version}`);
+    } else {
+      console.log(`    ⚠ ${drift.length} hook file(s) differ from this build (${drift.slice(0, 5).join(", ")}${drift.length > 5 ? ", ..." : ""}); sync .wolf/hooks before relying on it`);
+    }
+  }
   const missingSelectedRoots = excluded.filter(item => item.reason === "missing" || item.reason === "missing-wolf-directory").map(item => item.project.root);
 
   if (options.profile) normalizeReviewerProfile(options.profile);
@@ -572,23 +583,39 @@ function readTemplateContent(filename: string, templatesDir: string): string {
   return templates[filename] ?? "";
 }
 
-function copyHookScripts(wolfDir: string): void {
-  const hooksDir = path.join(wolfDir, "hooks");
-  ensureDir(hooksDir);
-
+function findHookSourceDir(): string {
   const candidates = [
     path.join(__dirname, "..", "hooks"),
     path.resolve(__dirname, "..", "..", "hooks"),
     path.resolve(__dirname, "..", "..", "dist", "hooks"),
   ];
+  return candidates.find(candidate => fs.existsSync(path.join(candidate, "shared.js"))) ?? "";
+}
 
-  let sourceDir = "";
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate) && fs.existsSync(path.join(candidate, "shared.js"))) {
-      sourceDir = candidate;
-      break;
+/**
+ * Hook payload files whose installed copy under wolfDir differs from (or is
+ * missing next to) the build's copy. The source checkout is excluded from
+ * fleet updates because its .wolf/hooks are synced by hand; this tells
+ * `update` whether that sync happened before it records the new version.
+ */
+export function hookPayloadDrift(wolfDir: string, sourceDir = findHookSourceDir()): string[] {
+  if (!sourceDir) return ["(no hook build found)"];
+  return HOOK_PAYLOAD_FILES.filter(file => {
+    const src = path.join(sourceDir, file);
+    if (!fs.existsSync(src)) return false;
+    try {
+      return !fs.readFileSync(src).equals(fs.readFileSync(path.join(wolfDir, "hooks", file)));
+    } catch {
+      return true;
     }
-  }
+  });
+}
+
+function copyHookScripts(wolfDir: string): void {
+  const hooksDir = path.join(wolfDir, "hooks");
+  ensureDir(hooksDir);
+
+  const sourceDir = findHookSourceDir();
 
   if (sourceDir) {
     for (const file of HOOK_PAYLOAD_FILES) {

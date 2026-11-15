@@ -38,10 +38,10 @@ test("cron run exits nonzero and does not claim success for an unknown task", ()
     const run = spawnSync(process.execPath, [cliPath, "cron", "run", "definitely-missing"], {
       cwd: root,
       encoding: "utf8",
-      timeout: 10_000,
+      timeout: 60_000, // ~1.3 s alone; the parallel full suite once pushed it past 10 s
     });
     const output = `${run.stdout}${run.stderr}`;
-    assert.equal(run.status, 1, output);
+    assert.equal(run.status, 1, run.error ? `spawn failed: ${run.error.message} (signal ${run.signal})` : output);
     assert.match(output, /task ID was not found/i);
     assert.doesNotMatch(output, /executed successfully/i);
   } finally {
