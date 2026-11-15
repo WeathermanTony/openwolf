@@ -186,3 +186,76 @@ test('Scientific skills rejects path-escaping configuration and preserves no rel
     await rm(source, { recursive: true, force: true });
   }
 });
+
+// Cron runs with PATH=/usr/bin:/bin and no OPENWOLF_CLAUDE_BIN. A bare
+// `claude` failed with ENOENT there every week and logged nothing.
+async function fakeClaude(home) {
+  const bin = path.join(home, '.local', 'bin', 'claude');
+  await mkdir(path.dirname(bin), { recursive: true });
+  await writeFile(bin, `#!/bin/sh\necho "$@" >> "$HOME/claude-calls.log"\necho "scientific-skills@kdense-scientific"\n`);
+  await chmod(bin, 0o755);
+  return bin;
+}
+
+function cronRun(home) {
+  return spawnSync(process.execPath, [cli, ...['skills', 'scientific', 'update', '--quiet']], {
+    cwd: tmpdir(),
+    env: { HOME: home, PATH: '/usr/bin:/bin' },
+    encoding: 'utf8',
+    timeout: 120000,
+  });
+}
+
+test('Scientific skills scheduled update works with cron\'s minimal PATH', async () => {
+  const home = await fixture('kdense-scientific-cron-path-');
+  const source = await sourceRepository();
+  try {
+    await configure(home, source);
+    await fakeClaude(home);
+    const result = cronRun(home);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const lock = JSON.parse(await readFile(path.join(home, '.openwolf', 'kdense-scientific', 'lock.json'), 'utf8'));
+    assert.equal(lock.lastResult, 'ok');
+    assert.match(await readFile(path.join(home, 'claude-calls.log'), 'utf8'), /^plugin list$/m);
+  } finally {
+    await rm(home, { recursive: true, force: true });
+    await rm(source, { recursive: true, force: true });
+  }
+});
+
+test('Scientific skills quiet scheduled failure writes one error line for weekly.log', async () => {
+  const home = await fixture('kdense-scientific-cron-fail-');
+  const source = await sourceRepository();
+  try {
+    await configure(home, source);
+    const result = cronRun(home); // no claude anywhere: plugin registration fails
+    assert.equal(result.status, 1);
+    const lines = result.stderr.trim().split('\n').filter(Boolean);
+    assert.equal(lines.length, 1, result.stderr);
+    assert.match(lines[0], /^\d{4}-\d\d-\d\dT\S+ Scientific skills update failed: .*claude/i);
+  } finally {
+    await rm(home, { recursive: true, force: true });
+    await rm(source, { recursive: true, force: true });
+  }
+});
+
+test('Scientific skills cron command pins the Claude CLI found at schedule time', async () => {
+  const fixtureRoot = await fixture("kdense-scientific-cron-env-o'brien-");
+  try {
+    const module = await import('../dist/src/cli/scientific-skills.js');
+    const executable = path.join(fixtureRoot, 'node');
+    await writeFile(executable, '#!/bin/sh\nprintf "%s\\n" "$OPENWOLF_CLAUDE_BIN"\n');
+    await chmod(executable, 0o755);
+    const claudeBin = path.join(fixtureRoot, "bin dir", "cl'aude");
+    const logPath = path.join(fixtureRoot, 'weekly.log');
+    const command = module.buildScheduledCommand(executable, '/x/openwolf.js', logPath, claudeBin);
+    const executed = spawnSync('/usr/bin/env', ['-i', 'PATH=/usr/bin:/bin', '/bin/sh', '-c', command], { encoding: 'utf8' });
+    assert.equal(executed.status, 0, executed.stderr);
+    assert.equal(await readFile(logPath, 'utf8'), `${claudeBin}\n`);
+    // A relative or missing path is not baked in.
+    assert.doesNotMatch(module.buildScheduledCommand(executable, '/x/openwolf.js', logPath, 'claude'), /OPENWOLF_CLAUDE_BIN/);
+    assert.doesNotMatch(module.buildScheduledCommand(executable, '/x/openwolf.js', logPath), /OPENWOLF_CLAUDE_BIN/);
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true });
+  }
+});

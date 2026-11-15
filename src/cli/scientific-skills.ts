@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
+import { quietFailureLine, resolveClaudeBin } from "./claude-bin.js";
 import { readJSON, tryWriteJSON, safeCopyDir } from "../utils/fs-safe.js";
 
 export interface ScientificSkillsConfig {
@@ -228,7 +229,7 @@ function activateRelease(release: string): { commit(): void; restore(): void } {
 
 function ensurePluginRegistration(): void {
   if (process.env.OPENWOLF_SKILLSBENCH_SKIP_PLUGIN_CLI === "1") return;
-  const claude = process.env.OPENWOLF_CLAUDE_BIN || "claude";
+  const claude = resolveClaudeBin();
   const run = (args: string[], allowFailure = false): string => {
     const result = spawnSync(claude, args, { encoding: "utf8" });
     if (result.error || (!allowFailure && result.status !== 0)) {
@@ -251,8 +252,10 @@ function ensurePluginRegistration(): void {
 
 function shellQuote(value: string): string { return `'${value.replace(/'/g, `'"'"'`)}'`; }
 
-export function buildScheduledCommand(executable: string, entrypoint: string, logPath: string): string {
-  return `${shellQuote(executable)} ${shellQuote(entrypoint)} skills scientific update --quiet >> ${shellQuote(logPath)} 2>&1`;
+export function buildScheduledCommand(executable: string, entrypoint: string, logPath: string, claudeBin?: string): string {
+  // Cron has no login PATH; pin the Claude CLI found at schedule time.
+  const env = claudeBin && path.isAbsolute(claudeBin) ? `OPENWOLF_CLAUDE_BIN=${shellQuote(claudeBin)} ` : "";
+  return `${env}${shellQuote(executable)} ${shellQuote(entrypoint)} skills scientific update --quiet >> ${shellQuote(logPath)} 2>&1`;
 }
 
 export function managedCron(crontab: string, command: string, present: boolean): string {
@@ -267,7 +270,7 @@ function installSchedule(present: boolean): string {
   if (existing.error) return "crontab unavailable";
   const logDir = path.join(stateDir(), "logs");
   fs.mkdirSync(logDir, { recursive: true });
-  const command = buildScheduledCommand(process.execPath, path.resolve(process.argv[1] || "openwolf"), path.join(logDir, "weekly.log"));
+  const command = buildScheduledCommand(process.execPath, path.resolve(process.argv[1] || "openwolf"), path.join(logDir, "weekly.log"), resolveClaudeBin());
   const next = managedCron(existing.status === 0 ? existing.stdout : "", command, present);
   const applied = spawnSync("crontab", ["-"], { input: next, encoding: "utf8" });
   if (applied.status !== 0) throw new Error(`Could not update Scientific skills crontab entry: ${applied.stderr.trim()}`);
@@ -315,7 +318,10 @@ export async function scientificSkillsUpdate(options: { dryRun?: boolean; quiet?
   } catch (error) {
     const prior = readJSON<ScientificSkillsLock | null>(lockPath(), null);
     if (prior) tryWriteJSON(lockPath(), { ...prior, lastResult: "failed", updatedAt: new Date().toISOString() });
-    if (options.quiet) process.exitCode = 1;
+    if (options.quiet) {
+      console.error(quietFailureLine("Scientific skills", error));
+      process.exitCode = 1;
+    }
     else throw error;
   } finally {
     try { fs.closeSync(lockHandle); } catch {}
@@ -349,7 +355,7 @@ export function scientificSkillsDoctor(): void {
   }
   if (!fs.existsSync(marketplaceLink()) || !fs.lstatSync(marketplaceLink()).isSymbolicLink()) throw new Error("Generated Scientific skills marketplace is not active.");
   if (process.env.OPENWOLF_SKILLSBENCH_SKIP_PLUGIN_CLI !== "1") {
-    const installed = spawnSync(process.env.OPENWOLF_CLAUDE_BIN || "claude", ["plugin", "list"], { encoding: "utf8" });
+    const installed = spawnSync(resolveClaudeBin(), ["plugin", "list"], { encoding: "utf8" });
     if (installed.error || installed.status !== 0 || !installed.stdout.includes(`${PLUGIN_NAME}@${MARKETPLACE_NAME}`)) {
       throw new Error("Scientific skills plugin is not registered with Claude Code.");
     }
