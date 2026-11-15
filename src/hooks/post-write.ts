@@ -8,7 +8,10 @@ async function main() {
     ensureWolfDir();
     const wolfDir = getWolfDir();
     const projectRoot = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-    const quiet = getBehaviorConfig().mode === "quiet";
+    const behaviorCfg = getBehaviorConfig();
+    const quiet = behaviorCfg.mode === "quiet";
+    // Quiet mode records write sizes only when the review gate needs them.
+    const trackWriteSizes = !quiet || behaviorCfg.quietReviews;
     const raw = await readStdin();
     let input;
     try {
@@ -267,14 +270,23 @@ async function main() {
                 const normalizedFile = normalizePath(absolutePath);
                 const action = toolName === "Write" ? "create" : "edit";
                 const fileContent = input.tool_input?.content ?? "";
-                const tokens = estimateTokens(fileContent || newStr, "code");
+                // Size the CHANGE, not just the new text: a deletion (empty
+                // new_string) or a MultiEdit (edits[]) used to record 0 and
+                // never reach the review size threshold.
+                const tokens = estimateTokens(fileContent || changedText(input.tool_input), "code");
+                const priorWrite = quiet ? session.files_written.findIndex((entry) => entry?.file === normalizedFile) : -1;
+                // Quiet mode keeps one entry per file; with size tracking on,
+                // that entry accumulates every write so the session total
+                // matches standard mode's per-write sum.
+                const priorTokens = priorWrite >= 0 && typeof session.files_written[priorWrite]?.tokens === "number"
+                    ? session.files_written[priorWrite].tokens
+                    : 0;
                 const writeEntry = {
                     file: normalizedFile,
                     action,
-                    tokens: quiet ? 0 : tokens,
+                    tokens: !trackWriteSizes ? 0 : quiet ? priorTokens + tokens : tokens,
                     at: new Date().toISOString(),
                 };
-                const priorWrite = quiet ? session.files_written.findIndex((entry) => entry?.file === normalizedFile) : -1;
                 if (priorWrite >= 0)
                     session.files_written[priorWrite] = writeEntry;
                 else
@@ -656,5 +668,17 @@ function extractCSSProps(code) {
         props.set(m[1].trim(), m[2].trim());
     }
     return props;
+}
+/** Larger side of each replacement, so deletions and MultiEdits are sized. */
+function changedText(toolInput) {
+    const ti = toolInput && typeof toolInput === "object" ? toolInput : {};
+    const pairs = Array.isArray(ti.edits) && ti.edits.length > 0
+        ? ti.edits
+        : [{ old_string: ti.old_string, new_string: ti.new_string }];
+    return pairs.map((e) => {
+        const o = typeof e?.old_string === "string" ? e.old_string : "";
+        const n = typeof e?.new_string === "string" ? e.new_string : "";
+        return n.length >= o.length ? n : o;
+    }).join("\n");
 }
 runHook("post-write", main);

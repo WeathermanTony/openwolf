@@ -112,7 +112,7 @@ function reviewerGuidance(msgCfg) {
     if (msgCfg.reviewer_profile === "open") {
         return `Profile: open — any installed standardized provider companion is eligible.`;
     }
-    return `Profile: gov/US-only — US-based provider companions only (Claude, ChatGPT, Grok).`;
+    return `Profile: gov/US-only — US-based provider companions only (Claude, Fable, ChatGPT, Astra, Grok).`;
 }
 function shellQuote(value) {
     return `'${String(value).replace(/'/g, `'"'"'`)}'`;
@@ -669,13 +669,20 @@ async function main() {
         session.session_id = hookPayload.session_id;
     if (typeof session.started !== "string")
         session.started = "";
-    if (getBehaviorConfig().mode === "quiet") {
+    const behaviorCfg = getBehaviorConfig();
+    if (behaviorCfg.mode === "quiet") {
         let integrityWarning = false;
         try {
             if (maybeWarnQueueDrops(wolfDir, session, hookPayload.transcript_path)) integrityWarning = true;
             if (maybeNudgeMidturnInjections(wolfDir, session, hookPayload.transcript_path)) integrityWarning = true;
         }
         catch { }
+        if (behaviorCfg.quietReviews) {
+            try {
+                if (maybeNudgeReview(wolfDir, session, quietReviewEntry(session))) integrityWarning = true;
+            }
+            catch { }
+        }
         exitWithStopHookResult(integrityWarning);
         return;
     }
@@ -1258,6 +1265,25 @@ function advanceCoveredTokens(entry, cumulativeTokens, attributionComplete) {
         entry.covered_tokens = cumulativeTokens;
     }
     entry.covered_tokens_basis = incomingBasis;
+}
+/**
+ * Quiet mode keeps no token ledger, so build the minimal session entry the
+ * review gate reads (writes + output total) from _session.json. Post-write
+ * records real per-file sizes in quiet mode only when quiet_reviews is on.
+ */
+function quietReviewEntry(session) {
+    const writes = (Array.isArray(session.files_written) ? session.files_written : [])
+        .filter(w => w && typeof w.file === "string")
+        .map(w => ({ file: w.file, tokens_estimated: w.tokens, action: w.action }));
+    const outputTokens = writes.reduce((sum, w) => sum + (typeof w.tokens_estimated === "number" && Number.isFinite(w.tokens_estimated) && w.tokens_estimated > 0 ? w.tokens_estimated : 0), 0);
+    return {
+        id: session.session_id,
+        started: session.started,
+        ended: new Date().toISOString(),
+        reads: [],
+        writes,
+        totals: { input_tokens_estimated: 0, output_tokens_estimated: outputTokens, reads_count: 0, writes_count: writes.length },
+    };
 }
 function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const reviewCfg = getReviewHookConfig();

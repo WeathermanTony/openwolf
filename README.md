@@ -30,6 +30,19 @@ Claude Code currently executes hooks from `.wolf/hooks/*.js` through `.claude/se
 
 Runtime files such as logs, ledgers, session state, design captures, and generated QA reductions are intentionally ignored by git.
 
+## Quiet mode with reviews
+
+Quiet mode (`openwolf.behavior.mode: "quiet"`) skips most reminders, including the review reminder. Two opt-in keys under `openwolf.behavior` change that for projects that need a second opinion on every substantial change:
+
+- `quiet_reviews: true` keeps quiet mode but still asks for an independent review when a change crosses the `review_hook` size or path thresholds. The reviewer list follows `openwolf.hook_messages.reviewer_profile` (`us-only` limits it to Claude, Fable, ChatGPT, Astra, and Grok).
+- `cover_subfolders: true` lets a session started in a subfolder that has no `.wolf/` of its own use this project's hooks. Claude Code reads hook settings only from the folder a session starts in, so this needs `scripts/ancestor-hook.mjs` registered at user scope:
+
+```bash
+[ -d "$CLAUDE_PROJECT_DIR/.wolf" ] || node "$HOME/.openwolf/ancestor-hook.mjs" <hook-name>
+```
+
+The nearest `.wolf/` above the session folder decides. If it has not opted in, nothing runs, so a broad parent folder is never picked by accident. The loader also runs only roots you list in `~/.openwolf/ancestor-roots.json` (`{"roots": ["/abs/path"]}`). It fires in every session, so without that list a downloaded folder with an opted-in `.wolf/` could run code without Claude Code's trust prompt.
+
 ## Optional background services
 
 Wolfpack's coding-quality controls run through Claude Code hooks and do not require PM2. Git discipline, simplicity checks, review gates, QA reductions, memory, bug learning, and anatomy guidance remain active with no daemon running.

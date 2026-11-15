@@ -1259,7 +1259,20 @@ export function resolveBehavior(config, context = {}) {
     };
 }
 export function getBehaviorConfig() {
-    return resolveBehavior(loadConfig(), { installationKind: "existing" });
+    const config = loadConfig();
+    const resolved = resolveBehavior(config, { installationKind: "existing" });
+    const behavior = config?.openwolf?.behavior;
+    const flags = behavior && typeof behavior === "object" && !Array.isArray(behavior) ? behavior : {};
+    return {
+        ...resolved,
+        // Quiet mode normally skips review reminders. `quiet_reviews: true`
+        // keeps quiet mode's silence but still asks for an independent review
+        // when a change crosses review_hook thresholds (work/gov projects).
+        quietReviews: flags.quiet_reviews === true,
+        // Sessions started in a subfolder with no .wolf/ of its own run this
+        // project's hooks via the user-scope ancestor loader only when true.
+        coverSubfolders: flags.cover_subfolders === true,
+    };
 }
 /**
  * List tracked project files for extension detection.
