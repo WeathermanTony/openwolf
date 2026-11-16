@@ -1285,6 +1285,56 @@ function quietReviewEntry(session) {
         totals: { input_tokens_estimated: 0, output_tokens_estimated: outputTokens, reads_count: 0, writes_count: writes.length },
     };
 }
+// Sanitized openwolf.review_hook.coalesce_lookback: invalid → 50, ≤0 → 0
+// (disables coalescing), positive → floored and capped at 50000 so a huge
+// value cannot defeat the bounded scan.
+function reviewLookback(reviewCfg) {
+    const raw = reviewCfg.coalesce_lookback;
+    if (raw === undefined || raw === null || typeof raw !== "number" || !Number.isFinite(raw))
+        return 50;
+    if (raw <= 0)
+        return 0;
+    return Math.min(Math.floor(raw), 50000);
+}
+// Files whose bytes at rest are exactly what a completed review already
+// covered. Without this, every new review in a session re-listed every file
+// written in that session, so reviewers were re-sent unchanged files round
+// after round (automatetasks review-0069..0073 all listed the same three
+// memory notes at the same hashes). Per file, only the most recent completed
+// review that recorded it decides (the same A→B→A guard as delta coalesce),
+// and an unreadable hash never counts as covered.
+function filesAlreadyReviewed(reviews, currentHashes, lookbackN) {
+    const covered = new Set();
+    if (!Array.isArray(reviews) || lookbackN <= 0)
+        return covered;
+    const current = new Map(Object.entries(currentHashes).map(([f, h]) => [normalizeFilePath(f), h]));
+    const decided = new Set();
+    const tail = reviews.slice(-lookbackN);
+    for (let i = tail.length - 1; i >= 0 && decided.size < current.size; i--) {
+        const r = tail[i];
+        if (!r || r.status !== "completed" || !r.content_hashes || typeof r.content_hashes !== "object")
+            continue;
+        for (const [file, hash] of Object.entries(r.content_hashes)) {
+            const key = normalizeFilePath(file);
+            if (!current.has(key) || decided.has(key))
+                continue;
+            decided.add(key);
+            const now = current.get(key);
+            if (now !== HASH_SENTINEL_UNREADABLE && hash === now)
+                covered.add(key);
+        }
+    }
+    return covered;
+}
+// Drop already-reviewed files, but keep any file an open review already
+// lists so its recorded hash still refreshes.
+function filesNeedingReview(writtenFiles, covered, keep = []) {
+    const keepSet = new Set(keep.map(normalizeFilePath));
+    return writtenFiles.filter(f => {
+        const key = normalizeFilePath(f);
+        return !covered.has(key) || keepSet.has(key);
+    });
+}
 function maybeNudgeReview(wolfDir, session, sessionEntry) {
     const reviewCfg = getReviewHookConfig();
     if (!reviewCfg.enabled)
@@ -1452,7 +1502,11 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             const pending = existingPending ?? [...reviewLog.reviews].reverse().find(r => r.status === "pending" && Array.isArray(r.files) && r.files.some((file) => writtenFiles.map(normalizeFilePath).includes(normalizeFilePath(file))));
             if (!pending)
                 return false;
-            const currentHashes = hashFilesAtRest(writtenFiles);
+            const covered = filesAlreadyReviewed(reviewLog.reviews, hashFilesAtRest(writtenFiles), reviewLookback(reviewCfg));
+            const refreshFiles = filesNeedingReview(writtenFiles, covered, pending.files ?? []);
+            if (refreshFiles.length === 0)
+                return false;
+            const currentHashes = hashFilesAtRest(refreshFiles);
             pending.ended = sessionEntry.ended;
             pending.approx_lines_changed = Math.max(pending.approx_lines_changed ?? 0, effectiveLines);
             // Only advance the baseline on a SAME-session pending. A cross-session
@@ -1462,7 +1516,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             if (pending.session_id && pending.session_id === session.session_id) {
                 advanceCoveredTokens(pending, cumulativeTokens, attributionComplete);
             }
-            pending.files = [...new Set([...(pending.files ?? []), ...writtenFiles])];
+            pending.files = [...new Set([...(pending.files ?? []), ...refreshFiles])];
             pending.reason = "follow-up edit below review threshold";
             setReviewCurrentByteReceipt(pending, pending.files, {
                 ...(pending.content_hashes ?? {}),
@@ -1509,6 +1563,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
     let coalescedSilent = false;
     let suppressedByCap = false; // Fix-3: nudge-cap suppression flag
     let nudgeCountForState = 1;
+    let nudgeFiles = writtenFiles; // the files the nudged review entry lists
     try {
         // Re-read AFTER lock acquisition to capture concurrent appends.
         const reviewLog = readJSON(reviewLogPath, { version: 1, reviews: [] });
@@ -1552,32 +1607,8 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
         // still bounded (retention sweep caps reviewlog at ~30 days anyway) and
         // covers realistic multi-session work spans. Configurable via
         // openwolf.review_hook.coalesce_lookback.
-        //
-        // Sanitize:
-        //  - undefined/null/non-number/non-finite/string → default 50
-        //  - 0 or negative → 0 (DISABLES coalesce — user-intent honored;
-        //    `?? 50` would have preserved a user-set 0 and slice(-0) returns
-        //    the FULL array, defeating the bounded-window DoS guard the
-        //    design explicitly set out to provide; see Fix-2 Claude review #1)
-        //  - positive integer → floored value
-        const rawLookback = reviewCfg.coalesce_lookback;
-        let lookbackN;
-        if (rawLookback === undefined || rawLookback === null
-            || typeof rawLookback !== "number" || !Number.isFinite(rawLookback)) {
-            lookbackN = 50;
-        }
-        else if (rawLookback <= 0) {
-            lookbackN = 0;
-        }
-        else {
-            // Clamp positive values to LOOKBACK_HARD_CAP (=50000). A user-supplied
-            // Number.MAX_SAFE_INTEGER would otherwise bypass the bounded-window
-            // DoS guard by making the absolute lookback exceed the log length.
-            // 50000 is ~3 orders of magnitude above the realistic working range
-            // (50 default × 1000) and stays well under array-indexing limits.
-            // See Fix-2 Codex round-2 LOW finding.
-            lookbackN = Math.min(Math.floor(rawLookback), 50000);
-        }
+        // openwolf.review_hook.coalesce_lookback; sanitized by reviewLookback().
+        const lookbackN = reviewLookback(reviewCfg);
         let deltaMatch;
         if (!existingPending && !currentHasUnreadable && lookbackN > 0) {
             const tail = reviewLog.reviews.slice(-lookbackN);
@@ -1637,6 +1668,12 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 break;
             }
         }
+        // A review lists only files not already reviewed at their current
+        // bytes; an open review's own files stay so their hashes refresh.
+        const covered = filesAlreadyReviewed(reviewLog.reviews, currentHashes, lookbackN);
+        const reviewFiles = filesNeedingReview(writtenFiles, covered, existingPending?.files ?? []);
+        const reviewKeys = new Set(reviewFiles.map(normalizeFilePath));
+        const reviewHashes = Object.fromEntries(Object.entries(currentHashes).filter(([f]) => reviewKeys.has(normalizeFilePath(f))));
         if (existingPending) {
             // Coalesce: refresh end timestamp, union files, take max line count.
             // CRITICAL: also refresh content_hashes for the currently-written files.
@@ -1649,12 +1686,12 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             existingPending.ended = sessionEntry.ended;
             existingPending.approx_lines_changed = Math.max(existingPending.approx_lines_changed, effectiveLines);
             advanceCoveredTokens(existingPending, cumulativeTokens, attributionComplete);
-            existingPending.files = [...new Set([...existingPending.files, ...writtenFiles])];
+            existingPending.files = [...new Set([...existingPending.files, ...reviewFiles])];
             existingPending.reason = reason;
             existingPending.trigger = trigger;
             setReviewCurrentByteReceipt(existingPending, existingPending.files, {
                 ...(existingPending.content_hashes ?? {}),
-                ...currentHashes,
+                ...reviewHashes,
             });
             existingPending.requires_rereview = true;
             existingPending.requires_rereview_reason = "pending review refreshed after additional edits";
@@ -1662,6 +1699,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 existingPending.matched_paths = [...new Set([...(existingPending.matched_paths ?? []), ...matchedPaths])];
             }
             nextId = existingPending.id;
+            nudgeFiles = existingPending.files;
         }
         else if (deltaMatch) {
             // Delta coalesce hit: don't allocate a new ID, don't append, don't nudge.
@@ -1670,6 +1708,12 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             // it was actually completed long ago. The prior review stands as-is.
             // See R3-4.
             nextId = deltaMatch.id;
+            coalescedSilent = true;
+        }
+        else if (reviewFiles.length === 0) {
+            // Every written file is at bytes some completed review already
+            // covered (spread across several reviews, so no single deltaMatch).
+            // Nothing new to review: stay silent, record nothing.
             coalescedSilent = true;
         }
         else {
@@ -1690,7 +1734,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 id: nextId,
                 session_id: session.session_id,
                 ended: sessionEntry.ended,
-                files: writtenFiles,
+                files: reviewFiles,
                 approx_lines_changed: effectiveLines,
                 covered_tokens: cumulativeTokens,
                 covered_tokens_basis: attributionComplete ? TOKEN_BASIS_SCOPED : TOKEN_BASIS_SESSION,
@@ -1699,7 +1743,8 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
                 trigger,
                 ...(pathTrigger ? { matched_paths: matchedPaths } : {}),
             };
-            setReviewCurrentByteReceipt(pendingReview, writtenFiles, currentHashes);
+            setReviewCurrentByteReceipt(pendingReview, reviewFiles, reviewHashes);
+            nudgeFiles = pendingReview.files;
             reviewLog.reviews.push(pendingReview);
         }
         // Fix-3: per-(review-id, content-hash-tuple) nudge cap.
@@ -1726,7 +1771,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             if (capN > 0) {
                 // Hash-tuple signature: sha256 of canonical-JSON of content_hashes.
                 // Keys sorted to ensure {a:x, b:y} and {b:y, a:x} hash identically.
-                const sortedEntries = Object.entries(currentHashes).sort(([a], [b]) => a.localeCompare(b));
+                const sortedEntries = Object.entries(reviewHashes).sort(([a], [b]) => a.localeCompare(b));
                 const sig = crypto.createHash("sha256").update(JSON.stringify(sortedEntries)).digest("hex");
                 // Find the entry we just modified or created.
                 const entry = reviewLog.reviews.find(r => r.id === nextId);
@@ -1795,7 +1840,7 @@ function maybeNudgeReview(wolfDir, session, sessionEntry) {
             const rel = path.relative(projectRoot, f);
             return rel && !rel.startsWith("..") && !path.isAbsolute(rel) ? rel : f;
         };
-        const relFiles = writtenFiles.map(toDisplay);
+        const relFiles = nudgeFiles.map(toDisplay);
         const reviewHelper = shellQuote(toDisplay(path.join(wolfDir, "hooks", "complete-review.js")));
         const completeCommand = `node ${reviewHelper} ${nextId} --reviewed-current --reviewer <name> --summary '<outcome>'`;
         const refreshCommand = `node ${reviewHelper} ${nextId} --refresh`;
