@@ -43,12 +43,22 @@ function lessonId(lessonText) {
     // we explicitly don't try to provide (would require fuzzy matching).
     return crypto.createHash("sha1").update(lessonText).digest("hex").slice(0, 12);
 }
+// Prose words that follow "never use" but are never code names. Keywords
+// such as any, new, this, for and not stay matchable.
+const FILLER_WORDS = /^(a|an|the|that|these|those|its|their|our|your)$/i;
+// Two or more characters including a letter: rm, fs, eval, md5, 3DES, $VAR.
+function isCodeName(word) {
+    return word.trim().length >= 2 && /[A-Za-z]/.test(word);
+}
 function checkCerebrum(wolfDir, content) {
     const cerebrumContent = readMarkdown(path.join(wolfDir, "cerebrum.md"));
-    const doNotRepeatSection = cerebrumContent.split("## Do-Not-Repeat")[1];
-    if (!doNotRepeatSection)
+    // Anchor on real `## ` headings. An unanchored "## " also matches inside
+    // every "### " subheading, which cut the section at its first subheading
+    // and silently disabled every lesson below it.
+    const heading = /^ {0,3}## Do-Not-Repeat.*$/m.exec(cerebrumContent);
+    if (!heading)
         return;
-    const entries = doNotRepeatSection.split("## ")[0];
+    const entries = cerebrumContent.slice(heading.index + heading[0].length).split(/^ {0,3}## /m)[0];
     const lines = entries.split("\n").filter((l) => l.trim().startsWith("[") || l.trim().startsWith("-"));
     // Track lessons that fired THIS invocation so a single Do-Not-Repeat line
     // with multiple matching patterns counts as one hit, not many.
@@ -61,11 +71,20 @@ function checkCerebrum(wolfDir, content) {
         const quotedMatches = trimmed.match(/"([^"]+)"/g) || trimmed.match(/'([^']+)'/g) || trimmed.match(/`([^`]+)`/g);
         if (quotedMatches) {
             for (const qm of quotedMatches) {
-                patterns.push(qm.replace(/["'`]/g, ""));
+                const fragment = qm.replace(/["'`]/g, "");
+                // Short fragments ("the", "a", "_", "if") match almost any write
+                // and turn the warning into noise. Keep 5+ chars with a letter, or
+                // a backticked name of 2+ chars (`rm`, `eval`), which is deliberate.
+                const longEnough = fragment.trim().length >= 5 && /[A-Za-z]/.test(fragment);
+                const codeName = qm.startsWith("`") && isCodeName(fragment);
+                if (longEnough || codeName)
+                    patterns.push(fragment);
             }
         }
-        const neverMatch = trimmed.match(/(?:never use|avoid|don't use|do not use)\s+(\w+)/i);
-        if (neverMatch)
+        const neverMatch = trimmed.match(/(?:never use|avoid|don't use|do not use)\s+[`"']?(\w+)/i);
+        // "Never use eval" names its word on purpose, so short names count,
+        // but not filler such as "never use the ...".
+        if (neverMatch && !FILLER_WORDS.test(neverMatch[1]))
             patterns.push(neverMatch[1]);
         for (const pattern of patterns) {
             try {
